@@ -1,11 +1,11 @@
 // src/main.rs
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use use_case_manager::{UseCaseManager, config::Config};
+use markdown_use_case_manager::{UseCaseManager, config::Config};
 
 #[derive(Parser)]
-#[command(name = "ucm")]
-#[command(about = "Use Case Manager - Manage use cases, scenarios, and generate tests")]
+#[command(name = "mucm")]
+#[command(about = "Markdown Use Case Manager - Manage use cases and scenarios in markdown format")]
 #[command(version)]
 struct Cli {
     #[command(subcommand)]
@@ -58,7 +58,7 @@ fn main() -> Result<()> {
         Commands::Init => {
             println!("Initializing use case manager project...");
             let config = Config::init_project()?;
-            println!("Project initialized! Configuration saved to .config/ucm/ucm.toml");
+            println!("Project initialized! Configuration saved to .mucm/mucm.toml");
             println!("Use cases will be stored in: {}", config.directories.use_case_dir);
             println!("Tests will be generated in: {}", config.directories.test_dir);
         }

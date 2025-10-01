@@ -340,7 +340,7 @@ Generated on: {{generated_date}}
 {{/if}}
 
 ---
-*Use Case managed with UCM - Use Case Manager*"#
+*Use Case managed with MUCM - Markdown Use Case Manager*"#
     }
     
     fn rust_test_template() -> &'static str {

@@ -1,5 +1,5 @@
 // Unit tests for Scenario struct and related functionality
-use use_case_manager::core::models::{Scenario, Status};
+use markdown_use_case_manager::core::models::{Scenario, Status};
 
 /// Test Scenario::new() creates scenario with correct initial values
 #[test]

@@ -75,8 +75,8 @@ pub struct MetadataConfig {
 }
 
 impl Config {
-    const CONFIG_DIR: &'static str = ".config/ucm";
-    const CONFIG_FILE: &'static str = "ucm.toml";
+    const CONFIG_DIR: &'static str = ".mucm";
+    const CONFIG_FILE: &'static str = "mucm.toml";
     const TEMPLATES_DIR: &'static str = "templates";
     
     pub fn config_path() -> PathBuf {
@@ -95,16 +95,16 @@ impl Config {
         let base_path = Path::new(base_dir);
         let config_dir = base_path.join(Self::CONFIG_DIR);
         
-        // Create .config/ucm directory if it doesn't exist
+        // Create .mucm directory if it doesn't exist
         if !config_dir.exists() {
             fs::create_dir_all(&config_dir)
-                .context("Failed to create .config/ucm directory")?;
+                .context("Failed to create .mucm directory")?;
         }
         
         let config = Self::default();
         config.save_in_dir(base_dir)?;
         
-        // Copy templates to .config/ucm/templates/
+        // Copy templates to .mucm/templates/
         Self::copy_templates_to_config_in_dir(base_dir)?;
         
         // Create default directories
@@ -206,7 +206,7 @@ impl Config {
         let config_path = Self::config_path();
         
         if !config_path.exists() {
-            anyhow::bail!("No use case manager project found. Run 'ucm init' first.");
+            anyhow::bail!("No markdown use case manager project found. Run 'mucm init' first.");
         }
         
         let content = fs::read_to_string(&config_path)
@@ -220,10 +220,10 @@ impl Config {
     
     pub fn load_from_dir(base_dir: &str) -> Result<Self> {
         let base_path = Path::new(base_dir);
-        let config_path = base_path.join(Self::CONFIG_DIR).join("ucm.toml");
+        let config_path = base_path.join(Self::CONFIG_DIR).join("mucm.toml");
         
         if !config_path.exists() {
-            anyhow::bail!("No use case manager project found. Run 'ucm init' first.");
+            anyhow::bail!("No markdown use case manager project found. Run 'mucm init' first.");
         }
         
         let content = fs::read_to_string(&config_path)
@@ -248,7 +248,7 @@ impl Config {
     
     pub fn save_in_dir(&self, base_dir: &str) -> Result<()> {
         let base_path = Path::new(base_dir);
-        let config_path = base_path.join(Self::CONFIG_DIR).join("ucm.toml");
+        let config_path = base_path.join(Self::CONFIG_DIR).join("mucm.toml");
         let content = toml::to_string_pretty(self)
             .context("Failed to serialize config")?;
         

@@ -196,7 +196,7 @@ impl UseCaseManager {
     
     pub fn list_use_cases(&self) -> Result<()> {
         if self.use_cases.is_empty() {
-            println!("No use cases found. Create one with 'ucm create'");
+            println!("No use cases found. Create one with 'mucm create'");
             return Ok(());
         }
         

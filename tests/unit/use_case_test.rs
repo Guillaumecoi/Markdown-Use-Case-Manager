@@ -1,5 +1,5 @@
 // Unit tests for UseCase struct and related functionality
-use use_case_manager::core::models::{UseCase, Priority, Status, Scenario};
+use markdown_use_case_manager::core::models::{UseCase, Priority, Status, Scenario};
 
 /// Test UseCase::new() creates use case with correct initial values
 #[test]

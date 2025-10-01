@@ -1,5 +1,5 @@
 // Unit tests for Config and related configuration functionality
-use use_case_manager::config::{Config, ProjectConfig, DirectoryConfig, TemplateConfig, GenerationConfig, MetadataConfig};
+use markdown_use_case_manager::config::{Config, ProjectConfig, DirectoryConfig, TemplateConfig, GenerationConfig, MetadataConfig};
 use std::path::Path;
 
 /// Test Config::default() creates valid default configuration
@@ -25,7 +25,7 @@ fn test_config_default() {
 #[test]
 fn test_config_path() {
     let path = Config::config_path();
-    assert_eq!(path, Path::new(".config/ucm/ucm.toml"));
+    assert_eq!(path, Path::new(".mucm/mucm.toml"));
 }
 
 /// Test ProjectConfig creation and fields

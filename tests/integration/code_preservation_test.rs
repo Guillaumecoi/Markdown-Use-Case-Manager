@@ -1,5 +1,5 @@
 // Integration tests for code preservation functionality
-use use_case_manager::core::templates::TemplateEngine;
+use markdown_use_case_manager::core::templates::TemplateEngine;
 use crate::test_helpers::with_temp_dir;
 use serde_json::json;
 use std::collections::HashMap;

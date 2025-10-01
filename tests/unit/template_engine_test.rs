@@ -1,5 +1,5 @@
 // Unit tests for template engine and template utilities
-use use_case_manager::core::templates::{TemplateEngine, to_snake_case};
+use markdown_use_case_manager::core::templates::{TemplateEngine, to_snake_case};
 use serde_json::json;
 use std::collections::HashMap;
 
@@ -307,7 +307,7 @@ fn test_template_engine_render_python_test() {
 /// Test TemplateEngine with config for template style selection
 #[test]
 fn test_template_engine_with_config_simple_style() {
-    use use_case_manager::config::Config;
+    use markdown_use_case_manager::config::Config;
     
     // Create config with simple template style
     let mut config = Config::default();
@@ -330,7 +330,7 @@ fn test_template_engine_with_config_simple_style() {
 /// Test TemplateEngine with config for detailed template style
 #[test]
 fn test_template_engine_with_config_detailed_style() {
-    use use_case_manager::config::Config;
+    use markdown_use_case_manager::config::Config;
     
     // Create config with detailed template style
     let mut config = Config::default();
@@ -353,7 +353,7 @@ fn test_template_engine_with_config_detailed_style() {
 /// Test TemplateEngine fallback to built-in templates when custom templates don't exist
 #[test]
 fn test_template_engine_fallback_to_builtin() {
-    use use_case_manager::config::Config;
+    use markdown_use_case_manager::config::Config;
     use tempfile::TempDir;
     
     let temp_dir = TempDir::new().unwrap();

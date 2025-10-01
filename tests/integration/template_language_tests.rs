@@ -1,15 +1,15 @@
 // tests/integration/template_language_tests.rs
 use std::collections::HashMap;
 use std::fs;
-use use_case_manager::config::Config;
-use use_case_manager::core::manager::UseCaseManager;
-use use_case_manager::core::templates::TemplateEngine;
+use markdown_use_case_manager::config::Config;
+use markdown_use_case_manager::core::manager::UseCaseManager;
+use markdown_use_case_manager::core::templates::TemplateEngine;
 use super::test_helpers::with_temp_dir;
 
 /// Helper to create a manager in the current directory with a given config
 fn create_manager_with_config(config: Config) -> UseCaseManager {
-    // Create the .config/ucm directory
-    std::fs::create_dir_all(".config/ucm").unwrap();
+    // Create the .mucm directory
+    std::fs::create_dir_all(".mucm").unwrap();
     
     // Save config to the current directory
     config.save_in_dir(".").unwrap();

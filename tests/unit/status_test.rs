@@ -1,5 +1,5 @@
 // Unit tests for Status enum and related functionality
-use use_case_manager::core::models::Status;
+use markdown_use_case_manager::core::models::Status;
 
 /// Test Status enum variants exist and have correct ordering
 #[test]

@@ -1,5 +1,5 @@
 // Integration tests for file system operations and project structure
-use use_case_manager::{UseCaseManager, config::Config};
+use markdown_use_case_manager::{UseCaseManager, config::Config};
 use tempfile::TempDir;
 use std::fs;
 use std::path::Path;
@@ -10,8 +10,8 @@ fn create_test_manager_with_config(config: Config) -> (TempDir, UseCaseManager) 
     let temp_dir = TempDir::new().unwrap();
     let base_path = temp_dir.path().to_str().unwrap();
     
-    // Create the .config/ucm directory
-    std::fs::create_dir_all(temp_dir.path().join(".config/ucm")).unwrap();
+    // Create the .mucm directory
+    std::fs::create_dir_all(temp_dir.path().join(".mucm")).unwrap();
     
     // Save config to the temp directory
     config.save_in_dir(base_path).unwrap();
@@ -35,19 +35,18 @@ fn test_config_init_project_creates_structure() {
     
     // Verify config was created
     let temp_path = temp_dir.path();
-    assert!(temp_path.join(".config").exists());
-    assert!(temp_path.join(".config/ucm").exists());
-    assert!(temp_path.join(".config/ucm/ucm.toml").exists());
+    assert!(temp_path.join(".mucm").exists());
+    assert!(temp_path.join(".mucm/mucm.toml").exists());
     
     // Verify templates directory was created (templates may or may not be copied depending on source availability)
-    assert!(temp_path.join(".config/ucm/templates").exists());
+    assert!(temp_path.join(".mucm/templates").exists());
     
     // Verify directories were created
     assert!(temp_path.join(&config.directories.use_case_dir).exists());
     assert!(temp_path.join(&config.directories.test_dir).exists());
     
     // Verify config content
-    let config_content = fs::read_to_string(temp_path.join(".config/ucm/ucm.toml")).unwrap();
+    let config_content = fs::read_to_string(temp_path.join(".mucm/mucm.toml")).unwrap();
     assert!(config_content.contains("[project]"));
     assert!(config_content.contains("name = \"My Project\""));
     assert!(config_content.contains("[directories]"));
@@ -82,8 +81,8 @@ fn test_config_load_no_project() {
     assert!(result.is_err());
     
     let error = result.unwrap_err();
-    assert!(error.to_string().contains("No use case manager project found"));
-    assert!(error.to_string().contains("Run 'ucm init' first"));
+    assert!(error.to_string().contains("No markdown use case manager project found"));
+    assert!(error.to_string().contains("Run 'mucm init' first"));
 }
 
 /// Test Config::save() persists configuration changes
@@ -114,8 +113,20 @@ fn test_use_case_manager_load() {
     let original_dir = std::env::current_dir().unwrap();
     std::env::set_current_dir(&temp_dir).unwrap();
     
-    // Initialize project
-    Config::init_project().unwrap();
+    // Initialize project - retry a few times in case of transient filesystem issues
+    let mut init_result = Config::init_project();
+    if init_result.is_err() {
+        std::thread::sleep(std::time::Duration::from_millis(10));
+        init_result = Config::init_project();
+    }
+    
+    match init_result {
+        Ok(_) => {}
+        Err(e) => {
+            std::env::set_current_dir(original_dir).unwrap();
+            panic!("Config init failed: {:?}", e);
+        }
+    }
     
     // Load manager
     let _manager = UseCaseManager::load().expect("Failed to load UseCaseManager");

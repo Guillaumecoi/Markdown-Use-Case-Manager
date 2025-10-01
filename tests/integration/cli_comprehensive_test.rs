@@ -7,12 +7,12 @@ use std::fs;
 /// Test CLI help command shows usage information
 #[test]
 fn test_cli_help() {
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.arg("--help");
     
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("Use Case Manager"))
+        .stdout(predicate::str::contains("Markdown Use Case Manager"))
         .stdout(predicate::str::contains("Usage:"))
         .stdout(predicate::str::contains("Commands:"))
         .stdout(predicate::str::contains("init"))
@@ -23,12 +23,12 @@ fn test_cli_help() {
 /// Test CLI version command shows version information
 #[test]
 fn test_cli_version() {
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.arg("--version");
     
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("ucm"))
+        .stdout(predicate::str::contains("mucm"))
         .stdout(predicate::str::contains("0.1.0"));
 }
 
@@ -37,7 +37,7 @@ fn test_cli_version() {
 fn test_cli_init_creates_project_structure() {
     let temp_dir = TempDir::new().unwrap();
     
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.arg("init");
     
@@ -45,18 +45,17 @@ fn test_cli_init_creates_project_structure() {
         .success()
         .stdout(predicate::str::contains("Initializing use case manager project"))
         .stdout(predicate::str::contains("Project initialized"))
-        .stdout(predicate::str::contains("Configuration saved to .config/ucm/ucm.toml"));
+        .stdout(predicate::str::contains("Configuration saved to .mucm/mucm.toml"));
     
     // Verify project structure was created
-    assert!(temp_dir.path().join(".config").exists());
-    assert!(temp_dir.path().join(".config/ucm").exists());
-    assert!(temp_dir.path().join(".config/ucm/ucm.toml").exists());
-    assert!(temp_dir.path().join(".config/ucm/templates").exists());
+    assert!(temp_dir.path().join(".mucm").exists());
+    assert!(temp_dir.path().join(".mucm/mucm.toml").exists());
+    assert!(temp_dir.path().join(".mucm/templates").exists());
     assert!(temp_dir.path().join("docs/use-cases").exists());
     assert!(temp_dir.path().join("tests/use-cases").exists());
     
     // Verify config file content
-    let config_content = fs::read_to_string(temp_dir.path().join(".config/ucm/ucm.toml")).unwrap();
+    let config_content = fs::read_to_string(temp_dir.path().join(".mucm/mucm.toml")).unwrap();
     assert!(config_content.contains("[project]"));
     assert!(config_content.contains("[directories]"));
     assert!(config_content.contains("[metadata]"));
@@ -69,13 +68,13 @@ fn test_cli_create_use_case() {
     let temp_dir = TempDir::new().unwrap();
     
     // First initialize project
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.arg("init");
     cmd.assert().success();
     
     // Then create a use case
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.args(["create", "--category", "auth", "User Login"]);
     
@@ -101,13 +100,13 @@ fn test_cli_create_use_case_with_description() {
     let temp_dir = TempDir::new().unwrap();
     
     // Initialize project
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.arg("init");
     cmd.assert().success();
     
     // Create use case with description
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.args([
         "create", 
@@ -132,25 +131,25 @@ fn test_cli_list_use_cases() {
     let temp_dir = TempDir::new().unwrap();
     
     // Initialize and create some use cases
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.arg("init");
     cmd.assert().success();
     
     // Create first use case
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.args(["create", "--category", "auth", "User Login"]);
     cmd.assert().success();
     
     // Create second use case
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.args(["create", "--category", "profile", "Update Profile"]);
     cmd.assert().success();
     
     // List use cases
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.arg("list");
     
@@ -169,19 +168,19 @@ fn test_cli_status_shows_statistics() {
     let temp_dir = TempDir::new().unwrap();
     
     // Initialize and create use cases
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.arg("init");
     cmd.assert().success();
     
     // Create a use case
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.args(["create", "--category", "test", "Test Case"]);
     cmd.assert().success();
     
     // Check status
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.arg("status");
     
@@ -198,18 +197,18 @@ fn test_cli_add_scenario() {
     let temp_dir = TempDir::new().unwrap();
     
     // Initialize and create use case
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.arg("init");
     cmd.assert().success();
     
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.args(["create", "--category", "test", "Test Case"]);
     cmd.assert().success();
     
     // Add scenario
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.args([
         "add-scenario", 
@@ -236,23 +235,23 @@ fn test_cli_update_scenario_status() {
     let temp_dir = TempDir::new().unwrap();
     
     // Setup: init, create use case, add scenario
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.arg("init");
     cmd.assert().success();
     
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.args(["create", "--category", "test", "Test Case"]);
     cmd.assert().success();
     
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.args(["add-scenario", "UC-TES-001", "Test Scenario"]);
     cmd.assert().success();
     
     // Update scenario status
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.args(["update-status", "UC-TES-001-S01", "--status", "in_progress"]);
     
@@ -267,19 +266,19 @@ fn test_cli_overview_generation() {
     let temp_dir = TempDir::new().unwrap();
     
     // Setup project with use cases
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.arg("init");
     cmd.assert().success();
     
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.args(["create", "--category", "auth", "Login"]);
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("Generated overview"));
     
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.args(["create", "--category", "profile", "Update Profile"]);
     cmd.assert()
@@ -304,20 +303,20 @@ fn test_cli_error_no_project() {
     let temp_dir = TempDir::new().unwrap();
     
     // Try to create use case without initializing
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.args(["create", "--category", "test", "Test"]);
     
     cmd.assert()
         .failure()
-        .stderr(predicate::str::contains("No use case manager project found"))
-        .stderr(predicate::str::contains("Run 'ucm init' first"));
+        .stderr(predicate::str::contains("No markdown use case manager project found"))
+        .stderr(predicate::str::contains("Run 'mucm init' first"));
 }
 
 /// Test CLI error handling for invalid commands
 #[test]
 fn test_cli_invalid_command() {
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.arg("invalid-command");
     
     cmd.assert()
@@ -331,13 +330,13 @@ fn test_cli_missing_arguments() {
     let temp_dir = TempDir::new().unwrap();
     
     // Initialize project
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.arg("init");
     cmd.assert().success();
     
     // Try create without title
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.args(["create", "--category", "test"]);
     
@@ -352,20 +351,20 @@ fn test_cli_complete_workflow() {
     let temp_dir = TempDir::new().unwrap();
     
     // 1. Initialize project
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.arg("init");
     cmd.assert().success();
     
     // 2. Create use case
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.args(["create", "--category", "workflow", "Complete Workflow"]);
     cmd.assert().success();
     
     // 3. Add multiple scenarios
     for i in 1..=3 {
-        let mut cmd = Command::cargo_bin("ucm").unwrap();
+        let mut cmd = Command::cargo_bin("mucm").unwrap();
         cmd.current_dir(&temp_dir);
         cmd.args([
             "add-scenario", 
@@ -378,18 +377,18 @@ fn test_cli_complete_workflow() {
     }
     
     // 4. Update scenario statuses
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.args(["update-status", "UC-WOR-001-S01", "--status", "implemented"]);
     cmd.assert().success();
     
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.args(["update-status", "UC-WOR-001-S02", "--status", "tested"]);
     cmd.assert().success();
     
     // 5. Check final status
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.arg("status");
     cmd.assert()

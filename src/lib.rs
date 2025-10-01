@@ -1,5 +1,5 @@
 // src/lib.rs
-//! Use Case Manager - A library for managing use cases, scenarios, and generating tests
+//! Markdown Use Case Manager - A library for managing use cases and scenarios in markdown format
 
 pub mod config;
 pub mod core;

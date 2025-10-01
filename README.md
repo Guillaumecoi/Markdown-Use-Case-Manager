@@ -1,120 +1,133 @@
-# Use Case Manager
 
-A comprehensive CLI tool and Rust library for managing use cases, scenarios, and documentation with automatic status tracking and test generation.
+<div align="center">
+  <img src="https://capsule-render.vercel.app/api?type=soft&color=0:667eea,100:764ba2&height=160&section=header&text=Markdown%20Use%20Case%20Manager&fontSize=42&fontColor=ffffff&fontAlignY=40&desc=Documentation%20that%20travels%20with%20your%20code&descSize=26&descAlignY=70" style="border-radius: 25px;">
+</div>
+
+## Why This Tool?
+
+Most use case management happens in external tools like Jira or Confluence, which creates a disconnect between your documentation and code. This tool keeps everything together in your repository as plain markdown files.
+
+Your use cases live alongside your code, version-controlled and readable by anyone. No external dependencies, no cloud services, no vendor lock-in. Just markdown files that work with any static site generator or documentation platform.
+
+Works great for solo developers, small teams, or any project where you want documentation that travels with your code.
 
 ## Features
 
-- 📋 **Use Case Management**: Create, organize, and track use cases with hierarchical scenarios
-- 🎯 **Smart Status Tracking**: Automatic status aggregation from scenarios to use cases
-- 📝 **Template-Driven Generation**: Generate documentation and test files from customizable templates
-- 🔄 **Multi-Language Support**: Generate tests for Rust (more languages coming soon)
-- 📊 **Progress Tracking**: Visual progress indicators and status reporting
-- ⚙️ **Configurable**: Project-specific configuration and custom templates
+- Organize use cases by categories with automatic ID generation
+- Track progress from planning to deployment
+- Generate consistent documentation and test scaffolding  
+- Prevent conflicts with intelligent naming
+- Export to any markdown-compatible format
+- Support automatic test generation
+- Customizable generation templates
+- Flexible configuration
 
-## Quick Start
+## Getting Started
 
 ### Installation
 
 ```bash
-# Build from source
-git clone https://github.com/GuillaumeCoi/use-case-manager
-cd use-case-manager
+git clone https://github.com/GuillaumeCoi/markdown-use-case-manager
+cd markdown-use-case-manager
 cargo install --path .
 ```
 
 ### Basic Usage
 
 ```bash
-# Initialize a new project
-ucm init
+# Initialize your project
+mucm init
 
-# Create a use case
-ucm create "User Authentication" --category "Security" --description "Handle user login and logout"
+# Create your first use case  
+mucm create "User Login" --category "Security"
 
-# List all use cases
-ucm list
+# Add scenarios to your use case
+mucm add-scenario "UC-SEC-001" "Login with email and password"
 
-# Show project status
-ucm status
+# View your documentation
+mucm list
+mucm status
 ```
 
-## Status Hierarchy
+### What You Get
+
+Creating use cases generates a clean file structure:
 
 ```
-PLANNED (📋)     → Basic idea documented
-IN_PROGRESS (🔄) → Development started
-IMPLEMENTED (⚡) → Code complete, not tested
-TESTED (✅)      → Tested and verified
-DEPLOYED (🚀)    → Live in production
-DEPRECATED (⚠️) → No longer maintained
+docs/use-cases/
+├── README.md                    # Auto-generated overview
+├── security/
+│   └── UC-SEC-001.md           # Individual use case 
+└── ...
+
+tests/use-cases/
+├── security/
+│   └── uc_sec_001.rs           # Test scaffolding 
+└── ...
 ```
 
-Use case status is automatically computed as the minimum status of all scenarios.
+Everything is standard markdown with YAML frontmatter, so it works with any static site generator.
+
+## Status Tracking
+
+Six development statuses that automatically roll up from scenarios to use cases:
+
+```
+PLANNED 📋      → Basic idea documented
+IN_PROGRESS 🔄  → Development started
+IMPLEMENTED ⚡  → Code complete, not tested
+TESTED ✅       → Tested and verified
+DEPLOYED 🚀     → Live in production
+DEPRECATED ⚠️   → No longer maintained
+```
+
+The use case status automatically reflects the minimum status of all its scenarios.
 
 ## Configuration
 
-The tool creates a `.ucm/config.toml` file in your project root:
+Configure the tool via `.mucm/config.toml`:
 
 ```toml
 [project]
 name = "My Project"
-description = "A project managed with use case manager"
+description = "Project managed with Markdown Use Case Manager"
 
 [directories]
 use_case_dir = "docs/use-cases"
 test_dir = "tests/use-cases"
 
 [generation]
-test_language = "rust"
+test_language = "rust"        # rust, python, or none
 auto_generate_tests = true
+
+...
 ```
 
-## Library Usage
+## Customization 🎨
 
-```rust
-use use_case_manager::{UseCaseManager, UseCase, Status, Priority};
+The tool is designed to be flexible and adapt to your workflow:
 
-fn main() -> anyhow::Result<()> {
-    let mut manager = UseCaseManager::load()?;
-    
-    let use_case_id = manager.create_use_case(
-        "User Registration".to_string(),
-        "Authentication".to_string(),
-        Some("User provides valid information".to_string())
-    )?;
-    
-    println!("Created use case: {}", use_case_id);
-    
-    Ok(())
-}
-```
+**Custom Templates**: All documentation and test templates are stored in `.mucm/templates/` and can be modified:
+- `use_case_simple.hbs` - Basic use case format
+- `use_case_detailed.hbs` - Detailed use case with scenarios
+- `overview.hbs` - Auto-generated overview page
+- `{language}/test.hbs` - Test scaffolding for your chosen language
 
-## Generated Files
+## Deployment
 
-### Use Case Documentation
-- **Markdown documentation**: `docs/use-cases/UC-XXX-001.md` (with YAML frontmatter)
+Since everything is just markdown, your documentation works everywhere:
 
-### Test Files
-- **Rust tests**: `tests/use-cases/uc_xxx_001.rs`
-
-## Roadmap
-
-- [ ] Add scenario management commands
-- [ ] Support for more test languages (JavaScript, Python)
-- [ ] Custom template support
-- [ ] Git integration for change tracking
-- [ ] Interactive CLI mode
-- [ ] Export to various formats (PDF, HTML)
+- **GitHub/GitLab Pages** - Automatic deployment from your repo
+- **MkDocs** - `mkdocs serve` for instant documentation sites  
+- **Docusaurus** - Modern documentation platform
+- **Jekyll** - GitHub's default static site generator
+- **Hugo** - Fast static site generator
+- **Any markdown processor** - Pandoc, GitBook, etc.
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Issues and pull requests welcome!
 
 ## License
 
-Licensed under either of
-
-- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE))
-- MIT License ([LICENSE-MIT](LICENSE-MIT))
-
-at your option.
+MIT License - see [LICENSE](LICENSE) for details.
