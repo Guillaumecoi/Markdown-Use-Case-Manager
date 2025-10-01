@@ -15,7 +15,7 @@ pub enum Status {
 impl Status {
     pub fn priority(&self) -> u8 {
         match self {
-            Status::Deprecated => 0,    // Always lowest
+            Status::Deprecated => 0, // Always lowest
             Status::Planned => 1,
             Status::InProgress => 2,
             Status::Implemented => 3,
@@ -23,7 +23,7 @@ impl Status {
             Status::Deployed => 5,
         }
     }
-    
+
     pub fn emoji(&self) -> &'static str {
         match self {
             Status::Planned => "📋",
@@ -34,7 +34,7 @@ impl Status {
             Status::Deprecated => "⚠️",
         }
     }
-    
+
     pub fn display_name(&self) -> &'static str {
         match self {
             Status::Planned => "PLANNED",
@@ -45,27 +45,28 @@ impl Status {
             Status::Deprecated => "DEPRECATED",
         }
     }
-    
+
     /// Compute aggregated status for use case from scenario statuses
     /// Rule: Lowest status across all scenarios, except Planned only shows if everything is Planned
     pub fn aggregate(statuses: &[Status]) -> Status {
         if statuses.is_empty() {
             return Status::Planned;
         }
-        
+
         // Deprecated always wins
         if statuses.contains(&Status::Deprecated) {
             return Status::Deprecated;
         }
-        
+
         // Check if all scenarios are planned
         let all_planned = statuses.iter().all(|s| *s == Status::Planned);
         if all_planned {
             return Status::Planned;
         }
-        
+
         // Otherwise return the lowest non-planned status
-        *statuses.iter()
+        *statuses
+            .iter()
             .filter(|s| **s != Status::Planned)
             .min_by_key(|s| s.priority())
             .unwrap_or(&Status::Planned)

@@ -1,5 +1,5 @@
 // Unit tests for UseCase struct and related functionality
-use markdown_use_case_manager::core::models::{UseCase, Priority, Status, Scenario};
+use markdown_use_case_manager::core::models::{Priority, Scenario, Status, UseCase};
 
 /// Test UseCase::new() creates use case with correct initial values
 #[test]
@@ -8,9 +8,9 @@ fn test_use_case_new() {
         "UC-001".to_string(),
         "Test Use Case".to_string(),
         "authentication".to_string(),
-        "Test description for use case".to_string()
+        "Test description for use case".to_string(),
     );
-    
+
     assert_eq!(use_case.id, "UC-001");
     assert_eq!(use_case.title, "Test Use Case");
     assert_eq!(use_case.category, "authentication");
@@ -31,25 +31,37 @@ fn test_use_case_status_aggregation() {
         "UC-002".to_string(),
         "Status Test".to_string(),
         "test".to_string(),
-        "Testing status aggregation".to_string()
+        "Testing status aggregation".to_string(),
     );
-    
+
     // Empty use case should have Planned status
     assert_eq!(use_case.status(), Status::Planned);
-    
+
     // Add scenarios with different statuses
-    let scenario1 = Scenario::new("SC-001".to_string(), "Scenario 1".to_string(), "Description 1".to_string());
-    let mut scenario2 = Scenario::new("SC-002".to_string(), "Scenario 2".to_string(), "Description 2".to_string());
+    let scenario1 = Scenario::new(
+        "SC-001".to_string(),
+        "Scenario 1".to_string(),
+        "Description 1".to_string(),
+    );
+    let mut scenario2 = Scenario::new(
+        "SC-002".to_string(),
+        "Scenario 2".to_string(),
+        "Description 2".to_string(),
+    );
     scenario2.set_status(Status::InProgress);
-    let mut scenario3 = Scenario::new("SC-003".to_string(), "Scenario 3".to_string(), "Description 3".to_string());
+    let mut scenario3 = Scenario::new(
+        "SC-003".to_string(),
+        "Scenario 3".to_string(),
+        "Description 3".to_string(),
+    );
     scenario3.set_status(Status::Tested);
-    
+
     use_case.add_scenario(scenario1);
     assert_eq!(use_case.status(), Status::Planned); // All planned
-    
+
     use_case.add_scenario(scenario2);
     assert_eq!(use_case.status(), Status::InProgress); // Lowest non-planned
-    
+
     use_case.add_scenario(scenario3);
     assert_eq!(use_case.status(), Status::InProgress); // Still lowest non-planned
 }
@@ -61,17 +73,17 @@ fn test_use_case_explicit_status() {
         "UC-003".to_string(),
         "Explicit Status Test".to_string(),
         "test".to_string(),
-        "Testing explicit status override".to_string()
+        "Testing explicit status override".to_string(),
     );
-    
+
     let original_updated_at = use_case.metadata.updated_at;
-    
+
     // Set explicit status
     use_case.set_explicit_status(Some(Status::Deployed));
     assert_eq!(use_case.status(), Status::Deployed);
     assert_eq!(use_case.explicit_status, Some(Status::Deployed));
     assert!(use_case.metadata.updated_at >= original_updated_at);
-    
+
     // Clear explicit status
     use_case.set_explicit_status(None);
     assert_eq!(use_case.status(), Status::Planned); // Back to aggregated
@@ -85,19 +97,19 @@ fn test_use_case_add_scenario() {
         "UC-004".to_string(),
         "Scenario Addition Test".to_string(),
         "test".to_string(),
-        "Testing scenario addition".to_string()
+        "Testing scenario addition".to_string(),
     );
-    
+
     let original_updated_at = use_case.metadata.updated_at;
-    
+
     let scenario = Scenario::new(
         "SC-004-001".to_string(),
         "First Scenario".to_string(),
-        "First scenario description".to_string()
+        "First scenario description".to_string(),
     );
-    
+
     use_case.add_scenario(scenario);
-    
+
     assert_eq!(use_case.scenarios.len(), 1);
     assert_eq!(use_case.scenarios[0].id, "SC-004-001");
     assert_eq!(use_case.scenarios[0].title, "First Scenario");
@@ -111,24 +123,24 @@ fn test_use_case_update_scenario_status() {
         "UC-005".to_string(),
         "Scenario Status Update Test".to_string(),
         "test".to_string(),
-        "Testing scenario status updates".to_string()
+        "Testing scenario status updates".to_string(),
     );
-    
+
     let scenario = Scenario::new(
         "SC-005-001".to_string(),
         "Test Scenario".to_string(),
-        "Test scenario for status update".to_string()
+        "Test scenario for status update".to_string(),
     );
-    
+
     use_case.add_scenario(scenario);
     let original_updated_at = use_case.metadata.updated_at;
-    
+
     // Update existing scenario status
     let updated = use_case.update_scenario_status("SC-005-001", Status::Tested);
     assert!(updated);
     assert_eq!(use_case.scenarios[0].status, Status::Tested);
     assert!(use_case.metadata.updated_at >= original_updated_at);
-    
+
     // Try to update non-existent scenario
     let not_updated = use_case.update_scenario_status("SC-005-999", Status::Deployed);
     assert!(!not_updated);
@@ -141,19 +153,19 @@ fn test_use_case_add_tag() {
         "UC-006".to_string(),
         "Tag Test".to_string(),
         "test".to_string(),
-        "Testing tag functionality".to_string()
+        "Testing tag functionality".to_string(),
     );
-    
+
     let original_updated_at = use_case.metadata.updated_at;
-    
+
     use_case.add_tag("authentication".to_string());
     use_case.add_tag("security".to_string());
-    
+
     assert_eq!(use_case.tags.len(), 2);
     assert!(use_case.tags.contains(&"authentication".to_string()));
     assert!(use_case.tags.contains(&"security".to_string()));
     assert!(use_case.metadata.updated_at >= original_updated_at);
-    
+
     // Adding duplicate tag should not increase count
     use_case.add_tag("authentication".to_string());
     assert_eq!(use_case.tags.len(), 2);
@@ -167,21 +179,21 @@ fn test_use_case_multiple_scenarios() {
         "UC-007".to_string(),
         "Multiple Scenarios Test".to_string(),
         "test".to_string(),
-        "Testing multiple scenarios".to_string()
+        "Testing multiple scenarios".to_string(),
     );
-    
+
     // Add multiple scenarios
     for i in 1..=5 {
         let scenario = Scenario::new(
             format!("SC-007-{:03}", i),
             format!("Scenario {}", i),
-            format!("Description for scenario {}", i)
+            format!("Description for scenario {}", i),
         );
         use_case.add_scenario(scenario);
     }
-    
+
     assert_eq!(use_case.scenarios.len(), 5);
-    
+
     // Verify all scenarios are present and ordered
     for (i, scenario) in use_case.scenarios.iter().enumerate() {
         let expected_id = format!("SC-007-{:03}", i + 1);
@@ -196,21 +208,21 @@ fn test_use_case_clone() {
         "UC-008".to_string(),
         "Clone Test".to_string(),
         "test".to_string(),
-        "Testing clone functionality".to_string()
+        "Testing clone functionality".to_string(),
     );
-    
+
     use_case.add_tag("cloning".to_string());
     use_case.set_explicit_status(Some(Status::Tested));
-    
+
     let scenario = Scenario::new(
         "SC-008-001".to_string(),
         "Clone Scenario".to_string(),
-        "Scenario for clone test".to_string()
+        "Scenario for clone test".to_string(),
     );
     use_case.add_scenario(scenario);
-    
+
     let cloned = use_case.clone();
-    
+
     assert_eq!(use_case.id, cloned.id);
     assert_eq!(use_case.title, cloned.title);
     assert_eq!(use_case.category, cloned.category);
@@ -228,23 +240,24 @@ fn test_use_case_serialization() {
         "UC-009".to_string(),
         "Serialization Test".to_string(),
         "serialization".to_string(),
-        "Testing serialization capabilities".to_string()
+        "Testing serialization capabilities".to_string(),
     );
-    
+
     use_case.add_tag("serialization".to_string());
     use_case.set_explicit_status(Some(Status::Implemented));
-    
+
     let scenario = Scenario::new(
         "SC-009-001".to_string(),
         "Serialization Scenario".to_string(),
-        "Scenario for serialization test".to_string()
+        "Scenario for serialization test".to_string(),
     );
     use_case.add_scenario(scenario);
-    
+
     // Test JSON serialization
     let json = serde_json::to_string(&use_case).expect("Failed to serialize to JSON");
-    let deserialized: UseCase = serde_json::from_str(&json).expect("Failed to deserialize from JSON");
-    
+    let deserialized: UseCase =
+        serde_json::from_str(&json).expect("Failed to deserialize from JSON");
+
     assert_eq!(use_case.id, deserialized.id);
     assert_eq!(use_case.title, deserialized.title);
     assert_eq!(use_case.category, deserialized.category);
@@ -260,23 +273,35 @@ fn test_use_case_complex_status_scenarios() {
         "UC-010".to_string(),
         "Complex Status Test".to_string(),
         "test".to_string(),
-        "Testing complex status scenarios".to_string()
+        "Testing complex status scenarios".to_string(),
     );
-    
+
     // Test deprecated always wins
-    let mut scenario1 = Scenario::new("SC-1".to_string(), "Scenario 1".to_string(), "Desc 1".to_string());
+    let mut scenario1 = Scenario::new(
+        "SC-1".to_string(),
+        "Scenario 1".to_string(),
+        "Desc 1".to_string(),
+    );
     scenario1.set_status(Status::Deployed);
-    
-    let mut scenario2 = Scenario::new("SC-2".to_string(), "Scenario 2".to_string(), "Desc 2".to_string());
+
+    let mut scenario2 = Scenario::new(
+        "SC-2".to_string(),
+        "Scenario 2".to_string(),
+        "Desc 2".to_string(),
+    );
     scenario2.set_status(Status::Deprecated);
-    
-    let mut scenario3 = Scenario::new("SC-3".to_string(), "Scenario 3".to_string(), "Desc 3".to_string());
+
+    let mut scenario3 = Scenario::new(
+        "SC-3".to_string(),
+        "Scenario 3".to_string(),
+        "Desc 3".to_string(),
+    );
     scenario3.set_status(Status::Tested);
-    
+
     use_case.add_scenario(scenario1);
     use_case.add_scenario(scenario2);
     use_case.add_scenario(scenario3);
-    
+
     assert_eq!(use_case.status(), Status::Deprecated);
 }
 
@@ -287,9 +312,9 @@ fn test_use_case_edge_cases() {
         "".to_string(),
         "".to_string(),
         "".to_string(),
-        "".to_string()
+        "".to_string(),
     );
-    
+
     assert_eq!(use_case.id, "");
     assert_eq!(use_case.title, "");
     assert_eq!(use_case.category, "");
@@ -304,16 +329,22 @@ fn test_use_case_prerequisites() {
         "UC-011".to_string(),
         "Prerequisites Test".to_string(),
         "test".to_string(),
-        "Testing prerequisites functionality".to_string()
+        "Testing prerequisites functionality".to_string(),
     );
-    
+
     assert!(use_case.prerequisites.is_empty());
-    
-    use_case.prerequisites.push("UC-001 must be completed".to_string());
-    use_case.prerequisites.push("User authentication system".to_string());
-    
+
+    use_case
+        .prerequisites
+        .push("UC-001 must be completed".to_string());
+    use_case
+        .prerequisites
+        .push("User authentication system".to_string());
+
     assert_eq!(use_case.prerequisites.len(), 2);
-    assert!(use_case.prerequisites.contains(&"UC-001 must be completed".to_string()));
+    assert!(use_case
+        .prerequisites
+        .contains(&"UC-001 must be completed".to_string()));
 }
 
 /// Test UseCase test_file functionality
@@ -323,14 +354,14 @@ fn test_use_case_test_file() {
         "UC-012".to_string(),
         "Test File Test".to_string(),
         "test".to_string(),
-        "Testing test file association".to_string()
+        "Testing test file association".to_string(),
     );
-    
+
     assert!(use_case.test_file.is_none());
-    
+
     use_case.test_file = Some("uc_012_test.rs".to_string());
     assert_eq!(use_case.test_file, Some("uc_012_test.rs".to_string()));
-    
+
     use_case.test_file = None;
     assert!(use_case.test_file.is_none());
 }

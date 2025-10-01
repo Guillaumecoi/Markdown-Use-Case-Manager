@@ -1,5 +1,5 @@
 // src/core/models/use_case.rs
-use super::{Status, Scenario, Metadata};
+use super::{Metadata, Scenario, Status};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
@@ -13,7 +13,7 @@ pub enum Priority {
 
 impl FromStr for Priority {
     type Err = String;
-    
+
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_lowercase().as_str() {
             "low" => Ok(Priority::Low),
@@ -45,10 +45,10 @@ pub struct UseCase {
     pub priority: Priority,
     pub scenarios: Vec<Scenario>,
     pub test_file: Option<String>,
-    pub prerequisites: Vec<String>,  // Changed from related_use_cases
+    pub prerequisites: Vec<String>, // Changed from related_use_cases
     pub tags: Vec<String>,
     pub metadata: Metadata,
-    
+
     /// Explicit status override (if None, computed from scenarios)
     pub explicit_status: Option<Status>,
 }
@@ -69,26 +69,24 @@ impl UseCase {
             explicit_status: None,
         }
     }
-    
+
     pub fn status(&self) -> Status {
         self.explicit_status.unwrap_or_else(|| {
-            let scenario_statuses: Vec<Status> = self.scenarios.iter()
-                .map(|s| s.status)
-                .collect();
+            let scenario_statuses: Vec<Status> = self.scenarios.iter().map(|s| s.status).collect();
             Status::aggregate(&scenario_statuses)
         })
     }
-    
+
     pub fn set_explicit_status(&mut self, status: Option<Status>) {
         self.explicit_status = status;
         self.metadata.touch();
     }
-    
+
     pub fn add_scenario(&mut self, scenario: Scenario) {
         self.scenarios.push(scenario);
         self.metadata.touch();
     }
-    
+
     pub fn update_scenario_status(&mut self, scenario_id: &str, status: Status) -> bool {
         if let Some(scenario) = self.scenarios.iter_mut().find(|s| s.id == scenario_id) {
             scenario.status = status;
@@ -99,7 +97,7 @@ impl UseCase {
             false
         }
     }
-    
+
     pub fn add_tag(&mut self, tag: String) {
         if !self.tags.contains(&tag) {
             self.tags.push(tag);

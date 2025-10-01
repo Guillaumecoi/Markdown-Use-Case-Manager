@@ -7,13 +7,13 @@ use std::str::FromStr;
 fn test_priority_enum_variants() {
     let priority = Priority::Low;
     assert_eq!(format!("{:?}", priority), "Low");
-    
+
     let priority = Priority::Medium;
     assert_eq!(format!("{:?}", priority), "Medium");
-    
+
     let priority = Priority::High;
     assert_eq!(format!("{:?}", priority), "High");
-    
+
     let priority = Priority::Critical;
     assert_eq!(format!("{:?}", priority), "Critical");
 }
@@ -33,15 +33,15 @@ fn test_priority_from_str_valid() {
     assert_eq!(Priority::from_str("low").unwrap(), Priority::Low);
     assert_eq!(Priority::from_str("LOW").unwrap(), Priority::Low);
     assert_eq!(Priority::from_str("Low").unwrap(), Priority::Low);
-    
+
     assert_eq!(Priority::from_str("medium").unwrap(), Priority::Medium);
     assert_eq!(Priority::from_str("MEDIUM").unwrap(), Priority::Medium);
     assert_eq!(Priority::from_str("Medium").unwrap(), Priority::Medium);
-    
+
     assert_eq!(Priority::from_str("high").unwrap(), Priority::High);
     assert_eq!(Priority::from_str("HIGH").unwrap(), Priority::High);
     assert_eq!(Priority::from_str("High").unwrap(), Priority::High);
-    
+
     assert_eq!(Priority::from_str("critical").unwrap(), Priority::Critical);
     assert_eq!(Priority::from_str("CRITICAL").unwrap(), Priority::Critical);
     assert_eq!(Priority::from_str("Critical").unwrap(), Priority::Critical);
@@ -54,7 +54,7 @@ fn test_priority_from_str_invalid() {
     assert!(Priority::from_str("urgent").is_err());
     assert!(Priority::from_str("").is_err());
     assert!(Priority::from_str("123").is_err());
-    
+
     let error = Priority::from_str("invalid").unwrap_err();
     assert!(error.contains("Invalid priority: invalid"));
 }
@@ -66,7 +66,7 @@ fn test_priority_equality() {
     assert_eq!(Priority::Medium, Priority::Medium);
     assert_eq!(Priority::High, Priority::High);
     assert_eq!(Priority::Critical, Priority::Critical);
-    
+
     assert_ne!(Priority::Low, Priority::Medium);
     assert_ne!(Priority::Medium, Priority::High);
     assert_ne!(Priority::High, Priority::Critical);
@@ -87,12 +87,18 @@ fn test_priority_serialization() {
     let serialized = serde_json::to_string(&priority).expect("Failed to serialize");
     let deserialized: Priority = serde_json::from_str(&serialized).expect("Failed to deserialize");
     assert_eq!(priority, deserialized);
-    
+
     // Test all variants
-    let priorities = vec![Priority::Low, Priority::Medium, Priority::High, Priority::Critical];
+    let priorities = vec![
+        Priority::Low,
+        Priority::Medium,
+        Priority::High,
+        Priority::Critical,
+    ];
     for original in priorities {
         let serialized = serde_json::to_string(&original).expect("Failed to serialize");
-        let deserialized: Priority = serde_json::from_str(&serialized).expect("Failed to deserialize");
+        let deserialized: Priority =
+            serde_json::from_str(&serialized).expect("Failed to deserialize");
         assert_eq!(original, deserialized);
     }
 }
@@ -101,27 +107,38 @@ fn test_priority_serialization() {
 #[test]
 fn test_priority_in_collections() {
     use std::collections::HashMap;
-    
+
     let mut priority_map = HashMap::new();
     priority_map.insert(Priority::Low, "Low priority tasks");
     priority_map.insert(Priority::Medium, "Medium priority tasks");
     priority_map.insert(Priority::High, "High priority tasks");
     priority_map.insert(Priority::Critical, "Critical priority tasks");
-    
-    assert_eq!(priority_map.get(&Priority::Low), Some(&"Low priority tasks"));
-    assert_eq!(priority_map.get(&Priority::Critical), Some(&"Critical priority tasks"));
+
+    assert_eq!(
+        priority_map.get(&Priority::Low),
+        Some(&"Low priority tasks")
+    );
+    assert_eq!(
+        priority_map.get(&Priority::Critical),
+        Some(&"Critical priority tasks")
+    );
     assert_eq!(priority_map.len(), 4);
 }
 
 /// Test Priority in vector operations
 #[test]
 fn test_priority_in_vectors() {
-    let priorities = [Priority::Medium, Priority::High, Priority::Low, Priority::Critical];
-    
+    let priorities = [
+        Priority::Medium,
+        Priority::High,
+        Priority::Low,
+        Priority::Critical,
+    ];
+
     assert!(priorities.contains(&Priority::Medium));
     assert!(priorities.contains(&Priority::Critical));
     assert!(priorities.contains(&Priority::Low)); // Simplified assertion
-    
+
     let high_priority_count = priorities.iter().filter(|&p| *p == Priority::High).count();
     assert_eq!(high_priority_count, 1);
 }

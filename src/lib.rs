@@ -5,7 +5,7 @@ pub mod config;
 pub mod core;
 
 pub use core::manager::UseCaseManager;
-pub use core::models::{UseCase, Scenario, Status, Priority};
+pub use core::models::{Priority, Scenario, Status, UseCase};
 
 use anyhow::Result;
 

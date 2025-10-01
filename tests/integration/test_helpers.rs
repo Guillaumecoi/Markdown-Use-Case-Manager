@@ -27,13 +27,13 @@ impl WorkingDirGuard {
                 poisoned.into_inner()
             }
         };
-        
+
         // Save the current directory
         let original_dir = std::env::current_dir()?;
-        
+
         // Change to the new directory
         std::env::set_current_dir(new_dir)?;
-        
+
         Ok(WorkingDirGuard {
             original_dir,
             _guard: guard,
@@ -67,46 +67,46 @@ mod tests {
     #[test]
     fn test_working_dir_guard_isolation() {
         let original_dir = std::env::current_dir().unwrap();
-        
+
         {
             let temp_dir = TempDir::new().unwrap();
             let _guard = WorkingDirGuard::new(temp_dir.path()).unwrap();
-            
+
             // Verify we're in the temp directory
             let current_dir = std::env::current_dir().unwrap();
             assert_eq!(current_dir, temp_dir.path());
-            
+
             // Create a test file
             fs::write("test_file.txt", "test content").unwrap();
             assert!(Path::new("test_file.txt").exists());
         }
-        
+
         // Verify we're back to the original directory
         let current_dir = std::env::current_dir().unwrap();
         assert_eq!(current_dir, original_dir);
-        
+
         // Verify the test file doesn't exist in the original directory
         assert!(!Path::new("test_file.txt").exists());
     }
-    
+
     #[test]
     fn test_with_temp_dir_helper() {
         let original_dir = std::env::current_dir().unwrap();
-        
+
         let result = with_temp_dir(|temp_dir| {
             // Verify we're in the temp directory
             let current_dir = std::env::current_dir().unwrap();
             assert_eq!(current_dir, temp_dir.path());
-            
+
             // Create and test file operations
             fs::write("helper_test.txt", "helper content").unwrap();
             assert!(Path::new("helper_test.txt").exists());
-            
+
             "test_result"
         });
-        
+
         assert_eq!(result, "test_result");
-        
+
         // Verify we're back to the original directory
         let current_dir = std::env::current_dir().unwrap();
         assert_eq!(current_dir, original_dir);

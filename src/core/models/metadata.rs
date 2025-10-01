@@ -16,7 +16,7 @@ impl Metadata {
             updated_at: now,
         }
     }
-    
+
     pub fn touch(&mut self) {
         self.updated_at = Utc::now();
     }
