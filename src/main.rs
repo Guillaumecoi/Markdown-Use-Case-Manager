@@ -49,8 +49,6 @@ enum Commands {
     List,
     /// Show project status
     Status,
-    /// Generate overview of all use cases
-    Overview,
 }
 
 fn main() -> Result<()> {
@@ -85,10 +83,6 @@ fn main() -> Result<()> {
         Commands::Status => {
             let manager = UseCaseManager::load()?;
             manager.show_status()?;
-        }
-        Commands::Overview => {
-            let manager = UseCaseManager::load()?;
-            manager.generate_overview()?;
         }
     }
 

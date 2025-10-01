@@ -1,0 +1,53 @@
+{{#if metadata_enabled}}---
+{{#if include_id}}id: {{id}}
+{{/if}}{{#if include_title}}title: {{title}}
+{{/if}}{{#if include_category}}category: {{category}}
+{{/if}}{{#if include_status}}status: {{status_name}}
+{{/if}}{{#if include_priority}}priority: {{priority}}
+{{/if}}{{#if include_version}}version: {{metadata.version}}
+{{/if}}{{#if include_created}}created: {{created_date}}
+{{/if}}{{#if include_last_updated}}last_updated: {{updated_date}}
+{{/if}}{{#if include_test_file}}test_file: {{test_file}}
+{{/if}}{{#if include_tags}}tags: {{#if tags}}[{{#each tags}}"{{this}}"{{#unless @last}}, {{/unless}}{{/each}}]{{else}}[]{{/if}}
+{{/if}}related_use_cases: []
+{{#each custom_fields}}{{this}}: 
+{{/each}}---
+
+{{/if}}# {{id}}: {{title}}
+
+## Description
+{{description}}
+
+## Actors
+- **Primary**: 
+- **Secondary**: 
+- **System**: 
+
+## Preconditions
+{{#each preconditions}}
+- {{this}}
+{{else}}
+- (Define preconditions that must be met before this use case can execute)
+{{/each}}
+
+## Scenarios
+
+{{#each scenarios}}
+### {{title}} ({{id}})
+
+**Status:** {{status}}
+
+{{description}}
+
+#### Flow Steps
+1. (Step 1 description)
+2. (Step 2 description)  
+3. (Step 3 description)
+4. (Continue with numbered steps...)
+
+---
+{{/each}}
+
+## Postconditions
+- (Define what state the system should be in after successful completion)
+- (List all guaranteed outcomes)

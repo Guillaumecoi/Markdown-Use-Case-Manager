@@ -30,6 +30,7 @@ pub struct DirectoryConfig {
 pub struct TemplateConfig {
     pub use_case_template: Option<String>,
     pub test_template: Option<String>,
+    pub use_case_style: Option<String>, // "simple" or "detailed"
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -61,10 +62,10 @@ pub struct MetadataConfig {
     pub include_created: bool,
     /// Last updated timestamp (automatically set to current time)  
     pub include_last_updated: bool,
-    /// Version number (automatically set to "1.0.0")
-    pub include_version: bool,
     /// Tags array (automatically set to empty)
     pub include_tags: bool,
+    /// Test file path (automatically set when tests are generated)
+    pub include_test_file: bool,
     
     // Custom fields that user fills manually (always empty by default)
     // Add field names here that you want to appear in the metadata for manual completion
@@ -144,6 +145,7 @@ impl Default for Config {
             templates: TemplateConfig {
                 use_case_template: None,
                 test_template: None,
+                use_case_style: Some("detailed".to_string()),
             },
             generation: GenerationConfig {
                 test_language: "rust".to_string(),
@@ -159,8 +161,8 @@ impl Default for Config {
                 include_priority: true,
                 include_created: true,
                 include_last_updated: true,
-                include_version: true,
                 include_tags: false,
+                include_test_file: true,
                 custom_fields: vec![
                     "author".to_string(),
                     "reviewer".to_string(),
@@ -168,7 +170,6 @@ impl Default for Config {
                     "complexity".to_string(),
                     "epic".to_string(),
                     "prerequisites".to_string(),
-                    "test_file".to_string(),
                 ],
             },
         }

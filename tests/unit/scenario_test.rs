@@ -17,7 +17,7 @@ fn test_scenario_new() {
     assert!(scenario.test_file.is_none());
     
     // Metadata should be initialized
-    assert_eq!(scenario.metadata.version, 1);
+    assert!(scenario.metadata.created_at.timestamp() > 0);
 }
 
 /// Test Scenario::set_status() updates status and metadata
@@ -29,7 +29,6 @@ fn test_scenario_set_status() {
         "Testing status updates".to_string()
     );
     
-    let original_version = scenario.metadata.version;
     let original_updated = scenario.metadata.updated_at;
     
     // Small delay to ensure timestamp difference
@@ -38,7 +37,6 @@ fn test_scenario_set_status() {
     scenario.set_status(Status::InProgress);
     
     assert_eq!(scenario.status, Status::InProgress);
-    assert_eq!(scenario.metadata.version, original_version + 1);
     assert!(scenario.metadata.updated_at > original_updated);
 }
 
@@ -51,6 +49,8 @@ fn test_scenario_multiple_status_updates() {
         "Testing multiple status changes".to_string()
     );
     
+    let mut last_updated = scenario.metadata.updated_at;
+    
     let statuses = vec![
         Status::InProgress,
         Status::Implemented,
@@ -58,10 +58,12 @@ fn test_scenario_multiple_status_updates() {
         Status::Deployed,
     ];
     
-    for (i, status) in statuses.iter().enumerate() {
+    for status in statuses.iter() {
         scenario.set_status(*status);
         assert_eq!(scenario.status, *status);
-        assert_eq!(scenario.metadata.version, (i + 2) as u32); // +2 because starts at 1, then each update increments
+        // Verify timestamp gets updated with each status change
+        assert!(scenario.metadata.updated_at >= last_updated);
+        last_updated = scenario.metadata.updated_at;
     }
 }
 
@@ -131,7 +133,8 @@ fn test_scenario_clone() {
     assert_eq!(scenario.description, cloned.description);
     assert_eq!(scenario.status, cloned.status);
     assert_eq!(scenario.test_file, cloned.test_file);
-    assert_eq!(scenario.metadata.version, cloned.metadata.version);
+    assert_eq!(scenario.metadata.created_at, cloned.metadata.created_at);
+    assert_eq!(scenario.metadata.updated_at, cloned.metadata.updated_at);
 }
 
 /// Test scenario serialization and deserialization
@@ -155,7 +158,8 @@ fn test_scenario_serialization() {
     assert_eq!(scenario.description, deserialized.description);
     assert_eq!(scenario.status, deserialized.status);
     assert_eq!(scenario.test_file, deserialized.test_file);
-    assert_eq!(scenario.metadata.version, deserialized.metadata.version);
+    assert_eq!(scenario.metadata.created_at, deserialized.metadata.created_at);
+    assert_eq!(scenario.metadata.updated_at, deserialized.metadata.updated_at);
 }
 
 /// Test scenario debug formatting

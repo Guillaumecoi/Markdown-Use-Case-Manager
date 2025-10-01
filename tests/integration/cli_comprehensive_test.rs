@@ -258,7 +258,7 @@ fn test_cli_update_scenario_status() {
         .stdout(predicate::str::contains("Updated scenario UC-TES-001-S01 status"));
 }
 
-/// Test CLI overview command generates overview
+/// Test that overview is automatically generated when creating use cases
 #[test]
 fn test_cli_overview_generation() {
     let temp_dir = TempDir::new().unwrap();
@@ -272,23 +272,18 @@ fn test_cli_overview_generation() {
     let mut cmd = Command::cargo_bin("ucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.args(&["create", "--category", "auth", "Login"]);
-    cmd.assert().success();
-    
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
-    cmd.current_dir(&temp_dir);
-    cmd.args(&["create", "--category", "profile", "Update Profile"]);
-    cmd.assert().success();
-    
-    // Generate overview
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
-    cmd.current_dir(&temp_dir);
-    cmd.arg("overview");
-    
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("Generated overview"));
     
-    // Verify overview file was created
+    let mut cmd = Command::cargo_bin("ucm").unwrap();
+    cmd.current_dir(&temp_dir);
+    cmd.args(&["create", "--category", "profile", "Update Profile"]);
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("Generated overview"));
+    
+    // Verify overview file was created automatically
     let overview_file = temp_dir.path().join("docs/use-cases/README.md");
     assert!(overview_file.exists());
     
@@ -399,11 +394,8 @@ fn test_cli_complete_workflow() {
         .stdout(predicate::str::contains("Total Use Cases: 1"))
         .stdout(predicate::str::contains("Total Scenarios: 3"));
     
-    // 6. Generate overview
-    let mut cmd = Command::cargo_bin("ucm").unwrap();
-    cmd.current_dir(&temp_dir);
-    cmd.arg("overview");
-    cmd.assert().success();
+    // 6. Verify overview was automatically generated and contains expected content
+    assert!(temp_dir.path().join("docs/use-cases/README.md").exists());
     
     // Verify all files exist and have correct content
     assert!(temp_dir.path().join("docs/use-cases/workflow/UC-WOR-001.md").exists());

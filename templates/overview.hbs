@@ -18,25 +18,11 @@ Generated on: {{generated_date}}
 {{/each}}
 
 {{#each categories}}
-## {{category_name}} Use Cases
+## Use Cases: {{category_name}}
 
-{{#each use_cases}}
-### {{id}} - {{title}}
-
-**Status:** {{aggregated_status}}  
-**Priority:** {{priority}}  
-**Description:** {{description}}
-
-{{#if scenarios}}
-**Scenarios:**
-{{#each scenarios}}
-- **{{id}}** - {{title}} ({{status}})
-{{/each}}
-{{/if}}
-
-[📖 View Details]({{category_path}}/{{id}}.md) | [🧪 View Tests](../../tests/use-cases/{{category_path}}/{{id}}_test.rs)
-
----
+| ID | Title | Description | Status | Priority |
+|---|---|---|---|---|
+{{#each use_cases}}| {{id}} | [{{title}}]({{category_path}}/{{id}}.md) | {{#if description}}{{description}}{{else}}*No description*{{/if}} | {{aggregated_status}} | {{priority}} |
 {{/each}}
 
 {{/each}}

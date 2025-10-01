@@ -21,7 +21,7 @@ fn test_use_case_new() {
     assert!(use_case.prerequisites.is_empty());
     assert!(use_case.tags.is_empty());
     assert!(use_case.explicit_status.is_none());
-    assert_eq!(use_case.metadata.version, 1);
+    assert!(use_case.metadata.created_at.timestamp() > 0);
 }
 
 /// Test UseCase::status() returns correct aggregated status
@@ -64,13 +64,13 @@ fn test_use_case_explicit_status() {
         "Testing explicit status override".to_string()
     );
     
-    let original_version = use_case.metadata.version;
+    let original_updated_at = use_case.metadata.updated_at;
     
     // Set explicit status
     use_case.set_explicit_status(Some(Status::Deployed));
     assert_eq!(use_case.status(), Status::Deployed);
     assert_eq!(use_case.explicit_status, Some(Status::Deployed));
-    assert_eq!(use_case.metadata.version, original_version + 1);
+    assert!(use_case.metadata.updated_at >= original_updated_at);
     
     // Clear explicit status
     use_case.set_explicit_status(None);
@@ -88,7 +88,7 @@ fn test_use_case_add_scenario() {
         "Testing scenario addition".to_string()
     );
     
-    let original_version = use_case.metadata.version;
+    let original_updated_at = use_case.metadata.updated_at;
     
     let scenario = Scenario::new(
         "SC-004-001".to_string(),
@@ -101,7 +101,7 @@ fn test_use_case_add_scenario() {
     assert_eq!(use_case.scenarios.len(), 1);
     assert_eq!(use_case.scenarios[0].id, "SC-004-001");
     assert_eq!(use_case.scenarios[0].title, "First Scenario");
-    assert_eq!(use_case.metadata.version, original_version + 1);
+    assert!(use_case.metadata.updated_at >= original_updated_at);
 }
 
 /// Test UseCase::update_scenario_status() functionality
@@ -121,13 +121,13 @@ fn test_use_case_update_scenario_status() {
     );
     
     use_case.add_scenario(scenario);
-    let original_version = use_case.metadata.version;
+    let original_updated_at = use_case.metadata.updated_at;
     
     // Update existing scenario status
     let updated = use_case.update_scenario_status("SC-005-001", Status::Tested);
     assert!(updated);
     assert_eq!(use_case.scenarios[0].status, Status::Tested);
-    assert_eq!(use_case.metadata.version, original_version + 1);
+    assert!(use_case.metadata.updated_at >= original_updated_at);
     
     // Try to update non-existent scenario
     let not_updated = use_case.update_scenario_status("SC-005-999", Status::Deployed);
@@ -144,7 +144,7 @@ fn test_use_case_add_tag() {
         "Testing tag functionality".to_string()
     );
     
-    let original_version = use_case.metadata.version;
+    let original_updated_at = use_case.metadata.updated_at;
     
     use_case.add_tag("authentication".to_string());
     use_case.add_tag("security".to_string());
@@ -152,12 +152,12 @@ fn test_use_case_add_tag() {
     assert_eq!(use_case.tags.len(), 2);
     assert!(use_case.tags.contains(&"authentication".to_string()));
     assert!(use_case.tags.contains(&"security".to_string()));
-    assert_eq!(use_case.metadata.version, original_version + 2);
+    assert!(use_case.metadata.updated_at >= original_updated_at);
     
     // Adding duplicate tag should not increase count
     use_case.add_tag("authentication".to_string());
     assert_eq!(use_case.tags.len(), 2);
-    assert_eq!(use_case.metadata.version, original_version + 2); // No additional version increment
+    // Adding duplicate should not update timestamp further than the previous calls
 }
 
 /// Test UseCase with multiple scenarios

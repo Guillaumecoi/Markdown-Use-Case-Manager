@@ -4,6 +4,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
+use crate::config::Config;
 
 #[derive(Debug)]
 pub struct TemplateEngine {
@@ -12,10 +13,29 @@ pub struct TemplateEngine {
 
 impl TemplateEngine {
     pub fn new() -> Self {
+        Self::with_config(None)
+    }
+    
+    pub fn with_config(config: Option<&Config>) -> Self {
         let mut handlebars = Handlebars::new();
         
+        // Disable HTML escaping since we're generating Markdown, not HTML
+        handlebars.set_strict_mode(false);
+        handlebars.register_escape_fn(handlebars::no_escape);
+        
+        // Determine which use case template to use based on config
+        let use_case_style = config
+            .and_then(|c| c.templates.use_case_style.as_ref())
+            .map(|s| s.as_str())
+            .unwrap_or("simple");
+            
+        let use_case_template_file = match use_case_style {
+            "detailed" => "templates/use_case_detailed.hbs",
+            _ => "templates/use_case_simple.hbs", // default to simple
+        };
+        
         // Try to load templates from external files, fall back to built-in
-        Self::register_template(&mut handlebars, "use_case", "templates/use_case.hbs", Self::use_case_template);
+        Self::register_template(&mut handlebars, "use_case", use_case_template_file, Self::use_case_template);
         Self::register_template(&mut handlebars, "rust_test", "templates/rust_test.hbs", Self::rust_test_template);
         Self::register_template(&mut handlebars, "scenario_test", "templates/scenario_test.hbs", Self::scenario_test_template);
         Self::register_template(&mut handlebars, "overview", "templates/overview.hbs", Self::overview_template);
@@ -123,7 +143,6 @@ Generated on: {{generated_date}}
 {{/if}}{{#if include_category}}category: {{category}}
 {{/if}}{{#if include_status}}status: {{status_name}}
 {{/if}}{{#if include_priority}}priority: {{priority}}
-{{/if}}{{#if include_version}}version: {{metadata.version}}
 {{/if}}{{#if include_created}}created: {{created_date}}
 {{/if}}{{#if include_last_updated}}last_updated: {{updated_date}}
 {{/if}}{{#if include_tags}}tags: {{#if tags}}[{{#each tags}}"{{this}}"{{#unless @last}}, {{/unless}}{{/each}}]{{else}}[]{{/if}}

@@ -276,10 +276,7 @@ fn test_overview_generation() {
         None
     ).unwrap();
     
-    // Generate overview
-    manager.generate_overview().expect("Failed to generate overview");
-    
-    // Verify overview file
+    // Verify overview file was automatically generated
     let overview_path = Path::new("docs/use-cases/README.md");
     assert!(overview_path.exists());
     

@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 pub struct Metadata {
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
-    pub version: u32,
 }
 
 impl Metadata {
@@ -15,13 +14,11 @@ impl Metadata {
         Self {
             created_at: now,
             updated_at: now,
-            version: 1,
         }
     }
     
     pub fn touch(&mut self) {
         self.updated_at = Utc::now();
-        self.version += 1;
     }
 }
 

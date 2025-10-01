@@ -60,10 +60,12 @@ fn test_template_config() {
     let template_config = TemplateConfig {
         use_case_template: Some("custom_use_case.hbs".to_string()),
         test_template: Some("custom_test.hbs".to_string()),
+        use_case_style: Some("detailed".to_string()),
     };
     
     assert_eq!(template_config.use_case_template, Some("custom_use_case.hbs".to_string()));
     assert_eq!(template_config.test_template, Some("custom_test.hbs".to_string()));
+    assert_eq!(template_config.use_case_style, Some("detailed".to_string()));
 }
 
 /// Test GenerationConfig creation and fields
@@ -92,8 +94,8 @@ fn test_metadata_config() {
         include_priority: true,
         include_created: true,
         include_last_updated: true,
-        include_version: true,
         include_tags: false,
+        include_test_file: true,
         custom_fields: vec!["author".to_string(), "reviewer".to_string()],
     };
     
@@ -105,8 +107,8 @@ fn test_metadata_config() {
     assert!(metadata_config.include_priority);
     assert!(metadata_config.include_created);
     assert!(metadata_config.include_last_updated);
-    assert!(metadata_config.include_version);
     assert!(!metadata_config.include_tags);
+    assert!(metadata_config.include_test_file);
     assert_eq!(metadata_config.custom_fields.len(), 2);
     assert!(metadata_config.custom_fields.contains(&"author".to_string()));
     assert!(metadata_config.custom_fields.contains(&"reviewer".to_string()));
@@ -167,14 +169,15 @@ fn test_metadata_config_disabled() {
         include_priority: false,
         include_created: false,
         include_last_updated: false,
-        include_version: false,
         include_tags: false,
+        include_test_file: false,
         custom_fields: vec![],
     };
     
     assert!(!metadata_config.enabled);
     assert!(!metadata_config.include_id);
     assert!(!metadata_config.include_title);
+    assert!(!metadata_config.include_test_file);
     assert!(metadata_config.custom_fields.is_empty());
 }
 
@@ -194,6 +197,7 @@ fn test_config_custom_values() {
         templates: TemplateConfig {
             use_case_template: Some("my_template.hbs".to_string()),
             test_template: None,
+            use_case_style: Some("simple".to_string()),
         },
         generation: GenerationConfig {
             test_language: "python".to_string(),
@@ -209,8 +213,8 @@ fn test_config_custom_values() {
             include_priority: false,
             include_created: false,
             include_last_updated: true,
-            include_version: true,
             include_tags: true,
+            include_test_file: false,
             custom_fields: vec!["epic".to_string(), "team".to_string(), "priority".to_string()],
         },
     };

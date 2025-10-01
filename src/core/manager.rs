@@ -19,10 +19,11 @@ pub struct UseCaseManager {
 impl UseCaseManager {
     pub fn load() -> Result<Self> {
         let config = Config::load()?;
+        let template_engine = TemplateEngine::with_config(Some(&config));
         let mut manager = Self {
             config,
             use_cases: Vec::new(),
-            template_engine: TemplateEngine::new(),
+            template_engine,
         };
         
         manager.load_use_cases()?;
@@ -42,6 +43,9 @@ impl UseCaseManager {
         // Tests are only generated when scenarios are added
         
         self.use_cases.push(use_case);
+        
+        // Automatically regenerate overview
+        self.generate_overview()?;
         
         Ok(use_case_id)
     }
@@ -71,6 +75,9 @@ impl UseCaseManager {
         // Always generate/update test file when scenarios are added
         self.generate_test_file(&use_case_copy)?;
         
+        // Automatically regenerate overview
+        self.generate_overview()?;
+        
         Ok(scenario_id)
     }
     
@@ -97,6 +104,9 @@ impl UseCaseManager {
                 
                 // Note: We don't regenerate tests for status changes
                 // Tests are only generated when scenarios are added
+                
+                // Automatically regenerate overview
+                self.generate_overview()?;
                 
                 println!("✅ Updated scenario {} status to: {}", scenario_id, status);
                 return Ok(());
@@ -154,6 +164,7 @@ impl UseCaseManager {
                 uc_data.insert("priority".to_string(), serde_json::Value::String(use_case.priority.to_string()));
                 uc_data.insert("aggregated_status".to_string(), serde_json::Value::String(use_case.status().to_string()));
                 uc_data.insert("category_path".to_string(), serde_json::Value::String(to_snake_case(&use_case.category)));
+                uc_data.insert("scenario_count".to_string(), serde_json::Value::Number(serde_json::Number::from(use_case.scenarios.len())));
                 
                 let scenario_data: Vec<serde_json::Value> = use_case.scenarios.iter().map(|s| {
                     let mut scenario_map = std::collections::HashMap::new();
@@ -308,7 +319,6 @@ impl UseCaseManager {
         data.insert("include_category".to_string(), json!(metadata_config.include_category));
         data.insert("include_status".to_string(), json!(metadata_config.include_status));
         data.insert("include_priority".to_string(), json!(metadata_config.include_priority));
-        data.insert("include_version".to_string(), json!(metadata_config.include_version));
         data.insert("include_created".to_string(), json!(metadata_config.include_created));
         data.insert("include_last_updated".to_string(), json!(metadata_config.include_last_updated));
         data.insert("include_tags".to_string(), json!(metadata_config.include_tags));
