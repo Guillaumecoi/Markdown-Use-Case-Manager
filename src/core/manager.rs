@@ -39,8 +39,7 @@ impl UseCaseManager {
         // Save use case to file
         self.save_use_case(&use_case)?;
         
-        // Note: We don't generate tests for empty use cases
-        // Tests are only generated when scenarios are added
+        // Note: Tests are only generated when scenarios are added (not for empty use cases)
         
         self.use_cases.push(use_case);
         
@@ -108,7 +107,7 @@ impl UseCaseManager {
                 // Automatically regenerate overview
                 self.generate_overview()?;
                 
-                println!("✅ Updated scenario {} status to: {}", scenario_id, status);
+                println!("Updated scenario {} status to: {}", scenario_id, status);
                 return Ok(());
             }
         }
@@ -190,7 +189,7 @@ impl UseCaseManager {
         let content = self.template_engine.render_overview(&template_data)?;
         
         fs::write(&overview_path, content)?;
-        println!("✅ Generated overview at: {}", overview_path.display());
+        println!("Generated overview at: {}", overview_path.display());
         
         Ok(())
     }
@@ -270,7 +269,7 @@ impl UseCaseManager {
         
         for entry in walkdir::WalkDir::new(use_case_dir) {
             let entry = entry?;
-            if entry.file_type().is_file() && entry.path().extension().map_or(false, |ext| ext == "md") {
+            if entry.file_type().is_file() && entry.path().extension().is_some_and(|ext| ext == "md") {
                 let content = fs::read_to_string(entry.path())?;
                 if let Some(use_case) = self.parse_use_case_from_markdown(&content)? {
                     self.use_cases.push(use_case);
@@ -328,20 +327,40 @@ impl UseCaseManager {
     }
     
     fn generate_test_file(&self, use_case: &UseCase) -> Result<()> {
-        if self.config.generation.test_language != "rust" {
-            return Ok(()); // Only support Rust for now
+        // Only generate tests if explicitly enabled and scenarios exist
+        if !self.config.generation.auto_generate_tests {
+            return Ok(());
+        }
+        
+        if use_case.scenarios.is_empty() {
+            // No scenarios = no tests generated
+            return Ok(());
+        }
+        
+        // Check if we support the configured language
+        if !self.template_engine.has_test_template(&self.config.generation.test_language) {
+            println!("Warning: Test language '{}' not supported, skipping test generation", self.config.generation.test_language);
+            return Ok(());
         }
         
         let test_dir = Path::new(&self.config.directories.test_dir)
             .join(to_snake_case(&use_case.category));
         fs::create_dir_all(&test_dir)?;
         
-        let test_file_name = format!("{}.rs", to_snake_case(&use_case.id));
+        // Generate file extension based on language
+        let file_extension = match self.config.generation.test_language.as_str() {
+            "rust" => "rs",
+            "python" => "py",
+            _ => "txt", // fallback
+        };
+        
+        let test_file_name = format!("{}.{}", to_snake_case(&use_case.id), file_extension);
         let test_path = test_dir.join(test_file_name);
         
         let mut data = HashMap::new();
         data.insert("id".to_string(), json!(use_case.id));
         data.insert("title".to_string(), json!(use_case.title));
+        data.insert("title_snake_case".to_string(), json!(to_snake_case(&use_case.title)));
         data.insert("description".to_string(), json!(use_case.description));
         data.insert("test_module_name".to_string(), json!(to_snake_case(&use_case.id)));
         data.insert("generated_at".to_string(), json!(Utc::now().format("%Y-%m-%d %H:%M:%S UTC").to_string()));
@@ -353,7 +372,9 @@ impl UseCaseManager {
                 "snake_case_id": to_snake_case(&scenario.id),
                 "title": scenario.title,
                 "description": scenario.description,
-                "status": scenario.status.to_string()
+                "status": scenario.status.to_string(),
+                "preconditions": Vec::<String>::new(), // TODO: Add when scenario model supports it
+                "steps": Vec::<String>::new() // TODO: Add when scenario model supports it
             })
         }).collect();
         
@@ -364,20 +385,21 @@ impl UseCaseManager {
             let existing_content = fs::read_to_string(&test_path)?;
             let updated_content = self.merge_test_documentation(&existing_content, &data)?;
             fs::write(&test_path, updated_content)?;
-            println!("📝 Updated test documentation: {}", test_path.display().to_string().cyan());
+            println!("Updated test documentation: {}", test_path.display().to_string().cyan());
         } else {
-            // Generate new file
-            let test_content = self.template_engine.render_rust_test(&data)?;
+            // Generate new file using language-specific template
+            let test_content = self.template_engine.render_test(&self.config.generation.test_language, &data)?;
             fs::write(&test_path, test_content)?;
-            println!("✅ Generated test file: {}", test_path.display().to_string().cyan());
+            println!("Generated test file: {}", test_path.display().to_string().cyan());
         }
         
         Ok(())
     }
     
-    /// Merge new documentation with existing test file, preserving user content after stop marker
+    /// Merge new documentation with existing test file, preserving user content between implementation markers
     fn merge_test_documentation(&self, existing_content: &str, data: &HashMap<String, Value>) -> Result<String> {
-        const STOP_MARKER: &str = "// END AUTO-GENERATED DOCUMENTATION";
+        const START_MARKER: &str = "// START USER IMPLEMENTATION";
+        const END_MARKER: &str = "// END USER IMPLEMENTATION";
         
         // If overwrite_test_documentation is false, preserve the entire file
         if !self.config.generation.overwrite_test_documentation {
@@ -385,28 +407,74 @@ impl UseCaseManager {
             return Ok(existing_content.to_string());
         }
         
-        // Find the stop marker
-        if let Some(stop_pos) = existing_content.find(STOP_MARKER) {
-            // Find the end of the stop marker line
-            if let Some(line_end) = existing_content[stop_pos..].find('\n') {
-                let user_content = &existing_content[stop_pos + line_end..];
+        // Generate new template content
+        let new_template = self.template_engine.render_test(&self.config.generation.test_language, data)?;
+        
+        // Extract user implementations from existing content
+        let mut user_implementations = std::collections::HashMap::new();
+        let mut current_pos = 0;
+        
+        while let Some(start_pos) = existing_content[current_pos..].find(START_MARKER) {
+            let absolute_start = current_pos + start_pos;
+            
+            // Find the end of the start marker line
+            if let Some(start_line_end) = existing_content[absolute_start..].find('\n') {
+                let impl_start = absolute_start + start_line_end + 1;
                 
-                // Generate new documentation
-                let template_content = self.template_engine.render_rust_test(data)?;
-                
-                // Find the stop marker in the new template
-                if let Some(template_stop_pos) = template_content.find(STOP_MARKER) {
-                    if let Some(template_line_end) = template_content[template_stop_pos..].find('\n') {
-                        let new_docs = &template_content[..template_stop_pos + template_line_end];
-                        return Ok(format!("{}{}", new_docs, user_content));
+                // Find the corresponding end marker
+                if let Some(end_pos) = existing_content[impl_start..].find(END_MARKER) {
+                    let impl_end = impl_start + end_pos;
+                    
+                    // Extract the user implementation
+                    let user_impl = existing_content[impl_start..impl_end].trim_end();
+                    
+                    // Try to identify which test function this belongs to by looking backwards
+                    let before_start = &existing_content[..absolute_start];
+                    if let Some(fn_match) = before_start.rfind("fn test_") {
+                        if let Some(fn_end) = existing_content[fn_match..absolute_start].find('(') {
+                            let fn_name = &existing_content[fn_match + 3..fn_match + fn_end]; // +3 to skip "fn "
+                            user_implementations.insert(fn_name.to_string(), user_impl.to_string());
+                        }
+                    }
+                    
+                    current_pos = impl_end;
+                } else {
+                    break; // No matching end marker found
+                }
+            } else {
+                break; // No line end found
+            }
+        }
+        
+        // Replace user implementations in the new template
+        let mut result = new_template;
+        for (fn_name, user_impl) in user_implementations {
+            // Create pattern to find the default implementation for this function
+            let start_pattern = format!("fn {}(", fn_name);
+            if let Some(fn_pos) = result.find(&start_pattern) {
+                // Find the start marker for this function
+                if let Some(start_marker_pos) = result[fn_pos..].find(START_MARKER) {
+                    let absolute_start_marker = fn_pos + start_marker_pos;
+                    
+                    // Find the start of implementation (after the marker line)
+                    if let Some(start_line_end) = result[absolute_start_marker..].find('\n') {
+                        let impl_start = absolute_start_marker + start_line_end + 1;
+                        
+                        // Find the end marker
+                        if let Some(end_marker_pos) = result[impl_start..].find(END_MARKER) {
+                            let impl_end = impl_start + end_marker_pos;
+                            
+                            // Replace the default implementation with user implementation
+                            let before = &result[..impl_start];
+                            let after = &result[impl_end..];
+                            result = format!("{}{}\n        {}", before, user_impl, after);
+                        }
                     }
                 }
             }
         }
         
-        // Fallback: if no stop marker found, generate fresh content
-        println!("⚠️  No stop marker found, generating fresh test file");
-        self.template_engine.render_rust_test(data)
+        Ok(result)
     }
     
     fn parse_use_case_from_markdown(&self, content: &str) -> Result<Option<UseCase>> {
@@ -469,8 +537,8 @@ impl UseCaseManager {
         let mut use_case = None;
         
         for (i, line) in lines.iter().enumerate() {
-            if line.starts_with("# ") {
-                let title = line[2..].trim().to_string();
+            if let Some(stripped) = line.strip_prefix("# ") {
+                let title = stripped.trim().to_string();
                 
                 // Look for metadata in the following lines
                 let mut id = String::new();
@@ -517,8 +585,8 @@ impl UseCaseManager {
         for (i, line) in lines.iter().enumerate() {
             if line.starts_with("## Description") {
                 // Look for the next non-empty line
-                for j in i+1..lines.len() {
-                    let desc_line = lines[j].trim();
+                for desc_line in lines.iter().skip(i + 1) {
+                    let desc_line = desc_line.trim();
                     if !desc_line.is_empty() && !desc_line.starts_with("##") {
                         return Ok(desc_line.to_string());
                     }

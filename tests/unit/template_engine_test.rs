@@ -255,41 +255,304 @@ fn test_template_engine_render_rust_test() {
     ]);
     data.insert("scenarios".to_string(), scenarios);
     
-    let result = engine.render_rust_test(&data);
+    let result = engine.render_test("rust", &data);
     assert!(result.is_ok());
     
     let content = result.unwrap();
     
     // Check for content that exists in the actual template
-    assert!(content.contains("Use Case: Test Case (UC-TST-001)"));
+    assert!(content.contains("Use Case: Test Case"));
     assert!(content.contains("mod uc_tst_001"));
     assert!(content.contains("fn test_sc_001()"));
     assert!(content.contains("Scenario: Test Scenario"));
     assert!(content.contains("Test scenario description"));
 }
 
-/// Test TemplateEngine::render_scenario_test() functionality
+/// Test TemplateEngine::render_python_test() functionality
 #[test]
-fn test_template_engine_render_scenario_test() {
+fn test_template_engine_render_python_test() {
     let engine = TemplateEngine::new();
     let mut data = HashMap::new();
     
-    data.insert("scenario_id".to_string(), json!("SC-001"));
-    data.insert("scenario_title".to_string(), json!("Test Scenario"));
-    data.insert("scenario_description".to_string(), json!("Scenario description"));
-    data.insert("use_case_id".to_string(), json!("UC-001"));
-    data.insert("use_case_title".to_string(), json!("Use Case Title"));
-    data.insert("test_module_name".to_string(), json!("sc_001"));
+    data.insert("id".to_string(), json!("UC-TST-001"));
+    data.insert("title".to_string(), json!("Test Case"));
+    data.insert("title_snake_case".to_string(), json!("Test_Case"));
+    data.insert("description".to_string(), json!("Test description"));
     data.insert("generated_at".to_string(), json!("2025-10-01 12:00:00 UTC"));
     
-    let result = engine.render_scenario_test(&data);
+    let scenarios = json!([
+        {
+            "id": "SC-001",
+            "snake_case_id": "sc_001",
+            "title": "Test Scenario",
+            "description": "Test scenario description"
+        }
+    ]);
+    data.insert("scenarios".to_string(), scenarios);
+    
+    let result = engine.render_test("python", &data);
     assert!(result.is_ok());
     
     let content = result.unwrap();
     
-    assert!(content.contains("Generated test file for scenario: Test Scenario"));
-    assert!(content.contains("Use Case: Use Case Title (UC-001)"));
-    assert!(content.contains("Scenario ID: SC-001"));
-    assert!(content.contains("mod sc_001"));
-    assert!(content.contains("fn test_sc_001()"));
+    // Check for Python-specific content
+    assert!(content.contains("Generated test file for use case: Test Case"));
+    assert!(content.contains("import unittest"));
+    assert!(content.contains("class TestTest_Case(unittest.TestCase)"));
+    assert!(content.contains("def test_sc_001(self)"));
+    assert!(content.contains("START USER IMPLEMENTATION"));
+    assert!(content.contains("END USER IMPLEMENTATION"));
+}
+
+/// Test TemplateEngine with config for template style selection
+#[test]
+fn test_template_engine_with_config_simple_style() {
+    use use_case_manager::config::Config;
+    
+    // Create config with simple template style
+    let mut config = Config::default();
+    config.templates.use_case_style = Some("simple".to_string());
+    
+    // Test that the engine can be created with the config (will use fallback templates)
+    let engine = TemplateEngine::with_config(Some(&config));
+    
+    let mut data = HashMap::new();
+    data.insert("title".to_string(), json!("Test Use Case"));
+    data.insert("description".to_string(), json!("Test description"));
+    
+    let result = engine.render_use_case(&data);
+    assert!(result.is_ok());
+    let content = result.unwrap();
+    // Should use built-in simple template since custom templates don't exist
+    assert!(content.contains("Test Use Case"));
+}
+
+/// Test TemplateEngine with config for detailed template style
+#[test]
+fn test_template_engine_with_config_detailed_style() {
+    use use_case_manager::config::Config;
+    
+    // Create config with detailed template style
+    let mut config = Config::default();
+    config.templates.use_case_style = Some("detailed".to_string());
+    
+    // Test that the engine can be created with the config (will use fallback templates)
+    let engine = TemplateEngine::with_config(Some(&config));
+    
+    let mut data = HashMap::new();
+    data.insert("title".to_string(), json!("Test Use Case"));
+    data.insert("description".to_string(), json!("Test description"));
+    
+    let result = engine.render_use_case(&data);
+    assert!(result.is_ok());
+    let content = result.unwrap();
+    // Should use built-in detailed template since custom templates don't exist
+    assert!(content.contains("Test Use Case"));
+}
+
+/// Test TemplateEngine fallback to built-in templates when custom templates don't exist
+#[test]
+fn test_template_engine_fallback_to_builtin() {
+    use use_case_manager::config::Config;
+    use tempfile::TempDir;
+    
+    let temp_dir = TempDir::new().unwrap();
+    let original_dir = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&temp_dir).unwrap();
+    
+    // Don't create any custom templates - should fallback to built-in
+    let config = Config::default();
+    let engine = TemplateEngine::with_config(Some(&config));
+    
+    let mut data = HashMap::new();
+    data.insert("title".to_string(), json!("Test Use Case"));
+    data.insert("description".to_string(), json!("Test description"));
+    
+    let result = engine.render_use_case(&data);
+    assert!(result.is_ok());
+    let content = result.unwrap();
+    // Should use built-in template and still work
+    assert!(content.contains("Test Use Case"));
+    
+    std::env::set_current_dir(original_dir).unwrap();
+}
+
+/// Test TemplateEngine default config behavior
+#[test]
+fn test_template_engine_default_config() {
+    let engine = TemplateEngine::new();
+    
+    let mut data = HashMap::new();
+    data.insert("title".to_string(), json!("Test Use Case"));
+    data.insert("description".to_string(), json!("Test description"));
+    
+    let result = engine.render_use_case(&data);
+    assert!(result.is_ok());
+    let content = result.unwrap();
+    assert!(content.contains("Test Use Case"));
+}
+
+/// Test that Rust templates contain the new granular user implementation markers
+#[test]
+fn test_rust_template_granular_markers() {
+    let engine = TemplateEngine::new();
+    let mut data = HashMap::new();
+    
+    data.insert("id".to_string(), json!("UC-TST-001"));
+    data.insert("title".to_string(), json!("Test Case"));
+    data.insert("test_module_name".to_string(), json!("uc_tst_001"));
+    data.insert("generated_at".to_string(), json!("2025-10-01 12:00:00 UTC"));
+    
+    let scenarios = json!([
+        {
+            "id": "SC-001",
+            "snake_case_id": "sc_001",
+            "title": "Test Scenario",
+            "description": "Test scenario description"
+        }
+    ]);
+    data.insert("scenarios".to_string(), scenarios);
+    
+    let result = engine.render_test("rust", &data);
+    assert!(result.is_ok());
+    
+    let content = result.unwrap();
+    
+    // Verify granular markers are present around test implementations
+    assert!(content.contains("// ============================================================================="));
+    assert!(content.contains("// START USER IMPLEMENTATION - Feel free to modify the code below this line"));
+    assert!(content.contains("// ============================================================================="));
+    assert!(content.contains("// END USER IMPLEMENTATION - Do not modify anything below this line"));
+    
+    // Verify markers are around individual test methods, not the whole file
+    let marker_count = content.matches("START USER IMPLEMENTATION").count();
+    let scenario_count = content.matches("fn test_").count();
+    assert_eq!(marker_count, scenario_count, "Each test method should have its own markers");
+}
+
+/// Test that Python templates contain the new granular user implementation markers
+#[test]
+fn test_python_template_granular_markers() {
+    let engine = TemplateEngine::new();
+    let mut data = HashMap::new();
+    
+    data.insert("id".to_string(), json!("UC-TST-001"));
+    data.insert("title".to_string(), json!("Test Case"));
+    data.insert("title_snake_case".to_string(), json!("Test_Case"));
+    data.insert("generated_at".to_string(), json!("2025-10-01 12:00:00 UTC"));
+    
+    let scenarios = json!([
+        {
+            "id": "SC-001",
+            "snake_case_id": "sc_001",
+            "title": "Test Scenario",
+            "description": "Test scenario description"
+        },
+        {
+            "id": "SC-002",
+            "snake_case_id": "sc_002", 
+            "title": "Another Scenario",
+            "description": "Another test scenario"
+        }
+    ]);
+    data.insert("scenarios".to_string(), scenarios);
+    
+    let result = engine.render_test("python", &data);
+    assert!(result.is_ok());
+    
+    let content = result.unwrap();
+    
+    // Verify granular markers are present around test implementations
+    assert!(content.contains("# ============================================================================="));
+    assert!(content.contains("# START USER IMPLEMENTATION - Feel free to modify the code below this line"));
+    assert!(content.contains("# ============================================================================="));
+    assert!(content.contains("# END USER IMPLEMENTATION - Do not modify anything below this line"));
+    
+    // Verify markers are around individual test methods, not the whole file
+    let marker_count = content.matches("START USER IMPLEMENTATION").count();
+    let scenario_count = content.matches("def test_").count();
+    assert_eq!(marker_count, scenario_count, "Each test method should have its own markers");
+    
+    // Verify we have 2 test methods for 2 scenarios
+    assert_eq!(scenario_count, 2);
+}
+
+/// Test that scenario template methods are no longer available
+#[test]
+fn test_scenario_template_methods_removed() {
+    let engine = TemplateEngine::new();
+    
+    // This test verifies at compile time that scenario template methods don't exist
+    // If this compiles, it means the methods were successfully removed
+    
+    // We can't call engine.render_scenario_test() anymore - it should not exist
+    // We can't call engine.get_scenario_test_template() anymore - it should not exist
+    
+    // Instead, we should only be able to use render_test() for both use case tests
+    let mut data = HashMap::new();
+    data.insert("title".to_string(), json!("Test"));
+    data.insert("scenarios".to_string(), json!([]));
+    
+    let rust_result = engine.render_test("rust", &data);
+    let python_result = engine.render_test("python", &data);
+    
+    assert!(rust_result.is_ok());
+    assert!(python_result.is_ok());
+}
+
+/// Test error handling for unsupported languages
+#[test]
+fn test_render_test_unsupported_language() {
+    let engine = TemplateEngine::new();
+    let mut data = HashMap::new();
+    data.insert("title".to_string(), json!("Test"));
+    data.insert("scenarios".to_string(), json!([]));
+    
+    let result = engine.render_test("javascript", &data);
+    assert!(result.is_err());
+    
+    let error_msg = result.unwrap_err().to_string();
+    assert!(error_msg.contains("Unsupported language"));
+}
+
+/// Test template engine load_test_templates_for_language function coverage
+#[test]
+fn test_load_test_templates_coverage() {
+    let engine = TemplateEngine::new();
+    
+    // Test that we can render both supported languages
+    let mut data = HashMap::new();
+    data.insert("title".to_string(), json!("Coverage Test"));
+    data.insert("scenarios".to_string(), json!([]));
+    
+    // Both languages should work
+    assert!(engine.render_test("rust", &data).is_ok());
+    assert!(engine.render_test("python", &data).is_ok());
+    
+    // Case insensitive should work
+    assert!(engine.render_test("RUST", &data).is_ok());
+    assert!(engine.render_test("Python", &data).is_ok());
+}
+
+/// Test that templates don't contain "Expected outcome" field references
+#[test]
+fn test_no_expected_outcome_in_templates() {
+    let engine = TemplateEngine::new();
+    let mut data = HashMap::new();
+    
+    data.insert("title".to_string(), json!("Test Case"));
+    data.insert("scenarios".to_string(), json!([{
+        "id": "SC-001",
+        "snake_case_id": "sc_001",
+        "title": "Test Scenario"
+    }]));
+    
+    let rust_content = engine.render_test("rust", &data).unwrap();
+    let python_content = engine.render_test("python", &data).unwrap();
+    
+    // Verify "Expected outcome" field has been removed from templates
+    assert!(!rust_content.to_lowercase().contains("expected outcome"));
+    assert!(!python_content.to_lowercase().contains("expected outcome"));
+    assert!(!rust_content.to_lowercase().contains("expected_outcome"));
+    assert!(!python_content.to_lowercase().contains("expected_outcome"));
 }

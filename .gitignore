@@ -31,3 +31,6 @@ Thumbs.db
 # Test artifacts
 test_output/
 test_temp/
+
+# Local environment files
+.local/

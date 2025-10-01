@@ -116,11 +116,11 @@ fn test_priority_in_collections() {
 /// Test Priority in vector operations
 #[test]
 fn test_priority_in_vectors() {
-    let priorities = vec![Priority::Medium, Priority::High, Priority::Low, Priority::Critical];
+    let priorities = [Priority::Medium, Priority::High, Priority::Low, Priority::Critical];
     
     assert!(priorities.contains(&Priority::Medium));
     assert!(priorities.contains(&Priority::Critical));
-    assert!(!priorities.contains(&Priority::Low) == false); // Double negative for clarity
+    assert!(priorities.contains(&Priority::Low)); // Simplified assertion
     
     let high_priority_count = priorities.iter().filter(|&p| *p == Priority::High).count();
     assert_eq!(high_priority_count, 1);

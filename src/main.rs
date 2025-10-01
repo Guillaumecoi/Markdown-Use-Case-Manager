@@ -56,21 +56,21 @@ fn main() -> Result<()> {
 
     match cli.command {
         Commands::Init => {
-            println!("🚀 Initializing use case manager project...");
+            println!("Initializing use case manager project...");
             let config = Config::init_project()?;
-            println!("✅ Project initialized! Configuration saved to .config/ucm.toml");
-            println!("📁 Use cases will be stored in: {}", config.directories.use_case_dir);
-            println!("🧪 Tests will be generated in: {}", config.directories.test_dir);
+            println!("Project initialized! Configuration saved to .config/ucm/ucm.toml");
+            println!("Use cases will be stored in: {}", config.directories.use_case_dir);
+            println!("Tests will be generated in: {}", config.directories.test_dir);
         }
         Commands::Create { title, category, description } => {
             let mut manager = UseCaseManager::load()?;
             let use_case_id = manager.create_use_case(title, category, description)?;
-            println!("✅ Created use case: {}", use_case_id);
+            println!("Created use case: {}", use_case_id);
         }
         Commands::AddScenario { use_case_id, title, description } => {
             let mut manager = UseCaseManager::load()?;
             let scenario_id = manager.add_scenario_to_use_case(use_case_id, title, description)?;
-            println!("✅ Added scenario: {}", scenario_id);
+            println!("Added scenario: {}", scenario_id);
         }
         Commands::UpdateStatus { scenario_id, status } => {
             let mut manager = UseCaseManager::load()?;

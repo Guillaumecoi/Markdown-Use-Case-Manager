@@ -25,7 +25,7 @@ fn test_config_default() {
 #[test]
 fn test_config_path() {
     let path = Config::config_path();
-    assert_eq!(path, Path::new(".config/ucm.toml"));
+    assert_eq!(path, Path::new(".config/ucm/ucm.toml"));
 }
 
 /// Test ProjectConfig creation and fields

@@ -12,8 +12,8 @@ fn test_metadata_new() {
     let created_diff = now.signed_duration_since(metadata.created_at).num_seconds();
     let updated_diff = now.signed_duration_since(metadata.updated_at).num_seconds();
     
-    assert!(created_diff >= 0 && created_diff < 3, "Created timestamp should be recent");
-    assert!(updated_diff >= 0 && updated_diff < 3, "Updated timestamp should be recent");
+    assert!((0..3).contains(&created_diff), "Created timestamp should be recent");
+    assert!((0..3).contains(&updated_diff), "Updated timestamp should be recent");
     
     // Initially, created and updated should be the same (or very close)
     let time_diff = metadata.updated_at.signed_duration_since(metadata.created_at).num_milliseconds();
@@ -52,7 +52,7 @@ fn test_metadata_touch() {
     // Updated timestamp should be recent
     let now = Utc::now();
     let updated_diff = now.signed_duration_since(metadata.updated_at).num_seconds();
-    assert!(updated_diff >= 0 && updated_diff < 2);
+    assert!((0..2).contains(&updated_diff));
 }
 
 /// Test multiple touch() calls update timestamp correctly

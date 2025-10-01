@@ -51,12 +51,10 @@ fn test_scenario_multiple_status_updates() {
     
     let mut last_updated = scenario.metadata.updated_at;
     
-    let statuses = vec![
-        Status::InProgress,
+    let statuses = [Status::InProgress,
         Status::Implemented,
         Status::Tested,
-        Status::Deployed,
-    ];
+        Status::Deployed];
     
     for status in statuses.iter() {
         scenario.set_status(*status);

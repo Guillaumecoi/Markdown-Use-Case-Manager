@@ -45,19 +45,22 @@ fn test_cli_init_creates_project_structure() {
         .success()
         .stdout(predicate::str::contains("Initializing use case manager project"))
         .stdout(predicate::str::contains("Project initialized"))
-        .stdout(predicate::str::contains("Configuration saved to .config/ucm.toml"));
+        .stdout(predicate::str::contains("Configuration saved to .config/ucm/ucm.toml"));
     
     // Verify project structure was created
     assert!(temp_dir.path().join(".config").exists());
-    assert!(temp_dir.path().join(".config/ucm.toml").exists());
+    assert!(temp_dir.path().join(".config/ucm").exists());
+    assert!(temp_dir.path().join(".config/ucm/ucm.toml").exists());
+    assert!(temp_dir.path().join(".config/ucm/templates").exists());
     assert!(temp_dir.path().join("docs/use-cases").exists());
     assert!(temp_dir.path().join("tests/use-cases").exists());
     
     // Verify config file content
-    let config_content = fs::read_to_string(temp_dir.path().join(".config/ucm.toml")).unwrap();
+    let config_content = fs::read_to_string(temp_dir.path().join(".config/ucm/ucm.toml")).unwrap();
     assert!(config_content.contains("[project]"));
     assert!(config_content.contains("[directories]"));
     assert!(config_content.contains("[metadata]"));
+    assert!(config_content.contains("[templates]"));
 }
 
 /// Test CLI create command creates use case
@@ -74,7 +77,7 @@ fn test_cli_create_use_case() {
     // Then create a use case
     let mut cmd = Command::cargo_bin("ucm").unwrap();
     cmd.current_dir(&temp_dir);
-    cmd.args(&["create", "--category", "auth", "User Login"]);
+    cmd.args(["create", "--category", "auth", "User Login"]);
     
     cmd.assert()
         .success()
@@ -106,7 +109,7 @@ fn test_cli_create_use_case_with_description() {
     // Create use case with description
     let mut cmd = Command::cargo_bin("ucm").unwrap();
     cmd.current_dir(&temp_dir);
-    cmd.args(&[
+    cmd.args([
         "create", 
         "--category", "security", 
         "--description", "Handle user authentication and session management",
@@ -137,13 +140,13 @@ fn test_cli_list_use_cases() {
     // Create first use case
     let mut cmd = Command::cargo_bin("ucm").unwrap();
     cmd.current_dir(&temp_dir);
-    cmd.args(&["create", "--category", "auth", "User Login"]);
+    cmd.args(["create", "--category", "auth", "User Login"]);
     cmd.assert().success();
     
     // Create second use case
     let mut cmd = Command::cargo_bin("ucm").unwrap();
     cmd.current_dir(&temp_dir);
-    cmd.args(&["create", "--category", "profile", "Update Profile"]);
+    cmd.args(["create", "--category", "profile", "Update Profile"]);
     cmd.assert().success();
     
     // List use cases
@@ -174,7 +177,7 @@ fn test_cli_status_shows_statistics() {
     // Create a use case
     let mut cmd = Command::cargo_bin("ucm").unwrap();
     cmd.current_dir(&temp_dir);
-    cmd.args(&["create", "--category", "test", "Test Case"]);
+    cmd.args(["create", "--category", "test", "Test Case"]);
     cmd.assert().success();
     
     // Check status
@@ -202,13 +205,13 @@ fn test_cli_add_scenario() {
     
     let mut cmd = Command::cargo_bin("ucm").unwrap();
     cmd.current_dir(&temp_dir);
-    cmd.args(&["create", "--category", "test", "Test Case"]);
+    cmd.args(["create", "--category", "test", "Test Case"]);
     cmd.assert().success();
     
     // Add scenario
     let mut cmd = Command::cargo_bin("ucm").unwrap();
     cmd.current_dir(&temp_dir);
-    cmd.args(&[
+    cmd.args([
         "add-scenario", 
         "UC-TES-001", 
         "Happy Path",
@@ -240,18 +243,18 @@ fn test_cli_update_scenario_status() {
     
     let mut cmd = Command::cargo_bin("ucm").unwrap();
     cmd.current_dir(&temp_dir);
-    cmd.args(&["create", "--category", "test", "Test Case"]);
+    cmd.args(["create", "--category", "test", "Test Case"]);
     cmd.assert().success();
     
     let mut cmd = Command::cargo_bin("ucm").unwrap();
     cmd.current_dir(&temp_dir);
-    cmd.args(&["add-scenario", "UC-TES-001", "Test Scenario"]);
+    cmd.args(["add-scenario", "UC-TES-001", "Test Scenario"]);
     cmd.assert().success();
     
     // Update scenario status
     let mut cmd = Command::cargo_bin("ucm").unwrap();
     cmd.current_dir(&temp_dir);
-    cmd.args(&["update-status", "UC-TES-001-S01", "--status", "in_progress"]);
+    cmd.args(["update-status", "UC-TES-001-S01", "--status", "in_progress"]);
     
     cmd.assert()
         .success()
@@ -271,14 +274,14 @@ fn test_cli_overview_generation() {
     
     let mut cmd = Command::cargo_bin("ucm").unwrap();
     cmd.current_dir(&temp_dir);
-    cmd.args(&["create", "--category", "auth", "Login"]);
+    cmd.args(["create", "--category", "auth", "Login"]);
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("Generated overview"));
     
     let mut cmd = Command::cargo_bin("ucm").unwrap();
     cmd.current_dir(&temp_dir);
-    cmd.args(&["create", "--category", "profile", "Update Profile"]);
+    cmd.args(["create", "--category", "profile", "Update Profile"]);
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("Generated overview"));
@@ -303,7 +306,7 @@ fn test_cli_error_no_project() {
     // Try to create use case without initializing
     let mut cmd = Command::cargo_bin("ucm").unwrap();
     cmd.current_dir(&temp_dir);
-    cmd.args(&["create", "--category", "test", "Test"]);
+    cmd.args(["create", "--category", "test", "Test"]);
     
     cmd.assert()
         .failure()
@@ -336,7 +339,7 @@ fn test_cli_missing_arguments() {
     // Try create without title
     let mut cmd = Command::cargo_bin("ucm").unwrap();
     cmd.current_dir(&temp_dir);
-    cmd.args(&["create", "--category", "test"]);
+    cmd.args(["create", "--category", "test"]);
     
     cmd.assert()
         .failure()
@@ -357,14 +360,14 @@ fn test_cli_complete_workflow() {
     // 2. Create use case
     let mut cmd = Command::cargo_bin("ucm").unwrap();
     cmd.current_dir(&temp_dir);
-    cmd.args(&["create", "--category", "workflow", "Complete Workflow"]);
+    cmd.args(["create", "--category", "workflow", "Complete Workflow"]);
     cmd.assert().success();
     
     // 3. Add multiple scenarios
     for i in 1..=3 {
         let mut cmd = Command::cargo_bin("ucm").unwrap();
         cmd.current_dir(&temp_dir);
-        cmd.args(&[
+        cmd.args([
             "add-scenario", 
             "UC-WOR-001", 
             &format!("Scenario {}", i),
@@ -377,12 +380,12 @@ fn test_cli_complete_workflow() {
     // 4. Update scenario statuses
     let mut cmd = Command::cargo_bin("ucm").unwrap();
     cmd.current_dir(&temp_dir);
-    cmd.args(&["update-status", "UC-WOR-001-S01", "--status", "implemented"]);
+    cmd.args(["update-status", "UC-WOR-001-S01", "--status", "implemented"]);
     cmd.assert().success();
     
     let mut cmd = Command::cargo_bin("ucm").unwrap();
     cmd.current_dir(&temp_dir);
-    cmd.args(&["update-status", "UC-WOR-001-S02", "--status", "tested"]);
+    cmd.args(["update-status", "UC-WOR-001-S02", "--status", "tested"]);
     cmd.assert().success();
     
     // 5. Check final status
