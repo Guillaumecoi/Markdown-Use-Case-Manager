@@ -1,0 +1,30 @@
+{{#if metadata_enabled}}---
+{{#if include_id}}id: {{id}}
+{{/if}}{{#if include_title}}title: {{title}}
+{{/if}}{{#if include_category}}category: {{category}}
+{{/if}}{{#if include_status}}status: {{status_name}}
+{{/if}}{{#if include_priority}}priority: {{priority}}
+{{/if}}{{#if include_version}}version: {{metadata.version}}
+{{/if}}{{#if include_created}}created: {{created_date}}
+{{/if}}{{#if include_last_updated}}last_updated: {{updated_date}}
+{{/if}}{{#if include_tags}}tags: {{#if tags}}[{{#each tags}}"{{this}}"{{#unless @last}}, {{/unless}}{{/each}}]{{else}}[]{{/if}}
+{{/if}}{{#each custom_fields}}{{this}}: 
+{{/each}}---
+
+{{/if}}# {{title}}
+
+## Description
+
+{{description}}
+
+## Scenarios
+
+{{#each scenarios}}
+### {{title}} ({{id}})
+
+**Status:** {{status}}
+
+{{description}}
+
+---
+{{/each}}

@@ -1,0 +1,45 @@
+# {{project_name}} - Use Cases Overview
+
+Generated on: {{generated_date}}
+
+{{#if summary}}
+## Project Summary
+
+{{summary}}
+
+{{/if}}
+## Statistics
+
+- **Total Use Cases:** {{total_use_cases}}
+- **Total Scenarios:** {{total_scenarios}}
+- **Status Distribution:**
+{{#each status_counts}}
+  - {{@key}}: {{this}}
+{{/each}}
+
+{{#each categories}}
+## {{category_name}} Use Cases
+
+{{#each use_cases}}
+### {{id}} - {{title}}
+
+**Status:** {{aggregated_status}}  
+**Priority:** {{priority}}  
+**Description:** {{description}}
+
+{{#if scenarios}}
+**Scenarios:**
+{{#each scenarios}}
+- **{{id}}** - {{title}} ({{status}})
+{{/each}}
+{{/if}}
+
+[📖 View Details]({{category_path}}/{{id}}.md) | [🧪 View Tests](../../tests/use-cases/{{category_path}}/{{id}}_test.rs)
+
+---
+{{/each}}
+
+{{/each}}
+
+---
+*This overview is automatically generated. Last updated: {{generated_date}}*

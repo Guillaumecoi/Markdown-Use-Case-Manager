@@ -1,0 +1,37 @@
+// =============================================================================
+// AUTO-GENERATED TEST DOCUMENTATION
+// Use Case: {{title}} ({{id}})
+// Description: {{description}}
+// Generated at: {{generated_at}}
+// =============================================================================
+
+{{#each scenarios}}
+/// ## Scenario: {{title}} ({{id}})
+/// **Description:** {{description}}
+/// **Status:** {{status}}
+/// 
+{{/each}}
+
+// =============================================================================
+// END AUTO-GENERATED DOCUMENTATION
+// 
+// ⚠️  WARNING: Do not modify anything above this line! 
+// ✅  Feel free to add your own documentation, helpers, and code below this line.
+// =============================================================================
+
+#[cfg(test)]
+mod {{test_module_name}} {
+    use super::*;
+
+{{#each scenarios}}
+    #[test]
+    fn test_{{snake_case_id}}() {
+        // Scenario: {{title}}
+        // Description: {{description}}
+        // TODO: Implement test for scenario: {{title}}
+        
+        panic!("Test not implemented yet");
+    }
+    
+{{/each}}
+}

@@ -1,0 +1,54 @@
+[package]
+name = "use-case-manager"
+version = "0.1.0"
+edition = "2021"
+authors = ["Guillaume Coigniez <coigniez@gmail.com>"]
+license = "MIT"
+description = "A comprehensive CLI tool and library for managing use cases, scenarios, and documentation with automatic status tracking"
+homepage = "https://github.com/GuillaumeCOI/use-case-manager"
+repository = "https://github.com/GuillaumeCOI/use-case-manager"
+documentation = "https://github.com/GuillaumeCOI/use-case-manager/docs"
+readme = "README.md"
+keywords = ["use-case", "documentation", "project-management", "testing", "cli"]
+categories = ["command-line-utilities", "development-tools", "template-engine"]
+
+[dependencies]
+# CLI and argument parsing
+clap = { version = "4.0", features = ["derive", "color"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+toml = "0.8"
+
+# Templating
+handlebars = "4.0"
+
+# File system and I/O
+walkdir = "2.0"
+directories = "5.0"
+
+# Date and time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Terminal UI
+console = "0.15"
+colored = "2.0"
+
+[dev-dependencies]
+tempfile = "3.0"
+assert_cmd = "2.0"
+predicates = "3.0"
+
+[[bin]]
+name = "ucm"
+path = "src/main.rs"
+
+[lib]
+name = "use_case_manager"
+path = "src/lib.rs"
