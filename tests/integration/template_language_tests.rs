@@ -8,8 +8,8 @@ use std::fs;
 
 /// Helper to create a manager in the current directory with a given config
 fn create_manager_with_config(config: Config) -> UseCaseManager {
-    // Create the .mucm directory
-    std::fs::create_dir_all(".mucm").unwrap();
+    // Create the .config/.mucm directory
+    std::fs::create_dir_all(".config/.mucm").unwrap();
 
     // Save config to the current directory
     config.save_in_dir(".").unwrap();

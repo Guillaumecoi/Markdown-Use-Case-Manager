@@ -74,7 +74,7 @@ pub struct MetadataConfig {
 }
 
 impl Config {
-    const CONFIG_DIR: &'static str = ".mucm";
+    const CONFIG_DIR: &'static str = ".config/.mucm";
     const CONFIG_FILE: &'static str = "mucm.toml";
     const TEMPLATES_DIR: &'static str = "templates";
 
@@ -94,15 +94,15 @@ impl Config {
         let base_path = Path::new(base_dir);
         let config_dir = base_path.join(Self::CONFIG_DIR);
 
-        // Create .mucm directory if it doesn't exist
+        // Create .config/.mucm directory if it doesn't exist
         if !config_dir.exists() {
-            fs::create_dir_all(&config_dir).context("Failed to create .mucm directory")?;
+            fs::create_dir_all(&config_dir).context("Failed to create .config/.mucm directory")?;
         }
 
         let config = Self::default();
         config.save_in_dir(base_dir)?;
 
-        // Copy templates to .mucm/templates/
+        // Copy templates to .config/.mucm/templates/
         Self::copy_templates_to_config_in_dir(base_dir)?;
 
         // Create default directories

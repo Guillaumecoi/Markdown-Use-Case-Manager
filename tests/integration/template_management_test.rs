@@ -8,7 +8,7 @@ use tempfile::TempDir;
 #[test]
 fn test_templates_dir_path() {
     let templates_dir = Config::templates_dir();
-    assert_eq!(templates_dir, Path::new(".mucm/templates"));
+    assert_eq!(templates_dir, Path::new(".config/.mucm/templates"));
 }
 
 /// Test config structure includes template settings
@@ -29,7 +29,7 @@ fn test_init_creates_template_directory() {
     assert!(result.is_ok());
 
     // Verify template directory structure was created
-    let templates_dir = temp_dir.path().join(".mucm/templates");
+    let templates_dir = temp_dir.path().join(".config/.mucm/templates");
     assert!(templates_dir.exists());
 }
 
@@ -43,7 +43,7 @@ fn test_template_copying_with_source() {
         .expect("Failed to initialize project");
 
     // Verify core templates were created
-    let config_templates_dir = temp_dir.path().join(".mucm/templates");
+    let config_templates_dir = temp_dir.path().join(".config/.mucm/templates");
     assert!(config_templates_dir.exists());
     assert!(config_templates_dir.join("use_case_simple.hbs").exists());
     assert!(config_templates_dir.join("use_case_detailed.hbs").exists());

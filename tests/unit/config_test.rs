@@ -30,7 +30,7 @@ fn test_config_default() {
 #[test]
 fn test_config_path() {
     let path = Config::config_path();
-    assert_eq!(path, Path::new(".mucm/mucm.toml"));
+    assert_eq!(path, Path::new(".config/.mucm/mucm.toml"));
 }
 
 /// Test ProjectConfig creation and fields

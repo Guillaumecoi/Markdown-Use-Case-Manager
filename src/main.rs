@@ -58,14 +58,11 @@ fn main() -> Result<()> {
         Commands::Init => {
             println!("Initializing use case manager project...");
             let config = Config::init_project()?;
-            println!("Project initialized! Configuration saved to .mucm/mucm.toml");
+            println!("Project initialized! Configuration saved to .config/.mucm/mucm.toml");
+            print!("Feel free to edit the configuration file to customize your setup.\n");
             println!(
-                "Use cases will be stored in: {}",
+                "Unless changed, use cases will be stored in: {}",
                 config.directories.use_case_dir
-            );
-            println!(
-                "Tests will be generated in: {}",
-                config.directories.test_dir
             );
         }
         Commands::Create {

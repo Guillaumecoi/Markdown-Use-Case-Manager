@@ -10,8 +10,8 @@ fn create_test_manager_with_config(config: Config) -> (TempDir, UseCaseManager) 
     let temp_dir = TempDir::new().unwrap();
     let base_path = temp_dir.path().to_str().unwrap();
 
-    // Create the .mucm directory
-    std::fs::create_dir_all(temp_dir.path().join(".mucm")).unwrap();
+    // Create the .config/.mucm directory
+    std::fs::create_dir_all(temp_dir.path().join(".config/.mucm")).unwrap();
 
     // Save config to the temp directory
     config.save_in_dir(base_path).unwrap();
@@ -36,18 +36,18 @@ fn test_config_init_project_creates_structure() {
 
     // Verify config was created
     let temp_path = temp_dir.path();
-    assert!(temp_path.join(".mucm").exists());
-    assert!(temp_path.join(".mucm/mucm.toml").exists());
+    assert!(temp_path.join(".config/.mucm").exists());
+    assert!(temp_path.join(".config/.mucm/mucm.toml").exists());
 
     // Verify templates directory was created (templates may or may not be copied depending on source availability)
-    assert!(temp_path.join(".mucm/templates").exists());
+    assert!(temp_path.join(".config/.mucm/templates").exists());
 
     // Verify directories were created
     assert!(temp_path.join(&config.directories.use_case_dir).exists());
     assert!(temp_path.join(&config.directories.test_dir).exists());
 
     // Verify config content
-    let config_content = fs::read_to_string(temp_path.join(".mucm/mucm.toml")).unwrap();
+    let config_content = fs::read_to_string(temp_path.join(".config/.mucm/mucm.toml")).unwrap();
     assert!(config_content.contains("[project]"));
     assert!(config_content.contains("name = \"My Project\""));
     assert!(config_content.contains("[directories]"));
