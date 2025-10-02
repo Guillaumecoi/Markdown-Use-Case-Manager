@@ -91,6 +91,7 @@ impl FileService {
     }
 
     /// Read existing test file content
+    #[allow(dead_code)]
     pub fn read_test_file(&self, use_case: &UseCase, file_extension: &str) -> Result<String> {
         let test_dir = Path::new(&self.config.directories.test_dir)
             .join(to_snake_case(&use_case.category));

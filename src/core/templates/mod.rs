@@ -11,6 +11,7 @@ use std::path::Path;
 pub struct TemplateEngine {
     handlebars: Handlebars<'static>,
     test_templates: HashMap<String, String>,
+    #[allow(dead_code)]
     language_registry: LanguageRegistry,
 }
 
@@ -194,6 +195,7 @@ impl TemplateEngine {
     }
 
     /// Get available test languages
+    #[allow(dead_code)]
     pub fn get_available_test_languages(&self) -> Vec<String> {
         self.language_registry.available_languages()
     }
@@ -261,20 +263,24 @@ Generated on: {{generated_date}}
     }
 
     // Generic method for getting test templates by language
+    #[allow(dead_code)]
     pub fn get_test_template_for_language(language_name: &str) -> Option<&'static str> {
         let registry = LanguageRegistry::new();
         registry.get(language_name).map(|lang| lang.test_template())
     }
 
     // Legacy methods for backward compatibility
+    #[allow(dead_code)]
     pub fn get_rust_test_template() -> &'static str {
         Self::get_test_template_for_language("rust").unwrap_or("// Rust template not found")
     }
 
+    #[allow(dead_code)]
     pub fn get_python_test_template() -> &'static str {
         Self::get_test_template_for_language("python").unwrap_or("# Python template not found")
     }
 
+    #[allow(dead_code)]
     pub fn get_javascript_test_template() -> &'static str {
         Self::get_test_template_for_language("javascript").unwrap_or("// JavaScript template not found")
     }

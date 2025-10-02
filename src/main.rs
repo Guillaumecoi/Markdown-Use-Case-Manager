@@ -1,7 +1,13 @@
 // src/main.rs
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use markdown_use_case_manager::{config::Config, core::languages::LanguageRegistry, UseCaseManager};
+
+mod config;
+mod core;
+
+use config::Config;
+use core::languages::LanguageRegistry;
+use core::use_case_coordinator::UseCaseCoordinator;
 
 #[derive(Parser)]
 #[command(name = "mucm")]
@@ -76,8 +82,8 @@ fn main() -> Result<()> {
             category,
             description,
         } => {
-            let mut manager = UseCaseManager::load()?;
-            let use_case_id = manager.create_use_case(title, category, description)?;
+            let mut coordinator = UseCaseCoordinator::load()?;
+            let use_case_id = coordinator.create_use_case(title, category, description)?;
             println!("Created use case: {}", use_case_id);
         }
         Commands::AddScenario {
@@ -85,20 +91,20 @@ fn main() -> Result<()> {
             title,
             description,
         } => {
-            let mut manager = UseCaseManager::load()?;
-            let scenario_id = manager.add_scenario_to_use_case(use_case_id, title, description)?;
+            let mut coordinator = UseCaseCoordinator::load()?;
+            let scenario_id = coordinator.add_scenario_to_use_case(use_case_id, title, description)?;
             println!("Added scenario: {}", scenario_id);
         }
         Commands::UpdateStatus {
             scenario_id,
             status,
         } => {
-            let mut manager = UseCaseManager::load()?;
-            manager.update_scenario_status(scenario_id, status)?;
+            let mut coordinator = UseCaseCoordinator::load()?;
+            coordinator.update_scenario_status(scenario_id, status)?;
         }
         Commands::List => {
-            let manager = UseCaseManager::load()?;
-            manager.list_use_cases()?;
+            let coordinator = UseCaseCoordinator::load()?;
+            coordinator.list_use_cases()?;
         }
         Commands::Languages => {
             println!("Available programming languages:");
@@ -119,8 +125,8 @@ fn main() -> Result<()> {
             }
         }
         Commands::Status => {
-            let manager = UseCaseManager::load()?;
-            manager.show_status()?;
+            let coordinator = UseCaseCoordinator::load()?;
+            coordinator.show_status()?;
         }
     }
 

@@ -1,12 +1,12 @@
 // Integration tests for file system operations and project structure
 use crate::integration::test_helpers::with_temp_dir;
-use markdown_use_case_manager::{config::Config, UseCaseManager};
+use markdown_use_case_manager::{config::Config, UseCaseCoordinator};
 use std::fs;
 use std::path::Path;
 use tempfile::TempDir;
 
 // Helper function for creating test manager with custom config
-fn create_test_manager_with_config(config: Config) -> (TempDir, UseCaseManager) {
+fn create_test_manager_with_config(config: Config) -> (TempDir, UseCaseCoordinator) {
     let temp_dir = TempDir::new().unwrap();
     let base_path = temp_dir.path().to_str().unwrap();
 
@@ -20,7 +20,7 @@ fn create_test_manager_with_config(config: Config) -> (TempDir, UseCaseManager) 
     std::env::set_current_dir(&temp_dir).unwrap();
 
     // Load manager from the temp directory
-    let manager = UseCaseManager::load().unwrap();
+    let manager = UseCaseCoordinator::load().unwrap();
 
     (temp_dir, manager)
 }
@@ -118,7 +118,7 @@ fn test_config_save_modifications() {
     assert!(!loaded_config.metadata.enabled);
 }
 
-/// Test UseCaseManager::load() works with existing project
+/// Test UseCaseCoordinator::load() works with existing project
 #[test]
 fn test_use_case_manager_load() {
     let temp_dir = TempDir::new().unwrap();
@@ -141,7 +141,7 @@ fn test_use_case_manager_load() {
     }
 
     // Load manager
-    let _manager = UseCaseManager::load().expect("Failed to load UseCaseManager");
+    let _manager = UseCaseCoordinator::load().expect("Failed to load UseCaseCoordinator");
 
     // Should start with empty use cases
     // Note: We can't directly access use_cases field, but we can test behavior
@@ -149,7 +149,7 @@ fn test_use_case_manager_load() {
     std::env::set_current_dir(original_dir).unwrap();
 }
 
-/// Test UseCaseManager::load() fails without project
+/// Test UseCaseCoordinator::load() fails without project
 #[test]
 fn test_use_case_manager_load_no_project() {
     let temp_dir = TempDir::new().unwrap();
@@ -157,7 +157,7 @@ fn test_use_case_manager_load_no_project() {
     std::env::set_current_dir(&temp_dir).unwrap();
 
     // Try to load without project
-    let result = UseCaseManager::load();
+    let result = UseCaseCoordinator::load();
     assert!(result.is_err());
 
     std::env::set_current_dir(original_dir).unwrap();
@@ -169,7 +169,7 @@ fn test_use_case_file_creation() {
     with_temp_dir(|_temp_dir| {
         // Initialize project and create use case
         Config::init_project().unwrap();
-        let mut manager = UseCaseManager::load().unwrap();
+        let mut manager = UseCaseCoordinator::load().unwrap();
 
         let use_case_id = manager
             .create_use_case(
@@ -254,7 +254,7 @@ fn test_scenario_file_updates() {
 fn test_multiple_categories() {
     with_temp_dir(|_temp_dir| {
         Config::init_project().unwrap();
-        let mut manager = UseCaseManager::load().unwrap();
+        let mut manager = UseCaseCoordinator::load().unwrap();
 
         // Create use cases in different categories
         let auth_id = manager
@@ -296,7 +296,7 @@ fn test_multiple_categories() {
 fn test_overview_generation() {
     with_temp_dir(|_temp_dir| {
         Config::init_project().unwrap();
-        let mut manager = UseCaseManager::load().unwrap();
+        let mut manager = UseCaseCoordinator::load().unwrap();
 
         // Create multiple use cases
         manager
@@ -345,7 +345,7 @@ fn test_file_persistence_and_reload() {
 
         // Create and save use cases with first manager instance
         {
-            let mut manager = UseCaseManager::load().unwrap();
+            let mut manager = UseCaseCoordinator::load().unwrap();
             manager
                 .create_use_case(
                     "Persistent Test".to_string(),
@@ -365,7 +365,7 @@ fn test_file_persistence_and_reload() {
 
         // Load with new manager instance and verify data persisted
         {
-            let _manager = UseCaseManager::load().unwrap();
+            let _manager = UseCaseCoordinator::load().unwrap();
 
             // Use a public method to verify the use cases were loaded
             // Since we can't access private fields, we'll use list_use_cases output capture
@@ -385,7 +385,7 @@ fn test_file_persistence_and_reload() {
 fn test_file_operation_error_handling() {
     with_temp_dir(|_temp_dir| {
         Config::init_project().unwrap();
-        let mut manager = UseCaseManager::load().unwrap();
+        let mut manager = UseCaseCoordinator::load().unwrap();
 
         // Try to add scenario to non-existent use case
         let result = manager.add_scenario_to_use_case(
@@ -422,7 +422,7 @@ fn test_custom_directory_configuration() {
         fs::create_dir_all(&config.directories.test_dir).unwrap();
 
         // Use manager with custom config
-        let mut manager = UseCaseManager::load().unwrap();
+        let mut manager = UseCaseCoordinator::load().unwrap();
         let use_case_id = manager
             .create_use_case("Custom Dir Test".to_string(), "custom".to_string(), None)
             .unwrap();

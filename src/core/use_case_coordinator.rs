@@ -317,11 +317,10 @@ impl UseCaseCoordinator {
         data.insert("scenarios".to_string(), scenarios_data);
 
         // Handle existing files
-        if self.file_service.test_file_exists(use_case, file_extension) {
-            if !self.config.generation.overwrite_test_documentation {
-                println!("⚠️  Test file exists and overwrite_test_documentation=false, skipping");
-                return Ok(());
-            }
+        if self.file_service.test_file_exists(use_case, file_extension)
+            && !self.config.generation.overwrite_test_documentation {
+            println!("⚠️  Test file exists and overwrite_test_documentation=false, skipping");
+            return Ok(());
             
             // TODO: Implement smart merging here if needed
         }

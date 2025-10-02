@@ -49,6 +49,7 @@ predicates = "3.0"
 name = "mucm"
 path = "src/main.rs"
 
+# Internal testing interface - NOT FOR PUBLIC USE
 [lib]
 name = "markdown_use_case_manager"
 path = "src/lib.rs"

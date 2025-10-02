@@ -146,6 +146,7 @@ impl Config {
     }
 
     /// Get available languages from a specific directory (used for cross-directory checks)
+    #[allow(dead_code)]
     pub fn get_available_languages_from_dir(base_dir: &str) -> Result<Vec<String>> {
         let base_path = Path::new(base_dir);
         let templates_dir = base_path.join(Self::CONFIG_DIR).join(Self::TEMPLATES_DIR);
@@ -184,11 +185,13 @@ impl Config {
     }
 
     /// Check if a language is supported (either built-in or available in templates)
+    #[allow(dead_code)]
     pub fn is_language_supported(language: &str) -> Result<bool> {
         let available = Self::get_available_languages()?;
         Ok(available.contains(&language.to_string()))
     }
 
+    #[allow(dead_code)]
     pub fn init_project() -> Result<Self> {
         Self::init_project_in_dir(".")
     }
@@ -197,6 +200,7 @@ impl Config {
         Self::init_project_with_language_in_dir(".", language)
     }
 
+    #[allow(dead_code)]
     pub fn init_project_in_dir(base_dir: &str) -> Result<Self> {
         Self::init_project_with_language_in_dir(base_dir, None)
     }
@@ -391,6 +395,7 @@ impl Config {
         Ok(config)
     }
 
+    #[allow(dead_code)]
     pub fn load_from_dir(base_dir: &str) -> Result<Self> {
         let base_path = Path::new(base_dir);
         let config_path = base_path.join(Self::CONFIG_DIR).join("mucm.toml");
@@ -406,6 +411,7 @@ impl Config {
         Ok(config)
     }
 
+    #[allow(dead_code)]
     pub fn save(&self) -> Result<()> {
         let config_path = Self::config_path();
         let content = toml::to_string_pretty(self).context("Failed to serialize config")?;
