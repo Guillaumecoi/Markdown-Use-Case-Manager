@@ -122,7 +122,6 @@ fn test_template_engine_render_with_metadata() {
     data.insert("include_version".to_string(), json!(false));
     data.insert("include_created".to_string(), json!(false));
     data.insert("include_last_updated".to_string(), json!(false));
-    data.insert("include_tags".to_string(), json!(false));
     data.insert("custom_fields".to_string(), json!(["author", "epic"]));
 
     let result = engine.render_use_case(&data);

@@ -10,3 +10,6 @@ pub mod use_case_test;
 // Core functionality unit tests
 pub mod config_test;
 pub mod template_engine_test;
+
+// Service unit tests (new refactored architecture)
+pub mod use_case_service_test;

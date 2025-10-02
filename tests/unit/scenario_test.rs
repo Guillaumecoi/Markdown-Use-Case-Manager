@@ -14,7 +14,6 @@ fn test_scenario_new() {
     assert_eq!(scenario.title, "Test Scenario");
     assert_eq!(scenario.description, "Test description for scenario");
     assert_eq!(scenario.status, Status::Planned);
-    assert!(scenario.test_file.is_none());
 
     // Metadata should be initialized
     assert!(scenario.metadata.created_at.timestamp() > 0);
@@ -96,24 +95,6 @@ fn test_scenario_long_strings() {
     assert_eq!(scenario.description, long_description);
 }
 
-/// Test scenario test_file field functionality
-#[test]
-fn test_scenario_test_file() {
-    let mut scenario = Scenario::new(
-        "SC-004".to_string(),
-        "Test File Scenario".to_string(),
-        "Testing test file association".to_string(),
-    );
-
-    assert!(scenario.test_file.is_none());
-
-    scenario.test_file = Some("test_scenario_004.rs".to_string());
-    assert_eq!(scenario.test_file, Some("test_scenario_004.rs".to_string()));
-
-    scenario.test_file = None;
-    assert!(scenario.test_file.is_none());
-}
-
 /// Test scenario clone functionality
 #[test]
 fn test_scenario_clone() {
@@ -124,7 +105,6 @@ fn test_scenario_clone() {
     );
 
     scenario.set_status(Status::Tested);
-    scenario.test_file = Some("test_file.rs".to_string());
 
     let cloned = scenario.clone();
 
@@ -132,7 +112,6 @@ fn test_scenario_clone() {
     assert_eq!(scenario.title, cloned.title);
     assert_eq!(scenario.description, cloned.description);
     assert_eq!(scenario.status, cloned.status);
-    assert_eq!(scenario.test_file, cloned.test_file);
     assert_eq!(scenario.metadata.created_at, cloned.metadata.created_at);
     assert_eq!(scenario.metadata.updated_at, cloned.metadata.updated_at);
 }
@@ -147,7 +126,6 @@ fn test_scenario_serialization() {
     );
 
     scenario.set_status(Status::Implemented);
-    scenario.test_file = Some("serialization_test.rs".to_string());
 
     // Test serialization (used internally)
     let json = serde_json::to_string(&scenario).expect("Failed to serialize");
@@ -157,7 +135,6 @@ fn test_scenario_serialization() {
     assert_eq!(scenario.title, deserialized.title);
     assert_eq!(scenario.description, deserialized.description);
     assert_eq!(scenario.status, deserialized.status);
-    assert_eq!(scenario.test_file, deserialized.test_file);
     assert_eq!(
         scenario.metadata.created_at,
         deserialized.metadata.created_at

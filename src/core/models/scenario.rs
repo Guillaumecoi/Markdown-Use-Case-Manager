@@ -8,7 +8,6 @@ pub struct Scenario {
     pub title: String,
     pub description: String,
     pub status: Status,
-    pub test_file: Option<String>,
     pub metadata: Metadata,
 }
 
@@ -19,7 +18,6 @@ impl Scenario {
             title,
             description,
             status: Status::Planned,
-            test_file: None,
             metadata: Metadata::new(),
         }
     }

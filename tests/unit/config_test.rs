@@ -22,7 +22,6 @@ fn test_config_default() {
     assert!(!config.generation.overwrite_test_documentation);
     assert!(config.metadata.enabled);
     assert!(config.metadata.include_id);
-    assert!(!config.metadata.include_tags);
     assert!(!config.metadata.custom_fields.is_empty());
 }
 
@@ -111,8 +110,6 @@ fn test_metadata_config() {
         include_priority: true,
         include_created: true,
         include_last_updated: true,
-        include_tags: false,
-        include_test_file: true,
         custom_fields: vec!["author".to_string(), "reviewer".to_string()],
     };
 
@@ -124,8 +121,6 @@ fn test_metadata_config() {
     assert!(metadata_config.include_priority);
     assert!(metadata_config.include_created);
     assert!(metadata_config.include_last_updated);
-    assert!(!metadata_config.include_tags);
-    assert!(metadata_config.include_test_file);
     assert_eq!(metadata_config.custom_fields.len(), 2);
     assert!(metadata_config
         .custom_fields
@@ -202,15 +197,12 @@ fn test_metadata_config_disabled() {
         include_priority: false,
         include_created: false,
         include_last_updated: false,
-        include_tags: false,
-        include_test_file: false,
         custom_fields: vec![],
     };
 
     assert!(!metadata_config.enabled);
     assert!(!metadata_config.include_id);
     assert!(!metadata_config.include_title);
-    assert!(!metadata_config.include_test_file);
     assert!(metadata_config.custom_fields.is_empty());
 }
 
@@ -246,8 +238,6 @@ fn test_config_custom_values() {
             include_priority: false,
             include_created: false,
             include_last_updated: true,
-            include_tags: true,
-            include_test_file: false,
             custom_fields: vec![
                 "epic".to_string(),
                 "team".to_string(),
@@ -271,7 +261,6 @@ fn test_config_custom_values() {
     assert!(config.generation.auto_generate_tests);
     assert!(!config.generation.overwrite_test_documentation);
     assert!(!config.metadata.include_category);
-    assert!(config.metadata.include_tags);
     assert_eq!(config.metadata.custom_fields.len(), 3);
 }
 

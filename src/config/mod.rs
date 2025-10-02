@@ -64,10 +64,6 @@ pub struct MetadataConfig {
     pub include_created: bool,
     /// Last updated timestamp (automatically set to current time)  
     pub include_last_updated: bool,
-    /// Tags array (automatically set to empty)
-    pub include_tags: bool,
-    /// Test file path (automatically set when tests are generated)
-    pub include_test_file: bool,
 
     // Custom fields that user fills manually (always empty by default)
     // Add field names here that you want to appear in the metadata for manual completion
@@ -461,8 +457,6 @@ impl Default for Config {
                 include_priority: true,
                 include_created: true,
                 include_last_updated: true,
-                include_tags: false,
-                include_test_file: true,
                 custom_fields: vec![
                     "author".to_string(),
                     "reviewer".to_string(),

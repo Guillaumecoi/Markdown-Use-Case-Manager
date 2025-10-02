@@ -387,7 +387,6 @@ impl UseCaseManager {
         data.insert("description".to_string(), json!(use_case.description));
         data.insert("scenarios".to_string(), json!(use_case.scenarios));
         data.insert("metadata".to_string(), json!(use_case.metadata));
-        data.insert("tags".to_string(), json!(use_case.tags));
 
         // Format dates nicely (YYYY-MM-DD)
         data.insert(
@@ -429,10 +428,6 @@ impl UseCaseManager {
         data.insert(
             "include_last_updated".to_string(),
             json!(metadata_config.include_last_updated),
-        );
-        data.insert(
-            "include_tags".to_string(),
-            json!(metadata_config.include_tags),
         );
         data.insert(
             "custom_fields".to_string(),

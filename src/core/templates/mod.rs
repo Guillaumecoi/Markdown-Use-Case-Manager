@@ -288,7 +288,6 @@ Generated on: {{generated_date}}
 {{/if}}{{#if include_priority}}priority: {{priority}}
 {{/if}}{{#if include_created}}created: {{created_date}}
 {{/if}}{{#if include_last_updated}}last_updated: {{updated_date}}
-{{/if}}{{#if include_tags}}tags: {{#if tags}}[{{#each tags}}"{{this}}"{{#unless @last}}, {{/unless}}{{/each}}]{{else}}[]{{/if}}
 {{/if}}{{#each custom_fields}}{{this}}: 
 {{/each}}---
 
@@ -320,7 +319,6 @@ Generated on: {{generated_date}}
 {{/if}}{{#if include_priority}}priority: {{priority}}
 {{/if}}{{#if include_created}}created: {{created_date}}
 {{/if}}{{#if include_last_updated}}last_updated: {{updated_date}}
-{{/if}}{{#if include_tags}}tags: {{#if tags}}[{{#each tags}}"{{this}}"{{#unless @last}}, {{/unless}}{{/each}}]{{else}}[]{{/if}}
 {{/if}}{{#each custom_fields}}{{this}}: 
 {{/each}}---
 

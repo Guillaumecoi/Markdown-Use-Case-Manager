@@ -44,13 +44,11 @@ pub struct UseCase {
     pub description: String,
     pub priority: Priority,
     pub scenarios: Vec<Scenario>,
-    pub test_file: Option<String>,
-    pub prerequisites: Vec<String>, // Changed from related_use_cases
-    pub tags: Vec<String>,
     pub metadata: Metadata,
 
-    /// Explicit status override (if None, computed from scenarios)
-    pub explicit_status: Option<Status>,
+    // Optional fields (less commonly used)
+    #[serde(default)]
+    pub prerequisites: Vec<String>, 
 }
 
 impl UseCase {
@@ -62,24 +60,14 @@ impl UseCase {
             description,
             priority: Priority::Medium,
             scenarios: Vec::new(),
-            test_file: None,
-            prerequisites: Vec::new(),
-            tags: Vec::new(),
             metadata: Metadata::new(),
-            explicit_status: None,
+            prerequisites: Vec::new(),
         }
     }
 
     pub fn status(&self) -> Status {
-        self.explicit_status.unwrap_or_else(|| {
-            let scenario_statuses: Vec<Status> = self.scenarios.iter().map(|s| s.status).collect();
-            Status::aggregate(&scenario_statuses)
-        })
-    }
-
-    pub fn set_explicit_status(&mut self, status: Option<Status>) {
-        self.explicit_status = status;
-        self.metadata.touch();
+        let scenario_statuses: Vec<Status> = self.scenarios.iter().map(|s| s.status).collect();
+        Status::aggregate(&scenario_statuses)
     }
 
     pub fn add_scenario(&mut self, scenario: Scenario) {
@@ -95,13 +83,6 @@ impl UseCase {
             true
         } else {
             false
-        }
-    }
-
-    pub fn add_tag(&mut self, tag: String) {
-        if !self.tags.contains(&tag) {
-            self.tags.push(tag);
-            self.metadata.touch();
         }
     }
 }
