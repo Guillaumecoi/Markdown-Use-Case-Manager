@@ -1,5 +1,5 @@
 // src/core/models/scenario.rs
-use super::{Status, Metadata};
+use super::{Metadata, Status};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -23,7 +23,7 @@ impl Scenario {
             metadata: Metadata::new(),
         }
     }
-    
+
     pub fn set_status(&mut self, status: Status) {
         self.status = status;
         self.metadata.touch();

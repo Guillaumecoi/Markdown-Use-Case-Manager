@@ -3,7 +3,7 @@
 // Test utilities
 pub mod test_helpers;
 
-// CLI integration tests  
+// CLI integration tests
 pub mod cli_comprehensive_test;
 
 // File system and workflow integration tests

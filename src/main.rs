@@ -1,11 +1,11 @@
 // src/main.rs
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use use_case_manager::{UseCaseManager, config::Config};
+use markdown_use_case_manager::{config::Config, UseCaseManager};
 
 #[derive(Parser)]
-#[command(name = "ucm")]
-#[command(about = "Use Case Manager - Manage use cases, scenarios, and generate tests")]
+#[command(name = "mucm")]
+#[command(about = "Markdown Use Case Manager - Manage use cases and scenarios in markdown format")]
 #[command(version)]
 struct Cli {
     #[command(subcommand)]
@@ -58,21 +58,38 @@ fn main() -> Result<()> {
         Commands::Init => {
             println!("Initializing use case manager project...");
             let config = Config::init_project()?;
-            println!("Project initialized! Configuration saved to .config/ucm/ucm.toml");
-            println!("Use cases will be stored in: {}", config.directories.use_case_dir);
-            println!("Tests will be generated in: {}", config.directories.test_dir);
+            println!("Project initialized! Configuration saved to .mucm/mucm.toml");
+            println!(
+                "Use cases will be stored in: {}",
+                config.directories.use_case_dir
+            );
+            println!(
+                "Tests will be generated in: {}",
+                config.directories.test_dir
+            );
         }
-        Commands::Create { title, category, description } => {
+        Commands::Create {
+            title,
+            category,
+            description,
+        } => {
             let mut manager = UseCaseManager::load()?;
             let use_case_id = manager.create_use_case(title, category, description)?;
             println!("Created use case: {}", use_case_id);
         }
-        Commands::AddScenario { use_case_id, title, description } => {
+        Commands::AddScenario {
+            use_case_id,
+            title,
+            description,
+        } => {
             let mut manager = UseCaseManager::load()?;
             let scenario_id = manager.add_scenario_to_use_case(use_case_id, title, description)?;
             println!("Added scenario: {}", scenario_id);
         }
-        Commands::UpdateStatus { scenario_id, status } => {
+        Commands::UpdateStatus {
+            scenario_id,
+            status,
+        } => {
             let mut manager = UseCaseManager::load()?;
             manager.update_scenario_status(scenario_id, status)?;
         }

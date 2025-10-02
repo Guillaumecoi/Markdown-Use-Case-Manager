@@ -1,15 +1,15 @@
 [package]
-name = "use-case-manager"
+name = "markdown-use-case-manager"
 version = "0.1.0"
 edition = "2021"
 authors = ["Guillaume Coigniez <coigniez@gmail.com>"]
 license = "MIT"
-description = "A comprehensive CLI tool and library for managing use cases, scenarios, and documentation with automatic status tracking"
-homepage = "https://github.com/GuillaumeCOI/use-case-manager"
-repository = "https://github.com/GuillaumeCOI/use-case-manager"
-documentation = "https://github.com/GuillaumeCOI/use-case-manager/docs"
+description = "A lightweight CLI tool for managing use cases and scenarios in markdown format, designed to keep your documentation close to your code"
+homepage = "https://github.com/GuillaumeCOI/markdown-use-case-manager"
+repository = "https://github.com/GuillaumeCOI/markdown-use-case-manager"
+documentation = "https://github.com/GuillaumeCOI/markdown-use-case-manager/docs"
 readme = "README.md"
-keywords = ["use-case", "documentation", "project-management", "testing", "cli"]
+keywords = ["markdown", "use-case", "documentation", "cli", "git"]
 categories = ["command-line-utilities", "development-tools", "template-engine"]
 
 [dependencies]
@@ -46,9 +46,9 @@ assert_cmd = "2.0"
 predicates = "3.0"
 
 [[bin]]
-name = "ucm"
+name = "mucm"
 path = "src/main.rs"
 
 [lib]
-name = "use_case_manager"
+name = "markdown_use_case_manager"
 path = "src/lib.rs"

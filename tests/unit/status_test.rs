@@ -1,24 +1,24 @@
 // Unit tests for Status enum and related functionality
-use use_case_manager::core::models::Status;
+use markdown_use_case_manager::core::models::Status;
 
 /// Test Status enum variants exist and have correct ordering
 #[test]
 fn test_status_enum_variants() {
     let status = Status::Planned;
     assert_eq!(format!("{:?}", status), "Planned");
-    
+
     let status = Status::InProgress;
     assert_eq!(format!("{:?}", status), "InProgress");
-    
+
     let status = Status::Implemented;
     assert_eq!(format!("{:?}", status), "Implemented");
-    
+
     let status = Status::Tested;
     assert_eq!(format!("{:?}", status), "Tested");
-    
+
     let status = Status::Deployed;
     assert_eq!(format!("{:?}", status), "Deployed");
-    
+
     let status = Status::Deprecated;
     assert_eq!(format!("{:?}", status), "Deprecated");
 }
@@ -79,10 +79,10 @@ fn test_status_aggregate_empty() {
 fn test_status_aggregate_single() {
     let statuses = vec![Status::InProgress];
     assert_eq!(Status::aggregate(&statuses), Status::InProgress);
-    
+
     let statuses = vec![Status::Tested];
     assert_eq!(Status::aggregate(&statuses), Status::Tested);
-    
+
     let statuses = vec![Status::Deprecated];
     assert_eq!(Status::aggregate(&statuses), Status::Deprecated);
 }
@@ -99,7 +99,7 @@ fn test_status_aggregate_all_planned() {
 fn test_status_aggregate_deprecated_wins() {
     let statuses = vec![Status::Deployed, Status::Deprecated, Status::Tested];
     assert_eq!(Status::aggregate(&statuses), Status::Deprecated);
-    
+
     let statuses = vec![Status::Planned, Status::Deprecated];
     assert_eq!(Status::aggregate(&statuses), Status::Deprecated);
 }
@@ -109,10 +109,10 @@ fn test_status_aggregate_deprecated_wins() {
 fn test_status_aggregate_lowest_non_planned() {
     let statuses = vec![Status::Planned, Status::InProgress, Status::Tested];
     assert_eq!(Status::aggregate(&statuses), Status::InProgress);
-    
+
     let statuses = vec![Status::Deployed, Status::Implemented, Status::Tested];
     assert_eq!(Status::aggregate(&statuses), Status::Implemented);
-    
+
     let statuses = vec![Status::Tested, Status::Deployed, Status::InProgress];
     assert_eq!(Status::aggregate(&statuses), Status::InProgress);
 }
@@ -139,9 +139,9 @@ fn test_status_equality() {
 #[test]
 fn test_status_serialization() {
     let status = Status::InProgress;
-    
+
     let serialized = serde_json::to_string(&status).expect("Failed to serialize");
     let deserialized: Status = serde_json::from_str(&serialized).expect("Failed to deserialize");
-    
+
     assert_eq!(status, deserialized);
 }
