@@ -8,10 +8,8 @@
 {{#each scenarios}}
 /// ## Scenario: {{title}} ({{id}})
 /// **Description:** {{description}}
-/// **Status:** {{status}}
-/// 
+ 
 {{/each}}
-
 // =============================================================================
 // AUTO-GENERATED TEST CODE
 // ⚠️  WARNING: Only modify code between START/END USER IMPLEMENTATION markers!
@@ -19,7 +17,22 @@
 
 #[cfg(test)]
 mod {{test_module_name}} {
-    use super::*;
+    //! Test module for use case: {{title}} ({{id}})
+    //! Category: {{category}}
+
+    // =============================================================================
+    // START USER IMPLEMENTATION - Add your imports and setup code here
+    // =============================================================================
+    
+    // Add your imports here:
+    // use super::*;
+    // use your_crate::*;
+    
+    // Add test helper functions here if needed
+    
+    // =============================================================================
+    // END USER IMPLEMENTATION
+    // =============================================================================
 
 {{#each scenarios}}
     #[test]

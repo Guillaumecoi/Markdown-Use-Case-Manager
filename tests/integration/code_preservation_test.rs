@@ -54,7 +54,7 @@ fn test_template_preservation_features() {
         assert!(engine.render_test("Python", &data).is_ok());
 
         // Test that unsupported languages fail with proper error
-        let unsupported_result = engine.render_test("javascript", &data);
+        let unsupported_result = engine.render_test("unsupported_language", &data);
         assert!(unsupported_result.is_err());
         assert!(unsupported_result
             .unwrap_err()
@@ -94,7 +94,7 @@ fn test_marker_granularity() {
         // Test Rust template
         let rust_content = engine.render_test("rust", &data).unwrap();
 
-        // Count markers - should be one pair per scenario
+        // Count markers - should be one pair per scenario plus one for module setup
         let start_markers = rust_content.matches("START USER IMPLEMENTATION").count();
         let end_markers = rust_content.matches("END USER IMPLEMENTATION").count();
         let test_functions = rust_content.matches("fn test_").count();
@@ -105,22 +105,24 @@ fn test_marker_granularity() {
             start_markers, end_markers, test_functions
         );
 
+        // We expect: 1 module-level marker + 1 per scenario = 3 total for 2 scenarios
         assert_eq!(
-            start_markers, 2,
-            "Should have START marker for each scenario"
+            start_markers, 3,
+            "Should have module marker plus one marker per scenario"
         );
-        // There might be an extra END marker in the template structure, so let's check it's at least 2
+        // Due to template structure, we may have extra END markers from nested text
         assert!(
-            end_markers >= 2,
-            "Should have at least END marker for each scenario"
+            end_markers >= 3,
+            "Should have at least 3 END markers to match START markers"
         );
         assert_eq!(
             test_functions, 2,
             "Should have test function for each scenario"
         );
+        // Verify we have one marker per test function plus the module marker
         assert_eq!(
-            start_markers, test_functions,
-            "Each test should have its own markers"
+            start_markers, test_functions + 1,
+            "Should have module marker plus one per test function"
         );
 
         // Test Python template
@@ -136,21 +138,20 @@ fn test_marker_granularity() {
             py_start_markers, py_end_markers, py_test_methods
         );
 
+        // Python template has markers for module, setUp, tearDown, and per-test
+        // Expected: 1 module + 1 setUp + 1 tearDown + 1 per test method
+        let expected_py_markers = 1 + 1 + 1 + py_test_methods;
         assert_eq!(
-            py_start_markers, 2,
-            "Should have START marker for each scenario"
+            py_start_markers, expected_py_markers,
+            "Should have module, setUp, tearDown, and per-test markers"
         );
         assert!(
-            py_end_markers >= 2,
-            "Should have at least END marker for each scenario"
+            py_end_markers >= expected_py_markers,
+            "Should have at least matching END markers"
         );
         assert_eq!(
             py_test_methods, 2,
             "Should have test method for each scenario"
-        );
-        assert_eq!(
-            py_start_markers, py_test_methods,
-            "Each test should have its own markers"
         );
     });
 }

@@ -1,4 +1,5 @@
 // src/core/manager.rs
+use super::languages::LanguageRegistry;
 use super::models::{Scenario, Status, UseCase};
 use super::templates::{to_snake_case, TemplateEngine};
 use crate::config::Config;
@@ -469,11 +470,11 @@ impl UseCaseManager {
         fs::create_dir_all(&test_dir)?;
 
         // Generate file extension based on language
-        let file_extension = match self.config.generation.test_language.as_str() {
-            "rust" => "rs",
-            "python" => "py",
-            _ => "txt", // fallback
-        };
+        let language_registry = LanguageRegistry::new();
+        let file_extension = language_registry
+            .get(&self.config.generation.test_language)
+            .map(|lang| lang.file_extension())
+            .unwrap_or("txt"); // fallback
 
         let test_file_name = format!("{}.{}", to_snake_case(&use_case.id), file_extension);
         let test_path = test_dir.join(test_file_name);
@@ -486,6 +487,11 @@ impl UseCaseManager {
             json!(to_snake_case(&use_case.title)),
         );
         data.insert("description".to_string(), json!(use_case.description));
+        data.insert("category".to_string(), json!(use_case.category));
+        data.insert(
+            "category_snake_case".to_string(),
+            json!(to_snake_case(&use_case.category)),
+        );
         data.insert(
             "test_module_name".to_string(),
             json!(to_snake_case(&use_case.id)),

@@ -1,0 +1,92 @@
+// =============================================================================
+// AUTO-GENERATED TEST DOCUMENTATION
+// Use Case: {{title}} ({{id}})
+// Description: {{description}}
+// Generated at: {{generated_at}}
+// =============================================================================
+
+{{#each scenarios}}
+// ## Scenario: {{title}} ({{id}})
+// **Description:** {{description}}
+// 
+{{/each}}
+// =============================================================================
+// AUTO-GENERATED TEST CODE
+// ⚠️  WARNING: Only modify code between START/END USER IMPLEMENTATION markers!
+// =============================================================================
+
+// =============================================================================
+// START USER IMPLEMENTATION - Add your imports and setup code here
+// =============================================================================
+
+// Add your imports here:
+// const { expect } = require('@jest/globals');
+// const YourModule = require('./your-module');
+
+// Add test helper functions here if needed
+
+// =============================================================================
+// END USER IMPLEMENTATION
+// =============================================================================
+
+/**
+ * Test suite for use case: {{title}} ({{id}})
+ * Category: {{category}}
+ * Description: {{description}}
+ */
+describe('{{title}}', () => {
+    
+    // =============================================================================
+    // START USER IMPLEMENTATION - Add your setup and teardown code here
+    // =============================================================================
+    
+    beforeEach(() => {
+        // TODO: Add setup code that runs before each test
+    });
+    
+    afterEach(() => {
+        // TODO: Add cleanup code that runs after each test
+    });
+    
+    beforeAll(() => {
+        // TODO: Add setup code that runs once before all tests
+    });
+    
+    afterAll(() => {
+        // TODO: Add cleanup code that runs once after all tests
+    });
+    
+    // =============================================================================
+    // END USER IMPLEMENTATION
+    // =============================================================================
+
+{{#each scenarios}}
+    /**
+     * Test for scenario: {{title}} ({{id}})
+     * Description: {{description}}
+     */
+    test('{{title}}', () => {
+        // =============================================================================
+        // START USER IMPLEMENTATION - Feel free to modify the code below this line
+        // =============================================================================
+        
+        // TODO: Implement test for scenario: {{title}}
+        
+        // Arrange
+        // TODO: Set up test data and preconditions
+        
+        // Act
+        // TODO: Execute the scenario steps
+        
+        // Assert
+        // TODO: Verify the results
+        
+        throw new Error('Test not implemented yet');
+        
+        // =============================================================================
+        // END USER IMPLEMENTATION - Do not modify anything below this line
+        // =============================================================================
+    });
+    
+{{/each}}
+});

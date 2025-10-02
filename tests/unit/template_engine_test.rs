@@ -441,12 +441,12 @@ fn test_rust_template_granular_markers() {
     ));
     assert!(content.contains("// END USER IMPLEMENTATION - Do not modify anything below this line"));
 
-    // Verify markers are around individual test methods, not the whole file
+    // Verify markers are around individual test methods plus module setup
     let marker_count = content.matches("START USER IMPLEMENTATION").count();
     let scenario_count = content.matches("fn test_").count();
     assert_eq!(
-        marker_count, scenario_count,
-        "Each test method should have its own markers"
+        marker_count, scenario_count + 1,
+        "Each test method should have its own markers plus module setup marker"
     );
 }
 
@@ -493,12 +493,14 @@ fn test_python_template_granular_markers() {
     ));
     assert!(content.contains("# END USER IMPLEMENTATION - Do not modify anything below this line"));
 
-    // Verify markers are around individual test methods, not the whole file
+    // Verify markers are distributed across module, setup/teardown, and test methods
     let marker_count = content.matches("START USER IMPLEMENTATION").count();
     let scenario_count = content.matches("def test_").count();
+    // Expected: 1 module + 1 setUp + 1 tearDown + 1 per test method
+    let expected_markers = 1 + 1 + 1 + scenario_count;
     assert_eq!(
-        marker_count, scenario_count,
-        "Each test method should have its own markers"
+        marker_count, expected_markers,
+        "Should have module, setUp, tearDown, and per-test markers"
     );
 
     // Verify we have 2 test methods for 2 scenarios
@@ -536,7 +538,7 @@ fn test_render_test_unsupported_language() {
     data.insert("title".to_string(), json!("Test"));
     data.insert("scenarios".to_string(), json!([]));
 
-    let result = engine.render_test("javascript", &data);
+    let result = engine.render_test("unsupported_lang", &data);
     assert!(result.is_err());
 
     let error_msg = result.unwrap_err().to_string();
