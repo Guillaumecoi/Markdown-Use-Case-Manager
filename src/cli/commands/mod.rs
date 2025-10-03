@@ -1,11 +1,13 @@
 pub mod create;
 pub mod init;
 pub mod list;
+pub mod persona;
 pub mod scenario;
 pub mod status;
 
-pub use create::*;
-pub use init::*;
+pub use create::handle_create_command;
+pub use init::handle_init_command;
 pub use list::{handle_languages_command, handle_list_command};
-pub use scenario::*;
+pub use persona::handle_persona_command;
+pub use scenario::{handle_add_scenario_command, handle_update_status_command};
 pub use status::handle_status_command;

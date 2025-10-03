@@ -26,6 +26,7 @@ pub struct ProjectConfig {
 pub struct DirectoryConfig {
     pub use_case_dir: String,
     pub test_dir: String,
+    pub persona_dir: String,
     pub template_dir: Option<String>,
 }
 
@@ -65,10 +66,27 @@ pub struct MetadataConfig {
     /// Last updated timestamp (automatically set to current time)  
     pub include_last_updated: bool,
 
-    // Custom fields that user fills manually (always empty by default)
-    // Add field names here that you want to appear in the metadata for manual completion
-    // Examples: "author", "reviewer", "business_value", "complexity", "epic", "prerequisites", "test_file"
-    pub custom_fields: Vec<String>,
+    // Extended metadata fields (true/false to enable/disable each field)
+    /// Prerequisites and dependencies for the use case
+    pub include_prerequisites: bool,
+    /// Target users and stakeholders
+    pub include_personas: bool,
+    /// Author of the use case
+    pub include_author: bool,
+    /// Reviewer of the use case
+    pub include_reviewer: bool,
+    /// Business value and justification
+    pub include_business_value: bool,
+    /// Implementation complexity assessment
+    pub include_complexity: bool,
+    /// Associated epic or project
+    pub include_epic: bool,
+    /// Acceptance criteria for completion
+    pub include_acceptance_criteria: bool,
+    /// Assumptions made in the use case
+    pub include_assumptions: bool,
+    /// Constraints and limitations
+    pub include_constraints: bool,
 }
 
 impl Config {
@@ -162,9 +180,11 @@ impl Config {
         // Create default directories
         let use_case_dir = base_path.join(&config.directories.use_case_dir);
         let test_dir = base_path.join(&config.directories.test_dir);
+        let persona_dir = base_path.join(&config.directories.persona_dir);
 
         fs::create_dir_all(&use_case_dir).context("Failed to create use case directory")?;
         fs::create_dir_all(&test_dir).context("Failed to create test directory")?;
+        fs::create_dir_all(&persona_dir).context("Failed to create persona directory")?;
 
         Ok(config)
     }
@@ -345,6 +365,7 @@ impl Default for Config {
             directories: DirectoryConfig {
                 use_case_dir: "docs/use-cases".to_string(),
                 test_dir: "tests/use-cases".to_string(),
+                persona_dir: "docs/personas".to_string(),
                 template_dir: None,
             },
             templates: TemplateConfig {
@@ -366,18 +387,16 @@ impl Default for Config {
                 include_priority: true,
                 include_created: true,
                 include_last_updated: true,
-                custom_fields: vec![
-                    "prerequisites".to_string(),
-                    "personas".to_string(),
-                    "author".to_string(),
-                    "reviewer".to_string(),
-                    "business_value".to_string(),
-                    "complexity".to_string(),
-                    "epic".to_string(),
-                    "acceptance_criteria".to_string(),
-                    "assumptions".to_string(),
-                    "constraints".to_string(),
-                ],
+                include_prerequisites: true,
+                include_personas: true,
+                include_author: true,
+                include_reviewer: true,
+                include_business_value: true,
+                include_complexity: true,
+                include_epic: true,
+                include_acceptance_criteria: true,
+                include_assumptions: true,
+                include_constraints: true,
             },
         }
     }

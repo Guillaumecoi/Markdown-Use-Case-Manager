@@ -4,6 +4,7 @@ use anyhow::Result;
 
 /// Core business logic for use case management
 /// This service focuses purely on domain operations without I/O concerns
+#[derive(Clone)]
 pub struct UseCaseService;
 
 impl UseCaseService {

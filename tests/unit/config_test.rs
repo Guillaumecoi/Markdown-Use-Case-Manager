@@ -16,13 +16,16 @@ fn test_config_default() {
     );
     assert_eq!(config.directories.use_case_dir, "docs/use-cases");
     assert_eq!(config.directories.test_dir, "tests/use-cases");
+    assert_eq!(config.directories.persona_dir, "docs/personas");
     assert!(config.directories.template_dir.is_none());
     assert_eq!(config.generation.test_language, "rust");
     assert!(!config.generation.auto_generate_tests);
     assert!(!config.generation.overwrite_test_documentation);
     assert!(config.metadata.enabled);
     assert!(config.metadata.include_id);
-    assert!(!config.metadata.custom_fields.is_empty());
+    assert!(config.metadata.include_prerequisites);
+    assert!(config.metadata.include_personas);
+    assert!(config.metadata.include_author);
 }
 
 /// Test Config::config_path() returns correct path
@@ -53,6 +56,7 @@ fn test_directory_config() {
     let dir_config = DirectoryConfig {
         use_case_dir: "custom/use-cases".to_string(),
         test_dir: "custom/tests".to_string(),
+        persona_dir: "custom/personas".to_string(),
         template_dir: Some("custom/templates".to_string()),
     };
 
@@ -110,7 +114,16 @@ fn test_metadata_config() {
         include_priority: true,
         include_created: true,
         include_last_updated: true,
-        custom_fields: vec!["author".to_string(), "reviewer".to_string()],
+        include_prerequisites: false,
+        include_personas: false,
+        include_author: true,
+        include_reviewer: true,
+        include_business_value: false,
+        include_complexity: false,
+        include_epic: false,
+        include_acceptance_criteria: false,
+        include_assumptions: false,
+        include_constraints: false,
     };
 
     assert!(metadata_config.enabled);
@@ -121,13 +134,11 @@ fn test_metadata_config() {
     assert!(metadata_config.include_priority);
     assert!(metadata_config.include_created);
     assert!(metadata_config.include_last_updated);
-    assert_eq!(metadata_config.custom_fields.len(), 2);
-    assert!(metadata_config
-        .custom_fields
-        .contains(&"author".to_string()));
-    assert!(metadata_config
-        .custom_fields
-        .contains(&"reviewer".to_string()));
+    // Test boolean metadata configuration
+    assert!(metadata_config.include_author);
+    assert!(metadata_config.include_reviewer);
+    assert!(!metadata_config.include_prerequisites);
+    assert!(!metadata_config.include_personas);
 }
 
 /// Test Config serialization and deserialization
@@ -197,13 +208,22 @@ fn test_metadata_config_disabled() {
         include_priority: false,
         include_created: false,
         include_last_updated: false,
-        custom_fields: vec![],
+        include_prerequisites: false,
+        include_personas: false,
+        include_author: false,
+        include_reviewer: false,
+        include_business_value: false,
+        include_complexity: false,
+        include_epic: false,
+        include_acceptance_criteria: false,
+        include_assumptions: false,
+        include_constraints: false,
     };
 
     assert!(!metadata_config.enabled);
     assert!(!metadata_config.include_id);
     assert!(!metadata_config.include_title);
-    assert!(metadata_config.custom_fields.is_empty());
+    assert!(!metadata_config.include_prerequisites);
 }
 
 /// Test Config with custom values
@@ -217,6 +237,7 @@ fn test_config_custom_values() {
         directories: DirectoryConfig {
             use_case_dir: "src/docs".to_string(),
             test_dir: "src/tests".to_string(),
+            persona_dir: "src/personas".to_string(),
             template_dir: Some("src/templates".to_string()),
         },
         templates: TemplateConfig {
@@ -238,11 +259,16 @@ fn test_config_custom_values() {
             include_priority: false,
             include_created: false,
             include_last_updated: true,
-            custom_fields: vec![
-                "epic".to_string(),
-                "team".to_string(),
-                "priority".to_string(),
-            ],
+            include_prerequisites: false,
+            include_personas: false,
+            include_author: false,
+            include_reviewer: false,
+            include_business_value: false,
+            include_complexity: false,
+            include_epic: true,
+            include_acceptance_criteria: false,
+            include_assumptions: false,
+            include_constraints: false,
         },
     };
 
@@ -261,7 +287,10 @@ fn test_config_custom_values() {
     assert!(config.generation.auto_generate_tests);
     assert!(!config.generation.overwrite_test_documentation);
     assert!(!config.metadata.include_category);
-    assert_eq!(config.metadata.custom_fields.len(), 3);
+    // Test boolean metadata configuration
+    assert!(config.metadata.include_epic);
+    assert!(!config.metadata.include_category);
+    assert!(!config.metadata.include_priority);
 }
 
 /// Test Config field access and modification
@@ -279,9 +308,6 @@ fn test_config_field_access() {
     config.generation.auto_generate_tests = true;
     assert!(config.generation.auto_generate_tests);
 
-    config.metadata.custom_fields.push("new_field".to_string());
-    assert!(config
-        .metadata
-        .custom_fields
-        .contains(&"new_field".to_string()));
+    config.metadata.include_personas = true;
+    assert!(config.metadata.include_personas);
 }

@@ -1,16 +1,16 @@
-// src/core/use_case_manager_v2.rs
+// src/core/use_case_coordinator.rs
 use crate::config::Config;
-use crate::core::languages::LanguageRegistry;
-use crate::core::models::{Status, UseCase};
+use crate::core::models::{UseCase, ExtendedMetadata, Status};
 use crate::core::services::{FileService, UseCaseService};
-use crate::core::templates::{to_snake_case, TemplateEngine};
+use crate::core::templates::{TemplateEngine, to_snake_case};
+use crate::core::languages::LanguageRegistry;
 use anyhow::Result;
-use colored::*;
+use colored::Colorize;
 use serde_json::json;
 use std::collections::HashMap;
 
-/// Coordinates between services to provide a clean API for use case management
-/// This replaces the massive manager.rs with a cleaner architecture
+/// Coordinates use case management operations
+/// Now organized with modular helper methods for better maintainability
 pub struct UseCaseCoordinator {
     config: Config,
     use_case_service: UseCaseService,
@@ -26,7 +26,7 @@ impl UseCaseCoordinator {
         let file_service = FileService::new(config.clone());
         let template_engine = TemplateEngine::with_config(Some(&config));
 
-        let mut manager = Self {
+        let mut coordinator = Self {
             config,
             use_case_service,
             file_service,
@@ -34,8 +34,8 @@ impl UseCaseCoordinator {
             use_cases: Vec::new(),
         };
 
-        manager.use_cases = manager.file_service.load_use_cases()?;
-        Ok(manager)
+        coordinator.use_cases = coordinator.file_service.load_use_cases()?;
+        Ok(coordinator)
     }
 
     pub fn create_use_case(
@@ -44,28 +44,10 @@ impl UseCaseCoordinator {
         category: String,
         description: Option<String>,
     ) -> Result<String> {
-        let use_case_id = self
-            .use_case_service
-            .generate_use_case_id(&category, &self.use_cases);
-        let description = description.unwrap_or_default();
-
-        let use_case = self.use_case_service.create_use_case(
-            use_case_id.clone(),
-            title,
-            category,
-            description,
-        );
-
-        // Generate markdown and save
-        let markdown_content = self.generate_use_case_markdown(&use_case)?;
-        self.file_service
-            .save_use_case(&use_case, &markdown_content)?;
-
+        let use_case = self.create_use_case_internal(title, category, description, None)?;
+        let use_case_id = use_case.id.clone();
         self.use_cases.push(use_case);
-
-        // Regenerate overview
         self.generate_overview()?;
-
         Ok(use_case_id)
     }
 
@@ -75,33 +57,12 @@ impl UseCaseCoordinator {
         title: String,
         category: String,
         description: Option<String>,
-        extended_metadata: crate::core::models::ExtendedMetadata,
+        extended_metadata: ExtendedMetadata,
     ) -> Result<String> {
-        let use_case_id = self
-            .use_case_service
-            .generate_use_case_id(&category, &self.use_cases);
-        let description = description.unwrap_or_default();
-
-        let mut use_case = self.use_case_service.create_use_case(
-            use_case_id.clone(),
-            title,
-            category,
-            description,
-        );
-
-        // Apply extended metadata
-        use_case.apply_extended_metadata(extended_metadata);
-
-        // Generate markdown and save
-        let markdown_content = self.generate_use_case_markdown(&use_case)?;
-        self.file_service
-            .save_use_case(&use_case, &markdown_content)?;
-
+        let use_case = self.create_use_case_internal(title, category, description, Some(extended_metadata))?;
+        let use_case_id = use_case.id.clone();
         self.use_cases.push(use_case);
-
-        // Regenerate overview
         self.generate_overview()?;
-
         Ok(use_case_id)
     }
 
@@ -125,20 +86,8 @@ impl UseCaseCoordinator {
             description,
         );
 
-        // Clone the use case for operations that need immutable self
-        let use_case_copy = self.use_cases[use_case_index].clone();
-
-        // Save updated use case
-        let markdown_content = self.generate_use_case_markdown(&use_case_copy)?;
-        self.file_service
-            .save_use_case(&use_case_copy, &markdown_content)?;
-
-        // Generate test file if enabled
-        if self.config.generation.auto_generate_tests {
-            self.generate_test_file(&use_case_copy)?;
-        }
-
-        // Regenerate overview
+        // Save and regenerate
+        self.save_use_case_and_update(&self.use_cases[use_case_index].clone())?;
         self.generate_overview()?;
 
         Ok(scenario_id)
@@ -165,15 +114,8 @@ impl UseCaseCoordinator {
             status,
         )?;
 
-        // Clone the use case for operations that need immutable self
-        let use_case_copy = self.use_cases[use_case_index].clone();
-
-        // Save updated use case
-        let markdown_content = self.generate_use_case_markdown(&use_case_copy)?;
-        self.file_service
-            .save_use_case(&use_case_copy, &markdown_content)?;
-
-        // Regenerate overview
+        // Save and regenerate
+        self.save_use_case_and_update(&self.use_cases[use_case_index].clone())?;
         self.generate_overview()?;
 
         println!("Updated scenario {} status to: {}", scenario_id, status);
@@ -181,6 +123,118 @@ impl UseCaseCoordinator {
     }
 
     pub fn list_use_cases(&self) -> Result<()> {
+        self.display_use_cases_list()
+    }
+
+    pub fn show_status(&self) -> Result<()> {
+        self.display_project_status()
+    }
+
+    /// Get all use case IDs
+    pub fn get_all_use_case_ids(&self) -> Result<Vec<String>> {
+        Ok(self.use_cases.iter().map(|uc| uc.id.clone()).collect())
+    }
+
+    /// Get all scenario IDs for a specific use case
+    pub fn get_scenario_ids_for_use_case(&self, use_case_id: &str) -> Result<Vec<String>> {
+        let use_case = self
+            .use_cases
+            .iter()
+            .find(|uc| uc.id == use_case_id)
+            .ok_or_else(|| anyhow::anyhow!("Use case {} not found", use_case_id))?;
+
+        Ok(use_case.scenarios.iter().map(|s| s.id.clone()).collect())
+    }
+
+    /// Get all categories in use
+    pub fn get_all_categories(&self) -> Result<Vec<String>> {
+        let mut categories: Vec<String> = self
+            .use_cases
+            .iter()
+            .map(|uc| uc.category.clone())
+            .collect();
+
+        categories.sort();
+        categories.dedup();
+        Ok(categories)
+    }
+
+    /// Update extended metadata for an existing use case
+    pub fn update_use_case_metadata(
+        &mut self,
+        use_case_id: String,
+        extended_metadata: ExtendedMetadata,
+    ) -> Result<()> {
+        // Find the use case index
+        let use_case_index = self
+            .use_cases
+            .iter()
+            .position(|uc| uc.id == use_case_id)
+            .ok_or_else(|| anyhow::anyhow!("Use case {} not found", use_case_id))?;
+
+        // Update metadata
+        let use_case = &mut self.use_cases[use_case_index];
+        use_case.apply_extended_metadata(extended_metadata);
+
+        // Clone for save operation to avoid borrowing conflicts
+        let use_case_clone = use_case.clone();
+        self.save_use_case_and_update(&use_case_clone)?;
+        self.generate_overview()?;
+
+        Ok(())
+    }
+
+    // ========== Modular Helper Methods ==========
+
+    /// Internal helper to create use cases with optional extended metadata
+    fn create_use_case_internal(
+        &self,
+        title: String,
+        category: String,
+        description: Option<String>,
+        extended_metadata: Option<ExtendedMetadata>,
+    ) -> Result<UseCase> {
+        let use_case_id = self
+            .use_case_service
+            .generate_use_case_id(&category, &self.use_cases);
+        let description = description.unwrap_or_default();
+
+        let mut use_case = self.use_case_service.create_use_case(
+            use_case_id.clone(),
+            title,
+            category,
+            description,
+        );
+
+        // Apply extended metadata if provided
+        if let Some(metadata) = extended_metadata {
+            use_case.apply_extended_metadata(metadata);
+        }
+
+        // Generate markdown and save
+        let markdown_content = self.generate_use_case_markdown(&use_case)?;
+        self.file_service
+            .save_use_case(&use_case, &markdown_content)?;
+
+        Ok(use_case)
+    }
+
+    /// Helper to save use case and handle test generation
+    fn save_use_case_and_update(&self, use_case: &UseCase) -> Result<()> {
+        // Generate markdown and save
+        let markdown_content = self.generate_use_case_markdown(use_case)?;
+        self.file_service.save_use_case(use_case, &markdown_content)?;
+
+        // Generate test file if enabled
+        if self.config.generation.auto_generate_tests {
+            self.generate_test_file(use_case)?;
+        }
+
+        Ok(())
+    }
+
+    /// Helper to display use cases list
+    fn display_use_cases_list(&self) -> Result<()> {
         if self.use_cases.is_empty() {
             println!("No use cases found. Create one with 'mucm create'");
             return Ok(());
@@ -215,7 +269,8 @@ impl UseCaseCoordinator {
         Ok(())
     }
 
-    pub fn show_status(&self) -> Result<()> {
+    /// Helper to display project status
+    fn display_project_status(&self) -> Result<()> {
         let total_use_cases = self.use_cases.len();
         let total_scenarios: usize = self.use_cases.iter().map(|uc| uc.scenarios.len()).sum();
 
@@ -237,36 +292,7 @@ impl UseCaseCoordinator {
         Ok(())
     }
 
-    /// Get all use case IDs
-    pub fn get_all_use_case_ids(&self) -> Result<Vec<String>> {
-        Ok(self.use_cases.iter().map(|uc| uc.id.clone()).collect())
-    }
-
-    /// Get all scenario IDs for a specific use case
-    pub fn get_scenario_ids_for_use_case(&self, use_case_id: &str) -> Result<Vec<String>> {
-        let use_case = self
-            .use_cases
-            .iter()
-            .find(|uc| uc.id == use_case_id)
-            .ok_or_else(|| anyhow::anyhow!("Use case {} not found", use_case_id))?;
-
-        Ok(use_case.scenarios.iter().map(|s| s.id.clone()).collect())
-    }
-
-    /// Get all categories in use
-    pub fn get_all_categories(&self) -> Result<Vec<String>> {
-        let mut categories: Vec<String> = self
-            .use_cases
-            .iter()
-            .map(|uc| uc.category.clone())
-            .collect();
-
-        categories.sort();
-        categories.dedup();
-        Ok(categories)
-    }
-
-    // Private helper methods
+    /// Helper to generate use case markdown
     fn generate_use_case_markdown(&self, use_case: &UseCase) -> Result<String> {
         let mut data = HashMap::new();
         data.insert("id".to_string(), json!(use_case.id));
@@ -322,14 +348,29 @@ impl UseCaseCoordinator {
             "include_last_updated".to_string(),
             json!(metadata_config.include_last_updated),
         );
+        
+        // Create dynamic list of enabled custom fields
+        let mut enabled_fields = Vec::new();
+        if metadata_config.include_prerequisites { enabled_fields.push("prerequisites"); }
+        if metadata_config.include_personas { enabled_fields.push("personas"); }
+        if metadata_config.include_author { enabled_fields.push("author"); }
+        if metadata_config.include_reviewer { enabled_fields.push("reviewer"); }
+        if metadata_config.include_business_value { enabled_fields.push("business_value"); }
+        if metadata_config.include_complexity { enabled_fields.push("complexity"); }
+        if metadata_config.include_epic { enabled_fields.push("epic"); }
+        if metadata_config.include_acceptance_criteria { enabled_fields.push("acceptance_criteria"); }
+        if metadata_config.include_assumptions { enabled_fields.push("assumptions"); }
+        if metadata_config.include_constraints { enabled_fields.push("constraints"); }
+        
         data.insert(
             "custom_fields".to_string(),
-            json!(metadata_config.custom_fields),
+            json!(enabled_fields),
         );
 
         self.template_engine.render_use_case(&data)
     }
 
+    /// Helper to generate test files
     fn generate_test_file(&self, use_case: &UseCase) -> Result<()> {
         if use_case.scenarios.is_empty() {
             return Ok(());
@@ -399,8 +440,6 @@ impl UseCaseCoordinator {
         {
             println!("⚠️  Test file exists and overwrite_test_documentation=false, skipping");
             return Ok(());
-
-            // TODO: Implement smart merging here if needed
         }
 
         // Generate new test content
@@ -420,8 +459,9 @@ impl UseCaseCoordinator {
         Ok(())
     }
 
+    /// Helper to generate overview
     fn generate_overview(&self) -> Result<()> {
-        // Prepare data for template (same as before)
+        // Prepare data for template
         let mut template_data = HashMap::new();
 
         template_data.insert("project_name".to_string(), json!(self.config.project.name));
@@ -503,34 +543,6 @@ impl UseCaseCoordinator {
         // Render and save
         let content = self.template_engine.render_overview(&template_data)?;
         self.file_service.save_overview(&content)?;
-
-        Ok(())
-    }
-
-    /// Update extended metadata for an existing use case
-    pub fn update_use_case_metadata(
-        &mut self,
-        use_case_id: String,
-        extended_metadata: crate::core::models::ExtendedMetadata,
-    ) -> Result<()> {
-        // Find the use case index
-        let use_case_index = self
-            .use_cases
-            .iter()
-            .position(|uc| uc.id == use_case_id)
-            .ok_or_else(|| anyhow::anyhow!("Use case {} not found", use_case_id))?;
-
-        // Update metadata
-        let use_case = &mut self.use_cases[use_case_index];
-        use_case.apply_extended_metadata(extended_metadata);
-
-        // Regenerate and save the use case
-        let use_case_clone = use_case.clone();
-        let markdown_content = self.generate_use_case_markdown(&use_case_clone)?;
-        self.file_service.save_use_case(&use_case_clone, &markdown_content)?;
-
-        // Regenerate overview
-        self.generate_overview()?;
 
         Ok(())
     }

@@ -220,10 +220,10 @@ fn test_cli_auto_init_config_format() -> anyhow::Result<()> {
     assert!(config_content.contains("test_language = \"rust\""));
     assert!(config_content.contains("enabled = true"));
 
-    // Verify custom fields array
-    assert!(config_content.contains("custom_fields = ["));
-    assert!(config_content.contains("\"author\""));
-    assert!(config_content.contains("\"prerequisites\""));
+    // Verify boolean metadata fields
+    assert!(config_content.contains("include_author = true"));
+    assert!(config_content.contains("include_prerequisites = true"));
+    assert!(config_content.contains("include_personas = true"));
 
     Ok(())
 }

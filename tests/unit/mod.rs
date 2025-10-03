@@ -19,3 +19,6 @@ pub mod use_case_service_test;
 pub mod cli_auto_init_test;
 pub mod cli_interactive_test;
 pub mod cli_runner_test;
+
+// Extended functionality unit tests
+pub mod persona_test;

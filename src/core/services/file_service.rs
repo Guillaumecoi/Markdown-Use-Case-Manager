@@ -8,6 +8,7 @@ use std::path::Path;
 
 /// Service responsible for all file I/O operations
 /// Handles saving, loading, and parsing of use case files
+#[derive(Clone)]
 pub struct FileService {
     config: Config,
 }

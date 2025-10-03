@@ -270,11 +270,8 @@ fn test_auto_init_settings_integration() -> Result<()> {
     config.project.name = "Integration Test Project".to_string();
     config.directories.use_case_dir = "docs/custom-use-cases".to_string();
     config.generation.auto_generate_tests = true;
-    config.metadata.custom_fields = vec![
-        "author".to_string(),
-        "priority".to_string(),
-        "complexity".to_string(),
-    ];
+    config.metadata.include_author = true;
+    config.metadata.include_complexity = true;
 
     // 3. Save updated settings
     config.save_in_dir(".")?;
@@ -309,7 +306,8 @@ fn test_auto_init_settings_integration() -> Result<()> {
         "docs/custom-use-cases"
     );
     assert!(final_config.generation.auto_generate_tests);
-    assert_eq!(final_config.metadata.custom_fields.len(), 3);
+    assert!(final_config.metadata.include_author);
+    assert!(final_config.metadata.include_complexity);
 
     Ok(())
 }

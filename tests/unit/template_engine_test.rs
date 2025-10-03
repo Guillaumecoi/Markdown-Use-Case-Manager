@@ -1,7 +1,6 @@
 // Unit tests for template engine and template utilities
 use markdown_use_case_manager::core::templates::{to_snake_case, TemplateEngine};
 use serde_json::json;
-use serial_test::serial;
 use std::collections::HashMap;
 
 /// Test to_snake_case utility function with various inputs
@@ -369,32 +368,52 @@ fn test_template_engine_with_config_detailed_style() {
     assert!(content.contains("Test Use Case"));
 }
 
-/// Test TemplateEngine fallback to built-in templates when custom templates don't exist
+/// Test TemplateEngine uses built-in templates correctly
 #[test]
-#[serial]
-fn test_template_engine_fallback_to_builtin() {
+fn test_template_engine_builtin_templates() {
     use markdown_use_case_manager::config::Config;
-    use tempfile::TempDir;
 
-    let temp_dir = TempDir::new().unwrap();
-    let original_dir = std::env::current_dir().unwrap();
-    std::env::set_current_dir(&temp_dir).unwrap();
-
-    // Don't create any custom templates - should fallback to built-in
+    // Test that TemplateEngine works with built-in templates regardless of working directory
+    // Built-in templates are compiled into the binary with include_str! so they should always work
     let config = Config::default();
     let engine = TemplateEngine::with_config(Some(&config));
 
     let mut data = HashMap::new();
     data.insert("title".to_string(), json!("Test Use Case"));
     data.insert("description".to_string(), json!("Test description"));
+    data.insert("id".to_string(), json!("UC-TST-001"));
+    data.insert("category".to_string(), json!("Testing"));
+    data.insert("priority".to_string(), json!("Medium"));
+    data.insert("status_name".to_string(), json!("Planned"));
+    data.insert("scenarios".to_string(), json!([]));
+    data.insert("metadata".to_string(), json!({}));
+    data.insert("created_date".to_string(), json!("2025-10-03"));
+    data.insert("updated_date".to_string(), json!("2025-10-03"));
+    data.insert("metadata_enabled".to_string(), json!(true));
+    data.insert("include_id".to_string(), json!(true));
+    data.insert("include_title".to_string(), json!(true));
+    data.insert("custom_fields".to_string(), json!([]));
 
+    // Test use case rendering
     let result = engine.render_use_case(&data);
-    assert!(result.is_ok());
+    assert!(result.is_ok(), "Built-in use case template should always work");
     let content = result.unwrap();
-    // Should use built-in template and still work
-    assert!(content.contains("Test Use Case"));
+    assert!(content.contains("Test Use Case"), "Rendered content should contain the title");
+    assert!(content.contains("UC-TST-001"), "Rendered content should contain the ID");
 
-    std::env::set_current_dir(original_dir).unwrap();
+    // Test overview rendering
+    let mut overview_data = HashMap::new();
+    overview_data.insert("project_name".to_string(), json!("Test Project"));
+    overview_data.insert("generated_date".to_string(), json!("2025-10-03"));
+    overview_data.insert("total_use_cases".to_string(), json!(1));
+    overview_data.insert("total_scenarios".to_string(), json!(0));
+    overview_data.insert("status_counts".to_string(), json!({}));
+    overview_data.insert("categories".to_string(), json!([]));
+
+    let overview_result = engine.render_overview(&overview_data);
+    assert!(overview_result.is_ok(), "Built-in overview template should always work");
+    let overview_content = overview_result.unwrap();
+    assert!(overview_content.contains("Test Project"), "Overview should contain project name");
 }
 
 /// Test TemplateEngine default config behavior

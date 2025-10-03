@@ -43,6 +43,7 @@ pub fn run() -> Result<()> {
             scenario_id,
             status,
         } => handle_update_status_command(&mut runner, scenario_id, status),
+        Commands::Persona { action } => handle_persona_command(&mut runner, action),
         Commands::List => handle_list_command(&mut runner),
         Commands::Languages => handle_languages_command(),
         Commands::Status => handle_status_command(&mut runner),

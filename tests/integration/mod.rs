@@ -7,6 +7,7 @@ pub mod test_helpers;
 pub mod cli_auto_init_test;
 pub mod cli_comprehensive_test;
 pub mod cli_modular_test; // New modular CLI tests // Auto-init and settings tests
+pub mod persona_cli_test; // Persona management CLI tests
 
 // File system and workflow integration tests
 pub mod filesystem_comprehensive_test;

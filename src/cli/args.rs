@@ -14,6 +14,25 @@ pub struct Cli {
 }
 
 #[derive(Subcommand)]
+pub enum PersonaAction {
+    /// Create a new persona
+    Create {
+        /// Persona name
+        name: String,
+        /// Persona description
+        #[arg(short, long)]
+        description: Option<String>,
+    },
+    /// List all personas
+    List,
+    /// Delete a persona
+    Delete {
+        /// Persona name to delete
+        name: String,
+    },
+}
+
+#[derive(Subcommand)]
 pub enum Commands {
     /// Initialize a new use case manager project
     Init {
@@ -49,6 +68,11 @@ pub enum Commands {
         /// New status (planned, in_progress, implemented, tested, deployed, deprecated)
         #[arg(short, long)]
         status: String,
+    },
+    /// Manage personas (create, list, delete)
+    Persona {
+        #[command(subcommand)]
+        action: PersonaAction,
     },
     /// List all use cases
     List,
