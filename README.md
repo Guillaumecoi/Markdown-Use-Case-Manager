@@ -24,13 +24,15 @@ Works great for solo developers, small teams, or any project where you want docu
 
 ## Getting Started
 
-### Installation
+### System Installation
 
 ```bash
 git clone https://github.com/GuillaumeCoi/markdown-use-case-manager
 cd markdown-use-case-manager
-cargo install --path .
+cargo install --path .            # Don't forget the dot at the end
 ```
+
+Now you can run the tool with `mucm` from anywhere.
 
 ### Basic Usage
 
@@ -85,7 +87,7 @@ The use case status automatically reflects the minimum status of all its scenari
 
 ## Configuration
 
-Configure the tool via `.mucm/config.toml`:
+Configure the tool via `.config/.mucm/mucm.toml`:
 
 ```toml
 [project]
@@ -107,7 +109,7 @@ auto_generate_tests = true
 
 The tool is designed to be flexible and adapt to your workflow:
 
-**Custom Templates**: All documentation and test templates are stored in `.mucm/templates/` and can be modified:
+**Custom Templates**: All documentation and test templates are stored in `.config/.mucm/templates/` and can be modified:
 - `use_case_simple.hbs` - Basic use case format
 - `use_case_detailed.hbs` - Detailed use case with scenarios
 - `overview.hbs` - Auto-generated overview page

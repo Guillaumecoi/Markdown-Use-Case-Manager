@@ -1,36 +1,60 @@
 // tests/integration/template_language_tests.rs
 use super::test_helpers::with_temp_dir;
+use crate::test_utils::get_available_test_languages;
 use markdown_use_case_manager::config::Config;
-use markdown_use_case_manager::core::manager::UseCaseManager;
 use markdown_use_case_manager::core::templates::TemplateEngine;
+use markdown_use_case_manager::core::use_case_coordinator::UseCaseCoordinator;
 use std::collections::HashMap;
 use std::fs;
 
+/// Test end-to-end language support initialization
+#[test]
+fn test_end_to_end_language_support() {
+    with_temp_dir(|_temp_dir| {
+        // Test that we can initialize with each supported language
+        for language in &["rust", "python", "javascript", "js", "py"] {
+            let result = Config::init_project_with_language_in_dir(".", Some(language.to_string()));
+            assert!(
+                result.is_ok(),
+                "Failed to initialize with language: {}",
+                language
+            );
+
+            // Clean up for next iteration
+            let config_dir = std::path::Path::new(".config");
+            if config_dir.exists() {
+                fs::remove_dir_all(config_dir).unwrap();
+            }
+        }
+    });
+}
+
 /// Helper to create a manager in the current directory with a given config
-fn create_manager_with_config(config: Config) -> UseCaseManager {
-    // Create the .mucm directory
-    std::fs::create_dir_all(".mucm").unwrap();
+fn create_manager_with_config(config: Config) -> UseCaseCoordinator {
+    // Create the .config/.mucm directory
+    std::fs::create_dir_all(".config/.mucm").unwrap();
 
     // Save config to the current directory
     config.save_in_dir(".").unwrap();
 
     // Load manager from the current directory
-    UseCaseManager::load().unwrap()
+    UseCaseCoordinator::load().unwrap()
 }
 
 #[test]
 fn test_template_engine_language_map() {
-    let template_engine = TemplateEngine::new();
+    let template_engine = TemplateEngine::new().unwrap();
 
-    // Should have rust and python templates
+    // Should have rust, python, and javascript templates
     assert!(template_engine.has_test_template("rust"));
     assert!(template_engine.has_test_template("python"));
-    assert!(!template_engine.has_test_template("javascript"));
+    assert!(template_engine.has_test_template("javascript"));
 
-    let available_languages = template_engine.get_available_test_languages();
+    let available_languages = get_available_test_languages();
     assert!(available_languages.contains(&"rust".to_string()));
     assert!(available_languages.contains(&"python".to_string()));
-    assert_eq!(available_languages.len(), 2);
+    assert!(available_languages.contains(&"javascript".to_string()));
+    assert_eq!(available_languages.len(), 3);
 }
 
 #[test]
@@ -259,7 +283,7 @@ fn test_unsupported_language_warning() {
         // Initialize project with unsupported language
         let mut config = Config::default();
         config.generation.auto_generate_tests = true;
-        config.generation.test_language = "javascript".to_string(); // Unsupported
+        config.generation.test_language = "unsupported_lang".to_string(); // Genuinely unsupported
 
         let mut manager = create_manager_with_config(config);
 
@@ -281,8 +305,9 @@ fn test_unsupported_language_warning() {
             )
             .unwrap();
 
-        // Verify no test file was created
+        // Verify no test file was created for unsupported language
         let test_dir = std::path::Path::new("tests/use-cases/testing");
+        assert!(!test_dir.join("uc_tes_001.txt").exists()); // Should fallback to .txt
         assert!(!test_dir.join("uc_tes_001.js").exists());
         assert!(!test_dir.join("uc_tes_001.rs").exists());
         assert!(!test_dir.join("uc_tes_001.py").exists());

@@ -1,4 +1,6 @@
 // Unit tests for UseCase struct and related functionality
+// Unit tests for UseCase struct and related functionality
+use crate::test_utils::set_scenario_status;
 use markdown_use_case_manager::core::models::{Priority, Scenario, Status, UseCase};
 
 /// Test UseCase::new() creates use case with correct initial values
@@ -17,10 +19,7 @@ fn test_use_case_new() {
     assert_eq!(use_case.description, "Test description for use case");
     assert_eq!(use_case.priority, Priority::Medium);
     assert!(use_case.scenarios.is_empty());
-    assert!(use_case.test_file.is_none());
     assert!(use_case.prerequisites.is_empty());
-    assert!(use_case.tags.is_empty());
-    assert!(use_case.explicit_status.is_none());
     assert!(use_case.metadata.created_at.timestamp() > 0);
 }
 
@@ -48,13 +47,13 @@ fn test_use_case_status_aggregation() {
         "Scenario 2".to_string(),
         "Description 2".to_string(),
     );
-    scenario2.set_status(Status::InProgress);
+    set_scenario_status(&mut scenario2, Status::InProgress);
     let mut scenario3 = Scenario::new(
         "SC-003".to_string(),
         "Scenario 3".to_string(),
         "Description 3".to_string(),
     );
-    scenario3.set_status(Status::Tested);
+    set_scenario_status(&mut scenario3, Status::Tested);
 
     use_case.add_scenario(scenario1);
     assert_eq!(use_case.status(), Status::Planned); // All planned
@@ -64,30 +63,6 @@ fn test_use_case_status_aggregation() {
 
     use_case.add_scenario(scenario3);
     assert_eq!(use_case.status(), Status::InProgress); // Still lowest non-planned
-}
-
-/// Test UseCase::set_explicit_status() overrides aggregated status
-#[test]
-fn test_use_case_explicit_status() {
-    let mut use_case = UseCase::new(
-        "UC-003".to_string(),
-        "Explicit Status Test".to_string(),
-        "test".to_string(),
-        "Testing explicit status override".to_string(),
-    );
-
-    let original_updated_at = use_case.metadata.updated_at;
-
-    // Set explicit status
-    use_case.set_explicit_status(Some(Status::Deployed));
-    assert_eq!(use_case.status(), Status::Deployed);
-    assert_eq!(use_case.explicit_status, Some(Status::Deployed));
-    assert!(use_case.metadata.updated_at >= original_updated_at);
-
-    // Clear explicit status
-    use_case.set_explicit_status(None);
-    assert_eq!(use_case.status(), Status::Planned); // Back to aggregated
-    assert_eq!(use_case.explicit_status, None);
 }
 
 /// Test UseCase::add_scenario() functionality
@@ -146,32 +121,6 @@ fn test_use_case_update_scenario_status() {
     assert!(!not_updated);
 }
 
-/// Test UseCase::add_tag() functionality
-#[test]
-fn test_use_case_add_tag() {
-    let mut use_case = UseCase::new(
-        "UC-006".to_string(),
-        "Tag Test".to_string(),
-        "test".to_string(),
-        "Testing tag functionality".to_string(),
-    );
-
-    let original_updated_at = use_case.metadata.updated_at;
-
-    use_case.add_tag("authentication".to_string());
-    use_case.add_tag("security".to_string());
-
-    assert_eq!(use_case.tags.len(), 2);
-    assert!(use_case.tags.contains(&"authentication".to_string()));
-    assert!(use_case.tags.contains(&"security".to_string()));
-    assert!(use_case.metadata.updated_at >= original_updated_at);
-
-    // Adding duplicate tag should not increase count
-    use_case.add_tag("authentication".to_string());
-    assert_eq!(use_case.tags.len(), 2);
-    // Adding duplicate should not update timestamp further than the previous calls
-}
-
 /// Test UseCase with multiple scenarios
 #[test]
 fn test_use_case_multiple_scenarios() {
@@ -211,9 +160,6 @@ fn test_use_case_clone() {
         "Testing clone functionality".to_string(),
     );
 
-    use_case.add_tag("cloning".to_string());
-    use_case.set_explicit_status(Some(Status::Tested));
-
     let scenario = Scenario::new(
         "SC-008-001".to_string(),
         "Clone Scenario".to_string(),
@@ -229,8 +175,6 @@ fn test_use_case_clone() {
     assert_eq!(use_case.description, cloned.description);
     assert_eq!(use_case.priority, cloned.priority);
     assert_eq!(use_case.scenarios.len(), cloned.scenarios.len());
-    assert_eq!(use_case.tags, cloned.tags);
-    assert_eq!(use_case.explicit_status, cloned.explicit_status);
 }
 
 /// Test UseCase serialization and deserialization
@@ -242,9 +186,6 @@ fn test_use_case_serialization() {
         "serialization".to_string(),
         "Testing serialization capabilities".to_string(),
     );
-
-    use_case.add_tag("serialization".to_string());
-    use_case.set_explicit_status(Some(Status::Implemented));
 
     let scenario = Scenario::new(
         "SC-009-001".to_string(),
@@ -262,8 +203,6 @@ fn test_use_case_serialization() {
     assert_eq!(use_case.title, deserialized.title);
     assert_eq!(use_case.category, deserialized.category);
     assert_eq!(use_case.scenarios.len(), deserialized.scenarios.len());
-    assert_eq!(use_case.tags, deserialized.tags);
-    assert_eq!(use_case.explicit_status, deserialized.explicit_status);
 }
 
 /// Test UseCase with complex scenario status combinations
@@ -282,21 +221,21 @@ fn test_use_case_complex_status_scenarios() {
         "Scenario 1".to_string(),
         "Desc 1".to_string(),
     );
-    scenario1.set_status(Status::Deployed);
+    set_scenario_status(&mut scenario1, Status::Deployed);
 
     let mut scenario2 = Scenario::new(
         "SC-2".to_string(),
         "Scenario 2".to_string(),
         "Desc 2".to_string(),
     );
-    scenario2.set_status(Status::Deprecated);
+    set_scenario_status(&mut scenario2, Status::Deprecated);
 
     let mut scenario3 = Scenario::new(
         "SC-3".to_string(),
         "Scenario 3".to_string(),
         "Desc 3".to_string(),
     );
-    scenario3.set_status(Status::Tested);
+    set_scenario_status(&mut scenario3, Status::Tested);
 
     use_case.add_scenario(scenario1);
     use_case.add_scenario(scenario2);
@@ -345,23 +284,4 @@ fn test_use_case_prerequisites() {
     assert!(use_case
         .prerequisites
         .contains(&"UC-001 must be completed".to_string()));
-}
-
-/// Test UseCase test_file functionality
-#[test]
-fn test_use_case_test_file() {
-    let mut use_case = UseCase::new(
-        "UC-012".to_string(),
-        "Test File Test".to_string(),
-        "test".to_string(),
-        "Testing test file association".to_string(),
-    );
-
-    assert!(use_case.test_file.is_none());
-
-    use_case.test_file = Some("uc_012_test.rs".to_string());
-    assert_eq!(use_case.test_file, Some("uc_012_test.rs".to_string()));
-
-    use_case.test_file = None;
-    assert!(use_case.test_file.is_none());
 }

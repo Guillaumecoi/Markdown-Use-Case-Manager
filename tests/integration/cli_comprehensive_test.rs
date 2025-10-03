@@ -1,6 +1,7 @@
 // CLI integration tests - comprehensive testing of command line interface
 use assert_cmd::Command;
 use predicates::prelude::*;
+use serial_test::serial;
 use std::fs;
 use tempfile::TempDir;
 
@@ -34,6 +35,7 @@ fn test_cli_version() {
 
 /// Test CLI init command in temporary directory
 #[test]
+#[serial]
 fn test_cli_init_creates_project_structure() {
     let temp_dir = TempDir::new().unwrap();
 
@@ -48,18 +50,19 @@ fn test_cli_init_creates_project_structure() {
         ))
         .stdout(predicate::str::contains("Project initialized"))
         .stdout(predicate::str::contains(
-            "Configuration saved to .mucm/mucm.toml",
+            "Configuration saved to .config/.mucm/mucm.toml",
         ));
 
     // Verify project structure was created
-    assert!(temp_dir.path().join(".mucm").exists());
-    assert!(temp_dir.path().join(".mucm/mucm.toml").exists());
-    assert!(temp_dir.path().join(".mucm/templates").exists());
+    assert!(temp_dir.path().join(".config/.mucm").exists());
+    assert!(temp_dir.path().join(".config/.mucm/mucm.toml").exists());
+    assert!(temp_dir.path().join(".config/.mucm/templates").exists());
     assert!(temp_dir.path().join("docs/use-cases").exists());
     assert!(temp_dir.path().join("tests/use-cases").exists());
 
     // Verify config file content
-    let config_content = fs::read_to_string(temp_dir.path().join(".mucm/mucm.toml")).unwrap();
+    let config_content =
+        fs::read_to_string(temp_dir.path().join(".config/.mucm/mucm.toml")).unwrap();
     assert!(config_content.contains("[project]"));
     assert!(config_content.contains("[directories]"));
     assert!(config_content.contains("[metadata]"));
@@ -357,6 +360,7 @@ fn test_cli_missing_arguments() {
 
 /// Test CLI workflow: complete use case lifecycle
 #[test]
+#[serial]
 fn test_cli_complete_workflow() {
     let temp_dir = TempDir::new().unwrap();
 

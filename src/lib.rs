@@ -1,16 +1,12 @@
-// src/lib.rs
-//! Markdown Use Case Manager - A library for managing use cases and scenarios in markdown format
+// Internal test interface - NOT FOR PUBLIC USE
+// This exists solely to support the extensive test suite
+// All public functionality is accessed through the `mucm` CLI binary
+
+#![doc(hidden)]
+#![allow(dead_code)]
 
 pub mod config;
 pub mod core;
 
-pub use core::manager::UseCaseManager;
-pub use core::models::{Priority, Scenario, Status, UseCase};
-
-use anyhow::Result;
-
-/// Initialize a new use case manager project
-pub fn init_project() -> Result<()> {
-    config::Config::init_project()?;
-    Ok(())
-}
+pub use core::models::Priority;
+pub use core::use_case_coordinator::UseCaseCoordinator;

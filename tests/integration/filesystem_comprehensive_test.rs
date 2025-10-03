@@ -1,53 +1,34 @@
-// Integration tests for file system operations and project structure
-use crate::integration::test_helpers::with_temp_dir;
-use markdown_use_case_manager::{config::Config, UseCaseManager};
+// Integration tests for comprehensive filesystem functionality
+use super::test_helpers::with_temp_dir;
+use crate::test_utils::{init_project, init_project_in_dir, load_from_dir, save_config};
+use markdown_use_case_manager::{config::Config, UseCaseCoordinator};
 use std::fs;
 use std::path::Path;
 use tempfile::TempDir;
 
-// Helper function for creating test manager with custom config
-fn create_test_manager_with_config(config: Config) -> (TempDir, UseCaseManager) {
-    let temp_dir = TempDir::new().unwrap();
-    let base_path = temp_dir.path().to_str().unwrap();
-
-    // Create the .mucm directory
-    std::fs::create_dir_all(temp_dir.path().join(".mucm")).unwrap();
-
-    // Save config to the temp directory
-    config.save_in_dir(base_path).unwrap();
-
-    // Set working directory to temp directory
-    std::env::set_current_dir(&temp_dir).unwrap();
-
-    // Load manager from the temp directory
-    let manager = UseCaseManager::load().unwrap();
-
-    (temp_dir, manager)
-}
-
-/// Test Config::init_project() creates proper project structure
+/// Test init_project() creates proper project structure
 #[test]
 fn test_config_init_project_creates_structure() {
     let temp_dir = TempDir::new().unwrap();
 
     // Initialize project in temp directory
-    let config = Config::init_project_in_dir(temp_dir.path().to_str().unwrap())
+    let config = init_project_in_dir(temp_dir.path().to_str().unwrap())
         .expect("Failed to initialize project");
 
     // Verify config was created
     let temp_path = temp_dir.path();
-    assert!(temp_path.join(".mucm").exists());
-    assert!(temp_path.join(".mucm/mucm.toml").exists());
+    assert!(temp_path.join(".config/.mucm").exists());
+    assert!(temp_path.join(".config/.mucm/mucm.toml").exists());
 
     // Verify templates directory was created (templates may or may not be copied depending on source availability)
-    assert!(temp_path.join(".mucm/templates").exists());
+    assert!(temp_path.join(".config/.mucm/templates").exists());
 
     // Verify directories were created
     assert!(temp_path.join(&config.directories.use_case_dir).exists());
     assert!(temp_path.join(&config.directories.test_dir).exists());
 
     // Verify config content
-    let config_content = fs::read_to_string(temp_path.join(".mucm/mucm.toml")).unwrap();
+    let config_content = fs::read_to_string(temp_path.join(".config/.mucm/mucm.toml")).unwrap();
     assert!(config_content.contains("[project]"));
     assert!(config_content.contains("name = \"My Project\""));
     assert!(config_content.contains("[directories]"));
@@ -62,11 +43,11 @@ fn test_config_load_existing() {
     let temp_dir = TempDir::new().unwrap();
 
     // Create config first
-    let original_config = Config::init_project_in_dir(temp_dir.path().to_str().unwrap()).unwrap();
+    let original_config = init_project_in_dir(temp_dir.path().to_str().unwrap()).unwrap();
 
     // Load config
     let loaded_config =
-        Config::load_from_dir(temp_dir.path().to_str().unwrap()).expect("Failed to load config");
+        load_from_dir(temp_dir.path().to_str().unwrap()).expect("Failed to load config");
 
     assert_eq!(original_config.project.name, loaded_config.project.name);
     assert_eq!(
@@ -85,7 +66,7 @@ fn test_config_load_no_project() {
     let temp_dir = TempDir::new().unwrap();
 
     // Try to load config without initializing
-    let result = Config::load_from_dir(temp_dir.path().to_str().unwrap());
+    let result = load_from_dir(temp_dir.path().to_str().unwrap());
     assert!(result.is_err());
 
     let error = result.unwrap_err();
@@ -101,7 +82,7 @@ fn test_config_save_modifications() {
     let temp_dir = TempDir::new().unwrap();
 
     // Initialize and modify config
-    let mut config = Config::init_project_in_dir(temp_dir.path().to_str().unwrap()).unwrap();
+    let mut config = init_project_in_dir(temp_dir.path().to_str().unwrap()).unwrap();
     config.project.name = "Modified Project".to_string();
     config.generation.test_language = "javascript".to_string();
     config.metadata.enabled = false;
@@ -112,55 +93,46 @@ fn test_config_save_modifications() {
         .expect("Failed to save config");
 
     // Load and verify changes
-    let loaded_config = Config::load_from_dir(temp_dir.path().to_str().unwrap()).unwrap();
+    let loaded_config = load_from_dir(temp_dir.path().to_str().unwrap()).unwrap();
     assert_eq!(loaded_config.project.name, "Modified Project");
     assert_eq!(loaded_config.generation.test_language, "javascript");
     assert!(!loaded_config.metadata.enabled);
 }
 
-/// Test UseCaseManager::load() works with existing project
+/// Test UseCaseCoordinator::load() works with existing project
 #[test]
 fn test_use_case_manager_load() {
-    let temp_dir = TempDir::new().unwrap();
-    let original_dir = std::env::current_dir().unwrap();
-    std::env::set_current_dir(&temp_dir).unwrap();
-
-    // Initialize project - retry a few times in case of transient filesystem issues
-    let mut init_result = Config::init_project();
-    if init_result.is_err() {
-        std::thread::sleep(std::time::Duration::from_millis(10));
-        init_result = Config::init_project();
-    }
-
-    match init_result {
-        Ok(_) => {}
-        Err(e) => {
-            std::env::set_current_dir(original_dir).unwrap();
-            panic!("Config init failed: {:?}", e);
+    with_temp_dir(|_temp_dir| {
+        // Initialize project - retry a few times in case of transient filesystem issues
+        let mut init_result = init_project();
+        if init_result.is_err() {
+            std::thread::sleep(std::time::Duration::from_millis(10));
+            init_result = init_project();
         }
-    }
 
-    // Load manager
-    let _manager = UseCaseManager::load().expect("Failed to load UseCaseManager");
+        match init_result {
+            Ok(_) => {}
+            Err(e) => {
+                panic!("Config init failed: {:?}", e);
+            }
+        }
 
-    // Should start with empty use cases
-    // Note: We can't directly access use_cases field, but we can test behavior
+        // Load manager
+        let _manager = UseCaseCoordinator::load().expect("Failed to load UseCaseCoordinator");
 
-    std::env::set_current_dir(original_dir).unwrap();
+        // Should start with empty use cases
+        // Note: We can't directly access use_cases field, but we can test behavior
+    });
 }
 
-/// Test UseCaseManager::load() fails without project
+/// Test UseCaseCoordinator::load() fails without project
 #[test]
 fn test_use_case_manager_load_no_project() {
-    let temp_dir = TempDir::new().unwrap();
-    let original_dir = std::env::current_dir().unwrap();
-    std::env::set_current_dir(&temp_dir).unwrap();
-
-    // Try to load without project
-    let result = UseCaseManager::load();
-    assert!(result.is_err());
-
-    std::env::set_current_dir(original_dir).unwrap();
+    with_temp_dir(|_temp_dir| {
+        // Try to load without project
+        let result = UseCaseCoordinator::load();
+        assert!(result.is_err());
+    });
 }
 
 /// Test use case file creation and directory structure
@@ -168,8 +140,8 @@ fn test_use_case_manager_load_no_project() {
 fn test_use_case_file_creation() {
     with_temp_dir(|_temp_dir| {
         // Initialize project and create use case
-        Config::init_project().unwrap();
-        let mut manager = UseCaseManager::load().unwrap();
+        init_project().unwrap();
+        let mut manager = UseCaseCoordinator::load().unwrap();
 
         let use_case_id = manager
             .create_use_case(
@@ -195,66 +167,77 @@ fn test_use_case_file_creation() {
 /// Test scenario addition and file updates
 #[test]
 fn test_scenario_file_updates() {
-    // Initialize project with test generation enabled
-    let mut config = Config::default();
-    config.generation.auto_generate_tests = true;
-    config.generation.test_language = "rust".to_string();
+    with_temp_dir(|temp_dir| {
+        // Initialize project with test generation enabled
+        let mut config = Config::default();
+        config.generation.auto_generate_tests = true;
+        config.generation.test_language = "rust".to_string();
 
-    let (_temp_dir, mut manager) = create_test_manager_with_config(config);
+        // Initialize project
+        init_project().unwrap();
 
-    // Create use case
-    let use_case_id = manager
-        .create_use_case(
-            "Scenario Test".to_string(),
-            "testing".to_string(),
-            Some("Test with scenarios".to_string()),
-        )
-        .unwrap();
+        // Save the custom config
+        config
+            .save_in_dir(temp_dir.path().to_str().unwrap())
+            .unwrap();
 
-    // Add scenario
-    let scenario_id = manager
-        .add_scenario_to_use_case(
-            use_case_id.clone(),
-            "Test Scenario".to_string(),
-            Some("Scenario description".to_string()),
-        )
-        .expect("Failed to add scenario");
+        // Load manager
+        let mut manager = UseCaseCoordinator::load().unwrap();
 
-    // Verify file was updated
-    let use_case_path = Path::new("docs/use-cases/testing").join(format!("{}.md", use_case_id));
-    let content = fs::read_to_string(&use_case_path).unwrap();
-    assert!(content.contains("Test Scenario"));
-    assert!(content.contains(&scenario_id));
-    assert!(content.contains("Scenario description"));
+        // Create use case
+        let use_case_id = manager
+            .create_use_case(
+                "Scenario Test".to_string(),
+                "testing".to_string(),
+                Some("Test with scenarios".to_string()),
+            )
+            .unwrap();
 
-    // Verify test file was created
-    let test_path = Path::new("tests/use-cases/testing").join(format!(
-        "{}.rs",
-        use_case_id.to_lowercase().replace('-', "_")
-    ));
-    assert!(test_path.exists());
+        // Add scenario
+        let scenario_id = manager
+            .add_scenario_to_use_case(
+                use_case_id.clone(),
+                "Test Scenario".to_string(),
+                Some("Scenario description".to_string()),
+            )
+            .expect("Failed to add scenario");
 
-    let test_content = fs::read_to_string(&test_path).unwrap();
-    assert!(
-        test_content.contains("AUTO-GENERATED TEST"),
-        "Should contain test generation marker"
-    );
-    assert!(
-        test_content.contains(&use_case_id),
-        "Should contain use case ID"
-    );
-    assert!(
-        test_content.contains("Test Scenario"),
-        "Should contain scenario name"
-    );
+        // Verify file was updated
+        let use_case_path = Path::new("docs/use-cases/testing").join(format!("{}.md", use_case_id));
+        let content = fs::read_to_string(&use_case_path).unwrap();
+        assert!(content.contains("Test Scenario"));
+        assert!(content.contains(&scenario_id));
+        assert!(content.contains("Scenario description"));
+
+        // Verify test file was created
+        let test_path = Path::new("tests/use-cases/testing").join(format!(
+            "{}.rs",
+            use_case_id.to_lowercase().replace('-', "_")
+        ));
+        assert!(test_path.exists());
+
+        let test_content = fs::read_to_string(&test_path).unwrap();
+        assert!(
+            test_content.contains("AUTO-GENERATED TEST"),
+            "Should contain test generation marker"
+        );
+        assert!(
+            test_content.contains(&use_case_id),
+            "Should contain use case ID"
+        );
+        assert!(
+            test_content.contains("Test Scenario"),
+            "Should contain scenario name"
+        );
+    });
 }
 
 /// Test multiple categories create separate directories
 #[test]
 fn test_multiple_categories() {
     with_temp_dir(|_temp_dir| {
-        Config::init_project().unwrap();
-        let mut manager = UseCaseManager::load().unwrap();
+        init_project().unwrap();
+        let mut manager = UseCaseCoordinator::load().unwrap();
 
         // Create use cases in different categories
         let auth_id = manager
@@ -295,8 +278,8 @@ fn test_multiple_categories() {
 #[test]
 fn test_overview_generation() {
     with_temp_dir(|_temp_dir| {
-        Config::init_project().unwrap();
-        let mut manager = UseCaseManager::load().unwrap();
+        init_project().unwrap();
+        let mut manager = UseCaseCoordinator::load().unwrap();
 
         // Create multiple use cases
         manager
@@ -341,11 +324,11 @@ fn test_overview_generation() {
 #[test]
 fn test_file_persistence_and_reload() {
     with_temp_dir(|_temp_dir| {
-        Config::init_project().unwrap();
+        init_project().unwrap();
 
         // Create and save use cases with first manager instance
         {
-            let mut manager = UseCaseManager::load().unwrap();
+            let mut manager = UseCaseCoordinator::load().unwrap();
             manager
                 .create_use_case(
                     "Persistent Test".to_string(),
@@ -365,7 +348,7 @@ fn test_file_persistence_and_reload() {
 
         // Load with new manager instance and verify data persisted
         {
-            let _manager = UseCaseManager::load().unwrap();
+            let _manager = UseCaseCoordinator::load().unwrap();
 
             // Use a public method to verify the use cases were loaded
             // Since we can't access private fields, we'll use list_use_cases output capture
@@ -384,8 +367,8 @@ fn test_file_persistence_and_reload() {
 #[test]
 fn test_file_operation_error_handling() {
     with_temp_dir(|_temp_dir| {
-        Config::init_project().unwrap();
-        let mut manager = UseCaseManager::load().unwrap();
+        init_project().unwrap();
+        let mut manager = UseCaseCoordinator::load().unwrap();
 
         // Try to add scenario to non-existent use case
         let result = manager.add_scenario_to_use_case(
@@ -407,7 +390,7 @@ fn test_file_operation_error_handling() {
 fn test_custom_directory_configuration() {
     with_temp_dir(|_temp_dir| {
         // Initialize project first to create proper structure
-        Config::init_project().unwrap();
+        init_project().unwrap();
 
         // Create custom config
         let mut config = Config::default();
@@ -415,14 +398,14 @@ fn test_custom_directory_configuration() {
         config.directories.test_dir = "custom_tests".to_string();
 
         // Save custom config
-        config.save().unwrap();
+        save_config(&config).unwrap();
 
         // Create directories
         fs::create_dir_all(&config.directories.use_case_dir).unwrap();
         fs::create_dir_all(&config.directories.test_dir).unwrap();
 
         // Use manager with custom config
-        let mut manager = UseCaseManager::load().unwrap();
+        let mut manager = UseCaseCoordinator::load().unwrap();
         let use_case_id = manager
             .create_use_case("Custom Dir Test".to_string(), "custom".to_string(), None)
             .unwrap();

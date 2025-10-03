@@ -1,4 +1,6 @@
 // src/config/mod.rs
+use crate::core::languages::LanguageRegistry;
+use crate::core::templates::TemplateEngine;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -62,10 +64,6 @@ pub struct MetadataConfig {
     pub include_created: bool,
     /// Last updated timestamp (automatically set to current time)  
     pub include_last_updated: bool,
-    /// Tags array (automatically set to empty)
-    pub include_tags: bool,
-    /// Test file path (automatically set when tests are generated)
-    pub include_test_file: bool,
 
     // Custom fields that user fills manually (always empty by default)
     // Add field names here that you want to appear in the metadata for manual completion
@@ -74,36 +72,92 @@ pub struct MetadataConfig {
 }
 
 impl Config {
-    const CONFIG_DIR: &'static str = ".mucm";
+    const CONFIG_DIR: &'static str = ".config/.mucm";
     const CONFIG_FILE: &'static str = "mucm.toml";
     const TEMPLATES_DIR: &'static str = "templates";
+    const LANGUAGE_PREFIX: &'static str = "lang-";
+    const SOURCE_TEMPLATES_DIR: &'static str = "templates"; // Source templates in the project
 
     pub fn config_path() -> PathBuf {
         Path::new(Self::CONFIG_DIR).join(Self::CONFIG_FILE)
     }
 
-    pub fn templates_dir() -> PathBuf {
-        Path::new(Self::CONFIG_DIR).join(Self::TEMPLATES_DIR)
+    /// Get list of available programming languages from source templates and local config
+    pub fn get_available_languages() -> Result<Vec<String>> {
+        let mut languages = Vec::new();
+
+        // Start with built-in language registry
+        let language_registry = LanguageRegistry::new();
+        languages.extend(language_registry.available_languages());
+
+        // Look for user-defined languages in current directory
+        let config_dir = Path::new(Self::CONFIG_DIR);
+        let templates_dir = config_dir.join(Self::TEMPLATES_DIR);
+
+        if templates_dir.exists() {
+            for entry in fs::read_dir(&templates_dir)? {
+                let entry = entry?;
+                if entry.file_type()?.is_dir() {
+                    let dir_name = entry.file_name().to_string_lossy().to_string();
+
+                    // Check for "lang-{language}" pattern (preferred)
+                    if let Some(lang) = dir_name.strip_prefix("lang-") {
+                        if !languages.contains(&lang.to_string()) {
+                            languages.push(lang.to_string());
+                        }
+                    }
+                }
+            }
+        }
+
+        languages.sort();
+        Ok(languages)
     }
 
-    pub fn init_project() -> Result<Self> {
-        Self::init_project_in_dir(".")
+    pub fn init_project_with_language(language: Option<String>) -> Result<Self> {
+        Self::init_project_with_language_in_dir(".", language)
     }
 
-    pub fn init_project_in_dir(base_dir: &str) -> Result<Self> {
+    pub fn init_project_with_language_in_dir(
+        base_dir: &str,
+        language: Option<String>,
+    ) -> Result<Self> {
         let base_path = Path::new(base_dir);
         let config_dir = base_path.join(Self::CONFIG_DIR);
 
-        // Create .mucm directory if it doesn't exist
-        if !config_dir.exists() {
-            fs::create_dir_all(&config_dir).context("Failed to create .mucm directory")?;
+        // Validate language if provided - check both current directory and built-ins
+        if let Some(ref lang) = language {
+            let language_registry = LanguageRegistry::new();
+
+            // First check if the language is supported by the built-in registry
+            if language_registry.is_supported(lang) {
+                // Language is supported, continue
+            } else {
+                // Check available languages from current working directory as fallback
+                let available_languages = Self::get_available_languages()?;
+                if !available_languages.contains(lang) {
+                    anyhow::bail!("Unsupported language '{}'. Supported languages: {}. Add templates to .config/.mucm/templates/lang-{}/ to support this language.", 
+                                lang, available_languages.join(", "), lang);
+                }
+            }
         }
 
-        let config = Self::default();
+        // Create .config/.mucm directory if it doesn't exist
+        if !config_dir.exists() {
+            fs::create_dir_all(&config_dir).context("Failed to create .config/.mucm directory")?;
+        }
+
+        let mut config = Self::default();
+
+        // Set the test language if provided
+        if let Some(ref lang) = language {
+            config.generation.test_language = lang.clone();
+        }
+
         config.save_in_dir(base_dir)?;
 
-        // Copy templates to .mucm/templates/
-        Self::copy_templates_to_config_in_dir(base_dir)?;
+        // Copy templates to .config/.mucm/templates/
+        Self::copy_templates_to_config_with_language_in_dir(base_dir, language)?;
 
         // Create default directories
         let use_case_dir = base_path.join(&config.directories.use_case_dir);
@@ -115,16 +169,16 @@ impl Config {
         Ok(config)
     }
 
-    fn copy_templates_to_config_in_dir(base_dir: &str) -> Result<()> {
+    fn copy_templates_to_config_with_language_in_dir(
+        base_dir: &str,
+        language: Option<String>,
+    ) -> Result<()> {
         let base_path = Path::new(base_dir);
         let config_templates_dir = base_path.join(Self::CONFIG_DIR).join(Self::TEMPLATES_DIR);
 
         // Create templates directory in config
         fs::create_dir_all(&config_templates_dir)
             .context("Failed to create config templates directory")?;
-
-        // Get built-in templates from TemplateEngine
-        use crate::core::templates::TemplateEngine;
 
         // Define template files and their content
         let templates = [
@@ -157,43 +211,98 @@ impl Config {
         }
 
         // Create language-specific template directories and files
-        Self::copy_language_templates(&config_templates_dir)?;
+        Self::copy_language_templates_selective(&config_templates_dir, language)?;
 
         Ok(())
     }
 
-    /// Copy language-specific templates to config directory
-    fn copy_language_templates(config_templates_dir: &Path) -> Result<()> {
-        use crate::core::templates::TemplateEngine;
+    /// Copy language-specific templates to config directory with optional language filter
+    fn copy_language_templates_selective(
+        config_templates_dir: &Path,
+        language: Option<String>,
+    ) -> Result<()> {
+        let Some(lang) = language else {
+            return Ok(()); // No language specified, don't copy any language templates
+        };
 
-        // Create Rust templates directory
-        let rust_dir = config_templates_dir.join("rust");
-        fs::create_dir_all(&rust_dir).context("Failed to create rust templates directory")?;
+        // First try to copy from source templates (built-in)
+        let source_lang_dir = Path::new(Self::SOURCE_TEMPLATES_DIR).join(format!(
+            "{}{}",
+            Self::LANGUAGE_PREFIX,
+            &lang
+        ));
 
-        let rust_templates = [("test.hbs", TemplateEngine::get_rust_test_template())];
+        if source_lang_dir.exists() {
+            // Copy from source templates
+            let target_lang_dir = config_templates_dir.join(format!("{}{}", Self::LANGUAGE_PREFIX, &lang));
 
-        for (template_name, template_content) in rust_templates {
-            let template_path = rust_dir.join(template_name);
-            let mut file = std::fs::File::create(&template_path)
-                .context("Failed to create rust template file")?;
-            file.write_all(template_content.as_bytes())
-                .context("Failed to write rust template content")?;
-            println!("Created template: rust/{}", template_name);
-        }
+            fs::create_dir_all(&target_lang_dir)
+                .context("Failed to create language templates directory")?;
 
-        // Create Python templates directory
-        let python_dir = config_templates_dir.join("python");
-        fs::create_dir_all(&python_dir).context("Failed to create python templates directory")?;
+            // Copy all files from source to target
+            if let Ok(entries) = fs::read_dir(&source_lang_dir) {
+                for entry in entries.flatten() {
+                    let source_file = entry.path();
+                    if source_file.is_file() {
+                        if let Some(filename) = source_file.file_name() {
+                            let target_file = target_lang_dir.join(filename);
+                            fs::copy(&source_file, &target_file)
+                                .context("Failed to copy template file")?;
 
-        let python_templates = [("test.hbs", TemplateEngine::get_python_test_template())];
+                            let dir_name = target_lang_dir
+                                .file_name()
+                                .and_then(|n| n.to_str())
+                                .unwrap_or("unknown");
+                            let file_name = filename.to_str().unwrap_or("unknown");
+                            println!("Created template: {}/{}", dir_name, file_name);
+                        }
+                    }
+                }
+            }
+        } else {
+            // Fallback to built-in template generation using the language registry
+            let language_registry = LanguageRegistry::new();
+            if let Some(language_impl) = language_registry.get(&lang) {
+                let target_lang_dir = config_templates_dir.join(format!("{}{}", Self::LANGUAGE_PREFIX, &lang));
 
-        for (template_name, template_content) in python_templates {
-            let template_path = python_dir.join(template_name);
-            let mut file = std::fs::File::create(&template_path)
-                .context("Failed to create python template file")?;
-            file.write_all(template_content.as_bytes())
-                .context("Failed to write python template content")?;
-            println!("Created template: python/{}", template_name);
+                fs::create_dir_all(&target_lang_dir)
+                    .context("Failed to create language templates directory")?;
+
+                let test_template_content = language_impl.test_template();
+                let template_path = target_lang_dir.join("test.hbs");
+                let mut file = std::fs::File::create(&template_path)
+                    .context("Failed to create language template file")?;
+                file.write_all(test_template_content.as_bytes())
+                    .context("Failed to write language template content")?;
+
+                let dir_name = target_lang_dir
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("unknown");
+                println!("Created template: {}/test.hbs", dir_name);
+            } else {
+                // For unsupported languages, create a placeholder directory
+                let lang_dir =
+                    config_templates_dir.join(format!("{}{}", Self::LANGUAGE_PREFIX, lang));
+                fs::create_dir_all(&lang_dir)
+                    .context("Failed to create language templates directory")?;
+
+                // Create a basic test template placeholder
+                let test_template_path = lang_dir.join("test.hbs");
+                let placeholder_content = format!(
+                    "// Test template for {} - customize as needed\n// Use case: {{{{title}}}}\n",
+                    lang
+                );
+
+                let mut file = std::fs::File::create(&test_template_path)
+                    .context("Failed to create language template file")?;
+                file.write_all(placeholder_content.as_bytes())
+                    .context("Failed to write language template content")?;
+                println!(
+                    "Created template: {}/test.hbs",
+                    lang_dir.file_name().unwrap().to_str().unwrap()
+                );
+            }
         }
 
         Ok(())
@@ -211,30 +320,6 @@ impl Config {
         let config: Config = toml::from_str(&content).context("Failed to parse config file")?;
 
         Ok(config)
-    }
-
-    pub fn load_from_dir(base_dir: &str) -> Result<Self> {
-        let base_path = Path::new(base_dir);
-        let config_path = base_path.join(Self::CONFIG_DIR).join("mucm.toml");
-
-        if !config_path.exists() {
-            anyhow::bail!("No markdown use case manager project found. Run 'mucm init' first.");
-        }
-
-        let content = fs::read_to_string(&config_path).context("Failed to read config file")?;
-
-        let config: Config = toml::from_str(&content).context("Failed to parse config file")?;
-
-        Ok(config)
-    }
-
-    pub fn save(&self) -> Result<()> {
-        let config_path = Self::config_path();
-        let content = toml::to_string_pretty(self).context("Failed to serialize config")?;
-
-        fs::write(&config_path, content).context("Failed to write config file")?;
-
-        Ok(())
     }
 
     pub fn save_in_dir(&self, base_dir: &str) -> Result<()> {
@@ -279,8 +364,6 @@ impl Default for Config {
                 include_priority: true,
                 include_created: true,
                 include_last_updated: true,
-                include_tags: false,
-                include_test_file: true,
                 custom_fields: vec![
                     "author".to_string(),
                     "reviewer".to_string(),

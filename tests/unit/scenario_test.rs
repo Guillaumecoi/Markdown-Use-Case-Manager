@@ -1,4 +1,5 @@
 // Unit tests for Scenario struct and related functionality
+use crate::test_utils::set_scenario_status;
 use markdown_use_case_manager::core::models::{Scenario, Status};
 
 /// Test Scenario::new() creates scenario with correct initial values
@@ -14,7 +15,6 @@ fn test_scenario_new() {
     assert_eq!(scenario.title, "Test Scenario");
     assert_eq!(scenario.description, "Test description for scenario");
     assert_eq!(scenario.status, Status::Planned);
-    assert!(scenario.test_file.is_none());
 
     // Metadata should be initialized
     assert!(scenario.metadata.created_at.timestamp() > 0);
@@ -34,7 +34,7 @@ fn test_scenario_set_status() {
     // Small delay to ensure timestamp difference
     std::thread::sleep(std::time::Duration::from_millis(10));
 
-    scenario.set_status(Status::InProgress);
+    set_scenario_status(&mut scenario, Status::InProgress);
 
     assert_eq!(scenario.status, Status::InProgress);
     assert!(scenario.metadata.updated_at > original_updated);
@@ -59,7 +59,7 @@ fn test_scenario_multiple_status_updates() {
     ];
 
     for status in statuses.iter() {
-        scenario.set_status(*status);
+        set_scenario_status(&mut scenario, *status);
         assert_eq!(scenario.status, *status);
         // Verify timestamp gets updated with each status change
         assert!(scenario.metadata.updated_at >= last_updated);
@@ -96,24 +96,6 @@ fn test_scenario_long_strings() {
     assert_eq!(scenario.description, long_description);
 }
 
-/// Test scenario test_file field functionality
-#[test]
-fn test_scenario_test_file() {
-    let mut scenario = Scenario::new(
-        "SC-004".to_string(),
-        "Test File Scenario".to_string(),
-        "Testing test file association".to_string(),
-    );
-
-    assert!(scenario.test_file.is_none());
-
-    scenario.test_file = Some("test_scenario_004.rs".to_string());
-    assert_eq!(scenario.test_file, Some("test_scenario_004.rs".to_string()));
-
-    scenario.test_file = None;
-    assert!(scenario.test_file.is_none());
-}
-
 /// Test scenario clone functionality
 #[test]
 fn test_scenario_clone() {
@@ -123,8 +105,7 @@ fn test_scenario_clone() {
         "Testing clone functionality".to_string(),
     );
 
-    scenario.set_status(Status::Tested);
-    scenario.test_file = Some("test_file.rs".to_string());
+    set_scenario_status(&mut scenario, Status::Tested);
 
     let cloned = scenario.clone();
 
@@ -132,7 +113,6 @@ fn test_scenario_clone() {
     assert_eq!(scenario.title, cloned.title);
     assert_eq!(scenario.description, cloned.description);
     assert_eq!(scenario.status, cloned.status);
-    assert_eq!(scenario.test_file, cloned.test_file);
     assert_eq!(scenario.metadata.created_at, cloned.metadata.created_at);
     assert_eq!(scenario.metadata.updated_at, cloned.metadata.updated_at);
 }
@@ -146,8 +126,7 @@ fn test_scenario_serialization() {
         "Testing serialization capabilities".to_string(),
     );
 
-    scenario.set_status(Status::Implemented);
-    scenario.test_file = Some("serialization_test.rs".to_string());
+    set_scenario_status(&mut scenario, Status::Implemented);
 
     // Test serialization (used internally)
     let json = serde_json::to_string(&scenario).expect("Failed to serialize");
@@ -157,7 +136,6 @@ fn test_scenario_serialization() {
     assert_eq!(scenario.title, deserialized.title);
     assert_eq!(scenario.description, deserialized.description);
     assert_eq!(scenario.status, deserialized.status);
-    assert_eq!(scenario.test_file, deserialized.test_file);
     assert_eq!(
         scenario.metadata.created_at,
         deserialized.metadata.created_at
@@ -214,22 +192,22 @@ fn test_scenario_status_transitions() {
     // Typical workflow: Planned -> InProgress -> Implemented -> Tested -> Deployed
     assert_eq!(scenario.status, Status::Planned);
 
-    scenario.set_status(Status::InProgress);
+    set_scenario_status(&mut scenario, Status::InProgress);
     assert_eq!(scenario.status, Status::InProgress);
 
-    scenario.set_status(Status::Implemented);
+    set_scenario_status(&mut scenario, Status::Implemented);
     assert_eq!(scenario.status, Status::Implemented);
 
-    scenario.set_status(Status::Tested);
+    set_scenario_status(&mut scenario, Status::Tested);
     assert_eq!(scenario.status, Status::Tested);
 
-    scenario.set_status(Status::Deployed);
+    set_scenario_status(&mut scenario, Status::Deployed);
     assert_eq!(scenario.status, Status::Deployed);
 
     // Can also go backwards or skip steps
-    scenario.set_status(Status::InProgress);
+    set_scenario_status(&mut scenario, Status::InProgress);
     assert_eq!(scenario.status, Status::InProgress);
 
-    scenario.set_status(Status::Deprecated);
+    set_scenario_status(&mut scenario, Status::Deprecated);
     assert_eq!(scenario.status, Status::Deprecated);
 }

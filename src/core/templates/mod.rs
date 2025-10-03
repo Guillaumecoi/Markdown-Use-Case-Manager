@@ -1,10 +1,7 @@
-use crate::config::Config;
 use anyhow::{Context, Result};
 use handlebars::Handlebars;
 use serde_json::Value;
 use std::collections::HashMap;
-use std::fs;
-use std::path::Path;
 
 #[derive(Debug)]
 pub struct TemplateEngine {
@@ -13,157 +10,44 @@ pub struct TemplateEngine {
 }
 
 impl TemplateEngine {
-    pub fn new() -> Self {
-        Self::with_config(None)
-    }
-
-    pub fn with_config(config: Option<&Config>) -> Self {
+    pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let mut handlebars = Handlebars::new();
 
-        // Disable HTML escaping since we're generating Markdown, not HTML
-        handlebars.set_strict_mode(false);
-        handlebars.register_escape_fn(handlebars::no_escape);
-
-        // Determine which use case template to use based on config
-        let use_case_style = config
-            .and_then(|c| c.templates.use_case_style.as_ref())
-            .map(|s| s.as_str())
-            .unwrap_or("simple");
-
-        // Use config templates directory
-        let templates_dir = crate::config::Config::templates_dir();
-        let use_case_template_file = match use_case_style {
-            "detailed" => templates_dir.join("use_case_detailed.hbs"),
-            _ => templates_dir.join("use_case_simple.hbs"), // default to simple
-        };
-
-        // Register core templates
-        Self::register_template(
-            &mut handlebars,
-            "use_case",
-            &use_case_template_file.to_string_lossy(),
-            Self::use_case_template,
-        );
-        Self::register_template(
-            &mut handlebars,
+        // Register built-in templates
+        handlebars.register_template_string(
+            "use_case_simple",
+            include_str!("../../../templates/use_case_simple.hbs"),
+        )?;
+        handlebars.register_template_string(
+            "use_case_detailed",
+            include_str!("../../../templates/use_case_detailed.hbs"),
+        )?;
+        handlebars.register_template_string(
             "overview",
-            &templates_dir.join("overview.hbs").to_string_lossy(),
-            Self::overview_template,
-        );
+            include_str!("../../../templates/overview.hbs"),
+        )?;
 
-        // Initialize test templates map
+        // Register language test templates using LanguageRegistry
         let mut test_templates = HashMap::new();
 
-        // Load language-specific test templates if test generation is enabled
-        if let Some(config) = config {
-            if config.generation.auto_generate_tests {
-                Self::load_test_templates_for_language(
-                    &mut handlebars,
-                    &mut test_templates,
-                    &config.generation.test_language,
-                    &templates_dir,
-                );
+        use crate::core::languages::LanguageRegistry;
+        let language_registry = LanguageRegistry::new();
+        for language_name in language_registry.available_languages() {
+            if let Some(language) = language_registry.get(&language_name) {
+                let template_name = format!("{}_test", language.name());
+                handlebars.register_template_string(&template_name, language.test_template())?;
+                test_templates.insert(language.name().to_string(), template_name);
             }
-        } else {
-            // Default case: load all test templates
-            Self::load_all_test_templates(&mut handlebars, &mut test_templates, &templates_dir);
         }
 
-        Self {
+        Ok(TemplateEngine {
             handlebars,
             test_templates,
-        }
+        })
     }
 
-    /// Load test templates for a specific language
-    fn load_test_templates_for_language(
-        handlebars: &mut Handlebars,
-        test_templates: &mut HashMap<String, String>,
-        language: &str,
-        templates_dir: &Path,
-    ) {
-        match language {
-            "rust" => {
-                let rust_dir = templates_dir.join("rust");
-                Self::register_template(
-                    handlebars,
-                    "rust_test",
-                    &rust_dir.join("test.hbs").to_string_lossy(),
-                    Self::rust_test_template,
-                );
-                test_templates.insert("rust".to_string(), "rust_test".to_string());
-            }
-            "python" => {
-                let python_dir = templates_dir.join("python");
-                Self::register_template(
-                    handlebars,
-                    "python_test",
-                    &python_dir.join("test.hbs").to_string_lossy(),
-                    Self::python_test_template,
-                );
-                test_templates.insert("python".to_string(), "python_test".to_string());
-            }
-            _ => {
-                println!(
-                    "Warning: Unsupported test language '{}', skipping test template loading",
-                    language
-                );
-            }
-        }
-    }
-
-    /// Load all available test templates (for initialization)
-    fn load_all_test_templates(
-        handlebars: &mut Handlebars,
-        test_templates: &mut HashMap<String, String>,
-        templates_dir: &Path,
-    ) {
-        // Load Rust templates
-        let rust_dir = templates_dir.join("rust");
-        Self::register_template(
-            handlebars,
-            "rust_test",
-            &rust_dir.join("test.hbs").to_string_lossy(),
-            Self::rust_test_template,
-        );
-        test_templates.insert("rust".to_string(), "rust_test".to_string());
-
-        // Load Python templates
-        let python_dir = templates_dir.join("python");
-        Self::register_template(
-            handlebars,
-            "python_test",
-            &python_dir.join("test.hbs").to_string_lossy(),
-            Self::python_test_template,
-        );
-        test_templates.insert("python".to_string(), "python_test".to_string());
-    }
-
-    fn register_template<F>(handlebars: &mut Handlebars, name: &str, file_path: &str, fallback: F)
-    where
-        F: Fn() -> &'static str,
-    {
-        let template_content = if Path::new(file_path).exists() {
-            match fs::read_to_string(file_path) {
-                Ok(content) => {
-                    println!("Loaded custom template: {}", file_path);
-                    content
-                }
-                Err(_) => {
-                    println!(
-                        "Warning: Failed to read {}, using built-in template",
-                        file_path
-                    );
-                    fallback().to_string()
-                }
-            }
-        } else {
-            fallback().to_string()
-        };
-
-        handlebars
-            .register_template_string(name, template_content)
-            .unwrap_or_else(|_| panic!("Failed to register {} template", name));
+    pub fn with_config(_config: Option<&crate::config::Config>) -> Self {
+        Self::new().unwrap()
     }
 
     pub fn render_overview(&self, data: &HashMap<String, Value>) -> Result<String> {
@@ -174,7 +58,7 @@ impl TemplateEngine {
 
     pub fn render_use_case(&self, data: &HashMap<String, Value>) -> Result<String> {
         self.handlebars
-            .render("use_case", data)
+            .render("use_case_simple", data)
             .context("Failed to render use case template")
     }
 
@@ -195,11 +79,6 @@ impl TemplateEngine {
     /// Check if test templates are available for a language
     pub fn has_test_template(&self, language: &str) -> bool {
         self.test_templates.contains_key(language)
-    }
-
-    /// Get available test languages
-    pub fn get_available_test_languages(&self) -> Vec<String> {
-        self.test_templates.keys().cloned().collect()
     }
 
     fn overview_template() -> &'static str {
@@ -264,14 +143,6 @@ Generated on: {{generated_date}}
         Self::use_case_detailed_template()
     }
 
-    pub fn get_rust_test_template() -> &'static str {
-        Self::rust_test_template()
-    }
-
-    pub fn get_python_test_template() -> &'static str {
-        Self::python_test_template()
-    }
-
     fn use_case_template() -> &'static str {
         r#"{{#if metadata_enabled}}---
 {{#if include_id}}id: {{id}}
@@ -281,7 +152,6 @@ Generated on: {{generated_date}}
 {{/if}}{{#if include_priority}}priority: {{priority}}
 {{/if}}{{#if include_created}}created: {{created_date}}
 {{/if}}{{#if include_last_updated}}last_updated: {{updated_date}}
-{{/if}}{{#if include_tags}}tags: {{#if tags}}[{{#each tags}}"{{this}}"{{#unless @last}}, {{/unless}}{{/each}}]{{else}}[]{{/if}}
 {{/if}}{{#each custom_fields}}{{this}}: 
 {{/each}}---
 
@@ -313,7 +183,6 @@ Generated on: {{generated_date}}
 {{/if}}{{#if include_priority}}priority: {{priority}}
 {{/if}}{{#if include_created}}created: {{created_date}}
 {{/if}}{{#if include_last_updated}}last_updated: {{updated_date}}
-{{/if}}{{#if include_tags}}tags: {{#if tags}}[{{#each tags}}"{{this}}"{{#unless @last}}, {{/unless}}{{/each}}]{{else}}[]{{/if}}
 {{/if}}{{#each custom_fields}}{{this}}: 
 {{/each}}---
 
@@ -389,123 +258,11 @@ Generated on: {{generated_date}}
 ---
 *Use Case managed with MUCM - Markdown Use Case Manager*"#
     }
-
-    fn rust_test_template() -> &'static str {
-        r#"// =============================================================================
-// AUTO-GENERATED TEST DOCUMENTATION
-// Use Case: {{title}} ({{id}})
-// Description: {{description}}
-// Generated at: {{generated_at}}
-// =============================================================================
-
-{{#each scenarios}}
-/// ## Scenario: {{title}} ({{id}})
-/// **Description:** {{description}}
-/// **Status:** {{status}}
-/// 
-{{/each}}
-
-// =============================================================================
-// AUTO-GENERATED TEST CODE
-// ⚠️  WARNING: Only modify code between START/END USER IMPLEMENTATION markers!
-// =============================================================================
-
-#[cfg(test)]
-mod {{test_module_name}} {
-    use super::*;
-
-{{#each scenarios}}
-    #[test]
-    fn test_{{snake_case_id}}() {
-        // Scenario: {{title}}
-        // Description: {{description}}
-        
-        // =============================================================================
-        // START USER IMPLEMENTATION - Feel free to modify the code below this line
-        // =============================================================================
-        
-        // TODO: Implement test for scenario: {{title}}
-        
-        // Arrange
-        // TODO: Set up test data and preconditions
-        
-        // Act
-        // TODO: Execute the scenario steps
-        
-        // Assert
-        // TODO: Verify the results
-        
-        panic!("Test not implemented yet");
-        
-        // =============================================================================
-        // END USER IMPLEMENTATION - Do not modify anything below this line
-        // =============================================================================
-    }
-    
-{{/each}}
-}
-"#
-    }
-
-    fn python_test_template() -> &'static str {
-        r#"""Generated test file for use case: {{title}}
-ID: {{id}}
-Generated at: {{generated_at}}
-"""
-
-import unittest
-
-
-class Test{{title_snake_case}}(unittest.TestCase):
-    """
-    Test class for use case: {{title}}
-    Description: {{description}}
-    """
-    
-    def setUp(self):
-        """Set up test fixtures before each test method."""
-        pass
-    
-    def tearDown(self):
-        """Clean up after each test method."""
-        pass
-    
-{{#each scenarios}}
-    def test_{{snake_case_id}}(self):
-        """
-        Test for scenario: {{title}}
-        Description: {{description}}
-        """
-        # =============================================================================
-        # START USER IMPLEMENTATION - Feel free to modify the code below this line
-        # =============================================================================
-        
-        # Arrange
-        # TODO: Set up test data and preconditions
-        
-        # Act
-        # TODO: Execute the scenario steps
-        
-        # Assert
-        # TODO: Verify the results
-        
-        self.fail("Test not implemented yet")
-        
-        # =============================================================================
-        # END USER IMPLEMENTATION - Do not modify anything below this line
-        # =============================================================================
-
-{{/each}}
-
-if __name__ == '__main__':
-    unittest.main()
-"#
-    }
 }
 
 impl Default for TemplateEngine {
     fn default() -> Self {
-        Self::new()
+        Self::new().unwrap()
     }
 }
 
