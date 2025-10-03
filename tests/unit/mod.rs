@@ -18,3 +18,4 @@ pub mod use_case_service_test;
 // CLI unit tests (new modular CLI architecture)
 pub mod cli_runner_test;
 pub mod cli_interactive_test;
+pub mod cli_auto_init_test;
