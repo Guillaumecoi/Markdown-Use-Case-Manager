@@ -63,20 +63,7 @@ pub fn get_test_template_for_language(language_name: &str) -> Option<&'static st
     registry.get(language_name).map(|lang| lang.test_template())
 }
 
-/// Get Rust test template
-pub fn get_rust_test_template() -> &'static str {
-    get_test_template_for_language("rust").unwrap_or("// Rust template not found")
-}
 
-/// Get Python test template
-pub fn get_python_test_template() -> &'static str {
-    get_test_template_for_language("python").unwrap_or("# Python template not found")
-}
-
-/// Get JavaScript test template
-pub fn get_javascript_test_template() -> &'static str {
-    get_test_template_for_language("javascript").unwrap_or("// JavaScript template not found")
-}
 
 /// Get available test languages
 pub fn get_available_test_languages() -> Vec<String> {

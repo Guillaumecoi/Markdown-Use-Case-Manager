@@ -39,14 +39,16 @@ fn test_language_lookup() {
 
 #[test]
 fn test_template_language_specific_methods() {
+    let registry = LanguageRegistry::new();
+    
     // Test language-specific template methods
-    let rust_template = get_rust_test_template();
+    let rust_template = registry.get("rust").unwrap().test_template();
     assert!(rust_template.contains("fn test_"));
 
-    let python_template = get_python_test_template();
+    let python_template = registry.get("python").unwrap().test_template();
     assert!(python_template.contains("def test_"));
 
-    let js_template = get_javascript_test_template();
+    let js_template = registry.get("javascript").unwrap().test_template();
     assert!(js_template.contains("describe("));
 }
 
@@ -57,7 +59,6 @@ fn test_python_language_implementation() {
 
     assert_eq!(python_lang.name(), "python");
     assert_eq!(python_lang.file_extension(), "py");
-    assert!(python_lang.uses_legacy_directory());
     assert_eq!(python_lang.aliases(), &["py"]);
 
     // Test that template is loaded
@@ -74,7 +75,6 @@ fn test_javascript_language_implementation() {
 
     assert_eq!(js_lang.name(), "javascript");
     assert_eq!(js_lang.file_extension(), "js");
-    assert!(!js_lang.uses_legacy_directory()); // JavaScript uses new format
     assert_eq!(js_lang.aliases(), &["js"]);
 
     // Test that template is loaded
@@ -176,15 +176,4 @@ fn test_template_engine_integration() {
     assert!(unknown_template.is_none());
 }
 
-#[test]
-fn test_legacy_compatibility() {
-    // Test that legacy methods still work
-    let rust_template = get_rust_test_template();
-    assert!(rust_template.contains("{{title}}"));
 
-    let python_template = get_python_test_template();
-    assert!(python_template.contains("{{title}}"));
-
-    let js_template = get_javascript_test_template();
-    assert!(js_template.contains("{{title}}"));
-}

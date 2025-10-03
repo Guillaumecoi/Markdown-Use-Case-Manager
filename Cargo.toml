@@ -44,6 +44,7 @@ colored = "2.0"
 tempfile = "3.0"
 assert_cmd = "2.0"
 predicates = "3.0"
+serial_test = "3.0"
 
 [[bin]]
 name = "mucm"

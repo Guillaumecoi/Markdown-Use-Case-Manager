@@ -102,8 +102,8 @@ impl FileService {
             return self.parse_use_case_with_frontmatter(content);
         }
 
-        // Fallback to old format parsing
-        self.parse_use_case_legacy_format(content)
+        // No frontmatter found - not a valid use case file
+        Ok(None)
     }
 
     fn parse_use_case_with_frontmatter(&self, content: &str) -> Result<Option<UseCase>> {
@@ -151,55 +151,7 @@ impl FileService {
         Ok(Some(use_case))
     }
 
-    fn parse_use_case_legacy_format(&self, content: &str) -> Result<Option<UseCase>> {
-        let lines: Vec<&str> = content.lines().collect();
-        let mut use_case = None;
 
-        for (i, line) in lines.iter().enumerate() {
-            if let Some(stripped) = line.strip_prefix("# ") {
-                let title = stripped.trim().to_string();
-
-                // Look for metadata in the following lines
-                let mut id = String::new();
-                let mut category = String::new();
-                let mut description = String::new();
-                let mut scenarios = Vec::new();
-
-                // Parse the structured metadata
-                for j in i + 1..lines.len() {
-                    let metadata_line = lines[j];
-                    if metadata_line.starts_with("**ID:**") {
-                        id = metadata_line.replace("**ID:**", "").trim().to_string();
-                    } else if metadata_line.starts_with("**Category:**") {
-                        category = metadata_line
-                            .replace("**Category:**", "")
-                            .trim()
-                            .to_string();
-                    } else if metadata_line.starts_with("## Description") {
-                        // Get description from next non-empty line
-                        if j + 2 < lines.len() {
-                            description = lines[j + 2].trim().to_string();
-                        }
-                    } else if metadata_line.starts_with("## Scenarios") {
-                        // Parse scenarios section
-                        scenarios = self.parse_scenarios_from_markdown(&lines[j + 1..])?;
-                        break;
-                    }
-                }
-
-                if !id.is_empty() && !category.is_empty() {
-                    let mut uc = UseCase::new(id, title, category, description);
-                    for scenario in scenarios {
-                        uc.add_scenario(scenario);
-                    }
-                    use_case = Some(uc);
-                    break;
-                }
-            }
-        }
-
-        Ok(use_case)
-    }
 
     fn extract_description_from_markdown(&self, content: &str) -> Result<String> {
         let lines: Vec<&str> = content.lines().collect();

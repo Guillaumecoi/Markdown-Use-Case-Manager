@@ -3,6 +3,7 @@
 use super::test_helpers::with_temp_dir;
 use crate::test_utils::{init_project_in_dir, templates_dir};
 use markdown_use_case_manager::config::Config;
+use serial_test::serial;
 use std::fs;
 use std::path::Path;
 use tempfile::TempDir;
@@ -81,9 +82,9 @@ fn test_init_with_rust_language() {
     assert!(config_templates_dir.join("overview.hbs").exists());
 
     // Verify only rust language templates were created
-    assert!(config_templates_dir.join("rust").exists());
-    assert!(config_templates_dir.join("rust/test.hbs").exists());
-    assert!(!config_templates_dir.join("python").exists());
+    assert!(config_templates_dir.join("lang-rust").exists());
+    assert!(config_templates_dir.join("lang-rust/test.hbs").exists());
+    assert!(!config_templates_dir.join("lang-python").exists());
 
     // Verify config was updated with rust language
     let config = result.unwrap();
@@ -110,9 +111,9 @@ fn test_init_with_python_language() {
     assert!(config_templates_dir.join("overview.hbs").exists());
 
     // Verify only python language templates were created
-    assert!(config_templates_dir.join("python").exists());
-    assert!(config_templates_dir.join("python/test.hbs").exists());
-    assert!(!config_templates_dir.join("rust").exists());
+    assert!(config_templates_dir.join("lang-python").exists());
+    assert!(config_templates_dir.join("lang-python/test.hbs").exists());
+    assert!(!config_templates_dir.join("lang-rust").exists());
 
     // Verify config was updated with python language
     let config = result.unwrap();
@@ -138,6 +139,7 @@ fn test_init_with_invalid_language() {
 
 /// Test getting available languages with built-in defaults
 #[test]
+#[serial]
 fn test_get_available_languages_defaults() {
     let temp_dir = TempDir::new().unwrap();
     let original_dir = std::env::current_dir().unwrap();
@@ -151,29 +153,10 @@ fn test_get_available_languages_defaults() {
     std::env::set_current_dir(original_dir).unwrap();
 }
 
-/// Test language detection with legacy folders
-#[test]
-fn test_language_detection_legacy_folders() {
-    let temp_dir = TempDir::new().unwrap();
-    let original_dir = std::env::current_dir().unwrap();
-    std::env::set_current_dir(&temp_dir).unwrap();
-
-    // Create legacy language folders (these should still be detected in config)
-    let templates_dir = temp_dir.path().join(".config/.mucm/templates");
-    fs::create_dir_all(&templates_dir).unwrap();
-    fs::create_dir_all(templates_dir.join("rust")).unwrap();
-    fs::create_dir_all(templates_dir.join("python")).unwrap();
-
-    let languages = Config::get_available_languages().unwrap();
-    // Should detect the legacy folders
-    assert!(languages.contains(&"rust".to_string()));
-    assert!(languages.contains(&"python".to_string()));
-
-    std::env::set_current_dir(original_dir).unwrap();
-}
 
 /// Test language detection with new prefixed folders
 #[test]
+#[serial]
 fn test_language_detection_prefixed_folders() {
     let temp_dir = TempDir::new().unwrap();
     let original_dir = std::env::current_dir().unwrap();
@@ -194,21 +177,19 @@ fn test_language_detection_prefixed_folders() {
     std::env::set_current_dir(original_dir).unwrap();
 }
 
-/// Test mixed legacy and prefixed language folders
+/// Test mixed lang- prefixed language folders
 #[test]
 fn test_language_detection_mixed_folders() {
     with_temp_dir(|temp_dir| {
-        // Create both legacy and prefixed folders
+        // Create prefixed folders
         let templates_dir = temp_dir.path().join(".config/.mucm/templates");
         fs::create_dir_all(&templates_dir).unwrap();
-        fs::create_dir_all(templates_dir.join("rust")).unwrap(); // Legacy
-        fs::create_dir_all(templates_dir.join("lang-go")).unwrap(); // New
+        fs::create_dir_all(templates_dir.join("lang-go")).unwrap();
+        fs::create_dir_all(templates_dir.join("lang-java")).unwrap();
 
         let languages = Config::get_available_languages().unwrap();
         // Should detect local config additions
-        assert!(languages.contains(&"rust".to_string())); // Legacy folder
-        assert!(languages.contains(&"go".to_string())); // From local config
-                                                        // Should not contain duplicates
-        assert_eq!(languages.iter().filter(|&l| l == "rust").count(), 1);
+        assert!(languages.contains(&"go".to_string()));
+        assert!(languages.contains(&"java".to_string()));
     });
 }

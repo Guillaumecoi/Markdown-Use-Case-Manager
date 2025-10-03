@@ -1,6 +1,7 @@
 // CLI integration tests - comprehensive testing of command line interface
 use assert_cmd::Command;
 use predicates::prelude::*;
+use serial_test::serial;
 use std::fs;
 use tempfile::TempDir;
 
@@ -34,6 +35,7 @@ fn test_cli_version() {
 
 /// Test CLI init command in temporary directory
 #[test]
+#[serial]
 fn test_cli_init_creates_project_structure() {
     let temp_dir = TempDir::new().unwrap();
 
@@ -358,6 +360,7 @@ fn test_cli_missing_arguments() {
 
 /// Test CLI workflow: complete use case lifecycle
 #[test]
+#[serial]
 fn test_cli_complete_workflow() {
     let temp_dir = TempDir::new().unwrap();
 

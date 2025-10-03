@@ -106,10 +106,6 @@ impl Config {
                             languages.push(lang.to_string());
                         }
                     }
-                    // Check for just "{language}" (legacy compatibility)
-                    else if !languages.contains(&dir_name) {
-                        languages.push(dir_name);
-                    }
                 }
             }
         }
@@ -238,13 +234,7 @@ impl Config {
 
         if source_lang_dir.exists() {
             // Copy from source templates
-            let target_lang_dir = if matches!(lang.as_str(), "rust" | "python") {
-                // Use legacy format for backward compatibility
-                config_templates_dir.join(&lang)
-            } else {
-                // Use new format for other languages
-                config_templates_dir.join(format!("{}{}", Self::LANGUAGE_PREFIX, &lang))
-            };
+            let target_lang_dir = config_templates_dir.join(format!("{}{}", Self::LANGUAGE_PREFIX, &lang));
 
             fs::create_dir_all(&target_lang_dir)
                 .context("Failed to create language templates directory")?;
@@ -273,13 +263,7 @@ impl Config {
             // Fallback to built-in template generation using the language registry
             let language_registry = LanguageRegistry::new();
             if let Some(language_impl) = language_registry.get(&lang) {
-                let target_lang_dir = if language_impl.uses_legacy_directory() {
-                    // Use legacy format for backward compatibility
-                    config_templates_dir.join(language_impl.legacy_directory())
-                } else {
-                    // Use new format for other languages
-                    config_templates_dir.join(format!("{}{}", Self::LANGUAGE_PREFIX, &lang))
-                };
+                let target_lang_dir = config_templates_dir.join(format!("{}{}", Self::LANGUAGE_PREFIX, &lang));
 
                 fs::create_dir_all(&target_lang_dir)
                     .context("Failed to create language templates directory")?;

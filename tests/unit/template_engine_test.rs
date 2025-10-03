@@ -1,6 +1,7 @@
 // Unit tests for template engine and template utilities
 use markdown_use_case_manager::core::templates::{to_snake_case, TemplateEngine};
 use serde_json::json;
+use serial_test::serial;
 use std::collections::HashMap;
 
 /// Test to_snake_case utility function with various inputs
@@ -370,6 +371,7 @@ fn test_template_engine_with_config_detailed_style() {
 
 /// Test TemplateEngine fallback to built-in templates when custom templates don't exist
 #[test]
+#[serial]
 fn test_template_engine_fallback_to_builtin() {
     use markdown_use_case_manager::config::Config;
     use tempfile::TempDir;

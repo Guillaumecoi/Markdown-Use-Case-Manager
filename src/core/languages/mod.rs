@@ -22,16 +22,6 @@ pub trait Language {
     /// Template content for test files
     fn test_template(&self) -> &'static str;
 
-    /// Directory name for legacy support (defaults to language name)
-    fn legacy_directory(&self) -> &'static str {
-        self.name()
-    }
-
-    /// Whether this language uses legacy directory structure
-    fn uses_legacy_directory(&self) -> bool {
-        false
-    }
-
     /// Get all names this language responds to (name + aliases)
     fn all_names(&self) -> Vec<&'static str> {
         let mut names = vec![self.name()];
@@ -46,7 +36,6 @@ pub struct LanguageDefinition {
     aliases: &'static [&'static str],
     file_extension: &'static str,
     test_template: &'static str,
-    uses_legacy_directory: bool,
 }
 
 impl LanguageDefinition {
@@ -56,14 +45,12 @@ impl LanguageDefinition {
         aliases: &'static [&'static str],
         file_extension: &'static str,
         test_template: &'static str,
-        uses_legacy_directory: bool,
     ) -> Self {
         Self {
             name,
             aliases,
             file_extension,
             test_template,
-            uses_legacy_directory,
         }
     }
 }
@@ -83,10 +70,6 @@ impl Language for LanguageDefinition {
 
     fn test_template(&self) -> &'static str {
         self.test_template
-    }
-
-    fn uses_legacy_directory(&self) -> bool {
-        self.uses_legacy_directory
     }
 }
 
