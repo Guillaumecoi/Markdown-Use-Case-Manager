@@ -8,5 +8,5 @@
 pub mod config;
 pub mod core;
 
-pub use core::use_case_coordinator::UseCaseCoordinator;
 pub use core::models::Priority;
+pub use core::use_case_coordinator::UseCaseCoordinator;

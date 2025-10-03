@@ -56,13 +56,18 @@ impl FileService {
     }
 
     /// Save a test file
-    pub fn save_test_file(&self, use_case: &UseCase, test_content: &str, file_extension: &str) -> Result<()> {
+    pub fn save_test_file(
+        &self,
+        use_case: &UseCase,
+        test_content: &str,
+        file_extension: &str,
+    ) -> Result<()> {
         if use_case.scenarios.is_empty() {
             return Ok(()); // No scenarios = no tests
         }
 
-        let test_dir = Path::new(&self.config.directories.test_dir)
-            .join(to_snake_case(&use_case.category));
+        let test_dir =
+            Path::new(&self.config.directories.test_dir).join(to_snake_case(&use_case.category));
         fs::create_dir_all(&test_dir)?;
 
         let test_file_name = format!("{}.{}", to_snake_case(&use_case.id), file_extension);
@@ -83,8 +88,8 @@ impl FileService {
 
     /// Check if a test file exists
     pub fn test_file_exists(&self, use_case: &UseCase, file_extension: &str) -> bool {
-        let test_dir = Path::new(&self.config.directories.test_dir)
-            .join(to_snake_case(&use_case.category));
+        let test_dir =
+            Path::new(&self.config.directories.test_dir).join(to_snake_case(&use_case.category));
         let test_file_name = format!("{}.{}", to_snake_case(&use_case.id), file_extension);
         let test_path = test_dir.join(test_file_name);
         test_path.exists()

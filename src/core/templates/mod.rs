@@ -12,15 +12,24 @@ pub struct TemplateEngine {
 impl TemplateEngine {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let mut handlebars = Handlebars::new();
-        
+
         // Register built-in templates
-        handlebars.register_template_string("use_case_simple", include_str!("../../../templates/use_case_simple.hbs"))?;
-        handlebars.register_template_string("use_case_detailed", include_str!("../../../templates/use_case_detailed.hbs"))?;
-        handlebars.register_template_string("overview", include_str!("../../../templates/overview.hbs"))?;
-        
+        handlebars.register_template_string(
+            "use_case_simple",
+            include_str!("../../../templates/use_case_simple.hbs"),
+        )?;
+        handlebars.register_template_string(
+            "use_case_detailed",
+            include_str!("../../../templates/use_case_detailed.hbs"),
+        )?;
+        handlebars.register_template_string(
+            "overview",
+            include_str!("../../../templates/overview.hbs"),
+        )?;
+
         // Register language test templates using LanguageRegistry
         let mut test_templates = HashMap::new();
-        
+
         use crate::core::languages::LanguageRegistry;
         let language_registry = LanguageRegistry::new();
         for language_name in language_registry.available_languages() {
@@ -30,7 +39,7 @@ impl TemplateEngine {
                 test_templates.insert(language.name().to_string(), template_name);
             }
         }
-        
+
         Ok(TemplateEngine {
             handlebars,
             test_templates,
@@ -249,7 +258,6 @@ Generated on: {{generated_date}}
 ---
 *Use Case managed with MUCM - Markdown Use Case Manager*"#
     }
-
 }
 
 impl Default for TemplateEngine {

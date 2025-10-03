@@ -48,7 +48,7 @@ pub struct UseCase {
 
     // Optional fields (less commonly used)
     #[serde(default)]
-    pub prerequisites: Vec<String>, 
+    pub prerequisites: Vec<String>,
 }
 
 impl UseCase {

@@ -25,7 +25,7 @@ impl UseCaseCoordinator {
         let use_case_service = UseCaseService::new();
         let file_service = FileService::new(config.clone());
         let template_engine = TemplateEngine::with_config(Some(&config));
-        
+
         let mut manager = Self {
             config,
             use_case_service,
@@ -44,7 +44,9 @@ impl UseCaseCoordinator {
         category: String,
         description: Option<String>,
     ) -> Result<String> {
-        let use_case_id = self.use_case_service.generate_use_case_id(&category, &self.use_cases);
+        let use_case_id = self
+            .use_case_service
+            .generate_use_case_id(&category, &self.use_cases);
         let description = description.unwrap_or_default();
 
         let use_case = self.use_case_service.create_use_case(
@@ -56,7 +58,8 @@ impl UseCaseCoordinator {
 
         // Generate markdown and save
         let markdown_content = self.generate_use_case_markdown(&use_case)?;
-        self.file_service.save_use_case(&use_case, &markdown_content)?;
+        self.file_service
+            .save_use_case(&use_case, &markdown_content)?;
 
         self.use_cases.push(use_case);
 
@@ -73,7 +76,8 @@ impl UseCaseCoordinator {
         description: Option<String>,
     ) -> Result<String> {
         // Find the use case index
-        let use_case_index = self.use_cases
+        let use_case_index = self
+            .use_cases
             .iter()
             .position(|uc| uc.id == use_case_id)
             .ok_or_else(|| anyhow::anyhow!("Use case {} not found", use_case_id))?;
@@ -90,7 +94,8 @@ impl UseCaseCoordinator {
 
         // Save updated use case
         let markdown_content = self.generate_use_case_markdown(&use_case_copy)?;
-        self.file_service.save_use_case(&use_case_copy, &markdown_content)?;
+        self.file_service
+            .save_use_case(&use_case_copy, &markdown_content)?;
 
         // Generate test file if enabled
         if self.config.generation.auto_generate_tests {
@@ -111,16 +116,17 @@ impl UseCaseCoordinator {
         let status = self.use_case_service.parse_status(&status_str)?;
 
         // Find the use case containing this scenario
-        let use_case_index = self.use_cases
+        let use_case_index = self
+            .use_cases
             .iter()
             .position(|uc| uc.scenarios.iter().any(|s| s.id == scenario_id))
             .ok_or_else(|| anyhow::anyhow!("Scenario {} not found", scenario_id))?;
 
         // Update the scenario status
         self.use_case_service.update_scenario_status(
-            &mut self.use_cases[use_case_index], 
-            &scenario_id, 
-            status
+            &mut self.use_cases[use_case_index],
+            &scenario_id,
+            status,
         )?;
 
         // Clone the use case for operations that need immutable self
@@ -128,7 +134,8 @@ impl UseCaseCoordinator {
 
         // Save updated use case
         let markdown_content = self.generate_use_case_markdown(&use_case_copy)?;
-        self.file_service.save_use_case(&use_case_copy, &markdown_content)?;
+        self.file_service
+            .save_use_case(&use_case_copy, &markdown_content)?;
 
         // Regenerate overview
         self.generate_overview()?;
@@ -263,7 +270,10 @@ impl UseCaseCoordinator {
             return Ok(());
         }
 
-        if !self.template_engine.has_test_template(&self.config.generation.test_language) {
+        if !self
+            .template_engine
+            .has_test_template(&self.config.generation.test_language)
+        {
             println!(
                 "Warning: Test language '{}' not supported, skipping test generation",
                 self.config.generation.test_language
@@ -296,7 +306,9 @@ impl UseCaseCoordinator {
         );
         data.insert(
             "generated_at".to_string(),
-            json!(chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC").to_string()),
+            json!(chrono::Utc::now()
+                .format("%Y-%m-%d %H:%M:%S UTC")
+                .to_string()),
         );
 
         // Prepare scenarios data
@@ -318,10 +330,11 @@ impl UseCaseCoordinator {
 
         // Handle existing files
         if self.file_service.test_file_exists(use_case, file_extension)
-            && !self.config.generation.overwrite_test_documentation {
+            && !self.config.generation.overwrite_test_documentation
+        {
             println!("⚠️  Test file exists and overwrite_test_documentation=false, skipping");
             return Ok(());
-            
+
             // TODO: Implement smart merging here if needed
         }
 
@@ -330,8 +343,9 @@ impl UseCaseCoordinator {
             .template_engine
             .render_test(&self.config.generation.test_language, &data)?;
 
-        self.file_service.save_test_file(use_case, &test_content, file_extension)?;
-        
+        self.file_service
+            .save_test_file(use_case, &test_content, file_extension)?;
+
         println!(
             "Generated test file: {}/{}",
             to_snake_case(&use_case.category),
@@ -345,24 +359,17 @@ impl UseCaseCoordinator {
         // Prepare data for template (same as before)
         let mut template_data = HashMap::new();
 
-        template_data.insert(
-            "project_name".to_string(),
-            json!(self.config.project.name),
-        );
+        template_data.insert("project_name".to_string(), json!(self.config.project.name));
         template_data.insert(
             "generated_date".to_string(),
-            json!(chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC").to_string()),
+            json!(chrono::Utc::now()
+                .format("%Y-%m-%d %H:%M:%S UTC")
+                .to_string()),
         );
 
         let total_scenarios: usize = self.use_cases.iter().map(|uc| uc.scenarios.len()).sum();
-        template_data.insert(
-            "total_use_cases".to_string(),
-            json!(self.use_cases.len()),
-        );
-        template_data.insert(
-            "total_scenarios".to_string(),
-            json!(total_scenarios),
-        );
+        template_data.insert("total_use_cases".to_string(), json!(self.use_cases.len()));
+        template_data.insert("total_scenarios".to_string(), json!(total_scenarios));
 
         // Status distribution
         let mut status_counts = HashMap::new();
@@ -370,10 +377,7 @@ impl UseCaseCoordinator {
             let status_str = use_case.status().to_string();
             *status_counts.entry(status_str).or_insert(0) += 1;
         }
-        template_data.insert(
-            "status_counts".to_string(),
-            json!(status_counts),
-        );
+        template_data.insert("status_counts".to_string(), json!(status_counts));
 
         // Group by category
         let mut categories: HashMap<String, Vec<&UseCase>> = HashMap::new();
@@ -393,9 +397,18 @@ impl UseCaseCoordinator {
                 uc_data.insert("title".to_string(), json!(use_case.title));
                 uc_data.insert("description".to_string(), json!(use_case.description));
                 uc_data.insert("priority".to_string(), json!(use_case.priority.to_string()));
-                uc_data.insert("aggregated_status".to_string(), json!(use_case.status().to_string()));
-                uc_data.insert("category_path".to_string(), json!(to_snake_case(&use_case.category)));
-                uc_data.insert("scenario_count".to_string(), json!(use_case.scenarios.len()));
+                uc_data.insert(
+                    "aggregated_status".to_string(),
+                    json!(use_case.status().to_string()),
+                );
+                uc_data.insert(
+                    "category_path".to_string(),
+                    json!(to_snake_case(&use_case.category)),
+                );
+                uc_data.insert(
+                    "scenario_count".to_string(),
+                    json!(use_case.scenarios.len()),
+                );
 
                 let scenario_data: Vec<serde_json::Value> = use_case
                     .scenarios

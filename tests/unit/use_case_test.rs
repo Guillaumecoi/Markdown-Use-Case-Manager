@@ -1,7 +1,7 @@
 // Unit tests for UseCase struct and related functionality
 // Unit tests for UseCase struct and related functionality
-use markdown_use_case_manager::core::models::{UseCase, Scenario, Status, Priority};
 use crate::test_utils::set_scenario_status;
+use markdown_use_case_manager::core::models::{Priority, Scenario, Status, UseCase};
 
 /// Test UseCase::new() creates use case with correct initial values
 #[test]

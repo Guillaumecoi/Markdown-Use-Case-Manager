@@ -59,7 +59,8 @@ fn test_cli_init_creates_project_structure() {
     assert!(temp_dir.path().join("tests/use-cases").exists());
 
     // Verify config file content
-    let config_content = fs::read_to_string(temp_dir.path().join(".config/.mucm/mucm.toml")).unwrap();
+    let config_content =
+        fs::read_to_string(temp_dir.path().join(".config/.mucm/mucm.toml")).unwrap();
     assert!(config_content.contains("[project]"));
     assert!(config_content.contains("[directories]"));
     assert!(config_content.contains("[metadata]"));

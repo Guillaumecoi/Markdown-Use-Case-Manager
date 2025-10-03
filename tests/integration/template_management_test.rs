@@ -1,9 +1,9 @@
 // Integration tests for template management system
 // tests/integration/template_management_test.rs
 use super::test_helpers::with_temp_dir;
+use crate::test_utils::{init_project_in_dir, templates_dir};
 use markdown_use_case_manager::config::Config;
 use std::fs;
-use crate::test_utils::{init_project_in_dir, templates_dir};
 use std::path::Path;
 use tempfile::TempDir;
 
@@ -42,8 +42,7 @@ fn test_template_copying_with_source() {
     let temp_dir = TempDir::new().unwrap();
 
     // Initialize project in temp directory
-    init_project_in_dir(temp_dir.path().to_str().unwrap())
-        .expect("Failed to initialize project");
+    init_project_in_dir(temp_dir.path().to_str().unwrap()).expect("Failed to initialize project");
 
     // Verify core templates were created
     let config_templates_dir = temp_dir.path().join(".config/.mucm/templates");
@@ -69,8 +68,8 @@ fn test_init_with_rust_language() {
 
     // Initialize project with rust language
     let result = Config::init_project_with_language_in_dir(
-        temp_dir.path().to_str().unwrap(), 
-        Some("rust".to_string())
+        temp_dir.path().to_str().unwrap(),
+        Some("rust".to_string()),
     );
     assert!(result.is_ok());
 
@@ -98,8 +97,8 @@ fn test_init_with_python_language() {
 
     // Initialize project with python language
     let result = Config::init_project_with_language_in_dir(
-        temp_dir.path().to_str().unwrap(), 
-        Some("python".to_string())
+        temp_dir.path().to_str().unwrap(),
+        Some("python".to_string()),
     );
     assert!(result.is_ok());
 
@@ -127,10 +126,10 @@ fn test_init_with_invalid_language() {
 
     // Try to initialize project with invalid language
     let result = Config::init_project_with_language_in_dir(
-        temp_dir.path().to_str().unwrap(), 
-        Some("invalidlang".to_string())
+        temp_dir.path().to_str().unwrap(),
+        Some("invalidlang".to_string()),
     );
-    
+
     assert!(result.is_err());
     let error_msg = result.unwrap_err().to_string();
     assert!(error_msg.contains("Unsupported language 'invalidlang'"));
@@ -209,7 +208,7 @@ fn test_language_detection_mixed_folders() {
         // Should detect local config additions
         assert!(languages.contains(&"rust".to_string())); // Legacy folder
         assert!(languages.contains(&"go".to_string())); // From local config
-        // Should not contain duplicates
+                                                        // Should not contain duplicates
         assert_eq!(languages.iter().filter(|&l| l == "rust").count(), 1);
     });
 }

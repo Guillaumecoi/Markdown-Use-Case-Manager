@@ -1,14 +1,14 @@
 //! Test utilities and helper functions
-//! 
+//!
 //! This module contains all test utility functions that are used across
 //! multiple test files to provide consistent test setup and operations.
 
-use std::path::{Path, PathBuf};
-use std::fs;
-use anyhow::{Result, Context};
+use anyhow::{Context, Result};
 use markdown_use_case_manager::config::Config;
-use markdown_use_case_manager::core::models::{Scenario, Status, UseCase};
 use markdown_use_case_manager::core::languages::LanguageRegistry;
+use markdown_use_case_manager::core::models::{Scenario, Status, UseCase};
+use std::fs;
+use std::path::{Path, PathBuf};
 
 /// Initialize a new project in the current directory
 pub fn init_project() -> Result<Config> {
@@ -25,7 +25,9 @@ pub fn load_from_dir(dir: &str) -> Result<Config> {
     let config_path = PathBuf::from(dir).join(".config/.mucm").join("mucm.toml");
 
     if !config_path.exists() {
-        anyhow::bail!("No markdown use case manager project found in directory. Run 'mucm init' first.");
+        anyhow::bail!(
+            "No markdown use case manager project found in directory. Run 'mucm init' first."
+        );
     }
 
     let content = fs::read_to_string(&config_path).context("Failed to read config file")?;

@@ -1,11 +1,11 @@
 // tests/integration/template_language_tests.rs
 use super::test_helpers::with_temp_dir;
+use crate::test_utils::get_available_test_languages;
 use markdown_use_case_manager::config::Config;
-use markdown_use_case_manager::core::use_case_coordinator::UseCaseCoordinator;
 use markdown_use_case_manager::core::templates::TemplateEngine;
+use markdown_use_case_manager::core::use_case_coordinator::UseCaseCoordinator;
 use std::collections::HashMap;
 use std::fs;
-use crate::test_utils::get_available_test_languages;
 
 /// Test end-to-end language support initialization
 #[test]
@@ -13,12 +13,13 @@ fn test_end_to_end_language_support() {
     with_temp_dir(|_temp_dir| {
         // Test that we can initialize with each supported language
         for language in &["rust", "python", "javascript", "js", "py"] {
-            let result = Config::init_project_with_language_in_dir(
-                ".", 
-                Some(language.to_string())
+            let result = Config::init_project_with_language_in_dir(".", Some(language.to_string()));
+            assert!(
+                result.is_ok(),
+                "Failed to initialize with language: {}",
+                language
             );
-            assert!(result.is_ok(), "Failed to initialize with language: {}", language);
-            
+
             // Clean up for next iteration
             let config_dir = std::path::Path::new(".config");
             if config_dir.exists() {

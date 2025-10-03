@@ -121,7 +121,8 @@ fn test_marker_granularity() {
         );
         // Verify we have one marker per test function plus the module marker
         assert_eq!(
-            start_markers, test_functions + 1,
+            start_markers,
+            test_functions + 1,
             "Should have module marker plus one per test function"
         );
 

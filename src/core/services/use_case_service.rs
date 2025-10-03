@@ -48,10 +48,10 @@ impl UseCaseService {
     ) -> String {
         let scenario_id = self.generate_scenario_id(use_case);
         let description = description.unwrap_or_default();
-        
+
         let scenario = Scenario::new(scenario_id.clone(), title, description);
         use_case.add_scenario(scenario);
-        
+
         scenario_id
     }
 
@@ -65,7 +65,11 @@ impl UseCaseService {
         if use_case.update_scenario_status(scenario_id, status) {
             Ok(())
         } else {
-            Err(anyhow::anyhow!("Scenario {} not found in use case {}", scenario_id, use_case.id))
+            Err(anyhow::anyhow!(
+                "Scenario {} not found in use case {}",
+                scenario_id,
+                use_case.id
+            ))
         }
     }
 

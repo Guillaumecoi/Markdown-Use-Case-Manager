@@ -1,7 +1,7 @@
 // Integration tests for comprehensive filesystem functionality
 use super::test_helpers::with_temp_dir;
-use markdown_use_case_manager::{config::Config, UseCaseCoordinator};
 use crate::test_utils::{init_project, init_project_in_dir, load_from_dir, save_config};
+use markdown_use_case_manager::{config::Config, UseCaseCoordinator};
 use std::fs;
 use std::path::Path;
 use tempfile::TempDir;
@@ -175,10 +175,12 @@ fn test_scenario_file_updates() {
 
         // Initialize project
         init_project().unwrap();
-        
+
         // Save the custom config
-        config.save_in_dir(temp_dir.path().to_str().unwrap()).unwrap();
-        
+        config
+            .save_in_dir(temp_dir.path().to_str().unwrap())
+            .unwrap();
+
         // Load manager
         let mut manager = UseCaseCoordinator::load().unwrap();
 

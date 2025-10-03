@@ -92,7 +92,8 @@ fn main() -> Result<()> {
             description,
         } => {
             let mut coordinator = UseCaseCoordinator::load()?;
-            let scenario_id = coordinator.add_scenario_to_use_case(use_case_id, title, description)?;
+            let scenario_id =
+                coordinator.add_scenario_to_use_case(use_case_id, title, description)?;
             println!("Added scenario: {}", scenario_id);
         }
         Commands::UpdateStatus {

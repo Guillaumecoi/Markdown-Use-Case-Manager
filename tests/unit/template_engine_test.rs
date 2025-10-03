@@ -66,7 +66,7 @@ fn test_template_engine_creation() {
 #[test]
 fn test_template_engine_uniqueness() {
     let engine1 = TemplateEngine::new().unwrap();
-    
+
     // Both should be TemplateEngine instances
     assert!(format!("{:?}", engine1).contains("TemplateEngine"));
 }
@@ -451,7 +451,8 @@ fn test_rust_template_granular_markers() {
     let marker_count = content.matches("START USER IMPLEMENTATION").count();
     let scenario_count = content.matches("fn test_").count();
     assert_eq!(
-        marker_count, scenario_count + 1,
+        marker_count,
+        scenario_count + 1,
         "Each test method should have its own markers plus module setup marker"
     );
 }
