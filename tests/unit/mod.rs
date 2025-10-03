@@ -14,3 +14,7 @@ pub mod template_engine_test;
 
 // Service unit tests (new refactored architecture)
 pub mod use_case_service_test;
+
+// CLI unit tests (new modular CLI architecture)
+pub mod cli_runner_test;
+pub mod cli_interactive_test;

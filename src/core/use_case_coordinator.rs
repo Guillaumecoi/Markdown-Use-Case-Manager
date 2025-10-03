@@ -201,6 +201,35 @@ impl UseCaseCoordinator {
         Ok(())
     }
 
+    /// Get all use case IDs
+    pub fn get_all_use_case_ids(&self) -> Result<Vec<String>> {
+        Ok(self.use_cases.iter().map(|uc| uc.id.clone()).collect())
+    }
+
+    /// Get all scenario IDs for a specific use case
+    pub fn get_scenario_ids_for_use_case(&self, use_case_id: &str) -> Result<Vec<String>> {
+        let use_case = self
+            .use_cases
+            .iter()
+            .find(|uc| uc.id == use_case_id)
+            .ok_or_else(|| anyhow::anyhow!("Use case {} not found", use_case_id))?;
+
+        Ok(use_case.scenarios.iter().map(|s| s.id.clone()).collect())
+    }
+
+    /// Get all categories in use
+    pub fn get_all_categories(&self) -> Result<Vec<String>> {
+        let mut categories: Vec<String> = self
+            .use_cases
+            .iter()
+            .map(|uc| uc.category.clone())
+            .collect();
+        
+        categories.sort();
+        categories.dedup();
+        Ok(categories)
+    }
+
     // Private helper methods
     fn generate_use_case_markdown(&self, use_case: &UseCase) -> Result<String> {
         let mut data = HashMap::new();

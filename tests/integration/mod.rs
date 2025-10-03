@@ -5,6 +5,7 @@ pub mod test_helpers;
 
 // CLI integration tests
 pub mod cli_comprehensive_test;
+pub mod cli_modular_test; // New modular CLI tests
 
 // File system and workflow integration tests
 pub mod filesystem_comprehensive_test;

@@ -13,14 +13,16 @@ Works great for solo developers, small teams, or any project where you want docu
 
 ## Features
 
-- Organize use cases by categories with automatic ID generation
-- Track progress from planning to deployment
-- Generate consistent documentation and test scaffolding  
-- Prevent conflicts with intelligent naming
-- Export to any markdown-compatible format
-- Support automatic test generation
-- Customizable generation templates
-- Flexible configuration
+- **Interactive CLI Mode** - Beautiful terminal interface with arrow key navigation and guided workflows
+- **Script-Friendly** - Perfect for automation with all commands available in both modes
+- **Automatic ID Generation** - Organize use cases by categories with automatic ID generation
+- **Progress Tracking** - Track progress from planning to deployment
+- **Documentation Generation** - Generate consistent documentation and test scaffolding  
+- **Intelligent Naming** - Prevent conflicts with intelligent naming
+- **Flexible Export** - Export to any markdown-compatible format
+- **Test Generation** - Support automatic test generation
+- **Custom Templates** - Customizable generation templates
+- **Flexible Configuration** - Flexible configuration
 
 ## Getting Started
 
@@ -36,6 +38,23 @@ Now you can run the tool with `mucm` from anywhere.
 
 ### Basic Usage
 
+#### Interactive Mode (Recommended)
+
+```bash
+# Launch interactive mode
+mucm interactive               # or mucm -i
+```
+
+![interactive terminal screenshot](images/interactive.png)
+
+The interactive mode provides:
+- **Smart category suggestions** from existing use cases
+- **Step-by-step workflows** for creating use cases and scenarios
+- **Auto-completion** for use case and scenario selection
+- **Visual feedback** with colors and clear prompts
+
+#### Script Mode (Perfect for Automation)
+
 ```bash
 # Initialize your project
 mucm init
@@ -45,6 +64,9 @@ mucm create "User Login" --category "Security"
 
 # Add scenarios to your use case
 mucm add-scenario "UC-SEC-001" "Login with email and password"
+
+# Update scenario status
+mucm update-status "UC-SEC-001-S01" --status "implemented"
 
 # View your documentation
 mucm list
