@@ -151,8 +151,6 @@ impl FileService {
         Ok(Some(use_case))
     }
 
-
-
     fn extract_description_from_markdown(&self, content: &str) -> Result<String> {
         let lines: Vec<&str> = content.lines().collect();
 

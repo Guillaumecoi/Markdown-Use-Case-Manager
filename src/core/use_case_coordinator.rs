@@ -224,7 +224,7 @@ impl UseCaseCoordinator {
             .iter()
             .map(|uc| uc.category.clone())
             .collect();
-        
+
         categories.sort();
         categories.dedup();
         Ok(categories)

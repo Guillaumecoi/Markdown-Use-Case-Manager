@@ -153,7 +153,6 @@ fn test_get_available_languages_defaults() {
     std::env::set_current_dir(original_dir).unwrap();
 }
 
-
 /// Test language detection with new prefixed folders
 #[test]
 #[serial]

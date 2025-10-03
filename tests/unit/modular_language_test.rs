@@ -40,7 +40,7 @@ fn test_language_lookup() {
 #[test]
 fn test_template_language_specific_methods() {
     let registry = LanguageRegistry::new();
-    
+
     // Test language-specific template methods
     let rust_template = registry.get("rust").unwrap().test_template();
     assert!(rust_template.contains("fn test_"));
@@ -175,5 +175,3 @@ fn test_template_engine_integration() {
     let unknown_template = get_test_template_for_language("unknown");
     assert!(unknown_template.is_none());
 }
-
-

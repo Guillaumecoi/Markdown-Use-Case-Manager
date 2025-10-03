@@ -143,17 +143,17 @@ fn test_cli_error_handling_no_project() {
     let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.args(["create", "--category", "test", "Test Use Case"]);
-    cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains("No markdown use case manager project found"));
+    cmd.assert().failure().stderr(predicate::str::contains(
+        "No markdown use case manager project found",
+    ));
 
     // Test list without initialization
     let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.arg("list");
-    cmd.assert()
-        .failure()
-        .stderr(predicate::str::contains("No markdown use case manager project found"));
+    cmd.assert().failure().stderr(predicate::str::contains(
+        "No markdown use case manager project found",
+    ));
 }
 
 /// Test that help command includes new options
@@ -166,7 +166,9 @@ fn test_cli_help_includes_interactive_options() {
         .success()
         .stdout(predicate::str::contains("Markdown Use Case Manager"))
         .stdout(predicate::str::contains("-i, --interactive"))
-        .stdout(predicate::str::contains("interactive    Enter interactive mode"))
+        .stdout(predicate::str::contains(
+            "interactive    Enter interactive mode",
+        ))
         .stdout(predicate::str::contains("init"))
         .stdout(predicate::str::contains("create"))
         .stdout(predicate::str::contains("list"));

@@ -1,13 +1,16 @@
 use anyhow::Result;
 use crossterm::{
     execute,
-    terminal::{Clear, ClearType},
     style::{Color, Print, ResetColor, SetForegroundColor},
+    terminal::{Clear, ClearType},
 };
 use std::io::stdout;
 
+use crate::cli::interactive::menu::{
+    guided_add_scenario, guided_create_use_case, guided_update_scenario_status, show_main_menu,
+    MainMenuOption,
+};
 use crate::cli::runner::CliRunner;
-use crate::cli::interactive::menu::{show_main_menu, MainMenuOption, guided_create_use_case, guided_add_scenario, guided_update_scenario_status};
 
 /// Interactive session manager
 pub struct InteractiveSession {
@@ -63,12 +66,10 @@ impl InteractiveSession {
                         self.show_error(&format!("Error showing status: {}", e))?;
                     }
                 }
-                MainMenuOption::ShowLanguages => {
-                    match CliRunner::show_languages() {
-                        Ok(languages) => println!("\n{}", languages),
-                        Err(e) => self.show_error(&format!("Error showing languages: {}", e))?,
-                    }
-                }
+                MainMenuOption::ShowLanguages => match CliRunner::show_languages() {
+                    Ok(languages) => println!("\n{}", languages),
+                    Err(e) => self.show_error(&format!("Error showing languages: {}", e))?,
+                },
                 MainMenuOption::Exit => {
                     self.show_goodbye()?;
                     break;
@@ -85,7 +86,7 @@ impl InteractiveSession {
     /// Show welcome message
     fn show_welcome(&self) -> Result<()> {
         self.clear_screen()?;
-        
+
         execute!(
             stdout(),
             SetForegroundColor(Color::Cyan),
@@ -145,19 +146,19 @@ impl InteractiveSession {
 
         let mut input = String::new();
         std::io::stdin().read_line(&mut input)?;
-        
+
         Ok(())
     }
 
     /// Check if project is initialized, offer to initialize if not
     fn check_initialization(&mut self) -> Result<()> {
-        use inquire::Confirm;
         use crate::config::Config;
+        use inquire::Confirm;
 
         // Try to load config
         if Config::load().is_err() {
             self.clear_screen()?;
-            
+
             execute!(
                 stdout(),
                 SetForegroundColor(Color::Yellow),
@@ -180,7 +181,11 @@ impl InteractiveSession {
                     .with_help_message("Select a programming language for test generation, or 'none' to skip test generation")
                     .prompt()?;
 
-                let language = if language == "none" { None } else { Some(language) };
+                let language = if language == "none" {
+                    None
+                } else {
+                    Some(language)
+                };
 
                 match self.runner.init_project(language) {
                     Ok(message) => {
@@ -213,11 +218,11 @@ impl InteractiveSession {
 
     /// Interactive settings configuration
     fn configure_settings(&mut self) -> Result<()> {
-        use inquire::{Text, Select, Confirm};
         use crate::config::Config;
+        use inquire::{Confirm, Select, Text};
 
         self.clear_screen()?;
-        
+
         execute!(
             stdout(),
             SetForegroundColor(Color::Cyan),
@@ -232,21 +237,20 @@ impl InteractiveSession {
         loop {
             let options = vec![
                 "Project Information",
-                "Directory Settings", 
+                "Directory Settings",
                 "Generation Settings",
                 "Metadata Configuration",
                 "View Current Config",
                 "Save & Exit",
             ];
 
-            let choice = Select::new("What would you like to configure?", options)
-                .prompt()?;
+            let choice = Select::new("What would you like to configure?", options).prompt()?;
 
             match choice {
                 "Project Information" => {
                     println!("\n📋 Project Information");
                     println!("────────────────────────");
-                    
+
                     config.project.name = Text::new("Project name:")
                         .with_default(&config.project.name)
                         .prompt()?;
@@ -258,7 +262,7 @@ impl InteractiveSession {
                 "Directory Settings" => {
                     println!("\n📁 Directory Settings");
                     println!("───────────────────────");
-                    
+
                     config.directories.use_case_dir = Text::new("Use case directory:")
                         .with_default(&config.directories.use_case_dir)
                         .with_help_message("Where to store use case markdown files")
@@ -272,14 +276,15 @@ impl InteractiveSession {
                 "Generation Settings" => {
                     println!("\n🔧 Generation Settings");
                     println!("────────────────────────");
-                    
+
                     let languages = Config::get_available_languages()?;
                     let mut language_options = vec!["none".to_string()];
                     language_options.extend(languages);
 
-                    config.generation.test_language = Select::new("Test language:", language_options)
-                        .with_help_message("Programming language for test generation")
-                        .prompt()?;
+                    config.generation.test_language =
+                        Select::new("Test language:", language_options)
+                            .with_help_message("Programming language for test generation")
+                            .prompt()?;
 
                     config.generation.auto_generate_tests = Confirm::new("Auto-generate tests?")
                         .with_default(config.generation.auto_generate_tests)
@@ -288,7 +293,9 @@ impl InteractiveSession {
                     if config.templates.use_case_style.is_some() {
                         let style_options = vec!["simple", "detailed"];
                         let selected_style = Select::new("Use case template style:", style_options)
-                            .with_help_message("Choose between simple or detailed use case templates")
+                            .with_help_message(
+                                "Choose between simple or detailed use case templates",
+                            )
                             .prompt()?;
                         config.templates.use_case_style = Some(selected_style.to_string());
                     }
@@ -296,26 +303,26 @@ impl InteractiveSession {
                 "Metadata Configuration" => {
                     println!("\n📊 Metadata Configuration");
                     println!("────────────────────────────");
-                    
+
                     config.metadata.enabled = Confirm::new("Enable metadata generation?")
                         .with_default(config.metadata.enabled)
                         .prompt()?;
 
                     if config.metadata.enabled {
                         println!("\nWhich auto-generated fields to include:");
-                        
+
                         config.metadata.include_id = Confirm::new("Include ID?")
                             .with_default(config.metadata.include_id)
                             .prompt()?;
-                        
+
                         config.metadata.include_status = Confirm::new("Include status?")
                             .with_default(config.metadata.include_status)
                             .prompt()?;
-                        
+
                         config.metadata.include_priority = Confirm::new("Include priority?")
                             .with_default(config.metadata.include_priority)
                             .prompt()?;
-                        
+
                         config.metadata.include_created = Confirm::new("Include creation date?")
                             .with_default(config.metadata.include_created)
                             .prompt()?;
@@ -324,25 +331,31 @@ impl InteractiveSession {
                 "View Current Config" => {
                     println!("\n📄 Current Configuration");
                     println!("═══════════════════════════");
-                    println!("Project: {} - {}", config.project.name, config.project.description);
+                    println!(
+                        "Project: {} - {}",
+                        config.project.name, config.project.description
+                    );
                     println!("Use Case Dir: {}", config.directories.use_case_dir);
                     println!("Test Dir: {}", config.directories.test_dir);
                     println!("Test Language: {}", config.generation.test_language);
-                    println!("Auto Generate Tests: {}", config.generation.auto_generate_tests);
+                    println!(
+                        "Auto Generate Tests: {}",
+                        config.generation.auto_generate_tests
+                    );
                     println!("Metadata Enabled: {}", config.metadata.enabled);
-                    
+
                     self.pause_for_input()?;
                 }
                 "Save & Exit" => {
                     config.save_in_dir(".")?;
-                    
+
                     execute!(
                         stdout(),
                         SetForegroundColor(Color::Green),
                         Print("\n✅ Configuration saved successfully!\n"),
                         ResetColor
                     )?;
-                    
+
                     self.pause_for_input()?;
                     break;
                 }

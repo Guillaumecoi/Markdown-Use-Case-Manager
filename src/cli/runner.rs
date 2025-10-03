@@ -1,7 +1,7 @@
-use anyhow::Result;
 use crate::config::Config;
-use crate::core::use_case_coordinator::UseCaseCoordinator;
 use crate::core::languages::LanguageRegistry;
+use crate::core::use_case_coordinator::UseCaseCoordinator;
+use anyhow::Result;
 
 /// CLI runner that can be used both programmatically and interactively
 pub struct CliRunner {
@@ -58,10 +58,17 @@ impl CliRunner {
     }
 
     /// Update scenario status
-    pub fn update_scenario_status(&mut self, scenario_id: String, status: String) -> Result<String> {
+    pub fn update_scenario_status(
+        &mut self,
+        scenario_id: String,
+        status: String,
+    ) -> Result<String> {
         let coordinator = self.ensure_coordinator()?;
         coordinator.update_scenario_status(scenario_id.clone(), status.clone())?;
-        Ok(format!("Updated scenario {} status to {}", scenario_id, status))
+        Ok(format!(
+            "Updated scenario {} status to {}",
+            scenario_id, status
+        ))
     }
 
     /// List all use cases
@@ -73,23 +80,28 @@ impl CliRunner {
     /// Show available languages
     pub fn show_languages() -> Result<String> {
         let mut output = String::from("Available programming languages:\n");
-        
+
         match Config::get_available_languages() {
             Ok(languages) => {
                 for lang in languages {
                     output.push_str(&format!("  - {}\n", lang));
                 }
-                output.push_str("\nTo initialize with a specific language: mucm init -l <language>\n");
+                output.push_str(
+                    "\nTo initialize with a specific language: mucm init -l <language>\n",
+                );
                 output.push_str("To add a new language manually, create a directory: .config/.mucm/templates/lang-<language>/\n");
             }
             Err(e) => {
                 output.push_str(&format!("Error getting available languages: {}\n", e));
                 let language_registry = LanguageRegistry::new();
                 let builtin_languages = language_registry.available_languages();
-                output.push_str(&format!("Built-in languages: {}\n", builtin_languages.join(", ")));
+                output.push_str(&format!(
+                    "Built-in languages: {}\n",
+                    builtin_languages.join(", ")
+                ));
             }
         }
-        
+
         Ok(output)
     }
 

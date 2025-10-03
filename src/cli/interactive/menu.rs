@@ -1,6 +1,6 @@
-use anyhow::Result;
-use inquire::{Select, Text, Confirm};
 use crate::cli::runner::CliRunner;
+use anyhow::Result;
+use inquire::{Confirm, Select, Text};
 
 /// Main menu options for interactive mode
 #[derive(Debug, Clone)]
@@ -61,7 +61,7 @@ pub fn guided_create_use_case(runner: &mut CliRunner) -> Result<()> {
 
     // Get existing categories for suggestions
     let existing_categories = runner.get_categories().unwrap_or_default();
-    
+
     let category = if existing_categories.is_empty() {
         Text::new("Enter the category:")
             .with_help_message("e.g., 'auth', 'api', 'security', 'profile'")
@@ -70,10 +70,9 @@ pub fn guided_create_use_case(runner: &mut CliRunner) -> Result<()> {
         // Allow selection from existing or entering new
         let mut options = existing_categories.clone();
         options.push("✏️  Enter a new category".to_string());
-        
-        let selection = Select::new("Select a category or create a new one:", options)
-            .prompt()?;
-            
+
+        let selection = Select::new("Select a category or create a new one:", options).prompt()?;
+
         if selection == "✏️  Enter a new category" {
             Text::new("Enter the new category:")
                 .with_help_message("e.g., 'auth', 'api', 'security', 'profile'")
@@ -89,9 +88,11 @@ pub fn guided_create_use_case(runner: &mut CliRunner) -> Result<()> {
         .prompt()?;
 
     let description = if add_description {
-        Some(Text::new("Enter the description:")
-            .with_help_message("Brief description of what this use case covers")
-            .prompt()?)
+        Some(
+            Text::new("Enter the description:")
+                .with_help_message("Brief description of what this use case covers")
+                .prompt()?,
+        )
     } else {
         None
     };
@@ -121,7 +122,7 @@ pub fn guided_add_scenario(runner: &mut CliRunner) -> Result<()> {
 
     // Get all use case IDs
     let use_case_ids = runner.get_use_case_ids()?;
-    
+
     if use_case_ids.is_empty() {
         println!("❌ No use cases found. Create a use case first!");
         return Ok(());
@@ -146,13 +147,13 @@ fn guided_add_scenarios_to_use_case(runner: &mut CliRunner, use_case_id: &str) -
             .prompt()?;
 
         // Get optional description
-        let add_description = Confirm::new("Would you like to add a description for this scenario?")
-            .with_default(false)
-            .prompt()?;
+        let add_description =
+            Confirm::new("Would you like to add a description for this scenario?")
+                .with_default(false)
+                .prompt()?;
 
         let description = if add_description {
-            Some(Text::new("Enter the scenario description:")
-                .prompt()?)
+            Some(Text::new("Enter the scenario description:").prompt()?)
         } else {
             None
         };
@@ -180,7 +181,7 @@ pub fn guided_update_scenario_status(runner: &mut CliRunner) -> Result<()> {
 
     // Get all use case IDs
     let use_case_ids = runner.get_use_case_ids()?;
-    
+
     if use_case_ids.is_empty() {
         println!("❌ No use cases found. Create a use case first!");
         return Ok(());
@@ -193,7 +194,7 @@ pub fn guided_update_scenario_status(runner: &mut CliRunner) -> Result<()> {
 
     // Get scenarios for this use case
     let scenario_ids = runner.get_scenario_ids(&use_case_id)?;
-    
+
     if scenario_ids.is_empty() {
         println!("❌ No scenarios found for this use case. Add scenarios first!");
         return Ok(());
@@ -207,15 +208,14 @@ pub fn guided_update_scenario_status(runner: &mut CliRunner) -> Result<()> {
     // Select new status
     let statuses = vec![
         "planned",
-        "in_progress", 
+        "in_progress",
         "implemented",
         "tested",
         "deployed",
-        "deprecated"
+        "deprecated",
     ];
 
-    let status = Select::new("Select new status:", statuses)
-        .prompt()?;
+    let status = Select::new("Select new status:", statuses).prompt()?;
 
     // Update the status
     let result = runner.update_scenario_status(scenario_id, status.to_string())?;

@@ -63,8 +63,6 @@ pub fn get_test_template_for_language(language_name: &str) -> Option<&'static st
     registry.get(language_name).map(|lang| lang.test_template())
 }
 
-
-
 /// Get available test languages
 pub fn get_available_test_languages() -> Vec<String> {
     let registry = LanguageRegistry::new();

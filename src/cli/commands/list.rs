@@ -1,5 +1,5 @@
-use anyhow::Result;
 use crate::cli::runner::CliRunner;
+use anyhow::Result;
 
 pub fn handle_list_command(runner: &mut CliRunner) -> Result<()> {
     runner.list_use_cases()

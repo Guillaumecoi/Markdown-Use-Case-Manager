@@ -234,7 +234,8 @@ impl Config {
 
         if source_lang_dir.exists() {
             // Copy from source templates
-            let target_lang_dir = config_templates_dir.join(format!("{}{}", Self::LANGUAGE_PREFIX, &lang));
+            let target_lang_dir =
+                config_templates_dir.join(format!("{}{}", Self::LANGUAGE_PREFIX, &lang));
 
             fs::create_dir_all(&target_lang_dir)
                 .context("Failed to create language templates directory")?;
@@ -263,7 +264,8 @@ impl Config {
             // Fallback to built-in template generation using the language registry
             let language_registry = LanguageRegistry::new();
             if let Some(language_impl) = language_registry.get(&lang) {
-                let target_lang_dir = config_templates_dir.join(format!("{}{}", Self::LANGUAGE_PREFIX, &lang));
+                let target_lang_dir =
+                    config_templates_dir.join(format!("{}{}", Self::LANGUAGE_PREFIX, &lang));
 
                 fs::create_dir_all(&target_lang_dir)
                     .context("Failed to create language templates directory")?;
