@@ -1,5 +1,7 @@
 // Unit tests for UseCase struct and related functionality
-use markdown_use_case_manager::core::models::{Priority, Scenario, Status, UseCase};
+// Unit tests for UseCase struct and related functionality
+use markdown_use_case_manager::core::models::{UseCase, Scenario, Status, Priority};
+use crate::test_utils::set_scenario_status;
 
 /// Test UseCase::new() creates use case with correct initial values
 #[test]
@@ -45,13 +47,13 @@ fn test_use_case_status_aggregation() {
         "Scenario 2".to_string(),
         "Description 2".to_string(),
     );
-    scenario2.set_status(Status::InProgress);
+    set_scenario_status(&mut scenario2, Status::InProgress);
     let mut scenario3 = Scenario::new(
         "SC-003".to_string(),
         "Scenario 3".to_string(),
         "Description 3".to_string(),
     );
-    scenario3.set_status(Status::Tested);
+    set_scenario_status(&mut scenario3, Status::Tested);
 
     use_case.add_scenario(scenario1);
     assert_eq!(use_case.status(), Status::Planned); // All planned
@@ -219,21 +221,21 @@ fn test_use_case_complex_status_scenarios() {
         "Scenario 1".to_string(),
         "Desc 1".to_string(),
     );
-    scenario1.set_status(Status::Deployed);
+    set_scenario_status(&mut scenario1, Status::Deployed);
 
     let mut scenario2 = Scenario::new(
         "SC-2".to_string(),
         "Scenario 2".to_string(),
         "Desc 2".to_string(),
     );
-    scenario2.set_status(Status::Deprecated);
+    set_scenario_status(&mut scenario2, Status::Deprecated);
 
     let mut scenario3 = Scenario::new(
         "SC-3".to_string(),
         "Scenario 3".to_string(),
         "Desc 3".to_string(),
     );
-    scenario3.set_status(Status::Tested);
+    set_scenario_status(&mut scenario3, Status::Tested);
 
     use_case.add_scenario(scenario1);
     use_case.add_scenario(scenario2);

@@ -21,10 +21,4 @@ impl Scenario {
             metadata: Metadata::new(),
         }
     }
-
-    #[allow(dead_code)]
-    pub fn set_status(&mut self, status: Status) {
-        self.status = status;
-        self.metadata.touch();
-    }
 }

@@ -84,38 +84,6 @@ impl UseCaseService {
             )),
         }
     }
-
-    /// Find a use case by ID
-    #[allow(dead_code)]
-    pub fn find_use_case_by_id<'a>(
-        &self,
-        use_cases: &'a [UseCase],
-        use_case_id: &str,
-    ) -> Option<&'a UseCase> {
-        use_cases.iter().find(|uc| uc.id == use_case_id)
-    }
-
-    /// Find a mutable use case by ID
-    #[allow(dead_code)]
-    pub fn find_use_case_by_id_mut<'a>(
-        &self,
-        use_cases: &'a mut [UseCase],
-        use_case_id: &str,
-    ) -> Option<&'a mut UseCase> {
-        use_cases.iter_mut().find(|uc| uc.id == use_case_id)
-    }
-
-    /// Find a use case that contains a specific scenario
-    #[allow(dead_code)]
-    pub fn find_use_case_by_scenario_id<'a>(
-        &self,
-        use_cases: &'a mut [UseCase],
-        scenario_id: &str,
-    ) -> Option<&'a mut UseCase> {
-        use_cases.iter_mut().find(|uc| {
-            uc.scenarios.iter().any(|s| s.id == scenario_id)
-        })
-    }
 }
 
 impl Default for UseCaseService {

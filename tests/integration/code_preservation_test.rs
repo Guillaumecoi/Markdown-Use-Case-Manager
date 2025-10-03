@@ -7,7 +7,7 @@ use std::collections::HashMap;
 #[test]
 fn test_template_preservation_features() {
     with_temp_dir(|_temp_dir| {
-        let engine = TemplateEngine::new();
+        let engine = TemplateEngine::new().unwrap();
 
         // Create test data that represents a use case with scenarios
         let mut data = HashMap::new();
@@ -66,7 +66,7 @@ fn test_template_preservation_features() {
 #[test]
 fn test_marker_granularity() {
     with_temp_dir(|_temp_dir| {
-        let engine = TemplateEngine::new();
+        let engine = TemplateEngine::new().unwrap();
 
         // Create test data with multiple scenarios
         let mut data = HashMap::new();

@@ -1,6 +1,7 @@
 // tests/unit/use_case_service_test.rs
 use markdown_use_case_manager::core::models::{Status, UseCase};
 use markdown_use_case_manager::core::services::UseCaseService;
+use crate::test_utils::find_use_case_by_id;
 
 #[test]
 fn test_use_case_service_pure_business_logic() {
@@ -77,17 +78,16 @@ fn test_status_parsing() {
 
 #[test]
 fn test_finding_use_cases() {
-    let service = UseCaseService::new();
     let use_cases = vec![
         UseCase::new("UC-SEC-001".to_string(), "Login".to_string(), "Security".to_string(), "".to_string()),
         UseCase::new("UC-API-001".to_string(), "REST API".to_string(), "API".to_string(), "".to_string()),
     ];
     
-    let found = service.find_use_case_by_id(&use_cases, "UC-SEC-001");
+    let found = find_use_case_by_id(&use_cases, "UC-SEC-001");
     assert!(found.is_some());
     assert_eq!(found.unwrap().title, "Login");
     
-    let not_found = service.find_use_case_by_id(&use_cases, "UC-MISSING-001");
+    let not_found = find_use_case_by_id(&use_cases, "UC-MISSING-001");
     assert!(not_found.is_none());
 }
 

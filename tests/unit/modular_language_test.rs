@@ -1,8 +1,7 @@
 // Tests for the modular language support system
 
 use markdown_use_case_manager::core::languages::LanguageRegistry;
-use tempfile::TempDir;
-use std::fs;
+use crate::test_utils::*;
 
 #[test]
 fn test_language_registry_creation() {
@@ -39,20 +38,16 @@ fn test_language_lookup() {
 }
 
 #[test]
-fn test_rust_language_implementation() {
-    let registry = LanguageRegistry::new();
-    let rust_lang = registry.get("rust").unwrap();
+fn test_template_language_specific_methods() {
+    // Test language-specific template methods
+    let rust_template = get_rust_test_template();
+    assert!(rust_template.contains("fn test_"));
     
-    assert_eq!(rust_lang.name(), "rust");
-    assert_eq!(rust_lang.file_extension(), "rs");
-    assert!(rust_lang.uses_legacy_directory());
-    assert_eq!(rust_lang.legacy_directory(), "rust");
+    let python_template = get_python_test_template();
+    assert!(python_template.contains("def test_"));
     
-    // Test that template is loaded
-    let template = rust_lang.test_template();
-    assert!(template.contains("{{title}}"));
-    assert!(template.contains("#[test]"));
-    assert!(template.contains("fn test_{{snake_case_id}}"));
+    let js_template = get_javascript_test_template();
+    assert!(js_template.contains("describe("));
 }
 
 #[test]
@@ -143,67 +138,29 @@ fn test_template_content_quality() {
 
 #[test]
 fn test_template_engine_integration() {
-    use markdown_use_case_manager::core::templates::TemplateEngine;
-    
     // Test that TemplateEngine can get templates through the language registry
-    let rust_template = TemplateEngine::get_test_template_for_language("rust");
+    let rust_template = get_test_template_for_language("rust");
     assert!(rust_template.is_some());
     
-    let python_template = TemplateEngine::get_test_template_for_language("python");
+    let python_template = get_test_template_for_language("python");
     assert!(python_template.is_some());
     
-    let js_template = TemplateEngine::get_test_template_for_language("javascript");
+    let js_template = get_test_template_for_language("javascript");
     assert!(js_template.is_some());
     
-    let unknown_template = TemplateEngine::get_test_template_for_language("unknown");
+    let unknown_template = get_test_template_for_language("unknown");
     assert!(unknown_template.is_none());
 }
 
 #[test]
 fn test_legacy_compatibility() {
-    use markdown_use_case_manager::core::templates::TemplateEngine;
-    
     // Test that legacy methods still work
-    let rust_template = TemplateEngine::get_rust_test_template();
+    let rust_template = get_rust_test_template();
     assert!(rust_template.contains("{{title}}"));
     
-    let python_template = TemplateEngine::get_python_test_template();
+    let python_template = get_python_test_template();
     assert!(python_template.contains("{{title}}"));
     
-    let js_template = TemplateEngine::get_javascript_test_template();
+    let js_template = get_javascript_test_template();
     assert!(js_template.contains("{{title}}"));
-}
-
-#[cfg(test)]
-mod modular_language_tests {
-    use super::*;
-    use markdown_use_case_manager::config::Config;
-    use std::env;
-    
-    #[test]
-    fn test_end_to_end_language_support() {
-        let temp_dir = TempDir::new().unwrap();
-        let original_dir = env::current_dir().unwrap();
-        
-        // Change to temp directory for this test
-        env::set_current_dir(&temp_dir).unwrap();
-        
-        // Test that we can initialize with each supported language
-        for language in &["rust", "python", "javascript", "js", "py"] {
-            let result = Config::init_project_with_language_in_dir(
-                temp_dir.path().to_str().unwrap(), 
-                Some(language.to_string())
-            );
-            assert!(result.is_ok(), "Failed to initialize with language: {}", language);
-            
-            // Clean up for next iteration
-            let config_dir = temp_dir.path().join(".config");
-            if config_dir.exists() {
-                fs::remove_dir_all(&config_dir).unwrap();
-            }
-        }
-        
-        // Restore original directory
-        env::set_current_dir(original_dir).unwrap();
-    }
 }

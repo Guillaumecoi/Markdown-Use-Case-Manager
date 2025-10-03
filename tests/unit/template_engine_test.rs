@@ -56,18 +56,25 @@ fn test_to_snake_case_multiple_separators() {
     assert_eq!(to_snake_case("test-._ case"), "test_case");
 }
 
-/// Test TemplateEngine::new() creates a valid engine
+/// Test TemplateEngine::new().unwrap() creates a valid engine
 #[test]
-fn test_template_engine_new() {
-    let engine = TemplateEngine::new();
-    // Just verify it creates without panicking - internal structure is private
-    assert!(format!("{:?}", engine).contains("TemplateEngine"));
+fn test_template_engine_creation() {
+    let engine = TemplateEngine::new().unwrap();
+    assert!(engine.render_use_case(&HashMap::new()).is_ok());
+}
+
+#[test]
+fn test_template_engine_uniqueness() {
+    let engine1 = TemplateEngine::new().unwrap();
+    
+    // Both should be TemplateEngine instances
+    assert!(format!("{:?}", engine1).contains("TemplateEngine"));
 }
 
 /// Test TemplateEngine::default() works the same as new()
 #[test]
 fn test_template_engine_default() {
-    let engine1 = TemplateEngine::new();
+    let engine1 = TemplateEngine::new().unwrap();
     let engine2 = TemplateEngine::default();
 
     // Both should be TemplateEngine instances (can't test equality due to private fields)
@@ -78,7 +85,7 @@ fn test_template_engine_default() {
 /// Test TemplateEngine::render_use_case() with minimal data
 #[test]
 fn test_template_engine_render_minimal() {
-    let engine = TemplateEngine::new();
+    let engine = TemplateEngine::new().unwrap();
     let mut data = HashMap::new();
 
     // Minimal required data
@@ -100,7 +107,7 @@ fn test_template_engine_render_minimal() {
 /// Test TemplateEngine::render_use_case() with metadata enabled
 #[test]
 fn test_template_engine_render_with_metadata() {
-    let engine = TemplateEngine::new();
+    let engine = TemplateEngine::new().unwrap();
     let mut data = HashMap::new();
 
     // Complete data with metadata
@@ -158,7 +165,7 @@ fn test_template_engine_render_with_metadata() {
 /// Test TemplateEngine::render_use_case() without metadata
 #[test]
 fn test_template_engine_render_no_metadata() {
-    let engine = TemplateEngine::new();
+    let engine = TemplateEngine::new().unwrap();
     let mut data = HashMap::new();
 
     data.insert("title".to_string(), json!("Simple Case"));
@@ -186,7 +193,7 @@ fn test_template_engine_render_no_metadata() {
 /// Test TemplateEngine::render_use_case() with scenarios
 #[test]
 fn test_template_engine_render_with_scenarios() {
-    let engine = TemplateEngine::new();
+    let engine = TemplateEngine::new().unwrap();
     let mut data = HashMap::new();
 
     data.insert("title".to_string(), json!("Test With Scenarios"));
@@ -231,7 +238,7 @@ fn test_template_engine_render_with_scenarios() {
 /// Test TemplateEngine error handling with invalid data
 #[test]
 fn test_template_engine_error_handling() {
-    let engine = TemplateEngine::new();
+    let engine = TemplateEngine::new().unwrap();
     let data = HashMap::new();
 
     // Missing required fields should still work (handlebars is forgiving)
@@ -246,7 +253,7 @@ fn test_template_engine_error_handling() {
 /// Test TemplateEngine::render_rust_test() functionality
 #[test]
 fn test_template_engine_render_rust_test() {
-    let engine = TemplateEngine::new();
+    let engine = TemplateEngine::new().unwrap();
     let mut data = HashMap::new();
 
     data.insert("id".to_string(), json!("UC-TST-001"));
@@ -282,7 +289,7 @@ fn test_template_engine_render_rust_test() {
 /// Test TemplateEngine::render_python_test() functionality
 #[test]
 fn test_template_engine_render_python_test() {
-    let engine = TemplateEngine::new();
+    let engine = TemplateEngine::new().unwrap();
     let mut data = HashMap::new();
 
     data.insert("id".to_string(), json!("UC-TST-001"));
@@ -391,7 +398,7 @@ fn test_template_engine_fallback_to_builtin() {
 /// Test TemplateEngine default config behavior
 #[test]
 fn test_template_engine_default_config() {
-    let engine = TemplateEngine::new();
+    let engine = TemplateEngine::new().unwrap();
 
     let mut data = HashMap::new();
     data.insert("title".to_string(), json!("Test Use Case"));
@@ -406,7 +413,7 @@ fn test_template_engine_default_config() {
 /// Test that Rust templates contain the new granular user implementation markers
 #[test]
 fn test_rust_template_granular_markers() {
-    let engine = TemplateEngine::new();
+    let engine = TemplateEngine::new().unwrap();
     let mut data = HashMap::new();
 
     data.insert("id".to_string(), json!("UC-TST-001"));
@@ -452,7 +459,7 @@ fn test_rust_template_granular_markers() {
 /// Test that Python templates contain the new granular user implementation markers
 #[test]
 fn test_python_template_granular_markers() {
-    let engine = TemplateEngine::new();
+    let engine = TemplateEngine::new().unwrap();
     let mut data = HashMap::new();
 
     data.insert("id".to_string(), json!("UC-TST-001"));
@@ -509,7 +516,7 @@ fn test_python_template_granular_markers() {
 /// Test that scenario template methods are no longer available
 #[test]
 fn test_scenario_template_methods_removed() {
-    let engine = TemplateEngine::new();
+    let engine = TemplateEngine::new().unwrap();
 
     // This test verifies at compile time that scenario template methods don't exist
     // If this compiles, it means the methods were successfully removed
@@ -532,7 +539,7 @@ fn test_scenario_template_methods_removed() {
 /// Test error handling for unsupported languages
 #[test]
 fn test_render_test_unsupported_language() {
-    let engine = TemplateEngine::new();
+    let engine = TemplateEngine::new().unwrap();
     let mut data = HashMap::new();
     data.insert("title".to_string(), json!("Test"));
     data.insert("scenarios".to_string(), json!([]));
@@ -547,7 +554,7 @@ fn test_render_test_unsupported_language() {
 /// Test template engine load_test_templates_for_language function coverage
 #[test]
 fn test_load_test_templates_coverage() {
-    let engine = TemplateEngine::new();
+    let engine = TemplateEngine::new().unwrap();
 
     // Test that we can render both supported languages
     let mut data = HashMap::new();
@@ -566,7 +573,7 @@ fn test_load_test_templates_coverage() {
 /// Test that templates don't contain "Expected outcome" field references
 #[test]
 fn test_no_expected_outcome_in_templates() {
-    let engine = TemplateEngine::new();
+    let engine = TemplateEngine::new().unwrap();
     let mut data = HashMap::new();
 
     data.insert("title".to_string(), json!("Test Case"));

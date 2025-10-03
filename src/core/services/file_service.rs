@@ -2,7 +2,7 @@
 use crate::config::Config;
 use crate::core::models::{Scenario, UseCase};
 use crate::core::templates::to_snake_case;
-use anyhow::{Context, Result};
+use anyhow::Result;
 use std::fs;
 use std::path::Path;
 
@@ -88,17 +88,6 @@ impl FileService {
         let test_file_name = format!("{}.{}", to_snake_case(&use_case.id), file_extension);
         let test_path = test_dir.join(test_file_name);
         test_path.exists()
-    }
-
-    /// Read existing test file content
-    #[allow(dead_code)]
-    pub fn read_test_file(&self, use_case: &UseCase, file_extension: &str) -> Result<String> {
-        let test_dir = Path::new(&self.config.directories.test_dir)
-            .join(to_snake_case(&use_case.category));
-        let test_file_name = format!("{}.{}", to_snake_case(&use_case.id), file_extension);
-        let test_path = test_dir.join(test_file_name);
-        
-        fs::read_to_string(&test_path).context("Failed to read test file")
     }
 
     // Private parsing methods

@@ -1,5 +1,6 @@
 // Unit tests for Scenario struct and related functionality
 use markdown_use_case_manager::core::models::{Scenario, Status};
+use crate::test_utils::set_scenario_status;
 
 /// Test Scenario::new() creates scenario with correct initial values
 #[test]
@@ -33,7 +34,7 @@ fn test_scenario_set_status() {
     // Small delay to ensure timestamp difference
     std::thread::sleep(std::time::Duration::from_millis(10));
 
-    scenario.set_status(Status::InProgress);
+    set_scenario_status(&mut scenario, Status::InProgress);
 
     assert_eq!(scenario.status, Status::InProgress);
     assert!(scenario.metadata.updated_at > original_updated);
@@ -58,7 +59,7 @@ fn test_scenario_multiple_status_updates() {
     ];
 
     for status in statuses.iter() {
-        scenario.set_status(*status);
+        set_scenario_status(&mut scenario, *status);
         assert_eq!(scenario.status, *status);
         // Verify timestamp gets updated with each status change
         assert!(scenario.metadata.updated_at >= last_updated);
@@ -104,7 +105,7 @@ fn test_scenario_clone() {
         "Testing clone functionality".to_string(),
     );
 
-    scenario.set_status(Status::Tested);
+    set_scenario_status(&mut scenario, Status::Tested);
 
     let cloned = scenario.clone();
 
@@ -125,7 +126,7 @@ fn test_scenario_serialization() {
         "Testing serialization capabilities".to_string(),
     );
 
-    scenario.set_status(Status::Implemented);
+    set_scenario_status(&mut scenario, Status::Implemented);
 
     // Test serialization (used internally)
     let json = serde_json::to_string(&scenario).expect("Failed to serialize");
@@ -191,22 +192,22 @@ fn test_scenario_status_transitions() {
     // Typical workflow: Planned -> InProgress -> Implemented -> Tested -> Deployed
     assert_eq!(scenario.status, Status::Planned);
 
-    scenario.set_status(Status::InProgress);
+    set_scenario_status(&mut scenario, Status::InProgress);
     assert_eq!(scenario.status, Status::InProgress);
 
-    scenario.set_status(Status::Implemented);
+    set_scenario_status(&mut scenario, Status::Implemented);
     assert_eq!(scenario.status, Status::Implemented);
 
-    scenario.set_status(Status::Tested);
+    set_scenario_status(&mut scenario, Status::Tested);
     assert_eq!(scenario.status, Status::Tested);
 
-    scenario.set_status(Status::Deployed);
+    set_scenario_status(&mut scenario, Status::Deployed);
     assert_eq!(scenario.status, Status::Deployed);
 
     // Can also go backwards or skip steps
-    scenario.set_status(Status::InProgress);
+    set_scenario_status(&mut scenario, Status::InProgress);
     assert_eq!(scenario.status, Status::InProgress);
 
-    scenario.set_status(Status::Deprecated);
+    set_scenario_status(&mut scenario, Status::Deprecated);
     assert_eq!(scenario.status, Status::Deprecated);
 }

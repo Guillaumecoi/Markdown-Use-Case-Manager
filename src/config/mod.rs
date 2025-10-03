@@ -82,127 +82,44 @@ impl Config {
         Path::new(Self::CONFIG_DIR).join(Self::CONFIG_FILE)
     }
 
-    pub fn templates_dir() -> PathBuf {
-        Path::new(Self::CONFIG_DIR).join(Self::TEMPLATES_DIR)
-    }
-
     /// Get list of available programming languages from source templates and local config
     pub fn get_available_languages() -> Result<Vec<String>> {
         let mut languages = Vec::new();
-        
-        // Get built-in languages from the registry
+
+        // Start with built-in language registry
         let language_registry = LanguageRegistry::new();
-        let builtin_languages = language_registry.available_languages();
-
-        // First, check source templates directory (built-in languages)
-        let source_templates_dir = Path::new(Self::SOURCE_TEMPLATES_DIR);
-        if source_templates_dir.exists() {
-            if let Ok(entries) = fs::read_dir(source_templates_dir) {
-                for entry in entries.flatten() {
-                    let path = entry.path();
-                    if path.is_dir() {
-                        if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                            if let Some(lang_name) = name.strip_prefix(Self::LANGUAGE_PREFIX) {
-                                if !lang_name.is_empty() {
-                                    languages.push(lang_name.to_string());
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-                // Then check config templates directory
-        let current_templates_dir = Self::templates_dir();
-        if current_templates_dir.exists() {
-            if let Ok(entries) = fs::read_dir(&current_templates_dir) {
-                for entry in entries.flatten() {
-                    let path = entry.path();
-                    if path.is_dir() {
-                        if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                            if let Some(lang_name) = name.strip_prefix(Self::LANGUAGE_PREFIX) {
-                                if !lang_name.is_empty() && !languages.contains(&lang_name.to_string()) {
-                                    languages.push(lang_name.to_string());
-                                }
-                            } else if language_registry.is_supported(name) {
-                                // Support any language supported by the registry for backward compatibility
-                                if !languages.contains(&name.to_string()) {
-                                    languages.push(name.to_string());
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Add built-in languages if none found or to supplement discovered ones
-        languages.extend(builtin_languages);
-
-        languages.sort();
-        languages.dedup();
-        Ok(languages)
-    }
-
-    /// Get available languages from a specific directory (used for cross-directory checks)
-    #[allow(dead_code)]
-    pub fn get_available_languages_from_dir(base_dir: &str) -> Result<Vec<String>> {
-        let base_path = Path::new(base_dir);
-        let templates_dir = base_path.join(Self::CONFIG_DIR).join(Self::TEMPLATES_DIR);
-        let mut languages = Vec::new();
+        languages.extend(language_registry.available_languages());
+        
+        // Look for user-defined languages in current directory
+        let config_dir = Path::new(Self::CONFIG_DIR);
+        let templates_dir = config_dir.join(Self::TEMPLATES_DIR);
 
         if templates_dir.exists() {
-            if let Ok(entries) = fs::read_dir(&templates_dir) {
-                for entry in entries.flatten() {
-                    let path = entry.path();
-                    if path.is_dir() {
-                        if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                            if let Some(lang_name) = name.strip_prefix(Self::LANGUAGE_PREFIX) {
-                                if !lang_name.is_empty() {
-                                    languages.push(lang_name.to_string());
-                                }
-                            } else if matches!(name, "rust" | "python") {
-                                // Support legacy folders for backward compatibility
-                                languages.push(name.to_string());
-                            }
+            for entry in fs::read_dir(&templates_dir)? {
+                let entry = entry?;
+                if entry.file_type()?.is_dir() {
+                    let dir_name = entry.file_name().to_string_lossy().to_string();
+                    
+                    // Check for "lang-{language}" pattern (preferred)
+                    if let Some(lang) = dir_name.strip_prefix("lang-") {
+                        if !languages.contains(&lang.to_string()) {
+                            languages.push(lang.to_string());
                         }
+                    }
+                    // Check for just "{language}" (legacy compatibility)
+                    else if !languages.contains(&dir_name) {
+                        languages.push(dir_name);
                     }
                 }
             }
         }
 
-        // Always include built-in languages
-        for builtin in ["rust", "python"] {
-            if !languages.contains(&builtin.to_string()) {
-                languages.push(builtin.to_string());
-            }
-        }
-
         languages.sort();
-        languages.dedup();
         Ok(languages)
-    }
-
-    /// Check if a language is supported (either built-in or available in templates)
-    #[allow(dead_code)]
-    pub fn is_language_supported(language: &str) -> Result<bool> {
-        let available = Self::get_available_languages()?;
-        Ok(available.contains(&language.to_string()))
-    }
-
-    #[allow(dead_code)]
-    pub fn init_project() -> Result<Self> {
-        Self::init_project_in_dir(".")
     }
 
     pub fn init_project_with_language(language: Option<String>) -> Result<Self> {
         Self::init_project_with_language_in_dir(".", language)
-    }
-
-    #[allow(dead_code)]
-    pub fn init_project_in_dir(base_dir: &str) -> Result<Self> {
-        Self::init_project_with_language_in_dir(base_dir, None)
     }
 
     pub fn init_project_with_language_in_dir(base_dir: &str, language: Option<String>) -> Result<Self> {
@@ -393,32 +310,6 @@ impl Config {
         let config: Config = toml::from_str(&content).context("Failed to parse config file")?;
 
         Ok(config)
-    }
-
-    #[allow(dead_code)]
-    pub fn load_from_dir(base_dir: &str) -> Result<Self> {
-        let base_path = Path::new(base_dir);
-        let config_path = base_path.join(Self::CONFIG_DIR).join("mucm.toml");
-
-        if !config_path.exists() {
-            anyhow::bail!("No markdown use case manager project found. Run 'mucm init' first.");
-        }
-
-        let content = fs::read_to_string(&config_path).context("Failed to read config file")?;
-
-        let config: Config = toml::from_str(&content).context("Failed to parse config file")?;
-
-        Ok(config)
-    }
-
-    #[allow(dead_code)]
-    pub fn save(&self) -> Result<()> {
-        let config_path = Self::config_path();
-        let content = toml::to_string_pretty(self).context("Failed to serialize config")?;
-
-        fs::write(&config_path, content).context("Failed to write config file")?;
-
-        Ok(())
     }
 
     pub fn save_in_dir(&self, base_dir: &str) -> Result<()> {

@@ -1,13 +1,16 @@
 // Integration tests for template management system
+// tests/integration/template_management_test.rs
+use super::test_helpers::with_temp_dir;
 use markdown_use_case_manager::config::Config;
 use std::fs;
+use crate::test_utils::{init_project_in_dir, templates_dir};
 use std::path::Path;
 use tempfile::TempDir;
 
 /// Test that templates_dir() returns correct path
 #[test]
 fn test_templates_dir_path() {
-    let templates_dir = Config::templates_dir();
+    let templates_dir = templates_dir();
     assert_eq!(templates_dir, Path::new(".config/.mucm/templates"));
 }
 
@@ -25,7 +28,7 @@ fn test_init_creates_template_directory() {
     let temp_dir = TempDir::new().unwrap();
 
     // Initialize project in temp directory (no directory change needed)
-    let result = Config::init_project_in_dir(temp_dir.path().to_str().unwrap());
+    let result = init_project_in_dir(temp_dir.path().to_str().unwrap());
     assert!(result.is_ok());
 
     // Verify template directory structure was created
@@ -39,7 +42,7 @@ fn test_template_copying_with_source() {
     let temp_dir = TempDir::new().unwrap();
 
     // Initialize project in temp directory
-    Config::init_project_in_dir(temp_dir.path().to_str().unwrap())
+    init_project_in_dir(temp_dir.path().to_str().unwrap())
         .expect("Failed to initialize project");
 
     // Verify core templates were created
@@ -195,22 +198,18 @@ fn test_language_detection_prefixed_folders() {
 /// Test mixed legacy and prefixed language folders
 #[test]
 fn test_language_detection_mixed_folders() {
-    let temp_dir = TempDir::new().unwrap();
-    let original_dir = std::env::current_dir().unwrap();
-    std::env::set_current_dir(&temp_dir).unwrap();
+    with_temp_dir(|temp_dir| {
+        // Create both legacy and prefixed folders
+        let templates_dir = temp_dir.path().join(".config/.mucm/templates");
+        fs::create_dir_all(&templates_dir).unwrap();
+        fs::create_dir_all(templates_dir.join("rust")).unwrap(); // Legacy
+        fs::create_dir_all(templates_dir.join("lang-go")).unwrap(); // New
 
-    // Create both legacy and prefixed folders
-    let templates_dir = temp_dir.path().join(".config/.mucm/templates");
-    fs::create_dir_all(&templates_dir).unwrap();
-    fs::create_dir_all(templates_dir.join("rust")).unwrap(); // Legacy
-    fs::create_dir_all(templates_dir.join("lang-go")).unwrap(); // New
-
-    let languages = Config::get_available_languages().unwrap();
-    // Should detect local config additions
-    assert!(languages.contains(&"rust".to_string())); // Legacy folder
-    assert!(languages.contains(&"go".to_string())); // From local config
-    // Should not contain duplicates
-    assert_eq!(languages.iter().filter(|&l| l == "rust").count(), 1);
-
-    std::env::set_current_dir(original_dir).unwrap();
+        let languages = Config::get_available_languages().unwrap();
+        // Should detect local config additions
+        assert!(languages.contains(&"rust".to_string())); // Legacy folder
+        assert!(languages.contains(&"go".to_string())); // From local config
+        // Should not contain duplicates
+        assert_eq!(languages.iter().filter(|&l| l == "rust").count(), 1);
+    });
 }

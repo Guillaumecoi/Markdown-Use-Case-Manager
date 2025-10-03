@@ -5,6 +5,28 @@ use markdown_use_case_manager::core::use_case_coordinator::UseCaseCoordinator;
 use markdown_use_case_manager::core::templates::TemplateEngine;
 use std::collections::HashMap;
 use std::fs;
+use crate::test_utils::get_available_test_languages;
+
+/// Test end-to-end language support initialization
+#[test]
+fn test_end_to_end_language_support() {
+    with_temp_dir(|_temp_dir| {
+        // Test that we can initialize with each supported language
+        for language in &["rust", "python", "javascript", "js", "py"] {
+            let result = Config::init_project_with_language_in_dir(
+                ".", 
+                Some(language.to_string())
+            );
+            assert!(result.is_ok(), "Failed to initialize with language: {}", language);
+            
+            // Clean up for next iteration
+            let config_dir = std::path::Path::new(".config");
+            if config_dir.exists() {
+                fs::remove_dir_all(config_dir).unwrap();
+            }
+        }
+    });
+}
 
 /// Helper to create a manager in the current directory with a given config
 fn create_manager_with_config(config: Config) -> UseCaseCoordinator {
@@ -20,14 +42,14 @@ fn create_manager_with_config(config: Config) -> UseCaseCoordinator {
 
 #[test]
 fn test_template_engine_language_map() {
-    let template_engine = TemplateEngine::new();
+    let template_engine = TemplateEngine::new().unwrap();
 
     // Should have rust, python, and javascript templates
     assert!(template_engine.has_test_template("rust"));
     assert!(template_engine.has_test_template("python"));
     assert!(template_engine.has_test_template("javascript"));
 
-    let available_languages = template_engine.get_available_test_languages();
+    let available_languages = get_available_test_languages();
     assert!(available_languages.contains(&"rust".to_string()));
     assert!(available_languages.contains(&"python".to_string()));
     assert!(available_languages.contains(&"javascript".to_string()));
