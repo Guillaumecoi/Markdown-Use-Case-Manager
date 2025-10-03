@@ -3,10 +3,10 @@
 use crate::test_utils::set_scenario_status;
 use markdown_use_case_manager::core::models::{Priority, Scenario, Status, UseCase};
 
-/// Test UseCase::new() creates use case with correct initial values
+/// Test UseCase::new_test() creates use case with correct initial values
 #[test]
 fn test_use_case_new() {
-    let use_case = UseCase::new(
+    let use_case = UseCase::new_test(
         "UC-001".to_string(),
         "Test Use Case".to_string(),
         "authentication".to_string(),
@@ -26,7 +26,7 @@ fn test_use_case_new() {
 /// Test UseCase::status() returns correct aggregated status
 #[test]
 fn test_use_case_status_aggregation() {
-    let mut use_case = UseCase::new(
+    let mut use_case = UseCase::new_test(
         "UC-002".to_string(),
         "Status Test".to_string(),
         "test".to_string(),
@@ -68,7 +68,7 @@ fn test_use_case_status_aggregation() {
 /// Test UseCase::add_scenario() functionality
 #[test]
 fn test_use_case_add_scenario() {
-    let mut use_case = UseCase::new(
+    let mut use_case = UseCase::new_test(
         "UC-004".to_string(),
         "Scenario Addition Test".to_string(),
         "test".to_string(),
@@ -94,7 +94,7 @@ fn test_use_case_add_scenario() {
 /// Test UseCase::update_scenario_status() functionality
 #[test]
 fn test_use_case_update_scenario_status() {
-    let mut use_case = UseCase::new(
+    let mut use_case = UseCase::new_test(
         "UC-005".to_string(),
         "Scenario Status Update Test".to_string(),
         "test".to_string(),
@@ -124,7 +124,7 @@ fn test_use_case_update_scenario_status() {
 /// Test UseCase with multiple scenarios
 #[test]
 fn test_use_case_multiple_scenarios() {
-    let mut use_case = UseCase::new(
+    let mut use_case = UseCase::new_test(
         "UC-007".to_string(),
         "Multiple Scenarios Test".to_string(),
         "test".to_string(),
@@ -153,7 +153,7 @@ fn test_use_case_multiple_scenarios() {
 /// Test UseCase clone functionality
 #[test]
 fn test_use_case_clone() {
-    let mut use_case = UseCase::new(
+    let mut use_case = UseCase::new_test(
         "UC-008".to_string(),
         "Clone Test".to_string(),
         "test".to_string(),
@@ -180,7 +180,7 @@ fn test_use_case_clone() {
 /// Test UseCase serialization and deserialization
 #[test]
 fn test_use_case_serialization() {
-    let mut use_case = UseCase::new(
+    let mut use_case = UseCase::new_test(
         "UC-009".to_string(),
         "Serialization Test".to_string(),
         "serialization".to_string(),
@@ -208,7 +208,7 @@ fn test_use_case_serialization() {
 /// Test UseCase with complex scenario status combinations
 #[test]
 fn test_use_case_complex_status_scenarios() {
-    let mut use_case = UseCase::new(
+    let mut use_case = UseCase::new_test(
         "UC-010".to_string(),
         "Complex Status Test".to_string(),
         "test".to_string(),
@@ -247,7 +247,7 @@ fn test_use_case_complex_status_scenarios() {
 /// Test UseCase with empty strings and edge cases
 #[test]
 fn test_use_case_edge_cases() {
-    let use_case = UseCase::new(
+    let use_case = UseCase::new_test(
         "".to_string(),
         "".to_string(),
         "".to_string(),
@@ -264,7 +264,7 @@ fn test_use_case_edge_cases() {
 /// Test UseCase prerequisite functionality
 #[test]
 fn test_use_case_prerequisites() {
-    let mut use_case = UseCase::new(
+    let mut use_case = UseCase::new_test(
         "UC-011".to_string(),
         "Prerequisites Test".to_string(),
         "test".to_string(),

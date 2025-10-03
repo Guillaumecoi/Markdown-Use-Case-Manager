@@ -337,7 +337,7 @@ impl Config {
 
 impl Default for Config {
     fn default() -> Self {
-        Self {
+        Config {
             project: ProjectConfig {
                 name: "My Project".to_string(),
                 description: "A project managed with use case manager".to_string(),
@@ -354,8 +354,8 @@ impl Default for Config {
             },
             generation: GenerationConfig {
                 test_language: "rust".to_string(),
-                auto_generate_tests: false,          // Changed default
-                overwrite_test_documentation: false, // Changed default
+                auto_generate_tests: false,
+                overwrite_test_documentation: false,
             },
             metadata: MetadataConfig {
                 enabled: true,
@@ -367,12 +367,16 @@ impl Default for Config {
                 include_created: true,
                 include_last_updated: true,
                 custom_fields: vec![
+                    "prerequisites".to_string(),
+                    "personas".to_string(),
                     "author".to_string(),
                     "reviewer".to_string(),
                     "business_value".to_string(),
                     "complexity".to_string(),
                     "epic".to_string(),
-                    "prerequisites".to_string(),
+                    "acceptance_criteria".to_string(),
+                    "assumptions".to_string(),
+                    "constraints".to_string(),
                 ],
             },
         }

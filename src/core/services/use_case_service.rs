@@ -1,5 +1,5 @@
 // src/core/services/use_case_service.rs
-use crate::core::models::{Scenario, Status, UseCase};
+use crate::core::models::{Priority, Scenario, Status, UseCase};
 use anyhow::Result;
 
 /// Core business logic for use case management
@@ -30,7 +30,7 @@ impl UseCaseService {
         category: String,
         description: String,
     ) -> UseCase {
-        UseCase::new(id, title, category, description)
+        UseCase::new(id, title, category, description, Priority::Medium)
     }
 
     /// Generate a scenario ID for a use case

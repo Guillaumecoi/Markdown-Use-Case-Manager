@@ -1,6 +1,6 @@
 // src/core/services/file_service.rs
 use crate::config::Config;
-use crate::core::models::{Scenario, UseCase};
+use crate::core::models::{Priority, Scenario, UseCase};
 use crate::core::templates::to_snake_case;
 use anyhow::Result;
 use std::fs;
@@ -143,7 +143,7 @@ impl FileService {
         let description = self.extract_description_from_markdown(&markdown_content)?;
         let scenarios = self.parse_scenarios_from_markdown_content(&markdown_content)?;
 
-        let mut use_case = UseCase::new(id, title, category, description);
+        let mut use_case = UseCase::new(id, title, category, description, Priority::Medium);
         for scenario in scenarios {
             use_case.add_scenario(scenario);
         }

@@ -46,23 +46,96 @@ pub struct UseCase {
     pub scenarios: Vec<Scenario>,
     pub metadata: Metadata,
 
-    // Optional fields (less commonly used)
+    // Extended metadata fields
     #[serde(default)]
     pub prerequisites: Vec<String>,
+    #[serde(default)]
+    pub personas: Vec<String>,
+    #[serde(default)]
+    pub author: Option<String>,
+    #[serde(default)]
+    pub reviewer: Option<String>,
+    #[serde(default)]
+    pub business_value: Option<String>,
+    #[serde(default)]
+    pub complexity: Option<String>,
+    #[serde(default)]
+    pub epic: Option<String>,
+    #[serde(default)]
+    pub acceptance_criteria: Vec<String>,
+    #[serde(default)]
+    pub assumptions: Vec<String>,
+    #[serde(default)]
+    pub constraints: Vec<String>,
+}
+
+/// Struct for collecting extended metadata parameters
+#[derive(Debug, Default, Clone)]
+pub struct ExtendedMetadata {
+    pub personas: Vec<String>,
+    pub prerequisites: Vec<String>,
+    pub author: Option<String>,
+    pub reviewer: Option<String>,
+    pub business_value: Option<String>,
+    pub complexity: Option<String>,
+    pub epic: Option<String>,
+    pub acceptance_criteria: Vec<String>,
+    pub assumptions: Vec<String>,
+    pub constraints: Vec<String>,
 }
 
 impl UseCase {
-    pub fn new(id: String, title: String, category: String, description: String) -> Self {
+    pub fn new(
+        id: String,
+        title: String,
+        category: String,
+        description: String,
+        priority: Priority,
+    ) -> Self {
         Self {
             id,
             title,
             category,
             description,
-            priority: Priority::Medium,
+            priority,
             scenarios: Vec::new(),
             metadata: Metadata::new(),
             prerequisites: Vec::new(),
+            personas: Vec::new(),
+            author: None,
+            reviewer: None,
+            business_value: None,
+            complexity: None,
+            epic: None,
+            acceptance_criteria: Vec::new(),
+            assumptions: Vec::new(),
+            constraints: Vec::new(),
         }
+    }
+
+    /// Test helper constructor with default priority (Medium)
+    #[allow(dead_code)]
+    pub fn new_test(
+        id: String,
+        title: String,
+        category: String,
+        description: String,
+    ) -> Self {
+        Self::new(id, title, category, description, Priority::Medium)
+    }
+
+    /// Apply extended metadata to this use case
+    pub fn apply_extended_metadata(&mut self, metadata: ExtendedMetadata) {
+        self.personas = metadata.personas;
+        self.prerequisites = metadata.prerequisites;
+        self.author = metadata.author;
+        self.reviewer = metadata.reviewer;
+        self.business_value = metadata.business_value;
+        self.complexity = metadata.complexity;
+        self.epic = metadata.epic;
+        self.acceptance_criteria = metadata.acceptance_criteria;
+        self.assumptions = metadata.assumptions;
+        self.constraints = metadata.constraints;
     }
 
     pub fn status(&self) -> Status {

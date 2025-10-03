@@ -23,6 +23,9 @@ Works great for solo developers, small teams, or any project where you want docu
 - **Test Generation** - Support automatic test generation
 - **Custom Templates** - Customizable generation templates
 - **Flexible Configuration** - Flexible configuration
+- **Extended Metadata** - Comprehensive metadata including personas, prerequisites, business value, acceptance criteria, and more
+- **Interactive CLI** - User-friendly interactive mode with guided workflows
+- **Use Case Dependencies** - Reference and link related use cases for traceability
 
 ## Getting Started
 
@@ -35,6 +38,21 @@ cargo install --path .            # Don't forget the dot at the end
 ```
 
 Now you can run the tool with `mucm` from anywhere.
+
+### Interactive Mode
+
+For the best user experience, use interactive mode:
+
+```bash
+mucm -i                          # Start interactive mode
+```
+
+The interactive mode provides:
+- **🔧 Guided use case creation** with optional extended metadata
+- **📋 Extended metadata management** for existing use cases  
+- **⚙️ Settings configuration** with auto-initialization
+- **📊 Project status overview** and management
+- **✨ Auto-initialization** for new projects
 
 ### Basic Usage
 
@@ -106,6 +124,50 @@ DEPRECATED ⚠️   → No longer maintained
 ```
 
 The use case status automatically reflects the minimum status of all its scenarios.
+
+## Extended Metadata
+
+Rich metadata support for professional documentation:
+
+### **Available Fields**
+- **👥 Personas** - Target users and stakeholders
+- **📋 Prerequisites** - System requirements and dependencies  
+- **✍️ Author/Reviewer** - Ownership and review information
+- **💰 Business Value** - Why this use case matters
+- **🔧 Complexity** - Implementation difficulty assessment
+- **📦 Epic** - Project/epic association
+- **✅ Acceptance Criteria** - Definition of "done"
+- **💭 Assumptions & ⚠️ Constraints** - Context and limitations
+
+### **Use Case Dependencies**
+Reference related use cases in prerequisites:
+```markdown
+## Prerequisites
+- User must be logged in (UC-AUTH-001)
+- Payment method configured (UC-PAY-003)
+- Shopping cart not empty (UC-CART-002)
+```
+
+### **Professional Output**
+```markdown
+# UC-AUTH-001: User Authentication
+
+**Author:** John Doe | **Reviewer:** Jane Smith
+**Target Users:** Customer, Admin User
+
+## Business Value
+Secure authentication improves user trust and reduces support tickets
+
+## Prerequisites
+- System is online
+- User registration completed (UC-REG-001)
+
+## Acceptance Criteria
+- Login completes within 5 seconds
+- Multi-factor authentication supported
+```
+
+See [Extended Metadata Guide](docs/EXTENDED_METADATA_GUIDE.md) for detailed usage.
 
 ## Configuration
 

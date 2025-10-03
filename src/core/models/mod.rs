@@ -8,4 +8,4 @@ pub use metadata::Metadata;
 pub use scenario::Scenario;
 pub use status::Status;
 #[allow(unused_imports)] // Used in tests
-pub use use_case::{Priority, UseCase};
+pub use use_case::{ExtendedMetadata, Priority, UseCase};

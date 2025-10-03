@@ -69,6 +69,42 @@ impl UseCaseCoordinator {
         Ok(use_case_id)
     }
 
+    /// Create a new use case with extended metadata fields directly
+    pub fn create_use_case_with_metadata(
+        &mut self,
+        title: String,
+        category: String,
+        description: Option<String>,
+        extended_metadata: crate::core::models::ExtendedMetadata,
+    ) -> Result<String> {
+        let use_case_id = self
+            .use_case_service
+            .generate_use_case_id(&category, &self.use_cases);
+        let description = description.unwrap_or_default();
+
+        let mut use_case = self.use_case_service.create_use_case(
+            use_case_id.clone(),
+            title,
+            category,
+            description,
+        );
+
+        // Apply extended metadata
+        use_case.apply_extended_metadata(extended_metadata);
+
+        // Generate markdown and save
+        let markdown_content = self.generate_use_case_markdown(&use_case)?;
+        self.file_service
+            .save_use_case(&use_case, &markdown_content)?;
+
+        self.use_cases.push(use_case);
+
+        // Regenerate overview
+        self.generate_overview()?;
+
+        Ok(use_case_id)
+    }
+
     pub fn add_scenario_to_use_case(
         &mut self,
         use_case_id: String,
@@ -467,6 +503,34 @@ impl UseCaseCoordinator {
         // Render and save
         let content = self.template_engine.render_overview(&template_data)?;
         self.file_service.save_overview(&content)?;
+
+        Ok(())
+    }
+
+    /// Update extended metadata for an existing use case
+    pub fn update_use_case_metadata(
+        &mut self,
+        use_case_id: String,
+        extended_metadata: crate::core::models::ExtendedMetadata,
+    ) -> Result<()> {
+        // Find the use case index
+        let use_case_index = self
+            .use_cases
+            .iter()
+            .position(|uc| uc.id == use_case_id)
+            .ok_or_else(|| anyhow::anyhow!("Use case {} not found", use_case_id))?;
+
+        // Update metadata
+        let use_case = &mut self.use_cases[use_case_index];
+        use_case.apply_extended_metadata(extended_metadata);
+
+        // Regenerate and save the use case
+        let use_case_clone = use_case.clone();
+        let markdown_content = self.generate_use_case_markdown(&use_case_clone)?;
+        self.file_service.save_use_case(&use_case_clone, &markdown_content)?;
+
+        // Regenerate overview
+        self.generate_overview()?;
 
         Ok(())
     }

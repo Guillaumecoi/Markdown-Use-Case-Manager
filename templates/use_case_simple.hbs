@@ -12,11 +12,29 @@
 
 {{/if}}# {{title}}
 
-## Description
+{{#if author}}
+**Author:** {{author}}{{#if reviewer}} | **Reviewer:** {{reviewer}}{{/if}}
+
+{{/if}}{{#if personas}}
+**Target Users:** {{#each personas}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
+
+{{/if}}## Description
 
 {{description}}
 
-## Scenarios
+{{#if prerequisites}}
+## Prerequisites
+{{#each prerequisites}}
+- {{this}}
+{{/each}}
+
+{{/if}}{{#if acceptance_criteria}}
+## Acceptance Criteria
+{{#each acceptance_criteria}}
+- {{this}}
+{{/each}}
+
+{{/if}}## Scenarios
 
 {{#each scenarios}}
 ### {{title}} ({{id}})

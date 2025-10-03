@@ -45,6 +45,38 @@ impl CliRunner {
         Ok(format!("Created use case: {}", use_case_id))
     }
 
+    /// Create a new use case with extended metadata
+    pub fn create_use_case_with_metadata(
+        &mut self,
+        title: String,
+        category: String,
+        description: Option<String>,
+        extended_metadata: crate::cli::interactive::menu::ExtendedMetadata,
+    ) -> Result<String> {
+        // Convert from CLI ExtendedMetadata to core ExtendedMetadata
+        let core_metadata = crate::core::models::ExtendedMetadata {
+            personas: extended_metadata.personas,
+            prerequisites: extended_metadata.prerequisites,
+            author: extended_metadata.author,
+            reviewer: extended_metadata.reviewer,
+            business_value: extended_metadata.business_value,
+            complexity: extended_metadata.complexity,
+            epic: extended_metadata.epic,
+            acceptance_criteria: extended_metadata.acceptance_criteria,
+            assumptions: extended_metadata.assumptions,
+            constraints: extended_metadata.constraints,
+        };
+        
+        let coordinator = self.ensure_coordinator()?;
+        let use_case_id = coordinator.create_use_case_with_metadata(
+            title, 
+            category, 
+            description,
+            core_metadata,
+        )?;
+        Ok(format!("Created use case: {}", use_case_id))
+    }
+
     /// Add a scenario to a use case
     pub fn add_scenario(
         &mut self,
@@ -127,5 +159,30 @@ impl CliRunner {
     pub fn get_categories(&mut self) -> Result<Vec<String>> {
         let coordinator = self.ensure_coordinator()?;
         coordinator.get_all_categories()
+    }
+
+    /// Update extended metadata for an existing use case
+    pub fn update_use_case_metadata(
+        &mut self,
+        use_case_id: String,
+        extended_metadata: crate::cli::interactive::menu::ExtendedMetadata,
+    ) -> Result<String> {
+        // Convert from CLI ExtendedMetadata to core ExtendedMetadata
+        let core_metadata = crate::core::models::ExtendedMetadata {
+            personas: extended_metadata.personas,
+            prerequisites: extended_metadata.prerequisites,
+            author: extended_metadata.author,
+            reviewer: extended_metadata.reviewer,
+            business_value: extended_metadata.business_value,
+            complexity: extended_metadata.complexity,
+            epic: extended_metadata.epic,
+            acceptance_criteria: extended_metadata.acceptance_criteria,
+            assumptions: extended_metadata.assumptions,
+            constraints: extended_metadata.constraints,
+        };
+        
+        let coordinator = self.ensure_coordinator()?;
+        coordinator.update_use_case_metadata(use_case_id.clone(), core_metadata)?;
+        Ok(format!("Updated metadata for use case: {}", use_case_id))
     }
 }

@@ -9,13 +9,13 @@ fn test_use_case_service_pure_business_logic() {
 
     // Test ID generation
     let existing_use_cases = vec![
-        UseCase::new(
+        UseCase::new_test(
             "UC-SEC-001".to_string(),
             "Login".to_string(),
             "Security".to_string(),
             "".to_string(),
         ),
-        UseCase::new(
+        UseCase::new_test(
             "UC-API-001".to_string(),
             "REST API".to_string(),
             "API".to_string(),
@@ -36,7 +36,7 @@ fn test_use_case_service_pure_business_logic() {
 #[test]
 fn test_scenario_management() {
     let service = UseCaseService::new();
-    let mut use_case = UseCase::new(
+    let mut use_case = UseCase::new_test(
         "UC-TEST-001".to_string(),
         "Test Use Case".to_string(),
         "Testing".to_string(),
@@ -98,13 +98,13 @@ fn test_status_parsing() {
 #[test]
 fn test_finding_use_cases() {
     let use_cases = vec![
-        UseCase::new(
+        UseCase::new_test(
             "UC-SEC-001".to_string(),
             "Login".to_string(),
             "Security".to_string(),
             "".to_string(),
         ),
-        UseCase::new(
+        UseCase::new_test(
             "UC-API-001".to_string(),
             "REST API".to_string(),
             "API".to_string(),
@@ -123,7 +123,7 @@ fn test_finding_use_cases() {
 #[test]
 fn test_scenario_status_update() {
     let service = UseCaseService::new();
-    let mut use_case = UseCase::new(
+    let mut use_case = UseCase::new_test(
         "UC-TEST-001".to_string(),
         "Test Use Case".to_string(),
         "Testing".to_string(),

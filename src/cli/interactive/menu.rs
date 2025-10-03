@@ -2,12 +2,27 @@ use crate::cli::runner::CliRunner;
 use anyhow::Result;
 use inquire::{Confirm, Select, Text};
 
+#[derive(Debug, Default)]
+pub struct ExtendedMetadata {
+    pub personas: Vec<String>,
+    pub prerequisites: Vec<String>,
+    pub author: Option<String>,
+    pub reviewer: Option<String>,
+    pub business_value: Option<String>,
+    pub complexity: Option<String>,
+    pub epic: Option<String>,
+    pub acceptance_criteria: Vec<String>,
+    pub assumptions: Vec<String>,
+    pub constraints: Vec<String>,
+}
+
 /// Main menu options for interactive mode
 #[derive(Debug, Clone)]
 pub enum MainMenuOption {
     CreateUseCase,
     AddScenario,
     UpdateScenarioStatus,
+    AddExtendedMetadata,
     ConfigureSettings,
     ListUseCases,
     ShowStatus,
@@ -21,6 +36,7 @@ impl std::fmt::Display for MainMenuOption {
             MainMenuOption::CreateUseCase => write!(f, "📝 Create a new use case"),
             MainMenuOption::AddScenario => write!(f, "➕ Add scenario to existing use case"),
             MainMenuOption::UpdateScenarioStatus => write!(f, "🔄 Update scenario status"),
+            MainMenuOption::AddExtendedMetadata => write!(f, "📋 Add extended metadata to use case"),
             MainMenuOption::ConfigureSettings => write!(f, "⚙️  Configure settings"),
             MainMenuOption::ListUseCases => write!(f, "📋 List all use cases"),
             MainMenuOption::ShowStatus => write!(f, "📊 Show project status"),
@@ -36,6 +52,7 @@ pub fn show_main_menu() -> Result<MainMenuOption> {
         MainMenuOption::CreateUseCase,
         MainMenuOption::AddScenario,
         MainMenuOption::UpdateScenarioStatus,
+        MainMenuOption::AddExtendedMetadata,
         MainMenuOption::ConfigureSettings,
         MainMenuOption::ListUseCases,
         MainMenuOption::ShowStatus,
@@ -97,8 +114,18 @@ pub fn guided_create_use_case(runner: &mut CliRunner) -> Result<()> {
         None
     };
 
+    // Ask if they want to add extended metadata
+    let add_extended_metadata = Confirm::new("Would you like to add extended metadata (personas, prerequisites, etc.)?")
+        .with_default(false)
+        .prompt()?;
+
+    let mut extended_metadata = ExtendedMetadata::default();
+    if add_extended_metadata {
+        extended_metadata = collect_extended_metadata()?;
+    }
+
     // Create the use case
-    let result = runner.create_use_case(title, category, description)?;
+    let result = runner.create_use_case_with_metadata(title, category, description, extended_metadata)?;
     println!("\n✅ {}", result);
 
     // Ask if they want to add scenarios immediately
@@ -237,4 +264,140 @@ fn extract_use_case_id(result: &str) -> Option<String> {
     } else {
         None
     }
+}
+
+/// Collect extended metadata through interactive prompts
+fn collect_extended_metadata() -> Result<ExtendedMetadata> {
+    println!("\n📋 Extended Metadata Collection\n");
+    
+    let mut metadata = ExtendedMetadata::default();
+
+    // Personas
+    let add_personas = Confirm::new("Add personas (target users)?")
+        .with_default(false)
+        .prompt()?;
+    
+    if add_personas {
+        metadata.personas = collect_list_items("persona", "e.g., 'Admin User', 'Customer', 'Support Agent'")?;
+    }
+
+    // Prerequisites
+    let add_prerequisites = Confirm::new("Add prerequisites?")
+        .with_default(false)
+        .prompt()?;
+    
+    if add_prerequisites {
+        metadata.prerequisites = collect_list_items("prerequisite", "e.g., 'User must be logged in (UC-AUTH-001)', 'Valid payment method required'")?;
+    }
+
+    // Single-value fields
+    let single_fields = vec![
+        ("author", "Author name", "Who is the author of this use case?"),
+        ("reviewer", "Reviewer name", "Who should review this use case?"),
+        ("business_value", "Business value", "What business value does this provide?"),
+        ("complexity", "Complexity level", "e.g., 'Low', 'Medium', 'High'"),
+        ("epic", "Epic name/ID", "Which epic does this belong to?"),
+    ];
+
+    for (field, label, help) in single_fields {
+        let add_field = Confirm::new(&format!("Add {}?", label.to_lowercase()))
+            .with_default(false)
+            .prompt()?;
+        
+        if add_field {
+            let value = Text::new(&format!("Enter {}:", label.to_lowercase()))
+                .with_help_message(help)
+                .prompt()?;
+            
+            match field {
+                "author" => metadata.author = Some(value),
+                "reviewer" => metadata.reviewer = Some(value),
+                "business_value" => metadata.business_value = Some(value),
+                "complexity" => metadata.complexity = Some(value),
+                "epic" => metadata.epic = Some(value),
+                _ => {}
+            }
+        }
+    }
+
+    // List fields
+    let list_fields = vec![
+        ("acceptance_criteria", "acceptance criteria", "e.g., 'System validates input', 'User receives confirmation'"),
+        ("assumptions", "assumptions", "e.g., 'User has internet connection', 'Database is available'"),
+        ("constraints", "constraints", "e.g., 'Must complete within 30 seconds', 'Mobile-friendly interface'"),
+    ];
+
+    for (field, label, help) in list_fields {
+        let add_field = Confirm::new(&format!("Add {}?", label))
+            .with_default(false)
+            .prompt()?;
+        
+        if add_field {
+            let items = collect_list_items(label, help)?;
+            match field {
+                "acceptance_criteria" => metadata.acceptance_criteria = items,
+                "assumptions" => metadata.assumptions = items,
+                "constraints" => metadata.constraints = items,
+                _ => {}
+            }
+        }
+    }
+
+    Ok(metadata)
+}
+
+/// Helper function to collect a list of items
+fn collect_list_items(item_type: &str, help: &str) -> Result<Vec<String>> {
+    let mut items = Vec::new();
+    
+    // Enhanced help text for prerequisites to suggest use case references
+    let enhanced_help = if item_type == "prerequisite" {
+        format!("{}\nTip: Reference other use cases like 'User must be logged in (UC-AUTH-001)'", help)
+    } else {
+        help.to_string()
+    };
+    
+    loop {
+        let item = Text::new(&format!("Enter {} (or press Enter to finish):", item_type))
+            .with_help_message(&enhanced_help)
+            .prompt()?;
+        
+        if item.trim().is_empty() {
+            break;
+        }
+        
+        items.push(item);
+        
+        if !Confirm::new(&format!("Add another {}?", item_type))
+            .with_default(true)
+            .prompt()? {
+            break;
+        }
+    }
+    
+    Ok(items)
+}
+
+/// Guided workflow for adding extended metadata to an existing use case
+pub fn guided_add_extended_metadata(runner: &mut CliRunner) -> Result<()> {
+    println!("\n📋 Adding extended metadata to existing use case...\n");
+
+    // Get list of existing use cases
+    let use_case_ids = runner.get_use_case_ids()?;
+    if use_case_ids.is_empty() {
+        println!("❌ No use cases found. Create a use case first.");
+        return Ok(());
+    }
+
+    // Select use case
+    let selected_id = Select::new("Select a use case to add metadata to:", use_case_ids).prompt()?;
+
+    // Collect extended metadata
+    let extended_metadata = collect_extended_metadata()?;
+
+    // Update the use case
+    let result = runner.update_use_case_metadata(selected_id, extended_metadata)?;
+    println!("\n✅ {}", result);
+
+    Ok(())
 }
