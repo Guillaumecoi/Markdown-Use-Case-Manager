@@ -7,6 +7,7 @@ use anyhow::Result;
 use clap::Parser;
 
 use args::{Cli, Commands};
+#[allow(clippy::wildcard_imports)]
 use commands::*;
 use interactive::session::InteractiveSession;
 use runner::CliRunner;
@@ -28,12 +29,13 @@ pub fn run() -> Result<()> {
     let mut runner = CliRunner::new();
 
     match cli.command.unwrap() {
-        Commands::Init { language } => handle_init_command(&mut runner, language),
+        Commands::Init { language, methodology } => handle_init_command(&mut runner, language, methodology),
         Commands::Create {
             title,
             category,
             description,
-        } => handle_create_command(&mut runner, title, category, description),
+            methodology,
+        } => handle_create_command(&mut runner, title, category, description, methodology),
         Commands::AddScenario {
             use_case_id,
             title,
@@ -46,6 +48,9 @@ pub fn run() -> Result<()> {
         Commands::Persona { action } => handle_persona_command(&mut runner, action),
         Commands::List => handle_list_command(&mut runner),
         Commands::Languages => handle_languages_command(),
+        Commands::Methodologies => handle_list_methodologies_command(&mut runner),
+        Commands::MethodologyInfo { name } => handle_methodology_info_command(&mut runner, name),
+        Commands::Regenerate { use_case_id, methodology } => handle_regenerate_command(&mut runner, use_case_id, methodology),
         Commands::Status => handle_status_command(&mut runner),
         Commands::Interactive => {
             // This case is handled above, but included for completeness

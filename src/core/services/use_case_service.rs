@@ -13,6 +13,7 @@ impl UseCaseService {
     }
 
     /// Generate a use case ID based on category and existing use cases
+    #[allow(clippy::unused_self)]
     pub fn generate_use_case_id(&self, category: &str, existing_use_cases: &[UseCase]) -> String {
         let category_prefix = category.to_uppercase().chars().take(3).collect::<String>();
         let existing_count = existing_use_cases
@@ -24,6 +25,7 @@ impl UseCaseService {
     }
 
     /// Create a new use case with the given parameters
+    #[allow(clippy::unused_self)]
     pub fn create_use_case(
         &self,
         id: String,
@@ -35,6 +37,7 @@ impl UseCaseService {
     }
 
     /// Generate a scenario ID for a use case
+    #[allow(clippy::unused_self)]
     pub fn generate_scenario_id(&self, use_case: &UseCase) -> String {
         let scenario_count = use_case.scenarios.len();
         format!("{}-S{:02}", use_case.id, scenario_count + 1)
@@ -57,6 +60,7 @@ impl UseCaseService {
     }
 
     /// Update scenario status in a use case
+    #[allow(clippy::unused_self)]
     pub fn update_scenario_status(
         &self,
         use_case: &mut UseCase,
@@ -75,6 +79,7 @@ impl UseCaseService {
     }
 
     /// Parse status string to Status enum
+    #[allow(clippy::unused_self)]
     pub fn parse_status(&self, status_str: &str) -> Result<Status> {
         match status_str.to_lowercase().as_str() {
             "planned" => Ok(Status::Planned),

@@ -13,6 +13,7 @@ pub enum Status {
 }
 
 impl Status {
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn priority(&self) -> u8 {
         match self {
             Status::Deprecated => 0, // Always lowest
@@ -24,6 +25,7 @@ impl Status {
         }
     }
 
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn emoji(&self) -> &'static str {
         match self {
             Status::Planned => "📋",
@@ -35,6 +37,7 @@ impl Status {
         }
     }
 
+    #[allow(clippy::trivially_copy_pass_by_ref)]
     pub fn display_name(&self) -> &'static str {
         match self {
             Status::Planned => "PLANNED",

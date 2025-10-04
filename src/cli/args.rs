@@ -39,6 +39,9 @@ pub enum Commands {
         /// Programming language for test templates (rust, python, javascript, etc.)
         #[arg(short, long)]
         language: Option<String>,
+        /// Documentation methodology (simple, business, testing)
+        #[arg(short, long)]
+        methodology: Option<String>,
     },
     /// Create a new use case
     Create {
@@ -50,6 +53,9 @@ pub enum Commands {
         /// Description
         #[arg(short, long)]
         description: Option<String>,
+        /// Documentation methodology (simple, business, testing)
+        #[arg(long)]
+        methodology: Option<String>,
     },
     /// Add a scenario to a use case
     AddScenario {
@@ -78,6 +84,21 @@ pub enum Commands {
     List,
     /// List available programming languages for templates
     Languages,
+    /// List available methodologies
+    Methodologies,
+    /// Show methodology information
+    MethodologyInfo {
+        /// Methodology name to get info for
+        name: String,
+    },
+    /// Regenerate use case with different methodology
+    Regenerate {
+        /// Use case ID (e.g., UC-SEC-001)
+        use_case_id: String,
+        /// Documentation methodology (simple, business, testing)
+        #[arg(long)]
+        methodology: String,
+    },
     /// Show project status
     Status,
     /// Enter interactive mode

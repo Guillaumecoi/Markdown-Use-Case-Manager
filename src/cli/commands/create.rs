@@ -6,8 +6,12 @@ pub fn handle_create_command(
     title: String,
     category: String,
     description: Option<String>,
+    methodology: Option<String>,
 ) -> Result<()> {
-    let result = runner.create_use_case(title, category, description)?;
+    let result = match methodology {
+        Some(methodology) => runner.create_use_case_with_methodology(title, category, description, methodology)?,
+        None => runner.create_use_case(title, category, description)?,
+    };
     println!("{}", result);
     Ok(())
 }

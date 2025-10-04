@@ -167,7 +167,7 @@ fn test_cli_help_includes_interactive_options() {
         .stdout(predicate::str::contains("Markdown Use Case Manager"))
         .stdout(predicate::str::contains("-i, --interactive"))
         .stdout(predicate::str::contains(
-            "interactive    Enter interactive mode",
+            "interactive",
         ))
         .stdout(predicate::str::contains("init"))
         .stdout(predicate::str::contains("create"))

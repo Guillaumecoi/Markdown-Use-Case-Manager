@@ -1,0 +1,117 @@
+{{#if metadata_enabled}}---
+{{#if include_id}}id: {{id}}
+{{/if}}{{#if include_title}}title: {{title}}
+{{/if}}{{#if include_category}}category: {{category}}
+{{/if}}{{#if include_status}}status: {{status_name}}
+{{/if}}{{#if include_priority}}priority: {{priority}}
+{{/if}}{{#if include_version}}version: {{metadata.version}}
+{{/if}}{{#if include_created}}created: {{created_date}}
+{{/if}}{{#if include_last_updated}}last_updated: {{updated_date}}
+{{/if}}related_use_cases: []
+{{#each custom_fields}}{{this}}: 
+{{/each}}---
+
+{{/if}}# {{id}}: {{title}}
+
+{{#if business_priority}}**Business Priority:** {{business_priority}}{{/if}}
+{{#if business_sponsor}}**Business Sponsor:** {{business_sponsor}}{{/if}}
+{{#if roi_impact}}**ROI Impact:** {{roi_impact}}{{/if}}
+
+## Description
+{{description}}
+
+{{#if business_value}}
+## Business Value
+{{business_value}}
+
+{{/if}}{{#if stakeholder_value}}
+## Stakeholder Value
+{{stakeholder_value}}
+
+{{/if}}{{#if business_context}}
+## Business Context
+{{business_context}}
+
+{{/if}}{{#if success_metrics}}
+## Success Metrics
+{{#each success_metrics}}
+- {{this}}
+{{/each}}
+
+{{/if}}{{#if personas}}
+## Stakeholders & Personas
+{{#each personas}}
+- **{{this}}** - (Define their role and interest in this use case)
+{{/each}}
+
+{{/if}}{{#if author}}
+## Authorship
+**Author:** {{author}}
+{{#if reviewer}}**Reviewer:** {{reviewer}}{{/if}}
+
+{{/if}}{{#if business_value}}
+## Business Value
+{{business_value}}
+
+{{/if}}{{#if complexity}}
+## Complexity
+{{complexity}}
+
+{{/if}}{{#if epic}}
+## Epic
+{{epic}}
+
+{{/if}}## Actors
+- **Primary**: 
+- **Secondary**: 
+- **System**: 
+
+{{#if prerequisites}}
+## Prerequisites
+{{#each prerequisites}}
+- {{this}}
+{{/each}}
+{{else}}
+## Preconditions
+- (Define preconditions that must be met before this use case can execute)
+{{/if}}
+
+{{#if assumptions}}
+## Assumptions
+{{#each assumptions}}
+- {{this}}
+{{/each}}
+
+{{/if}}{{#if constraints}}
+## Constraints
+{{#each constraints}}
+- {{this}}
+{{/each}}
+
+{{/if}}## Scenarios
+
+{{#each scenarios}}
+### {{title}} ({{id}})
+
+**Status:** {{status}}
+
+{{description}}
+
+#### Flow Steps
+1. (Step 1 description)
+2. (Step 2 description)  
+3. (Step 3 description)
+4. (Continue with numbered steps...)
+
+---
+{{/each}}
+
+{{#if acceptance_criteria}}
+## Acceptance Criteria
+{{#each acceptance_criteria}}
+- {{this}}
+{{/each}}
+
+{{/if}}## Postconditions
+- (Define what state the system should be in after successful completion)
+- (List all guaranteed outcomes)

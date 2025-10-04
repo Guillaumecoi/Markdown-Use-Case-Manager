@@ -110,37 +110,34 @@ impl InteractiveSession {
     }
 
     /// Show goodbye message
+    #[allow(clippy::unused_self)]
     fn show_goodbye(&self) -> Result<()> {
-        execute!(
-            stdout(),
-            SetForegroundColor(Color::Green),
-            Print("\n🎉 Thank you for using Markdown Use Case Manager!\n"),
-            Print("📚 Happy documenting! 📚\n\n"),
-            ResetColor
-        )?;
-
+        println!("👋 Thanks for using MD Use Case Manager!");
         Ok(())
     }
 
     /// Show error message
+    #[allow(clippy::unused_self)]
     fn show_error(&self, message: &str) -> Result<()> {
         execute!(
             stdout(),
-            SetForegroundColor(Color::Red),
-            Print(&format!("\n❌ {}\n", message)),
-            ResetColor
+            Print(&format!("\n❌ {message}\n")),
+            Print("Press Enter to continue..."),
         )?;
-
+        let mut _input = String::new();
+        std::io::stdin().read_line(&mut _input)?;
         Ok(())
     }
 
     /// Clear the screen
+    #[allow(clippy::unused_self)]
     fn clear_screen(&self) -> Result<()> {
         execute!(stdout(), Clear(ClearType::All))?;
         Ok(())
     }
 
     /// Pause for user input before continuing
+    #[allow(clippy::unused_self)]
     fn pause_for_input(&self) -> Result<()> {
         execute!(
             stdout(),
@@ -192,7 +189,7 @@ impl InteractiveSession {
                     Some(language)
                 };
 
-                match self.runner.init_project(language) {
+                match self.runner.init_project(language, None) {
                     Ok(message) => {
                         execute!(
                             stdout(),
@@ -222,6 +219,7 @@ impl InteractiveSession {
     }
 
     /// Interactive settings configuration
+    #[allow(clippy::too_many_lines)]
     fn configure_settings(&mut self) -> Result<()> {
         use crate::config::Config;
         use inquire::{Confirm, Select, Text};

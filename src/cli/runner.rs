@@ -23,13 +23,31 @@ impl CliRunner {
     }
 
     /// Initialize a new use case manager project
-    pub fn init_project(&mut self, language: Option<String>) -> Result<String> {
-        let config = Config::init_project_with_language(language)?;
+    #[allow(clippy::unused_self)]
+    pub fn init_project(&mut self, language: Option<String>, methodology: Option<String>) -> Result<String> {
+        let config = if let Some(method) = methodology {
+            // Create config with methodology-specific recommendations
+            let mut config = Config::new_with_methodology(&method);
+            if let Some(lang) = language {
+                config.generation.test_language = lang;
+            }
+            Config::init_project_with_config(config)?
+        } else {
+            Config::init_project_with_language(language)?
+        };
+        
+        let recommendations = if let Some(method) = &config.templates.methodology {
+            format!("\n\n{}", Config::methodology_recommendations(method))
+        } else {
+            String::new()
+        };
+
         Ok(format!(
             "Project initialized! Configuration saved to .config/.mucm/mucm.toml\n\
              Feel free to edit the configuration file to customize your setup.\n\
-             Unless changed, use cases will be stored in: {}",
-            config.directories.use_case_dir
+             Unless changed, use cases will be stored in: {}{}",
+            config.directories.use_case_dir,
+            recommendations
         ))
     }
 
@@ -110,6 +128,7 @@ impl CliRunner {
     }
 
     /// Show available languages
+    #[allow(clippy::unnecessary_wraps)]
     pub fn show_languages() -> Result<String> {
         let mut output = String::from("Available programming languages:\n");
 
@@ -184,5 +203,60 @@ impl CliRunner {
         let coordinator = self.ensure_coordinator()?;
         coordinator.update_use_case_metadata(use_case_id.clone(), core_metadata)?;
         Ok(format!("Updated metadata for use case: {}", use_case_id))
+    }
+
+    /// Create a new use case with specific methodology
+    pub fn create_use_case_with_methodology(
+        &mut self,
+        title: String,
+        category: String,
+        description: Option<String>,
+        methodology: String,
+    ) -> Result<String> {
+        let coordinator = self.ensure_coordinator()?;
+        let use_case_id = coordinator.create_use_case_with_methodology(title, category, description, &methodology)?;
+        Ok(format!("Created use case: {} with {} methodology", use_case_id, methodology))
+    }
+
+    /// List available methodologies
+    pub fn list_methodologies(&mut self) -> Result<String> {
+        let coordinator = self.ensure_coordinator()?;
+        let methodologies = coordinator.list_available_methodologies();
+        
+        if methodologies.is_empty() {
+            return Ok("No methodologies available.".to_string());
+        }
+        
+        let mut result = String::from("Available methodologies:\n");
+        for methodology in methodologies {
+            result.push_str(&format!("  - {}\n", methodology));
+        }
+        
+        Ok(result)
+    }
+
+    /// Get information about a specific methodology
+    pub fn get_methodology_info(&mut self, methodology: String) -> Result<String> {
+        let coordinator = self.ensure_coordinator()?;
+        
+        match coordinator.get_methodology_info(&methodology) {
+            Some((name, description)) => {
+                Ok(format!("Methodology: {}\nDescription: {}", name, description))
+            }
+            None => {
+                Ok(format!("Methodology '{}' not found.", methodology))
+            }
+        }
+    }
+
+    /// Regenerate use case with different methodology
+    pub fn regenerate_use_case_with_methodology(
+        &mut self,
+        use_case_id: String,
+        methodology: String,
+    ) -> Result<String> {
+        let coordinator = self.ensure_coordinator()?;
+        coordinator.regenerate_use_case_with_methodology(&use_case_id, &methodology)?;
+        Ok(format!("Regenerated use case {} with {} methodology", use_case_id, methodology))
     }
 }

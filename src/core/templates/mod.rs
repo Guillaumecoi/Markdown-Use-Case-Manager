@@ -7,24 +7,41 @@ use std::collections::HashMap;
 pub struct TemplateEngine {
     handlebars: Handlebars<'static>,
     test_templates: HashMap<String, String>,
+    processor_registry: crate::core::processors::methodology_processor::MethodologyRegistry,
 }
 
 impl TemplateEngine {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let mut handlebars = Handlebars::new();
 
-        // Register built-in templates
+        // Register methodology-specific templates
+        handlebars.register_template_string(
+            "simple_use_case",
+            include_str!("../../../templates/methodologies/simple/use_case.hbs"),
+        )?;
+        handlebars.register_template_string(
+            "business_use_case", 
+            include_str!("../../../templates/methodologies/business/use_case.hbs"),
+        )?;
+        handlebars.register_template_string(
+            "testing_use_case",
+            include_str!("../../../templates/methodologies/testing/use_case.hbs"),
+        )?;
+        
+        // Register overview template (using simple methodology as default)
+        handlebars.register_template_string(
+            "overview",
+            include_str!("../../../templates/methodologies/simple/overview.hbs"),
+        )?;
+
+        // Register legacy templates for backwards compatibility
         handlebars.register_template_string(
             "use_case_simple",
-            include_str!("../../../templates/use_case_simple.hbs"),
+            include_str!("../../../templates/methodologies/simple/use_case.hbs"),
         )?;
         handlebars.register_template_string(
             "use_case_detailed",
-            include_str!("../../../templates/use_case_detailed.hbs"),
-        )?;
-        handlebars.register_template_string(
-            "overview",
-            include_str!("../../../templates/overview.hbs"),
+            include_str!("../../../templates/methodologies/business/use_case.hbs"),
         )?;
 
         // Register language test templates using LanguageRegistry
@@ -40,9 +57,14 @@ impl TemplateEngine {
             }
         }
 
+        // Initialize processor registry
+        use crate::core::processors::create_default_registry;
+        let processor_registry = create_default_registry();
+
         Ok(TemplateEngine {
             handlebars,
             test_templates,
+            processor_registry,
         })
     }
 
@@ -57,9 +79,27 @@ impl TemplateEngine {
     }
 
     pub fn render_use_case(&self, data: &HashMap<String, Value>) -> Result<String> {
+        self.render_use_case_with_template("use_case_simple", data)
+    }
+
+    /// Render use case with specific template
+    pub fn render_use_case_with_template(&self, template_name: &str, data: &HashMap<String, Value>) -> Result<String> {
         self.handlebars
-            .render("use_case_simple", data)
-            .context("Failed to render use case template")
+            .render(template_name, data)
+            .with_context(|| format!("Failed to render use case with template: {}", template_name))
+    }
+
+    /// Render use case with methodology-specific template
+    #[allow(dead_code)]
+    pub fn render_use_case_for_methodology(&self, data: &HashMap<String, Value>, methodology: &str) -> Result<String> {
+        let template_name = match methodology {
+            "simple" => "simple_use_case",
+            "business" => "business_use_case", 
+            "testing" => "testing_use_case",
+            _ => return Err(anyhow::anyhow!("Unknown methodology: {}", methodology)),
+        };
+        
+        self.render_use_case_with_template(template_name, data)
     }
 
     /// Render test file for a specific language
@@ -81,183 +121,148 @@ impl TemplateEngine {
         self.test_templates.contains_key(language)
     }
 
-    fn overview_template() -> &'static str {
-        r#"# {{project_name}} - Use Cases Overview
+    /// Render use case with methodology-specific processing
+    pub fn render_use_case_with_methodology(&self, data: &HashMap<String, Value>, methodology: &str) -> Result<String> {
+        // Get the methodology processor
+        let processor = self.processor_registry.get_processor(methodology)
+            .ok_or_else(|| anyhow::anyhow!("Unknown methodology: {}", methodology))?;
 
-Generated on: {{generated_date}}
+        // Extract use case and scenarios from data for processing
+        let use_case = self.extract_use_case_from_data(data)?;
+        let context = crate::core::processors::UseCaseContext {
+            use_case_id: use_case.id.clone(),
+            category: use_case.category.clone(),
+            business_context: std::collections::HashMap::new(),
+        };
 
-{{#if summary}}
-## Project Summary
+        // Process scenarios with the methodology
+        let processed = processor.process_scenarios(&use_case.scenarios, &context);
 
-{{summary}}
+        // Create enhanced template data
+        let mut enhanced_data = data.clone();
+        self.add_processed_scenario_data(&mut enhanced_data, &processed, processor)?;
 
-{{/if}}
-## Statistics
+        // Render with the enhanced data
+        let template_name = format!("use_case_{}", methodology);
+        if self.handlebars.get_template(&template_name).is_some() {
+            self.render_use_case_with_template(&template_name, &enhanced_data)
+        } else {
+            // Fallback to simple template if methodology-specific template doesn't exist
+            self.render_use_case_with_template("use_case_simple", &enhanced_data)
+        }
+    }
 
-- **Total Use Cases:** {{total_use_cases}}
-- **Total Scenarios:** {{total_scenarios}}
-- **Status Distribution:**
-{{#each status_counts}}
-  - {{@key}}: {{this}}
-{{/each}}
+    /// Get information about a specific methodology
+    pub fn get_methodology_info(&self, methodology_id: &str) -> Option<(String, String)> {
+        self.processor_registry.get_processor(methodology_id)
+            .map(|processor| (processor.display_name().to_string(), processor.description().to_string()))
+    }
+    
+    /// Get available methodology processors
+    pub fn available_methodologies(&self) -> Vec<String> {
+        self.processor_registry.available_methodologies()
+    }
 
-{{#each categories}}
-## {{category_name}} Use Cases
 
-{{#each use_cases}}
-### {{id}} - {{title}}
 
-**Status:** {{aggregated_status}}  
-**Priority:** {{priority}}  
-**Description:** {{description}}
+    // Helper methods for methodology processing
+    fn extract_use_case_from_data(&self, data: &HashMap<String, Value>) -> Result<crate::core::models::UseCase> {
+        // Create a basic UseCase from template data
+        // This is a simplified extraction - in a real scenario, we'd have richer data
+        let id = data.get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("UC-TEMP-001")
+            .to_string();
+        
+        let title = data.get("title")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Untitled Use Case")
+            .to_string();
+        
+        let category = data.get("category")
+            .and_then(|v| v.as_str())
+            .unwrap_or("General")
+            .to_string();
+        
+        let description = data.get("description")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        
+        let priority = crate::core::models::use_case::Priority::Medium; // Default priority
+        
+        // Extract scenarios if available
+        let mut scenarios = Vec::new();
+        if let Some(scenarios_value) = data.get("scenarios") {
+            if let Some(scenarios_array) = scenarios_value.as_array() {
+                scenarios = scenarios_array.iter()
+                    .filter_map(|s| self.value_to_scenario(s).ok())
+                    .collect();
+            }
+        }
 
-{{#if scenarios}}
-**Scenarios:**
-{{#each scenarios}}
-- **{{id}}** - {{title}} ({{status}})
-{{/each}}
-{{/if}}
+        let mut use_case = crate::core::models::UseCase::new(id, title, category, description, priority);
+        
+        // Add scenarios manually since there's no with_scenarios method
+        for scenario in scenarios {
+            use_case.add_scenario(scenario);
+        }
 
-[📖 View Details]({{category_path}}/{{id}}.md) | [🧪 View Tests](../../tests/use-cases/{{category_path}}/{{id}}_test.rs)
+        Ok(use_case)
+    }
 
----
-{{/each}}
+    fn value_to_scenario(&self, value: &Value) -> Result<crate::core::models::Scenario> {
+        let title = value.get("title")
+            .and_then(|v| v.as_str())
+            .unwrap_or("Untitled Scenario")
+            .to_string();
+        
+        let description = value.get("description")
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        
+        let id = value.get("id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("S-TEMP-001")
+            .to_string();
 
-{{/each}}
+        Ok(crate::core::models::Scenario::new(id, title, description))
+    }
 
----
-*This overview is automatically generated. Last updated: {{generated_date}}*
-"#
+    fn add_processed_scenario_data(&self, data: &mut HashMap<String, Value>, processed: &crate::core::processors::ProcessedScenarios, processor: &dyn crate::core::processors::MethodologyProcessor) -> Result<()> {
+        // Add methodology-specific data to template variables
+        data.insert("methodology_name".to_string(), serde_json::Value::String(processor.display_name().to_string()));
+        data.insert("methodology_description".to_string(), serde_json::Value::String(processor.description().to_string()));
+        
+        // Add processed scenario counts
+        data.insert("primary_flows_count".to_string(), serde_json::Value::Number(processed.primary_flows.len().into()));
+        data.insert("alternative_flows_count".to_string(), serde_json::Value::Number(processed.alternative_flows.len().into()));
+        data.insert("error_flows_count".to_string(), serde_json::Value::Number(processed.error_flows.len().into()));
+        
+        // Add methodology-specific metadata
+        data.insert("methodology_data".to_string(), serde_json::Value::Object(
+            processed.methodology_data.iter()
+                .map(|(k, v)| (k.clone(), v.clone()))
+                .collect()
+        ));
+
+        Ok(())
     }
 
     // Public template getters for config copying
     pub fn get_overview_template() -> &'static str {
-        Self::overview_template()
+        include_str!("../../../templates/methodologies/simple/overview.hbs")
     }
 
     pub fn get_use_case_simple_template() -> &'static str {
-        Self::use_case_template()
+        include_str!("../../../templates/methodologies/simple/use_case.hbs")
     }
 
     pub fn get_use_case_detailed_template() -> &'static str {
-        Self::use_case_detailed_template()
+        include_str!("../../../templates/methodologies/business/use_case.hbs")
     }
 
-    fn use_case_template() -> &'static str {
-        r#"{{#if metadata_enabled}}---
-{{#if include_id}}id: {{id}}
-{{/if}}{{#if include_title}}title: {{title}}
-{{/if}}{{#if include_category}}category: {{category}}
-{{/if}}{{#if include_status}}status: {{status_name}}
-{{/if}}{{#if include_priority}}priority: {{priority}}
-{{/if}}{{#if include_created}}created: {{created_date}}
-{{/if}}{{#if include_last_updated}}last_updated: {{updated_date}}
-{{/if}}{{#each custom_fields}}{{this}}: 
-{{/each}}---
-
-{{/if}}# {{title}}
-
-## Description
-
-{{description}}
-
-## Scenarios
-
-{{#each scenarios}}
-### {{title}} ({{id}})
-
-**Status:** {{status}}
-
-{{description}}
-
----
-{{/each}}"#
-    }
-
-    fn use_case_detailed_template() -> &'static str {
-        r#"{{#if metadata_enabled}}---
-{{#if include_id}}id: {{id}}
-{{/if}}{{#if include_title}}title: {{title}}
-{{/if}}{{#if include_category}}category: {{category}}
-{{/if}}{{#if include_status}}status: {{status_name}}
-{{/if}}{{#if include_priority}}priority: {{priority}}
-{{/if}}{{#if include_created}}created: {{created_date}}
-{{/if}}{{#if include_last_updated}}last_updated: {{updated_date}}
-{{/if}}{{#each custom_fields}}{{this}}: 
-{{/each}}---
-
-{{/if}}# {{title}}
-
-**ID:** {{id}}  
-**Category:** {{category}}  
-**Priority:** {{priority}}  
-**Status:** {{status_name}}  
-{{#if include_created}}**Created:** {{created_date}}  {{/if}}
-{{#if include_last_updated}}**Last Updated:** {{updated_date}}  {{/if}}
-
-## Description
-
-{{description}}
-
-{{#if tags}}
-## Tags
-
-{{#each tags}}
-- {{this}}
-{{/each}}
-
-{{/if}}
-{{#if custom_fields}}
-## Additional Information
-
-{{#each custom_fields}}
-**{{this}}:** <!-- TODO: Fill in -->
-{{/each}}
-
-{{/if}}
-## Scenarios
-
-{{#each scenarios}}
-### {{title}} ({{id}})
-
-**Status:** {{status}}  
-**Priority:** {{priority}}
-
-{{#if description}}
-**Description:** {{description}}
-
-{{/if}}
-{{#if preconditions}}
-**Preconditions:**
-{{#each preconditions}}
-- {{this}}
-{{/each}}
-
-{{/if}}
-{{#if steps}}
-**Steps:**
-{{#each steps}}
-1. {{this}}
-{{/each}}
-
-{{/if}}
-{{#if expected_outcome}}
-**Expected Outcome:** {{expected_outcome}}
-
-{{/if}}
----
-{{/each}}
-
-{{#if include_test_file}}
-## Test Information
-
-**Test File:** `{{test_file_path}}`
-
-{{/if}}
-
----
-*Use Case managed with MUCM - Markdown Use Case Manager*"#
-    }
 }
 
 impl Default for TemplateEngine {

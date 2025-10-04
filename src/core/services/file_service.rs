@@ -152,6 +152,7 @@ impl FileService {
         Ok(Some(use_case))
     }
 
+    #[allow(clippy::unused_self, clippy::unnecessary_wraps)]
     fn extract_description_from_markdown(&self, content: &str) -> Result<String> {
         let lines: Vec<&str> = content.lines().collect();
 

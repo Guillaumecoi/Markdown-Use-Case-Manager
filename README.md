@@ -167,37 +167,91 @@ Secure authentication improves user trust and reduces support tickets
 - Multi-factor authentication supported
 ```
 
-See [Extended Metadata Guide](docs/EXTENDED_METADATA_GUIDE.md) for detailed usage.
+## Documentation
+
+Comprehensive documentation is available in the [`docs/`](docs/) directory:
+
+### 📚 Core Documentation
+- **[Getting Started](docs/README.md)** - Complete documentation map and quick start guide
+- **[Template Methodologies](docs/methodologies/)** - Individual guides for each methodology:
+  - [Simple](docs/methodologies/simple.md) - Lightweight documentation
+  - [Business](docs/methodologies/business.md) - Enterprise business analysis  
+  - [Testing](docs/methodologies/testing.md) - Test-driven quality assurance
+- **[Template Comparisons](docs/template-comparisons.md)** - Side-by-side methodology examples
+
+### 🔗 Quick Links
+- **[CLI Reference](docs/cli-reference.md)** - Complete command documentation
+- **[Configuration Guide](docs/configuration.md)** - Setup and customization
+- **[Best Practices](docs/best-practices.md)** - Recommended workflows
+- **[Integration Guide](docs/integration.md)** - CI/CD and static site generators
+
+## Template Methodologies
+
+Choose from three practical template methodologies:
+
+### 📋 Simple
+**Best for**: Rapid prototyping, small teams, minimal overhead
+```bash
+mucm init --methodology simple
+```
+
+### 💼 Business Analysis  
+**Best for**: Enterprise projects, stakeholder focus, business requirements
+```bash
+mucm init --methodology business
+```
+
+### 🧪 Testing & QA
+**Best for**: Test-driven development, quality assurance, automation focus
+```bash
+mucm init --methodology testing
+```
+
+Each methodology provides:
+- **Methodology-specific templates** optimized for different documentation approaches
+- **Tailored configurations** with recommended settings
+- **Template customization** for specific use cases
+- **Seamless CLI integration** with guided setup
 
 ## Configuration
 
-Configure the tool via `.config/.mucm/mucm.toml`:
+The tool automatically creates methodology-specific configurations:
 
 ```toml
 [project]
 name = "My Project"
 description = "Project managed with Markdown Use Case Manager"
 
+[templates]
+methodology = "business"              # Selected methodology
+use_extended_metadata = true          # Methodology recommendation
+persona_template_enabled = true       # Persona support
+
 [directories]
 use_case_dir = "docs/use-cases"
 test_dir = "tests/use-cases"
 
 [generation]
-test_language = "rust"        # rust, python, or none
+test_language = "rust"                # rust, python, or none
 auto_generate_tests = true
-
-...
 ```
 
-## Customization 🎨
+## Template System 🎨
 
-The tool is designed to be flexible and adapt to your workflow:
+All templates are organized by methodology and fully customizable:
 
-**Custom Templates**: All documentation and test templates are stored in `.config/.mucm/templates/` and can be modified:
-- `use_case_simple.hbs` - Basic use case format
-- `use_case_detailed.hbs` - Detailed use case with scenarios
-- `overview.hbs` - Auto-generated overview page
-- `{language}/test.hbs` - Test scaffolding for your chosen language
+```
+templates/methodologies/
+├── simple/          # Lightweight documentation
+├── business/        # Business analysis approach
+└── testing/         # Test-driven quality assurance
+```
+
+Each methodology includes:
+- Use case templates (`use_case_*.hbs`)
+- Persona templates (`persona.hbs`) 
+- Overview templates (`overview.hbs`)
+- Methodology-specific formatting
 
 ## Deployment
 

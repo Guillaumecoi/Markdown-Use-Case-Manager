@@ -75,6 +75,7 @@ fn test_template_config() {
         use_case_template: Some("custom_use_case.hbs".to_string()),
         test_template: Some("custom_test.hbs".to_string()),
         use_case_style: Some("detailed".to_string()),
+        methodology: Some("simple".to_string()),
     };
 
     assert_eq!(
@@ -244,6 +245,7 @@ fn test_config_custom_values() {
             use_case_template: Some("my_template.hbs".to_string()),
             test_template: None,
             use_case_style: Some("simple".to_string()),
+            methodology: Some("business".to_string()),
         },
         generation: GenerationConfig {
             test_language: "python".to_string(),

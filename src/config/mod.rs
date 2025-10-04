@@ -23,6 +23,7 @@ pub struct ProjectConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(clippy::struct_field_names)]
 pub struct DirectoryConfig {
     pub use_case_dir: String,
     pub test_dir: String,
@@ -35,6 +36,7 @@ pub struct TemplateConfig {
     pub use_case_template: Option<String>,
     pub test_template: Option<String>,
     pub use_case_style: Option<String>, // "simple" or "detailed"
+    pub methodology: Option<String>, // "simple", "cockburn", "unified_process", "bdd_gherkin"
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -90,6 +92,121 @@ pub struct MetadataConfig {
 }
 
 impl Config {
+    /// Create a Config with methodology-specific recommended settings
+    pub fn new_with_methodology(methodology: &str) -> Self {
+        let mut config = Self::default();
+        
+        match methodology {
+            "simple" => {
+                config.templates.methodology = Some("simple".to_string());
+                config.templates.use_case_style = Some("simple".to_string());
+                config.metadata.enabled = false; // Minimal metadata for simple approach
+                config.generation.auto_generate_tests = false;
+            },
+            "cockburn" => {
+                config.templates.methodology = Some("cockburn".to_string());
+                config.metadata.enabled = true;
+                config.metadata.include_personas = true;
+                config.metadata.include_prerequisites = true;
+                config.metadata.include_business_value = true;
+                config.metadata.include_acceptance_criteria = true;
+                config.generation.auto_generate_tests = true; // Goal-oriented testing
+            },
+            "unified_process" | "rup" => {
+                config.templates.methodology = Some("unified_process".to_string());
+                config.metadata.enabled = true;
+                config.metadata.include_author = true;
+                config.metadata.include_personas = true;
+                config.metadata.include_prerequisites = true;
+                config.metadata.include_acceptance_criteria = true;
+                config.metadata.include_constraints = true;
+                config.generation.auto_generate_tests = true;
+                config.generation.overwrite_test_documentation = true; // Formal documentation
+            },
+            "bdd_gherkin" | "bdd" => {
+                config.templates.methodology = Some("bdd_gherkin".to_string());
+                config.metadata.enabled = true;
+                config.metadata.include_acceptance_criteria = true;
+                config.metadata.include_personas = true;
+                config.generation.auto_generate_tests = true; // BDD focuses on automated testing
+                config.generation.test_language = "rust".to_string(); // Could be configured based on project
+            },
+            _ => {
+                // Default to simple for unknown methodologies
+                config.templates.methodology = Some("simple".to_string());
+            }
+        }
+        
+        config
+    }
+
+    /// Initialize project with a pre-configured Config instance
+    pub fn init_project_with_config(config: Config) -> Result<Config> {
+        // Ensure we're not already in a project
+        if Self::load().is_ok() {
+            anyhow::bail!("A use case manager project already exists in this directory or a parent directory");
+        }
+
+        // Create .config/.mucm directory if it doesn't exist
+        let base_path = Path::new(".");
+        let config_dir = base_path.join(Self::CONFIG_DIR);
+        if !config_dir.exists() {
+            fs::create_dir_all(&config_dir).context("Failed to create .config/.mucm directory")?;
+        }
+
+        // Save the configuration first
+        config.save_in_dir(".")?;
+
+        // Copy templates to .config/.mucm/templates/
+        Self::copy_templates_to_config_with_language_in_dir(".", Some(config.generation.test_language.clone()))?;
+
+        // Create default directories
+        let base_path = Path::new(".");
+        let use_case_dir = base_path.join(&config.directories.use_case_dir);
+        let test_dir = base_path.join(&config.directories.test_dir);
+        let persona_dir = base_path.join(&config.directories.persona_dir);
+
+        fs::create_dir_all(&use_case_dir).context("Failed to create use case directory")?;
+        fs::create_dir_all(&test_dir).context("Failed to create test directory")?;
+        fs::create_dir_all(&persona_dir).context("Failed to create persona directory")?;
+        
+        Ok(config)
+    }
+
+    /// Get methodology-specific recommendations as a human-readable string
+    pub fn methodology_recommendations(methodology: &str) -> String {
+        match methodology {
+            "simple" => {
+                "Simple Methodology Recommendations:
+- Minimal metadata enabled
+- Quick documentation focus
+- No automatic test generation
+- Best for: Small teams, rapid prototyping, informal documentation".to_string()
+            },
+            "cockburn" => {
+                "Cockburn Goal-Oriented Methodology Recommendations:
+- Full metadata including personas and business value
+- Prerequisites and acceptance criteria tracking
+- Automatic test generation enabled
+- Best for: Complex business domains, stakeholder-heavy projects".to_string()
+            },
+            "unified_process" | "rup" => {
+                "Rational Unified Process (RUP) Methodology Recommendations:
+- Comprehensive metadata with versioning and authorship
+- Formal documentation with prerequisites and acceptance criteria
+- Test generation with documentation overwrite enabled
+- Best for: Enterprise projects, regulated industries, formal processes".to_string()
+            },
+            "bdd_gherkin" | "bdd" => {
+                "Behavior-Driven Development (BDD) Methodology Recommendations:
+- Acceptance criteria and persona-focused metadata
+- Automatic test generation strongly enabled
+- Collaborative documentation approach
+- Best for: Agile teams, automated testing focus, customer collaboration".to_string()
+            },
+            _ => "Unknown methodology. Using simple methodology defaults.".to_string()
+        }
+    }
     const CONFIG_DIR: &'static str = ".config/.mucm";
     const CONFIG_FILE: &'static str = "mucm.toml";
     const TEMPLATES_DIR: &'static str = "templates";
@@ -372,6 +489,7 @@ impl Default for Config {
                 use_case_template: None,
                 test_template: None,
                 use_case_style: Some("detailed".to_string()),
+                methodology: Some("simple".to_string()),
             },
             generation: GenerationConfig {
                 test_language: "rust".to_string(),

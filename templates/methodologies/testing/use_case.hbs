@@ -13,13 +13,41 @@
 
 {{/if}}# {{id}}: {{title}}
 
+{{#if test_complexity}}**Test Complexity:** {{test_complexity}}{{/if}}
+{{#if automation_level}}**Automation Level:** {{automation_level}}{{/if}}
+{{#if test_priority}}**Test Priority:** {{test_priority}}{{/if}}
+
 ## Description
 {{description}}
 
-{{#if personas}}
-## Personas (Target Users)
-{{#each personas}}
+{{#if test_strategy}}
+## Test Strategy
+{{test_strategy}}
+
+{{/if}}{{#if quality_metrics}}
+## Quality Metrics
+{{#each quality_metrics}}
 - {{this}}
+{{/each}}
+
+{{/if}}{{#if automation_notes}}
+## Automation Notes
+{{automation_notes}}
+
+{{/if}}{{#if coverage_requirements}}
+## Coverage Requirements
+{{coverage_requirements}}
+
+{{/if}}{{#if test_types}}
+## Test Types
+{{#each test_types}}
+- {{this}}
+{{/each}}
+
+{{/if}}{{#if personas}}
+## Test Personas
+{{#each personas}}
+- **{{this}}** - (Define testing role and responsibilities)
 {{/each}}
 
 {{/if}}{{#if author}}
