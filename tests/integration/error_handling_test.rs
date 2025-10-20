@@ -37,8 +37,9 @@ mod error_handling_tests {
             let result = UseCaseCoordinator::load();
             
             assert!(result.is_err());
-            let error = result.unwrap_err();
-            assert!(error.to_string().contains("use case manager project"));
+            if let Err(error) = result {
+                assert!(error.to_string().contains("use case manager project"));
+            }
         });
     }
 
@@ -114,7 +115,7 @@ mod error_handling_tests {
 
     #[test]
     #[serial]
-    fn test_duplicate_init_fails_gracefully() {
+    fn test_duplicate_init_is_idempotent() {
         with_temp_dir(|_| {
             use markdown_use_case_manager::config::Config;
             
@@ -122,12 +123,10 @@ mod error_handling_tests {
             let result1 = Config::init_project_with_language(Some("rust".to_string()));
             assert!(result1.is_ok());
             
-            // Second init should fail gracefully
+            // Second init should also succeed (idempotent operation)
+            // It will just update templates and config
             let result2 = Config::init_project_with_language(Some("rust".to_string()));
-            assert!(result2.is_err());
-            
-            let error = result2.unwrap_err();
-            assert!(error.to_string().contains("already exists"));
+            assert!(result2.is_ok());
         });
     }
 

@@ -26,3 +26,6 @@ pub mod code_preservation_test;
 
 // Error handling integration tests
 pub mod error_handling_test;
+
+// Regenerate command integration tests
+pub mod regenerate_test;

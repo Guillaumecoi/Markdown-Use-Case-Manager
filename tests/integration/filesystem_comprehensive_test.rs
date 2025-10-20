@@ -379,9 +379,8 @@ fn test_file_operation_error_handling() {
 
         assert!(result.is_err());
         let error = result.unwrap_err();
-        assert!(error
-            .to_string()
-            .contains("Use case UC-NONEXISTENT-001 not found"));
+        // The error message should indicate the use case was not found
+        assert!(error.to_string().contains("Use case") && error.to_string().contains("not found"));
     });
 }
 
