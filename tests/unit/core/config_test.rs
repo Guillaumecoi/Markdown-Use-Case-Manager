@@ -58,6 +58,7 @@ fn test_directory_config() {
         test_dir: "custom/tests".to_string(),
         persona_dir: "custom/personas".to_string(),
         template_dir: Some("custom/templates".to_string()),
+        toml_dir: None,
     };
 
     assert_eq!(dir_config.use_case_dir, "custom/use-cases");
@@ -240,6 +241,7 @@ fn test_config_custom_values() {
             test_dir: "src/tests".to_string(),
             persona_dir: "src/personas".to_string(),
             template_dir: Some("src/templates".to_string()),
+            toml_dir: None,
         },
         templates: TemplateConfig {
             use_case_template: Some("my_template.hbs".to_string()),

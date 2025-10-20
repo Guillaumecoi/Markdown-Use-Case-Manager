@@ -25,21 +25,28 @@ impl FileService {
     /// Save a use case to both TOML and Markdown files
     /// 
     /// This creates two files:
-    /// - {id}.toml - Source of truth containing all use case data
-    /// - {id}.md - Generated documentation for human reading
+    /// - {id}.toml - Source of truth containing all use case data (in toml_dir)
+    /// - {id}.md - Generated documentation for human reading (in use_case_dir)
     pub fn save_use_case(&self, use_case: &UseCase, markdown_content: &str) -> Result<()> {
-        // Create category-based directory structure
-        let category_dir = Path::new(&self.config.directories.use_case_dir)
-            .join(to_snake_case(&use_case.category));
-        fs::create_dir_all(&category_dir)?;
+        let category_snake = to_snake_case(&use_case.category);
+        
+        // Create TOML directory structure (source files)
+        let toml_dir = Path::new(self.config.directories.get_toml_dir())
+            .join(&category_snake);
+        fs::create_dir_all(&toml_dir)?;
+
+        // Create markdown directory structure (generated docs)
+        let md_dir = Path::new(&self.config.directories.use_case_dir)
+            .join(&category_snake);
+        fs::create_dir_all(&md_dir)?;
 
         // Save TOML file (source of truth)
-        let toml_path = category_dir.join(format!("{}.toml", use_case.id));
+        let toml_path = toml_dir.join(format!("{}.toml", use_case.id));
         let toml_content = toml::to_string_pretty(use_case)?;
         fs::write(&toml_path, toml_content)?;
 
         // Save markdown file (generated output)
-        let md_path = category_dir.join(format!("{}.md", use_case.id));
+        let md_path = md_dir.join(format!("{}.md", use_case.id));
         fs::write(&md_path, markdown_content)?;
 
         Ok(())
@@ -47,17 +54,17 @@ impl FileService {
 
     /// Load all use cases from TOML files
     /// 
-    /// Scans the use case directory for .toml files and deserializes them.
+    /// Scans the TOML directory for .toml files and deserializes them.
     /// Markdown files are ignored during loading - they're just generated output.
     pub fn load_use_cases(&self) -> Result<Vec<UseCase>> {
-        let use_case_dir = Path::new(&self.config.directories.use_case_dir);
+        let toml_dir = Path::new(self.config.directories.get_toml_dir());
         let mut use_cases = Vec::new();
 
-        if !use_case_dir.exists() {
+        if !toml_dir.exists() {
             return Ok(use_cases); // No use cases yet
         }
 
-        for entry in walkdir::WalkDir::new(use_case_dir) {
+        for entry in walkdir::WalkDir::new(toml_dir) {
             let entry = entry?;
             
             // Only process .toml files that start with "UC-" (use case ID pattern)

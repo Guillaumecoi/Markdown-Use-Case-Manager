@@ -1,34 +1,22 @@
 // Integration tests module organization
+//
+// Tests are organized into logical subdirectories for better maintainability:
+// - cli/: Command-line interface tests
+// - config/: Configuration and settings tests
+// - core/: Core functionality (filesystem, regeneration, initialization, errors)
+// - templates/: Template system tests (management, languages, code preservation)
 
 // Test utilities
 pub mod test_helpers;
 
 // CLI integration tests
-pub mod cli_auto_init_test;
-pub mod cli_comprehensive_test;
-pub mod cli_modular_test; // New modular CLI tests // Auto-init and settings tests
-pub mod persona_cli_test; // Persona management CLI tests
+pub mod cli;
 
-// File system and workflow integration tests
-pub mod filesystem_comprehensive_test;
+// Configuration integration tests
+pub mod config;
 
-// Template management integration tests
-pub mod template_management_test;
+// Core functionality tests
+pub mod core;
 
-// Template language integration tests
-pub mod template_language_tests;
-
-// CLI innovation tests showcasing TOML features
-pub mod cli_toml_innovation_test;
-
-// Code preservation integration tests
-pub mod code_preservation_test;
-
-// Error handling integration tests
-pub mod error_handling_test;
-
-// Regenerate command integration tests
-pub mod regenerate_test;
-
-// Initialization enforcement integration tests
-pub mod init_enforcement_test;
+// Template system tests
+pub mod templates;

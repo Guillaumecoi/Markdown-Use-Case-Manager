@@ -1,5 +1,5 @@
-// Integration tests for comprehensive filesystem functionality
-use super::test_helpers::with_temp_dir;
+// Integration tests for filesystem operations and coordination
+use super::super::test_helpers::with_temp_dir;
 use crate::test_utils::{init_project, init_project_in_dir, load_from_dir, save_config};
 use markdown_use_case_manager::{config::Config, UseCaseCoordinator};
 use std::fs;

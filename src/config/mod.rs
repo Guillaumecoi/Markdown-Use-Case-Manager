@@ -29,6 +29,15 @@ pub struct DirectoryConfig {
     pub test_dir: String,
     pub persona_dir: String,
     pub template_dir: Option<String>,
+    /// Directory for TOML source files (defaults to same as use_case_dir if not specified)
+    pub toml_dir: Option<String>,
+}
+
+impl DirectoryConfig {
+    /// Get the effective TOML directory (falls back to use_case_dir if not specified)
+    pub fn get_toml_dir(&self) -> &str {
+        self.toml_dir.as_deref().unwrap_or(&self.use_case_dir)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -165,10 +174,16 @@ impl Config {
         let use_case_dir = base_path.join(&config.directories.use_case_dir);
         let test_dir = base_path.join(&config.directories.test_dir);
         let persona_dir = base_path.join(&config.directories.persona_dir);
+        let toml_dir = base_path.join(config.directories.get_toml_dir());
 
         fs::create_dir_all(&use_case_dir).context("Failed to create use case directory")?;
         fs::create_dir_all(&test_dir).context("Failed to create test directory")?;
         fs::create_dir_all(&persona_dir).context("Failed to create persona directory")?;
+        
+        // Create TOML directory if it's different from use_case_dir
+        if config.directories.toml_dir.is_some() && toml_dir != use_case_dir {
+            fs::create_dir_all(&toml_dir).context("Failed to create TOML directory")?;
+        }
         
         Ok(config)
     }
@@ -298,10 +313,16 @@ impl Config {
         let use_case_dir = base_path.join(&config.directories.use_case_dir);
         let test_dir = base_path.join(&config.directories.test_dir);
         let persona_dir = base_path.join(&config.directories.persona_dir);
+        let toml_dir = base_path.join(config.directories.get_toml_dir());
 
         fs::create_dir_all(&use_case_dir).context("Failed to create use case directory")?;
         fs::create_dir_all(&test_dir).context("Failed to create test directory")?;
         fs::create_dir_all(&persona_dir).context("Failed to create persona directory")?;
+        
+        // Create TOML directory if it's different from use_case_dir
+        if config.directories.toml_dir.is_some() && toml_dir != use_case_dir {
+            fs::create_dir_all(&toml_dir).context("Failed to create TOML directory")?;
+        }
 
         Ok(config)
     }
@@ -486,6 +507,7 @@ impl Default for Config {
                 test_dir: "tests/use-cases".to_string(),
                 persona_dir: "docs/personas".to_string(),
                 template_dir: None,
+                toml_dir: Some("use-cases-data".to_string()), // Default: keep source data separate
             },
             templates: TemplateConfig {
                 use_case_template: None,

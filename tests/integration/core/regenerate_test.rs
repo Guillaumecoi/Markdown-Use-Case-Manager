@@ -45,8 +45,8 @@ mod regenerate_tests {
                 Some("Initial description".to_string()),
             ).unwrap();
             
-            // Manually edit the TOML file
-            let toml_path = format!("docs/use-cases/testing/{}.toml", use_case_id);
+                        // Manually edit the TOML file to add a new scenario
+            let toml_path = format!("use-cases-data/testing/{}.toml", use_case_id);
             let toml_content = fs::read_to_string(&toml_path).unwrap();
             let updated_toml = toml_content.replace(
                 "Initial description",
@@ -92,7 +92,7 @@ mod regenerate_tests {
             
             // Edit both TOML files
             for use_case_id in &[&uc1, &uc2] {
-                let toml_path = format!("docs/use-cases/testing/{}.toml", use_case_id);
+                let toml_path = format!("use-cases-data/testing/{}.toml", use_case_id);
                 let toml_content = fs::read_to_string(&toml_path).unwrap();
                 let updated_toml = toml_content.replace(
                     "priority = \"Medium\"",
@@ -132,7 +132,7 @@ mod regenerate_tests {
             ).unwrap();
             
             // Edit TOML with rich metadata
-            let toml_path = format!("docs/use-cases/testing/{}.toml", use_case_id);
+            let toml_path = format!("use-cases-data/testing/{}.toml", use_case_id);
             let toml_content = format!(
                 r#"id = "{}"
 title = "Complex Use Case"
@@ -225,7 +225,7 @@ updated_at = "2025-10-20T11:00:00.000000000Z"
             assert!(overview_before.contains("Feature X"));
             
             // Edit TOML to change title
-            let toml_path = format!("docs/use-cases/features/{}.toml", use_case_id);
+            let toml_path = format!("use-cases-data/features/{}.toml", use_case_id);
             let toml_content = fs::read_to_string(&toml_path).unwrap();
             let updated_toml = toml_content.replace(
                 "title = \"Feature X\"",
@@ -260,7 +260,7 @@ updated_at = "2025-10-20T11:00:00.000000000Z"
                 Some("Initial".to_string()),
             ).unwrap();
             
-            let toml_path = format!("docs/use-cases/testing/{}.toml", use_case_id);
+            let toml_path = format!("use-cases-data/testing/{}.toml", use_case_id);
             let md_path = format!("docs/use-cases/testing/{}.md", use_case_id);
             
             // Get timestamps

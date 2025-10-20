@@ -50,9 +50,12 @@ methodology = "simple"              # Options: simple, cockburn, unified_process
 ### Folder Setup
 ```toml
 [directories]
-use_case_dir = "docs/use-cases"     # Your use cases go here
+use_case_dir = "docs/use-cases"     # Your use cases (markdown) go here
 test_dir = "tests/use-cases"        # Test files go here (if you want them)
+toml_dir = "data/use-cases"         # (Optional) Store TOML source files separately
 ```
+
+**Note:** By default, both TOML source files and generated markdown files are stored in `use_case_dir`. If you set `toml_dir`, TOML files will be stored there instead, keeping source data separate from generated documentation. See [Separate TOML Directory Guide](./separate-toml-directory.md) for details.
 
 ### File Naming
 ```toml

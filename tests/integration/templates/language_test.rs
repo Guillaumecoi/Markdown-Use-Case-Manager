@@ -1,5 +1,5 @@
 // tests/integration/template_language_tests.rs
-use super::test_helpers::with_temp_dir;
+use super::super::test_helpers::with_temp_dir;
 use crate::test_utils::get_available_test_languages;
 use markdown_use_case_manager::config::Config;
 use markdown_use_case_manager::core::templates::TemplateEngine;
