@@ -106,43 +106,41 @@ impl Config {
         let mut config = Self::default();
         
         match methodology {
-            "simple" => {
-                config.templates.methodology = Some("simple".to_string());
-                config.templates.use_case_style = Some("simple".to_string());
-                config.metadata.enabled = false; // Minimal metadata for simple approach
-                config.generation.auto_generate_tests = false;
-            },
-            "cockburn" => {
-                config.templates.methodology = Some("cockburn".to_string());
+            "business" => {
+                config.templates.methodology = Some("business".to_string());
                 config.metadata.enabled = true;
-                config.metadata.include_personas = true;
-                config.metadata.include_prerequisites = true;
                 config.metadata.include_business_value = true;
-                config.metadata.include_acceptance_criteria = true;
-                config.generation.auto_generate_tests = true; // Goal-oriented testing
-            },
-            "unified_process" | "rup" => {
-                config.templates.methodology = Some("unified_process".to_string());
-                config.metadata.enabled = true;
-                config.metadata.include_author = true;
                 config.metadata.include_personas = true;
+                config.metadata.include_epic = true;
+                config.generation.auto_generate_tests = false; // Business focus, not test-driven
+            },
+            "developer" => {
+                config.templates.methodology = Some("developer".to_string());
+                config.metadata.enabled = true;
                 config.metadata.include_prerequisites = true;
                 config.metadata.include_acceptance_criteria = true;
-                config.metadata.include_constraints = true;
-                config.generation.auto_generate_tests = true;
-                config.generation.overwrite_test_documentation = true; // Formal documentation
+                config.metadata.include_complexity = true;
+                config.generation.auto_generate_tests = true; // Developer focus includes testing
             },
-            "bdd_gherkin" | "bdd" => {
-                config.templates.methodology = Some("bdd_gherkin".to_string());
+            "feature" => {
+                config.templates.methodology = Some("feature".to_string());
                 config.metadata.enabled = true;
+                config.metadata.include_epic = true;
                 config.metadata.include_acceptance_criteria = true;
                 config.metadata.include_personas = true;
-                config.generation.auto_generate_tests = true; // BDD focuses on automated testing
-                config.generation.test_language = "rust".to_string(); // Could be configured based on project
+                config.generation.auto_generate_tests = false; // Feature tracking, not test generation
+            },
+            "testing" => {
+                config.templates.methodology = Some("testing".to_string());
+                config.metadata.enabled = true;
+                config.metadata.include_acceptance_criteria = true;
+                config.metadata.include_complexity = true;
+                config.generation.auto_generate_tests = true; // Testing methodology needs tests!
+                config.generation.overwrite_test_documentation = true;
             },
             _ => {
-                // Default to simple for unknown methodologies
-                config.templates.methodology = Some("simple".to_string());
+                // Default to developer for unknown methodologies
+                config.templates.methodology = Some("developer".to_string());
             }
         }
         
@@ -169,21 +167,9 @@ impl Config {
         // Copy templates to .config/.mucm/templates/
         Self::copy_templates_to_config_with_language_in_dir(".", Some(config.generation.test_language.clone()))?;
 
-        // Create default directories
-        let base_path = Path::new(".");
-        let use_case_dir = base_path.join(&config.directories.use_case_dir);
-        let test_dir = base_path.join(&config.directories.test_dir);
-        let persona_dir = base_path.join(&config.directories.persona_dir);
-        let toml_dir = base_path.join(config.directories.get_toml_dir());
-
-        fs::create_dir_all(&use_case_dir).context("Failed to create use case directory")?;
-        fs::create_dir_all(&test_dir).context("Failed to create test directory")?;
-        fs::create_dir_all(&persona_dir).context("Failed to create persona directory")?;
-        
-        // Create TOML directory if it's different from use_case_dir
-        if config.directories.toml_dir.is_some() && toml_dir != use_case_dir {
-            fs::create_dir_all(&toml_dir).context("Failed to create TOML directory")?;
-        }
+        // NOTE: Directories are NOT created during init
+        // They will be created automatically when the first use case is created
+        // This gives users a chance to configure directory paths in mucm.toml first
         
         Ok(config)
     }
@@ -191,35 +177,35 @@ impl Config {
     /// Get methodology-specific recommendations as a human-readable string
     pub fn methodology_recommendations(methodology: &str) -> String {
         match methodology {
-            "simple" => {
-                "Simple Methodology Recommendations:
-- Minimal metadata enabled
-- Quick documentation focus
-- No automatic test generation
-- Best for: Small teams, rapid prototyping, informal documentation".to_string()
+            "business" => {
+                "Business Methodology Recommendations:
+- Focus on business value and stakeholder needs
+- Business-oriented language and structure
+- Emphasis on ROI and business outcomes
+- Best for: Business analysts, product managers, stakeholder documentation".to_string()
             },
-            "cockburn" => {
-                "Cockburn Goal-Oriented Methodology Recommendations:
-- Full metadata including personas and business value
-- Prerequisites and acceptance criteria tracking
-- Automatic test generation enabled
-- Best for: Complex business domains, stakeholder-heavy projects".to_string()
+            "developer" => {
+                "Developer Methodology Recommendations:
+- Technical implementation focus
+- System behavior and API documentation
+- Code-centric perspective
+- Best for: Development teams, technical documentation, API design".to_string()
             },
-            "unified_process" | "rup" => {
-                "Rational Unified Process (RUP) Methodology Recommendations:
-- Comprehensive metadata with versioning and authorship
-- Formal documentation with prerequisites and acceptance criteria
-- Test generation with documentation overwrite enabled
-- Best for: Enterprise projects, regulated industries, formal processes".to_string()
+            "feature" => {
+                "Feature Methodology Recommendations:
+- Feature-oriented documentation
+- User story and epic integration
+- Agile-friendly structure
+- Best for: Product development, agile teams, feature tracking".to_string()
             },
-            "bdd_gherkin" | "bdd" => {
-                "Behavior-Driven Development (BDD) Methodology Recommendations:
-- Acceptance criteria and persona-focused metadata
-- Automatic test generation strongly enabled
-- Collaborative documentation approach
-- Best for: Agile teams, automated testing focus, customer collaboration".to_string()
+            "testing" => {
+                "Testing Methodology Recommendations:
+- Test-focused documentation
+- Test scenarios and coverage tracking
+- Quality assurance emphasis
+- Best for: QA teams, test automation, quality metrics".to_string()
             },
-            _ => "Unknown methodology. Using simple methodology defaults.".to_string()
+            _ => "Unknown methodology. Using developer methodology defaults.".to_string()
         }
     }
     const CONFIG_DIR: &'static str = ".config/.mucm";
@@ -309,22 +295,38 @@ impl Config {
         // Copy templates to .config/.mucm/templates/
         Self::copy_templates_to_config_with_language_in_dir(base_dir, language)?;
 
-        // Create default directories
-        let use_case_dir = base_path.join(&config.directories.use_case_dir);
-        let test_dir = base_path.join(&config.directories.test_dir);
-        let persona_dir = base_path.join(&config.directories.persona_dir);
-        let toml_dir = base_path.join(config.directories.get_toml_dir());
-
-        fs::create_dir_all(&use_case_dir).context("Failed to create use case directory")?;
-        fs::create_dir_all(&test_dir).context("Failed to create test directory")?;
-        fs::create_dir_all(&persona_dir).context("Failed to create persona directory")?;
-        
-        // Create TOML directory if it's different from use_case_dir
-        if config.directories.toml_dir.is_some() && toml_dir != use_case_dir {
-            fs::create_dir_all(&toml_dir).context("Failed to create TOML directory")?;
-        }
+        // NOTE: Directories are NOT created during init
+        // They will be created automatically when the first use case is created
+        // This gives users a chance to configure directory paths in mucm.toml first
 
         Ok(config)
+    }
+
+    /// Save config file only (without copying templates or creating directories)
+    /// Used in the first step of two-step initialization
+    pub fn save_config_only(config: &Config) -> Result<()> {
+        let base_path = Path::new(".");
+        let config_dir = base_path.join(Self::CONFIG_DIR);
+        
+        // Create .config/.mucm directory if it doesn't exist
+        if !config_dir.exists() {
+            fs::create_dir_all(&config_dir).context("Failed to create .config/.mucm directory")?;
+        }
+        
+        config.save_in_dir(".")?;
+        Ok(())
+    }
+
+    /// Check if templates have already been copied to .config/.mucm/templates/
+    pub fn check_templates_exist() -> bool {
+        let base_path = Path::new(".");
+        let templates_dir = base_path.join(Self::CONFIG_DIR).join(Self::TEMPLATES_DIR);
+        templates_dir.exists() && templates_dir.is_dir()
+    }
+
+    /// Copy templates to .config/.mucm/templates/ with language (wrapper for _in_dir version)
+    pub fn copy_templates_to_config_with_language(language: Option<String>) -> Result<()> {
+        Self::copy_templates_to_config_with_language_in_dir(".", language)
     }
 
     fn copy_templates_to_config_with_language_in_dir(
@@ -513,7 +515,7 @@ impl Default for Config {
                 use_case_template: None,
                 test_template: None,
                 use_case_style: Some("detailed".to_string()),
-                methodology: Some("simple".to_string()),
+                methodology: Some("developer".to_string()),
             },
             generation: GenerationConfig {
                 test_language: "rust".to_string(),

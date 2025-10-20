@@ -34,7 +34,7 @@ pub fn run() -> Result<()> {
     };
 
     match command {
-        Commands::Init { language, methodology } => handle_init_command(&mut runner, language, methodology),
+        Commands::Init { language, methodology, finalize } => handle_init_command(&mut runner, language, methodology, finalize),
         Commands::Create {
             title,
             category,

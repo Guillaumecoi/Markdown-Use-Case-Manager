@@ -42,6 +42,9 @@ pub enum Commands {
         /// Documentation methodology (feature, business, developer, tester)
         #[arg(short, long)]
         methodology: Option<String>,
+        /// Finalize initialization by copying templates (run after reviewing config)
+        #[arg(long)]
+        finalize: bool,
     },
     /// Create a new use case
     Create {
