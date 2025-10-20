@@ -74,7 +74,7 @@ The interactive mode provides:
 #### Script Mode (Perfect for Automation)
 
 ```bash
-# Initialize your project
+# Initialize your project (REQUIRED FIRST STEP)
 mucm init
 
 # Create your first use case  
@@ -90,6 +90,8 @@ mucm update-status "UC-SEC-001-S01" --status "implemented"
 mucm list
 mucm status
 ```
+
+> **⚠️ Important**: You **must** run `mucm init` before using any other commands. This ensures your project is properly configured. All commands that create, modify, or read use cases require initialization. See [Initialization Enforcement](docs/INITIALIZATION_ENFORCEMENT.md) for details.
 
 ### What You Get
 

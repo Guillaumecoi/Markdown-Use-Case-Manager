@@ -1,5 +1,6 @@
 use crate::config::Config;
 use crate::core::languages::LanguageRegistry;
+use crate::core::templates::TemplateEngine;
 use crate::core::use_case_coordinator::UseCaseCoordinator;
 use anyhow::Result;
 
@@ -183,9 +184,13 @@ impl CliRunner {
     }
 
     /// List available methodologies
+    #[allow(clippy::unused_self)]
     pub fn list_methodologies(&mut self) -> Result<String> {
-        let coordinator = self.ensure_coordinator()?;
-        let methodologies = coordinator.list_available_methodologies();
+        // Create a temporary template engine just to list methodologies
+        // This doesn't require a full project initialization
+        let template_engine = TemplateEngine::new()
+            .map_err(|e| anyhow::anyhow!("Failed to create template engine: {}", e))?;
+        let methodologies = template_engine.available_methodologies();
         
         if methodologies.is_empty() {
             return Ok("No methodologies available.".to_string());
@@ -200,10 +205,14 @@ impl CliRunner {
     }
 
     /// Get information about a specific methodology
+    #[allow(clippy::unused_self)]
     pub fn get_methodology_info(&mut self, methodology: String) -> Result<String> {
-        let coordinator = self.ensure_coordinator()?;
+        // Create a temporary template engine just to get methodology info
+        // This doesn't require a full project initialization
+        let template_engine = TemplateEngine::new()
+            .map_err(|e| anyhow::anyhow!("Failed to create template engine: {}", e))?;
         
-        match coordinator.get_methodology_info(&methodology) {
+        match template_engine.get_methodology_info(&methodology) {
             Some((name, description)) => {
                 Ok(format!("Methodology: {}\nDescription: {}", name, description))
             }

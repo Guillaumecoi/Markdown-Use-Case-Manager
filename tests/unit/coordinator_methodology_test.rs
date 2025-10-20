@@ -1,5 +1,6 @@
 // tests/unit/coordinator_methodology_test.rs
 use markdown_use_case_manager::core::use_case_coordinator::UseCaseCoordinator;
+use markdown_use_case_manager::core::templates::TemplateEngine;
 use markdown_use_case_manager::config::Config;
 use std::env;
 use std::path::PathBuf;
@@ -34,36 +35,28 @@ where
 }
 
 #[test]
-fn test_coordinator_methodology_methods() {
-    with_temp_dir(|_| {
-        // Create a properly configured test config
-        let mut config = Config::default();
-        config.project.name = "Test Project".to_string();
-        
-        // Create necessary directories for the file service
-        std::fs::create_dir_all("docs/use-cases").expect("Failed to create docs directory");
+fn test_template_engine_methodology_methods() {
+    // Test methodology methods using TemplateEngine directly
+    // These don't require a full coordinator or project initialization
+    let template_engine = TemplateEngine::new().expect("Failed to create template engine");
 
-        // Create coordinator with our config
-        let coordinator = UseCaseCoordinator::new(config).expect("Failed to create coordinator");
+    // Test available methodologies
+    let methodologies = template_engine.available_methodologies();
+    assert!(methodologies.contains(&"feature".to_string()));
+    assert!(methodologies.contains(&"business".to_string()));
+    assert!(methodologies.contains(&"developer".to_string()));
+    assert!(methodologies.contains(&"tester".to_string()));
 
-        // Test available methodologies
-        let methodologies = coordinator.list_available_methodologies();
-        assert!(methodologies.contains(&"feature".to_string()));
-        assert!(methodologies.contains(&"business".to_string()));
-        assert!(methodologies.contains(&"developer".to_string()));
-        assert!(methodologies.contains(&"tester".to_string()));
+    // Test methodology info
+    let simple_info = template_engine.get_methodology_info("feature");
+    assert!(simple_info.is_some());
+    let (name, description) = simple_info.unwrap();
+    assert_eq!(name, "Feature Development");
+    assert!(description.contains("development"));
 
-        // Test methodology info
-        let simple_info = coordinator.get_methodology_info("feature");
-        assert!(simple_info.is_some());
-        let (name, description) = simple_info.unwrap();
-        assert_eq!(name, "Feature Development");
-        assert!(description.contains("development"));
-
-        // Test invalid methodology
-        let invalid_info = coordinator.get_methodology_info("nonexistent");
-        assert!(invalid_info.is_none());
-    });
+    // Test invalid methodology
+    let invalid_info = template_engine.get_methodology_info("nonexistent");
+    assert!(invalid_info.is_none());
 }
 
 #[test]

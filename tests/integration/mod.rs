@@ -29,3 +29,6 @@ pub mod error_handling_test;
 
 // Regenerate command integration tests
 pub mod regenerate_test;
+
+// Initialization enforcement integration tests
+pub mod init_enforcement_test;

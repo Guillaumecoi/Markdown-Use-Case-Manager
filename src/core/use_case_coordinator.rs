@@ -194,15 +194,6 @@ impl UseCaseCoordinator {
         Ok(use_case_id)
     }
 
-    /// List available methodologies
-    pub fn list_available_methodologies(&self) -> Vec<String> {
-        self.template_engine.available_methodologies()
-    }
-
-    /// Get methodology information
-    pub fn get_methodology_info(&self, methodology: &str) -> Option<(String, String)> {
-        self.template_engine.get_methodology_info(methodology)
-    }
 
     /// Regenerate use case with different methodology
     pub fn regenerate_use_case_with_methodology(
