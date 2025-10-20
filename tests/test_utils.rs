@@ -6,7 +6,7 @@
 use anyhow::{Context, Result};
 use markdown_use_case_manager::config::Config;
 use markdown_use_case_manager::core::languages::LanguageRegistry;
-use markdown_use_case_manager::core::models::{Scenario, Status, UseCase};
+use markdown_use_case_manager::core::models::{Priority, Scenario, Status, UseCase};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -67,4 +67,15 @@ pub fn get_test_template_for_language(language_name: &str) -> Option<&'static st
 pub fn get_available_test_languages() -> Vec<String> {
     let registry = LanguageRegistry::new();
     registry.available_languages()
+}
+
+/// Test helper constructor for UseCase with default priority (Medium)
+/// Creates a UseCase instance for testing purposes
+pub fn create_test_use_case(
+    id: String,
+    title: String,
+    category: String,
+    description: String,
+) -> UseCase {
+    UseCase::new(id, title, category, description, Priority::Medium)
 }

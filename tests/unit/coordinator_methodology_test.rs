@@ -48,16 +48,17 @@ fn test_coordinator_methodology_methods() {
 
         // Test available methodologies
         let methodologies = coordinator.list_available_methodologies();
-        assert!(methodologies.contains(&"simple".to_string()));
+        assert!(methodologies.contains(&"feature".to_string()));
         assert!(methodologies.contains(&"business".to_string()));
-        assert!(methodologies.contains(&"testing".to_string()));
+        assert!(methodologies.contains(&"developer".to_string()));
+        assert!(methodologies.contains(&"tester".to_string()));
 
         // Test methodology info
-        let simple_info = coordinator.get_methodology_info("simple");
+        let simple_info = coordinator.get_methodology_info("feature");
         assert!(simple_info.is_some());
         let (name, description) = simple_info.unwrap();
-        assert_eq!(name, "Simple");
-        assert!(description.contains("rapid development"));
+        assert_eq!(name, "Feature Development");
+        assert!(description.contains("development"));
 
         // Test invalid methodology
         let invalid_info = coordinator.get_methodology_info("nonexistent");
@@ -124,7 +125,7 @@ fn test_regenerate_use_case_with_methodology() {
         ).expect("Failed to create use case");
 
         // Regenerate with methodology
-        let result = coordinator.regenerate_use_case_with_methodology(&use_case_id, "simple");
+        let result = coordinator.regenerate_use_case_with_methodology(&use_case_id, "feature");
         assert!(result.is_ok());
 
         // Test with invalid methodology
@@ -133,7 +134,7 @@ fn test_regenerate_use_case_with_methodology() {
         assert!(invalid_result.unwrap_err().to_string().contains("Unknown methodology"));
 
         // Test with invalid use case ID  
-        let invalid_uc_result = coordinator.regenerate_use_case_with_methodology("INVALID-ID", "simple");
+        let invalid_uc_result = coordinator.regenerate_use_case_with_methodology("INVALID-ID", "feature");
         assert!(invalid_uc_result.is_err());
     });
 }

@@ -23,7 +23,6 @@ pub enum MainMenuOption {
     CreateUseCase,
     AddScenario,
     UpdateScenarioStatus,
-    AddExtendedMetadata,
     ConfigureSettings,
     ListUseCases,
     ShowStatus,
@@ -37,7 +36,6 @@ impl std::fmt::Display for MainMenuOption {
             MainMenuOption::CreateUseCase => write!(f, "📝 Create a new use case"),
             MainMenuOption::AddScenario => write!(f, "➕ Add scenario to existing use case"),
             MainMenuOption::UpdateScenarioStatus => write!(f, "🔄 Update scenario status"),
-            MainMenuOption::AddExtendedMetadata => write!(f, "📋 Add extended metadata to use case"),
             MainMenuOption::ConfigureSettings => write!(f, "⚙️  Configure settings"),
             MainMenuOption::ListUseCases => write!(f, "📋 List all use cases"),
             MainMenuOption::ShowStatus => write!(f, "📊 Show project status"),
@@ -53,7 +51,6 @@ pub fn show_main_menu() -> Result<MainMenuOption> {
         MainMenuOption::CreateUseCase,
         MainMenuOption::AddScenario,
         MainMenuOption::UpdateScenarioStatus,
-        MainMenuOption::AddExtendedMetadata,
         MainMenuOption::ConfigureSettings,
         MainMenuOption::ListUseCases,
         MainMenuOption::ShowStatus,
@@ -388,28 +385,4 @@ fn collect_list_items(item_type: &str, help: &str) -> Result<Vec<String>> {
     }
     
     Ok(items)
-}
-
-/// Guided workflow for adding extended metadata to an existing use case
-pub fn guided_add_extended_metadata(runner: &mut CliRunner) -> Result<()> {
-    println!("\n📋 Adding extended metadata to existing use case...\n");
-
-    // Get list of existing use cases
-    let use_case_ids = runner.get_use_case_ids()?;
-    if use_case_ids.is_empty() {
-        println!("❌ No use cases found. Create a use case first.");
-        return Ok(());
-    }
-
-    // Select use case
-    let selected_id = Select::new("Select a use case to add metadata to:", use_case_ids).prompt()?;
-
-    // Collect extended metadata
-    let extended_metadata = collect_extended_metadata()?;
-
-    // Update the use case
-    let result = runner.update_use_case_metadata(selected_id, extended_metadata)?;
-    println!("\n✅ {}", result);
-
-    Ok(())
 }

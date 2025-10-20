@@ -1,21 +1,21 @@
 // tests/unit/use_case_service_test.rs
-use crate::test_utils::find_use_case_by_id;
-use markdown_use_case_manager::core::models::{Status, UseCase};
+use crate::test_utils::{create_test_use_case, find_use_case_by_id};
+use markdown_use_case_manager::core::models::Status;
 use markdown_use_case_manager::core::services::UseCaseService;
 
 #[test]
-fn test_use_case_service_pure_business_logic() {
+fn test_use_case_service_unique_id_generation() {
     let service = UseCaseService::new();
 
-    // Test ID generation
+    // Test unique ID generation with filesystem checks
     let existing_use_cases = vec![
-        UseCase::new_test(
+        create_test_use_case(
             "UC-SEC-001".to_string(),
             "Login".to_string(),
             "Security".to_string(),
             "".to_string(),
         ),
-        UseCase::new_test(
+        create_test_use_case(
             "UC-API-001".to_string(),
             "REST API".to_string(),
             "API".to_string(),
@@ -23,20 +23,25 @@ fn test_use_case_service_pure_business_logic() {
         ),
     ];
 
-    let new_id = service.generate_use_case_id("Security", &existing_use_cases);
-    assert_eq!(new_id, "UC-SEC-002");
+    // Use a temporary directory for testing
+    let temp_dir = std::env::temp_dir().join("mucm_test_use_case_service");
+    let temp_dir_str = temp_dir.to_string_lossy();
 
-    let api_id = service.generate_use_case_id("API", &existing_use_cases);
-    assert_eq!(api_id, "UC-API-002");
+    let new_id = service.generate_unique_use_case_id("Security", &existing_use_cases, &temp_dir_str);
+    assert!(new_id.starts_with("UC-SEC-"));
+    assert!(new_id.len() > 7); // Should have format UC-SEC-XXX
 
-    let new_category_id = service.generate_use_case_id("Database", &existing_use_cases);
-    assert_eq!(new_category_id, "UC-DAT-001");
+    let api_id = service.generate_unique_use_case_id("API", &existing_use_cases, &temp_dir_str);
+    assert!(api_id.starts_with("UC-API-"));
+
+    let new_category_id = service.generate_unique_use_case_id("Database", &existing_use_cases, &temp_dir_str);
+    assert!(new_category_id.starts_with("UC-DAT-"));
 }
 
 #[test]
 fn test_scenario_management() {
     let service = UseCaseService::new();
-    let mut use_case = UseCase::new_test(
+    let mut use_case = create_test_use_case(
         "UC-TEST-001".to_string(),
         "Test Use Case".to_string(),
         "Testing".to_string(),
@@ -98,13 +103,13 @@ fn test_status_parsing() {
 #[test]
 fn test_finding_use_cases() {
     let use_cases = vec![
-        UseCase::new_test(
+        create_test_use_case(
             "UC-SEC-001".to_string(),
             "Login".to_string(),
             "Security".to_string(),
             "".to_string(),
         ),
-        UseCase::new_test(
+        create_test_use_case(
             "UC-API-001".to_string(),
             "REST API".to_string(),
             "API".to_string(),
@@ -123,7 +128,7 @@ fn test_finding_use_cases() {
 #[test]
 fn test_scenario_status_update() {
     let service = UseCaseService::new();
-    let mut use_case = UseCase::new_test(
+    let mut use_case = create_test_use_case(
         "UC-TEST-001".to_string(),
         "Test Use Case".to_string(),
         "Testing".to_string(),

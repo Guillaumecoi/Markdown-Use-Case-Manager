@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use handlebars::Handlebars;
-use serde_json::Value;
+use serde_json::{json, Value};
 use std::collections::HashMap;
 
 #[derive(Debug)]
@@ -14,34 +14,111 @@ impl TemplateEngine {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let mut handlebars = Handlebars::new();
 
-        // Register methodology-specific templates
+        // Register methodology-specific use case templates
+        // Feature methodology
         handlebars.register_template_string(
-            "simple_use_case",
-            include_str!("../../../templates/methodologies/simple/use_case.hbs"),
+            "feature-simple",
+            include_str!("../../../templates/methodologies/feature/uc_simple.hbs"),
         )?;
         handlebars.register_template_string(
-            "business_use_case", 
-            include_str!("../../../templates/methodologies/business/use_case.hbs"),
+            "feature-normal",
+            include_str!("../../../templates/methodologies/feature/uc_normal.hbs"),
         )?;
         handlebars.register_template_string(
-            "testing_use_case",
-            include_str!("../../../templates/methodologies/testing/use_case.hbs"),
+            "feature-detailed",
+            include_str!("../../../templates/methodologies/feature/uc_detailed.hbs"),
         )?;
-        
-        // Register overview template (using simple methodology as default)
+
+        // Business methodology
         handlebars.register_template_string(
-            "overview",
-            include_str!("../../../templates/methodologies/simple/overview.hbs"),
+            "business-simple",
+            include_str!("../../../templates/methodologies/business/uc_simple.hbs"),
+        )?;
+        handlebars.register_template_string(
+            "business-normal",
+            include_str!("../../../templates/methodologies/business/uc_normal.hbs"),
+        )?;
+        handlebars.register_template_string(
+            "business-detailed",
+            include_str!("../../../templates/methodologies/business/uc_detailed.hbs"),
+        )?;
+
+        // Developer methodology
+        handlebars.register_template_string(
+            "developer-simple",
+            include_str!("../../../templates/methodologies/developer/uc_simple.hbs"),
+        )?;
+        handlebars.register_template_string(
+            "developer-normal",
+            include_str!("../../../templates/methodologies/developer/uc_normal.hbs"),
+        )?;
+        handlebars.register_template_string(
+            "developer-detailed",
+            include_str!("../../../templates/methodologies/developer/uc_detailed.hbs"),
+        )?;
+
+        // Tester methodology
+        handlebars.register_template_string(
+            "tester-simple",
+            include_str!("../../../templates/methodologies/tester/uc_simple.hbs"),
+        )?;
+        handlebars.register_template_string(
+            "tester-normal",
+            include_str!("../../../templates/methodologies/tester/uc_normal.hbs"),
+        )?;
+        handlebars.register_template_string(
+            "tester-detailed",
+            include_str!("../../../templates/methodologies/tester/uc_detailed.hbs"),
+        )?;
+
+        // Register overview templates
+        handlebars.register_template_string(
+            "feature-overview",
+            include_str!("../../../templates/methodologies/feature/overview.hbs"),
+        )?;
+        handlebars.register_template_string(
+            "business-overview",
+            include_str!("../../../templates/methodologies/business/overview.hbs"),
+        )?;
+        handlebars.register_template_string(
+            "developer-overview",
+            include_str!("../../../templates/methodologies/developer/overview.hbs"),
+        )?;
+        handlebars.register_template_string(
+            "tester-overview",
+            include_str!("../../../templates/methodologies/tester/overview.hbs"),
+        )?;
+
+        // Register persona templates
+        handlebars.register_template_string(
+            "feature-persona",
+            include_str!("../../../templates/methodologies/feature/persona.hbs"),
+        )?;
+        handlebars.register_template_string(
+            "business-persona",
+            include_str!("../../../templates/methodologies/business/persona.hbs"),
+        )?;
+        handlebars.register_template_string(
+            "developer-persona",
+            include_str!("../../../templates/methodologies/developer/persona.hbs"),
+        )?;
+        handlebars.register_template_string(
+            "tester-persona",
+            include_str!("../../../templates/methodologies/tester/persona.hbs"),
         )?;
 
         // Register legacy templates for backwards compatibility
         handlebars.register_template_string(
             "use_case_simple",
-            include_str!("../../../templates/methodologies/simple/use_case.hbs"),
+            include_str!("../../../templates/use_case_simple.hbs"),
         )?;
         handlebars.register_template_string(
             "use_case_detailed",
-            include_str!("../../../templates/methodologies/business/use_case.hbs"),
+            include_str!("../../../templates/use_case_detailed.hbs"),
+        )?;
+        handlebars.register_template_string(
+            "overview",
+            include_str!("../../../templates/overview.hbs"),
         )?;
 
         // Register language test templates using LanguageRegistry
@@ -93,9 +170,10 @@ impl TemplateEngine {
     #[allow(dead_code)]
     pub fn render_use_case_for_methodology(&self, data: &HashMap<String, Value>, methodology: &str) -> Result<String> {
         let template_name = match methodology {
-            "simple" => "simple_use_case",
-            "business" => "business_use_case", 
-            "testing" => "testing_use_case",
+            "feature" => "feature-simple",
+            "business" => "business-simple", 
+            "developer" => "developer-simple",
+            "tester" => "tester-simple",
             _ => return Err(anyhow::anyhow!("Unknown methodology: {}", methodology)),
         };
         
@@ -142,8 +220,23 @@ impl TemplateEngine {
         let mut enhanced_data = data.clone();
         self.add_processed_scenario_data(&mut enhanced_data, &processed, processor)?;
 
+        // Transform flat data structure to nested structure expected by methodology templates
+        let core_data = json!({
+            "id": use_case.id,
+            "title": use_case.title,
+            "category": use_case.category,
+            "description": use_case.description,
+            "priority": use_case.priority.to_string(),
+            "status": use_case.status().to_string(),
+        });
+        enhanced_data.insert("core".to_string(), core_data);
+
+        // Add basic business and stakeholder data for methodology templates
+        enhanced_data.insert("business".to_string(), json!({}));
+        enhanced_data.insert("stakeholders".to_string(), json!({}));
+
         // Render with the enhanced data
-        let template_name = format!("use_case_{}", methodology);
+        let template_name = format!("{}-simple", methodology);
         if self.handlebars.get_template(&template_name).is_some() {
             self.render_use_case_with_template(&template_name, &enhanced_data)
         } else {
@@ -252,15 +345,15 @@ impl TemplateEngine {
 
     // Public template getters for config copying
     pub fn get_overview_template() -> &'static str {
-        include_str!("../../../templates/methodologies/simple/overview.hbs")
+        include_str!("../../../templates/overview.hbs")
     }
 
     pub fn get_use_case_simple_template() -> &'static str {
-        include_str!("../../../templates/methodologies/simple/use_case.hbs")
+        include_str!("../../../templates/use_case_simple.hbs")
     }
 
     pub fn get_use_case_detailed_template() -> &'static str {
-        include_str!("../../../templates/methodologies/business/use_case.hbs")
+        include_str!("../../../templates/use_case_detailed.hbs")
     }
 
 }

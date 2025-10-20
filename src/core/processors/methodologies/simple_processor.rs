@@ -7,9 +7,11 @@ use crate::core::models::Scenario;
 use std::collections::HashMap;
 
 /// Simple methodology processor - focuses on minimal overhead and quick documentation
+#[allow(dead_code)] // Part of methodology framework
 pub struct SimpleProcessor;
 
 impl SimpleProcessor {
+    #[allow(dead_code)] // Part of public API
     pub fn new() -> Self {
         Self
     }

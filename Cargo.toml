@@ -12,6 +12,10 @@ readme = "README.md"
 keywords = ["markdown", "use-case", "documentation", "cli", "git"]
 categories = ["command-line-utilities", "development-tools", "template-engine"]
 
+[features]
+# Test helpers - NOT FOR PUBLIC USE
+test-helpers = []
+
 [dependencies]
 # CLI and argument parsing
 clap = { version = "4.0", features = ["derive", "color"] }
@@ -50,6 +54,16 @@ tempfile = "3.0"
 assert_cmd = "2.0"
 predicates = "3.0"
 serial_test = "3.0"
+
+[[test]]
+name = "integration_tests"
+path = "tests/integration_tests.rs"
+required-features = ["test-helpers"]
+
+[[test]]
+name = "unit_tests"
+path = "tests/unit_tests.rs"
+required-features = ["test-helpers"]
 
 [[bin]]
 name = "mucm"

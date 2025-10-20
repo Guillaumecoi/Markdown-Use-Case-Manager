@@ -35,7 +35,7 @@ impl Scenario {
     }
     
     /// Create a new scenario with explicit type and tags
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Used by methodology processors
     pub fn new_with_type(
         id: String, 
         title: String, 

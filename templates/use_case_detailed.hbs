@@ -1,0 +1,57 @@
+# {{title}}
+
+**ID:** {{id}} | **Status:** {{status}} | **Priority:** {{priority}}
+
+## Description
+{{#if description}}
+{{description}}
+{{else}}
+_Brief description of the use case._
+{{/if}}
+
+## Business Context
+_Business context and stakeholders information._
+
+## Acceptance Criteria
+- [ ] _Acceptance criterion 1_
+- [ ] _Acceptance criterion 2_
+- [ ] _Acceptance criterion 3_
+
+## Scenarios
+{{#if scenarios}}
+{{#each scenarios}}
+### {{@index}}. {{title}}
+{{#if description}}
+{{description}}
+{{/if}}
+
+**Status:** {{status}}
+
+**Steps:**
+{{#each steps}}
+{{@index}}. {{this}}
+{{/each}}
+
+**Expected Outcome:**
+{{#if expected_outcome}}
+{{expected_outcome}}
+{{else}}
+_Expected outcome of this scenario._
+{{/if}}
+
+---
+{{/each}}
+{{else}}
+_No scenarios defined yet._
+{{/if}}
+
+## Notes
+_Additional notes and considerations._
+
+{{#if metadata_enabled}}
+---
+**Metadata:**
+- **Created:** {{created_at}}
+- **Last Modified:** {{last_modified}}
+- **Version:** {{version}}
+{{/if}}

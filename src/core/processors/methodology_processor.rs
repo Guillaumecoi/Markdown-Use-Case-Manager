@@ -51,10 +51,11 @@ impl MethodologyRegistry {
     pub fn new() -> Self {
         let mut processors: HashMap<String, Box<dyn MethodologyProcessor>> = HashMap::new();
         
-        // Register the three core methodologies
-        processors.insert("simple".to_string(), Box::new(super::methodologies::SimpleProcessor::new()));
+        // Register the four core methodologies with new names and dedicated processors
+        processors.insert("feature".to_string(), Box::new(super::methodologies::FeatureProcessor::new()));
         processors.insert("business".to_string(), Box::new(super::methodologies::BusinessProcessor::new()));
-        processors.insert("testing".to_string(), Box::new(super::methodologies::TestingProcessor::new()));
+        processors.insert("developer".to_string(), Box::new(super::methodologies::DeveloperProcessor::new()));
+        processors.insert("tester".to_string(), Box::new(super::methodologies::TestingProcessor::new()));
         
         Self { processors }
     }

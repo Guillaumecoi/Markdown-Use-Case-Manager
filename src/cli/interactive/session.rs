@@ -7,7 +7,7 @@ use crossterm::{
 use std::io::stdout;
 
 use crate::cli::interactive::menu::{
-    guided_add_extended_metadata, guided_add_scenario, guided_create_use_case, guided_update_scenario_status, show_main_menu,
+    guided_add_scenario, guided_create_use_case, guided_update_scenario_status, show_main_menu,
     MainMenuOption,
 };
 use crate::cli::runner::CliRunner;
@@ -49,11 +49,6 @@ impl InteractiveSession {
                 MainMenuOption::UpdateScenarioStatus => {
                     if let Err(e) = guided_update_scenario_status(&mut self.runner) {
                         self.show_error(&format!("Error updating scenario status: {}", e))?;
-                    }
-                }
-                MainMenuOption::AddExtendedMetadata => {
-                    if let Err(e) = guided_add_extended_metadata(&mut self.runner) {
-                        self.show_error(&format!("Error adding extended metadata: {}", e))?;
                     }
                 }
                 MainMenuOption::ConfigureSettings => {

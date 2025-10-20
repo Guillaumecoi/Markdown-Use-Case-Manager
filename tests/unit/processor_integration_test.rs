@@ -9,9 +9,10 @@ fn test_template_engine_with_methodology_processors() {
     
     // Test that processor registry is available
     let methodologies = engine.available_methodologies();
-    assert!(methodologies.contains(&"simple".to_string()));
+    assert!(methodologies.contains(&"feature".to_string()));
     assert!(methodologies.contains(&"business".to_string()));
-    assert!(methodologies.contains(&"testing".to_string()));
+    assert!(methodologies.contains(&"developer".to_string()));
+    assert!(methodologies.contains(&"tester".to_string()));
 }
 
 #[test]
@@ -19,11 +20,11 @@ fn test_methodology_info_retrieval() {
     let engine = TemplateEngine::new().expect("Failed to create template engine");
     
     // Test methodology info retrieval
-    let simple_info = engine.get_methodology_info("simple");
+    let simple_info = engine.get_methodology_info("feature");
     assert!(simple_info.is_some());
     let (name, description) = simple_info.unwrap();
-    assert_eq!(name, "Simple");
-    assert!(description.contains("rapid development"));
+    assert_eq!(name, "Feature Development");
+    assert!(description.contains("development"));
     
     let business_info = engine.get_methodology_info("business");
     assert!(business_info.is_some());
@@ -31,7 +32,7 @@ fn test_methodology_info_retrieval() {
     assert_eq!(name, "Business Analysis");
     assert!(description.contains("stakeholder"));
     
-    let testing_info = engine.get_methodology_info("testing");
+    let testing_info = engine.get_methodology_info("tester");
     assert!(testing_info.is_some());
     let (name, description) = testing_info.unwrap();
     assert_eq!(name, "Testing & QA");
@@ -50,7 +51,7 @@ fn test_render_with_methodology_simple() {
     data.insert("scenarios".to_string(), json!([]));
     
     // Test methodology-specific rendering
-    let result = engine.render_use_case_with_methodology(&data, "simple");
+    let result = engine.render_use_case_with_methodology(&data, "feature");
     assert!(result.is_ok());
     
     let content = result.unwrap();

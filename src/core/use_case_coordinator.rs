@@ -1,6 +1,6 @@
 // src/core/use_case_coordinator.rs
 use crate::config::Config;
-use crate::core::models::{UseCase, ExtendedMetadata, Status};
+use crate::core::models::{UseCase, Status};
 use crate::core::services::{FileService, UseCaseService};
 use crate::core::templates::{TemplateEngine, to_snake_case};
 use crate::core::languages::LanguageRegistry;
@@ -48,22 +48,7 @@ impl UseCaseCoordinator {
         category: String,
         description: Option<String>,
     ) -> Result<String> {
-        let use_case = self.create_use_case_internal(title, category, description, None)?;
-        let use_case_id = use_case.id.clone();
-        self.use_cases.push(use_case);
-        self.generate_overview()?;
-        Ok(use_case_id)
-    }
-
-    /// Create a new use case with extended metadata fields directly
-    pub fn create_use_case_with_metadata(
-        &mut self,
-        title: String,
-        category: String,
-        description: Option<String>,
-        extended_metadata: ExtendedMetadata,
-    ) -> Result<String> {
-        let use_case = self.create_use_case_internal(title, category, description, Some(extended_metadata))?;
+        let use_case = self.create_use_case_internal(title, category, description)?;
         let use_case_id = use_case.id.clone();
         self.use_cases.push(use_case);
         self.generate_overview()?;
@@ -165,31 +150,6 @@ impl UseCaseCoordinator {
         Ok(categories)
     }
 
-    /// Update extended metadata for an existing use case
-    pub fn update_use_case_metadata(
-        &mut self,
-        use_case_id: String,
-        extended_metadata: ExtendedMetadata,
-    ) -> Result<()> {
-        // Find the use case index
-        let use_case_index = self
-            .use_cases
-            .iter()
-            .position(|uc| uc.id == use_case_id)
-            .ok_or_else(|| anyhow::anyhow!("Use case {} not found", use_case_id))?;
-
-        // Update metadata
-        let use_case = &mut self.use_cases[use_case_index];
-        use_case.apply_extended_metadata(extended_metadata);
-
-        // Clone for save operation to avoid borrowing conflicts
-        let use_case_clone = use_case.clone();
-        self.save_use_case_and_update(&use_case_clone)?;
-        self.generate_overview()?;
-
-        Ok(())
-    }
-
     // ========== Methodology Management ==========
 
     /// Create a use case with specific methodology
@@ -210,7 +170,7 @@ impl UseCaseCoordinator {
             ));
         }
 
-        let use_case = self.create_use_case_internal(title, category, description, None)?;
+        let use_case = self.create_use_case_internal(title, category, description)?;
         let use_case_id = use_case.id.clone();
         
         // Save the use case with methodology-specific rendering
@@ -264,30 +224,24 @@ impl UseCaseCoordinator {
 
     // ========== Modular Helper Methods ==========
 
-    /// Internal helper to create use cases with optional extended metadata
+    /// Internal helper to create use cases
     fn create_use_case_internal(
         &self,
         title: String,
         category: String,
         description: Option<String>,
-        extended_metadata: Option<ExtendedMetadata>,
     ) -> Result<UseCase> {
         let use_case_id = self
             .use_case_service
-            .generate_use_case_id(&category, &self.use_cases);
+            .generate_unique_use_case_id(&category, &self.use_cases, &self.config.directories.use_case_dir);
         let description = description.unwrap_or_default();
 
-        let mut use_case = self.use_case_service.create_use_case(
+        let use_case = self.use_case_service.create_use_case(
             use_case_id.clone(),
             title,
             category,
             description,
         );
-
-        // Apply extended metadata if provided
-        if let Some(metadata) = extended_metadata {
-            use_case.apply_extended_metadata(metadata);
-        }
 
         // Generate markdown and save
         let markdown_content = self.generate_use_case_markdown(&use_case)?;
@@ -465,35 +419,69 @@ impl UseCaseCoordinator {
 
     /// Helper to generate use case markdown with specific methodology
     fn generate_use_case_markdown_with_methodology(&self, use_case: &UseCase, methodology: &str) -> Result<String> {
+        // Create data in external metadata format to match new templates
         let mut data = HashMap::new();
+        
+        // Core metadata section
+        let mut core = HashMap::new();
+        core.insert("id".to_string(), json!(use_case.id));
+        core.insert("title".to_string(), json!(use_case.title));
+        core.insert("category".to_string(), json!(use_case.category));
+        core.insert("priority".to_string(), json!(use_case.priority.to_string()));
+        core.insert("status".to_string(), json!(use_case.status().display_name()));
+        core.insert("description".to_string(), json!(use_case.description));
+        core.insert("created_date".to_string(), json!(use_case.metadata.created_at.format("%Y-%m-%d").to_string()));
+        core.insert("last_updated".to_string(), json!(use_case.metadata.updated_at.format("%Y-%m-%d").to_string()));
+        data.insert("core".to_string(), json!(core));
+        
+        // Stakeholders section (provide defaults for external metadata format)
+        let mut stakeholders = HashMap::new();
+        stakeholders.insert("primary_actor".to_string(), json!("System User"));
+        stakeholders.insert("secondary_actors".to_string(), json!(Vec::<String>::new()));
+        stakeholders.insert("primary_users".to_string(), json!(Vec::<String>::new()));
+        stakeholders.insert("decision_makers".to_string(), json!(Vec::<String>::new()));
+        data.insert("stakeholders".to_string(), json!(stakeholders));
+        
+        // Business section
+        let mut business = HashMap::new();
+        business.insert("value_proposition".to_string(), json!(None::<String>));
+        business.insert("success_metrics".to_string(), json!(Vec::<String>::new()));
+        business.insert("estimated_effort".to_string(), json!(None::<String>));
+        business.insert("expected_roi".to_string(), json!(None::<String>));
+        data.insert("business".to_string(), json!(business));
+        
+        // Technical section
+        let mut technical = HashMap::new();
+        technical.insert("architecture_requirements".to_string(), json!(Vec::<String>::new()));
+        technical.insert("integration_points".to_string(), json!(Vec::<String>::new()));
+        technical.insert("security_requirements".to_string(), json!(Vec::<String>::new()));
+        technical.insert("performance_requirements".to_string(), json!(HashMap::<String, String>::new()));
+        data.insert("technical".to_string(), json!(technical));
+        
+        // Testing section
+        let mut testing = HashMap::new();
+        testing.insert("test_strategy".to_string(), json!(None::<String>));
+        testing.insert("test_scenarios".to_string(), json!(Vec::<String>::new()));
+        testing.insert("automation_requirements".to_string(), json!(Vec::<String>::new()));
+        testing.insert("quality_metrics".to_string(), json!(HashMap::<String, String>::new()));
+        data.insert("testing".to_string(), json!(testing));
+        
+        // Add scenarios
+        data.insert("scenarios".to_string(), json!(use_case.scenarios));
+        
+        // Add legacy flat fields for backward compatibility
         data.insert("id".to_string(), json!(use_case.id));
         data.insert("title".to_string(), json!(use_case.title));
         data.insert("category".to_string(), json!(use_case.category));
         data.insert("priority".to_string(), json!(use_case.priority.to_string()));
-        data.insert(
-            "status_name".to_string(),
-            json!(use_case.status().display_name()),
-        );
+        data.insert("status_name".to_string(), json!(use_case.status().display_name()));
         data.insert("description".to_string(), json!(use_case.description));
-        data.insert("scenarios".to_string(), json!(use_case.scenarios));
-        data.insert("metadata".to_string(), json!(use_case.metadata));
+        data.insert("created_date".to_string(), json!(use_case.metadata.created_at.format("%Y-%m-%d").to_string()));
+        data.insert("updated_date".to_string(), json!(use_case.metadata.updated_at.format("%Y-%m-%d").to_string()));
 
-        // Format dates nicely (YYYY-MM-DD)
-        data.insert(
-            "created_date".to_string(),
-            json!(use_case.metadata.created_at.format("%Y-%m-%d").to_string()),
-        );
-        data.insert(
-            "updated_date".to_string(),
-            json!(use_case.metadata.updated_at.format("%Y-%m-%d").to_string()),
-        );
-
-        // Add metadata configuration
+        // Add metadata configuration for legacy compatibility
         let metadata_config = &self.config.metadata;
-        data.insert(
-            "metadata_enabled".to_string(),
-            json!(metadata_config.enabled),
-        );
+        data.insert("metadata_enabled".to_string(), json!(metadata_config.enabled));
         data.insert("include_id".to_string(), json!(metadata_config.include_id));
         data.insert(
             "include_title".to_string(),

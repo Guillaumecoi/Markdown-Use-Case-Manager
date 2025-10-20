@@ -10,4 +10,4 @@ pub use scenario::Scenario;
 pub use scenario_types::ScenarioType;
 pub use status::Status;
 #[allow(unused_imports)] // Used in tests
-pub use use_case::{ExtendedMetadata, Priority, UseCase};
+pub use use_case::{Priority, UseCase};

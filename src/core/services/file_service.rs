@@ -103,8 +103,8 @@ impl FileService {
             return self.parse_use_case_with_frontmatter(content);
         }
 
-        // No frontmatter found - not a valid use case file
-        Ok(None)
+        // Try to parse use case without frontmatter (simple template format)
+        self.parse_use_case_without_frontmatter(content)
     }
 
     fn parse_use_case_with_frontmatter(&self, content: &str) -> Result<Option<UseCase>> {
@@ -149,6 +149,77 @@ impl FileService {
             use_case.add_scenario(scenario);
         }
 
+        Ok(Some(use_case))
+    }
+
+    fn parse_use_case_without_frontmatter(&self, content: &str) -> Result<Option<UseCase>> {
+        let lines: Vec<&str> = content.lines().collect();
+        
+        // Look for the ID line pattern: **ID:** UC-XXX-XXX | **Status:** ... | **Priority:** ...
+        let mut id = String::new();
+        let mut title = String::new();
+        let mut priority_str = String::new();
+        
+        for line in lines.iter() {
+            // Look for the title (first # header)
+            if line.starts_with("# ") && title.is_empty() {
+                title = line[2..].trim().to_string();
+            }
+            
+            // Look for the ID line pattern
+            if line.starts_with("**ID:**") && line.contains("|") {
+                let parts: Vec<&str> = line.split('|').collect();
+                
+                // Extract ID
+                if let Some(id_part) = parts.first() {
+                    if let Some(extracted_id) = id_part.strip_prefix("**ID:**").map(|s| s.trim()) {
+                        id = extracted_id.to_string();
+                    }
+                }
+                
+                // Extract priority
+                for part in &parts {
+                    if part.trim().starts_with("**Priority:**") {
+                        priority_str = part.replace("**Priority:**", "").trim().to_string();
+                    }
+                }
+                break;
+            }
+        }
+        
+        // If we don't have basic required fields, this isn't a valid use case
+        if id.is_empty() || title.is_empty() {
+            return Ok(None);
+        }
+        
+        // Extract category from ID (UC-CAT-001 -> CAT)
+        let category = if id.starts_with("UC-") && id.len() > 7 {
+            let parts: Vec<&str> = id.split('-').collect();
+            if parts.len() >= 3 {
+                parts[1].to_lowercase()
+            } else {
+                "general".to_string()
+            }
+        } else {
+            "general".to_string()
+        };
+        
+        // Parse priority
+        let priority = match priority_str.to_uppercase().as_str() {
+            "HIGH" => Priority::High,
+            "LOW" => Priority::Low,
+            _ => Priority::Medium,
+        };
+        
+        // Extract description and scenarios from markdown content
+        let description = self.extract_description_from_markdown(content)?;
+        let scenarios = self.parse_scenarios_from_markdown_content(content)?;
+        
+        let mut use_case = UseCase::new(id, title, category, description, priority);
+        for scenario in scenarios {
+            use_case.add_scenario(scenario);
+        }
+        
         Ok(Some(use_case))
     }
 

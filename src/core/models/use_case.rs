@@ -69,21 +69,6 @@ pub struct UseCase {
     pub constraints: Vec<String>,
 }
 
-/// Struct for collecting extended metadata parameters
-#[derive(Debug, Default, Clone)]
-pub struct ExtendedMetadata {
-    pub personas: Vec<String>,
-    pub prerequisites: Vec<String>,
-    pub author: Option<String>,
-    pub reviewer: Option<String>,
-    pub business_value: Option<String>,
-    pub complexity: Option<String>,
-    pub epic: Option<String>,
-    pub acceptance_criteria: Vec<String>,
-    pub assumptions: Vec<String>,
-    pub constraints: Vec<String>,
-}
-
 impl UseCase {
     pub fn new(
         id: String,
@@ -111,31 +96,6 @@ impl UseCase {
             assumptions: Vec::new(),
             constraints: Vec::new(),
         }
-    }
-
-    /// Test helper constructor with default priority (Medium)
-    #[allow(dead_code)]
-    pub fn new_test(
-        id: String,
-        title: String,
-        category: String,
-        description: String,
-    ) -> Self {
-        Self::new(id, title, category, description, Priority::Medium)
-    }
-
-    /// Apply extended metadata to this use case
-    pub fn apply_extended_metadata(&mut self, metadata: ExtendedMetadata) {
-        self.personas = metadata.personas;
-        self.prerequisites = metadata.prerequisites;
-        self.author = metadata.author;
-        self.reviewer = metadata.reviewer;
-        self.business_value = metadata.business_value;
-        self.complexity = metadata.complexity;
-        self.epic = metadata.epic;
-        self.acceptance_criteria = metadata.acceptance_criteria;
-        self.assumptions = metadata.assumptions;
-        self.constraints = metadata.constraints;
     }
 
     pub fn status(&self) -> Status {

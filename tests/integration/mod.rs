@@ -18,5 +18,8 @@ pub mod template_management_test;
 // Template language integration tests
 pub mod template_language_tests;
 
+// CLI innovation tests showcasing TOML features
+pub mod cli_toml_innovation_test;
+
 // Code preservation integration tests
 pub mod code_preservation_test;

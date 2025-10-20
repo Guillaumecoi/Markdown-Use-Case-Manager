@@ -7,10 +7,11 @@ use super::methodology_processor::MethodologyRegistry;
 pub fn create_unified_registry() -> MethodologyRegistry {
     let mut registry = MethodologyRegistry::new();
     
-    // Register the three core methodologies using unified processors
-    registry.register("simple".to_string(), Box::new(UnifiedProcessor::simple()));
+    // Register the four core methodologies using unified processors
+    registry.register("feature".to_string(), Box::new(UnifiedProcessor::simple()));
     registry.register("business".to_string(), Box::new(UnifiedProcessor::business()));
-    registry.register("testing".to_string(), Box::new(UnifiedProcessor::testing()));
+    registry.register("developer".to_string(), Box::new(UnifiedProcessor::simple()));
+    registry.register("tester".to_string(), Box::new(UnifiedProcessor::testing()));
     
     registry
 }
@@ -64,24 +65,26 @@ mod tests {
     fn test_create_unified_registry() {
         let registry = create_unified_registry();
         
-        assert!(registry.get_processor("simple").is_some());
+        assert!(registry.get_processor("feature").is_some());
         assert!(registry.get_processor("business").is_some());
-        assert!(registry.get_processor("testing").is_some());
+        assert!(registry.get_processor("developer").is_some());
+        assert!(registry.get_processor("tester").is_some());
         assert!(registry.get_processor("nonexistent").is_none());
         
         // Test that the processors have the right display names
-        assert_eq!(registry.get_processor("simple").unwrap().display_name(), "Simple");
+        assert_eq!(registry.get_processor("feature").unwrap().display_name(), "Simple");
         assert_eq!(registry.get_processor("business").unwrap().display_name(), "Business Analysis");
-        assert_eq!(registry.get_processor("testing").unwrap().display_name(), "Testing & QA");
+        assert_eq!(registry.get_processor("tester").unwrap().display_name(), "Testing & QA");
     }
     
     #[test]
     fn test_registry_builder_default() {
         let registry = RegistryBuilder::with_defaults().build();
         
-        assert!(registry.get_processor("simple").is_some());
+        assert!(registry.get_processor("feature").is_some());
         assert!(registry.get_processor("business").is_some());
-        assert!(registry.get_processor("testing").is_some());
+        assert!(registry.get_processor("developer").is_some());
+        assert!(registry.get_processor("tester").is_some());
     }
     
     #[test]
@@ -100,7 +103,7 @@ mod tests {
             .with_custom("agile".to_string(), custom_processor)
             .build();
         
-        assert!(registry.get_processor("simple").is_some());
+        assert!(registry.get_processor("feature").is_some());
         assert!(registry.get_processor("agile").is_some());
         assert_eq!(registry.get_processor("agile").unwrap().display_name(), "Agile Methodology");
     }
@@ -131,8 +134,9 @@ mod tests {
         // Should only have the custom methodologies
         assert!(registry.get_processor("microservices").is_some());
         assert!(registry.get_processor("devops").is_some());
-        assert!(registry.get_processor("simple").is_none());
+        assert!(registry.get_processor("feature").is_none());
         assert!(registry.get_processor("business").is_none());
-        assert!(registry.get_processor("testing").is_none());
+        assert!(registry.get_processor("developer").is_none());
+        assert!(registry.get_processor("tester").is_none());
     }
 }

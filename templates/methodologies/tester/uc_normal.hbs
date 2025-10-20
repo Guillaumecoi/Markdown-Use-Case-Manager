@@ -1,0 +1,170 @@
+# Test Specification: {{core.title}}
+
+**Use Case ID:** {{core.id}} | **Test Status:** {{core.status}} | **Priority:** {{core.priority}} | **Created:** {{core.created}}
+
+## Test Overview
+{{#if core.description}}
+{{core.description}}
+{{else}}
+_Define the scope and objectives of testing for this use case._
+{{/if}}
+
+{{#if testing.test_strategy}}
+### Test Strategy
+{{testing.test_strategy}}
+{{else}}
+### Test Strategy
+**Test Types:**
+- _Unit Testing: Component validation_
+- _Integration Testing: System interaction validation_
+- _User Acceptance Testing: Business requirement validation_
+
+**Test Environment:**
+- _Test data requirements_
+- _Environment configuration_
+- _Tool setup needs_
+{{/if}}
+
+## Test Objectives
+{{#if core.objectives}}
+### Validation Goals
+{{#each core.objectives}}
+- {{this}}
+{{/each}}
+{{else}}
+### Validation Goals
+_What specific aspects need validation through testing?_
+- _Core functionality works as designed_
+- _Business rules and logic are correct_
+- _User workflows operate smoothly_
+{{/if}}
+
+## Test Scenarios
+{{#if testing.test_scenarios}}
+### Detailed Test Cases
+{{#each testing.test_scenarios}}
+#### {{this}}
+**Objective:** _What this test validates_
+**Steps:**
+1. _Step 1_
+2. _Step 2_
+3. _Step 3_
+
+**Expected Result:** _What should happen_
+
+---
+{{/each}}
+{{else}}
+### Core Test Scenarios
+
+#### Happy Path Testing
+**Objective:** _Validate primary user workflow_
+**Steps:**
+1. _User performs main action_
+2. _System processes request_
+3. _User receives confirmation_
+
+**Expected Result:** _Workflow completes successfully_
+
+#### Error Handling
+**Objective:** _Validate error responses_
+**Steps:**
+1. _Trigger error condition_
+2. _Observe system response_
+3. _Verify error handling_
+
+**Expected Result:** _Appropriate error handling_
+
+#### Performance Testing
+**Objective:** _Validate system performance_
+**Steps:**
+1. _Apply expected load_
+2. _Monitor response times_
+3. _Check system stability_
+
+**Expected Result:** _Performance meets requirements_
+{{/if}}
+
+## Acceptance Criteria
+{{#if testing.acceptance_criteria}}
+{{#each testing.acceptance_criteria}}
+- {{this}}
+{{/each}}
+{{else}}
+### Pass/Fail Criteria
+- _All critical functionality tests pass_
+- _Error handling works appropriately_
+- _Performance meets defined requirements_
+- _No high-severity bugs remain_
+{{/if}}
+
+## Test Data Requirements
+{{#if testing.test_data_requirements}}
+{{testing.test_data_requirements}}
+{{else}}
+### Test Data Strategy
+**Data Categories:**
+- _User accounts: Various types and permissions_
+- _Transaction data: Valid and edge cases_
+- _Configuration data: Different system settings_
+
+**Data Management:**
+- _Test data setup procedures_
+- _Data refresh and cleanup processes_
+{{/if}}
+
+## Testing Tools
+{{#if testing.testing_tools}}
+{{testing.testing_tools}}
+{{else}}
+### Test Environment
+**Manual Testing:**
+- _Browser testing across different browsers_
+- _Device testing for mobile compatibility_
+
+**Automated Testing:**
+- _Unit test framework setup_
+- _API testing tools_
+- _UI automation tools_
+{{/if}}
+
+## Quality Metrics
+{{#if testing.quality_metrics}}
+{{testing.quality_metrics}}
+{{else}}
+### Testing Metrics
+**Coverage Metrics:**
+- _Test coverage: Target 90%+ for critical paths_
+- _Requirement coverage: 100% of requirements tested_
+
+**Quality Metrics:**
+- _Defect discovery rate_
+- _Test execution efficiency_
+- _Pass/fail ratios_
+{{/if}}
+
+## Risk-Based Testing
+{{#if testing.testing_risks}}
+### Test Risk Assessment
+{{#each testing.testing_risks}}
+- **{{this}}** - _Testing approach to mitigate_
+{{/each}}
+{{else}}
+### High-Risk Areas
+- _Critical business logic_
+- _Integration points_
+- _Security-sensitive functions_
+- _Performance-critical operations_
+{{/if}}
+
+---
+
+**Test Sign-off:**
+- [ ] _Test plan approved_
+- [ ] _Test environment ready_
+- [ ] _Test data prepared_
+
+**Testing Deliverables:**
+- [ ] _Test case execution results_
+- [ ] _Defect reports and resolutions_
+- [ ] _Test summary report_

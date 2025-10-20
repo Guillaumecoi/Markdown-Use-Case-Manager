@@ -39,7 +39,7 @@ pub enum Commands {
         /// Programming language for test templates (rust, python, javascript, etc.)
         #[arg(short, long)]
         language: Option<String>,
-        /// Documentation methodology (simple, business, testing)
+        /// Documentation methodology (feature, business, developer, tester)
         #[arg(short, long)]
         methodology: Option<String>,
     },
@@ -53,7 +53,7 @@ pub enum Commands {
         /// Description
         #[arg(short, long)]
         description: Option<String>,
-        /// Documentation methodology (simple, business, testing)
+        /// Documentation methodology (feature, business, developer, tester)
         #[arg(long)]
         methodology: Option<String>,
     },
@@ -95,7 +95,7 @@ pub enum Commands {
     Regenerate {
         /// Use case ID (e.g., UC-SEC-001)
         use_case_id: String,
-        /// Documentation methodology (simple, business, testing)
+        /// Documentation methodology (feature, business, developer, tester)
         #[arg(long)]
         methodology: String,
     },

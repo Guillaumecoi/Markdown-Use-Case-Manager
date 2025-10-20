@@ -276,6 +276,10 @@ fn test_auto_init_settings_integration() -> Result<()> {
     // 3. Save updated settings
     config.save_in_dir(".")?;
 
+    // 3.1. Verify the config was saved correctly before proceeding
+    let saved_config = Config::load()?;
+    assert_eq!(saved_config.project.name, "Integration Test Project");
+
     // 4. Create new directories based on updated settings
     fs::create_dir_all(&config.directories.use_case_dir)?;
     fs::create_dir_all(&config.directories.test_dir)?;
