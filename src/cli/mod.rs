@@ -28,7 +28,12 @@ pub fn run() -> Result<()> {
     // Handle regular commands
     let mut runner = CliRunner::new();
 
-    match cli.command.unwrap() {
+    let Some(command) = cli.command else {
+        // This shouldn't happen due to clap validation, but handle gracefully
+        anyhow::bail!("No command specified. Use --help for available commands.");
+    };
+
+    match command {
         Commands::Init { language, methodology } => handle_init_command(&mut runner, language, methodology),
         Commands::Create {
             title,
@@ -50,7 +55,7 @@ pub fn run() -> Result<()> {
         Commands::Languages => handle_languages_command(),
         Commands::Methodologies => handle_list_methodologies_command(&mut runner),
         Commands::MethodologyInfo { name } => handle_methodology_info_command(&mut runner, name),
-        Commands::Regenerate { use_case_id, methodology } => handle_regenerate_command(&mut runner, use_case_id, methodology),
+        Commands::Regenerate { use_case_id, methodology, all } => handle_regenerate_command(&mut runner, use_case_id, methodology, all),
         Commands::Status => handle_status_command(&mut runner),
         Commands::Interactive => {
             // This case is handled above, but included for completeness

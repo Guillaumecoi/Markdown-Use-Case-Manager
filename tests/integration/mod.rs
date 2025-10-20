@@ -23,3 +23,6 @@ pub mod cli_toml_innovation_test;
 
 // Code preservation integration tests
 pub mod code_preservation_test;
+
+// Error handling integration tests
+pub mod error_handling_test;

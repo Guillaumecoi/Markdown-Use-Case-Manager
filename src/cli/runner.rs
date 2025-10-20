@@ -19,7 +19,8 @@ impl CliRunner {
         if self.coordinator.is_none() {
             self.coordinator = Some(UseCaseCoordinator::load()?);
         }
-        Ok(self.coordinator.as_mut().unwrap())
+        // Safe unwrap: we just ensured coordinator is Some above
+        Ok(self.coordinator.as_mut().expect("coordinator was just initialized"))
     }
 
     /// Initialize a new use case manager project
@@ -60,7 +61,10 @@ impl CliRunner {
     ) -> Result<String> {
         let coordinator = self.ensure_coordinator()?;
         let use_case_id = coordinator.create_use_case(title, category, description)?;
-        Ok(format!("Created use case: {}", use_case_id))
+        Ok(format!(
+            "Created use case: {}\n\n💡 Tip: Use this exact ID ('{}') when adding scenarios or updating status.",
+            use_case_id, use_case_id
+        ))
     }
 
     /// Create a new use case with extended metadata
@@ -218,5 +222,17 @@ impl CliRunner {
         let coordinator = self.ensure_coordinator()?;
         coordinator.regenerate_use_case_with_methodology(&use_case_id, &methodology)?;
         Ok(format!("Regenerated use case {} with {} methodology", use_case_id, methodology))
+    }
+
+    /// Regenerate markdown for a single use case from its TOML file
+    pub fn regenerate_use_case(&mut self, use_case_id: &str) -> Result<()> {
+        let coordinator = self.ensure_coordinator()?;
+        coordinator.regenerate_markdown(use_case_id)
+    }
+
+    /// Regenerate markdown for all use cases from their TOML files
+    pub fn regenerate_all_use_cases(&mut self) -> Result<()> {
+        let coordinator = self.ensure_coordinator()?;
+        coordinator.regenerate_all_markdown()
     }
 }

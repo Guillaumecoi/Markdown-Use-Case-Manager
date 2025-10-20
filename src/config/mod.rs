@@ -437,10 +437,12 @@ impl Config {
                     .context("Failed to create language template file")?;
                 file.write_all(placeholder_content.as_bytes())
                     .context("Failed to write language template content")?;
-                println!(
-                    "Created template: {}/test.hbs",
-                    lang_dir.file_name().unwrap().to_str().unwrap()
-                );
+                
+                let dir_name = lang_dir
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .unwrap_or("unknown");
+                println!("Created template: {}/test.hbs", dir_name);
             }
         }
 

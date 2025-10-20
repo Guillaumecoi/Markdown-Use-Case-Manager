@@ -1,13 +1,17 @@
 // src/core/services/file_service.rs
 use crate::config::Config;
-use crate::core::models::{Priority, Scenario, UseCase};
+use crate::core::models::UseCase;
 use crate::core::templates::to_snake_case;
 use anyhow::Result;
 use std::fs;
 use std::path::Path;
 
 /// Service responsible for all file I/O operations
-/// Handles saving, loading, and parsing of use case files
+/// Handles saving and loading of use case files
+/// 
+/// Architecture:
+/// - TOML files (.toml) are the source of truth - users edit these
+/// - Markdown files (.md) are generated documentation - regenerated from TOML
 #[derive(Clone)]
 pub struct FileService {
     config: Config,
@@ -18,21 +22,33 @@ impl FileService {
         Self { config }
     }
 
-    /// Save a use case to file
+    /// Save a use case to both TOML and Markdown files
+    /// 
+    /// This creates two files:
+    /// - {id}.toml - Source of truth containing all use case data
+    /// - {id}.md - Generated documentation for human reading
     pub fn save_use_case(&self, use_case: &UseCase, markdown_content: &str) -> Result<()> {
         // Create category-based directory structure
         let category_dir = Path::new(&self.config.directories.use_case_dir)
             .join(to_snake_case(&use_case.category));
         fs::create_dir_all(&category_dir)?;
 
-        // Save markdown file
+        // Save TOML file (source of truth)
+        let toml_path = category_dir.join(format!("{}.toml", use_case.id));
+        let toml_content = toml::to_string_pretty(use_case)?;
+        fs::write(&toml_path, toml_content)?;
+
+        // Save markdown file (generated output)
         let md_path = category_dir.join(format!("{}.md", use_case.id));
         fs::write(&md_path, markdown_content)?;
 
         Ok(())
     }
 
-    /// Load all use cases from the file system
+    /// Load all use cases from TOML files
+    /// 
+    /// Scans the use case directory for .toml files and deserializes them.
+    /// Markdown files are ignored during loading - they're just generated output.
     pub fn load_use_cases(&self) -> Result<Vec<UseCase>> {
         let use_case_dir = Path::new(&self.config.directories.use_case_dir);
         let mut use_cases = Vec::new();
@@ -43,13 +59,17 @@ impl FileService {
 
         for entry in walkdir::WalkDir::new(use_case_dir) {
             let entry = entry?;
+            
+            // Only process .toml files that start with "UC-" (use case ID pattern)
             if entry.file_type().is_file()
-                && entry.path().extension().is_some_and(|ext| ext == "md")
+                && entry.path().extension().is_some_and(|ext| ext == "toml")
+                && entry.path().file_name().is_some_and(|name| {
+                    name.to_string_lossy().starts_with("UC-")
+                })
             {
                 let content = fs::read_to_string(entry.path())?;
-                if let Some(use_case) = self.parse_use_case_from_markdown(&content)? {
-                    use_cases.push(use_case);
-                }
+                let use_case: UseCase = toml::from_str(&content)?;
+                use_cases.push(use_case);
             }
         }
 
@@ -94,212 +114,5 @@ impl FileService {
         let test_file_name = format!("{}.{}", to_snake_case(&use_case.id), file_extension);
         let test_path = test_dir.join(test_file_name);
         test_path.exists()
-    }
-
-    // Private parsing methods
-    fn parse_use_case_from_markdown(&self, content: &str) -> Result<Option<UseCase>> {
-        // Check if file has YAML frontmatter
-        if content.starts_with("---\n") {
-            return self.parse_use_case_with_frontmatter(content);
-        }
-
-        // Try to parse use case without frontmatter (simple template format)
-        self.parse_use_case_without_frontmatter(content)
-    }
-
-    fn parse_use_case_with_frontmatter(&self, content: &str) -> Result<Option<UseCase>> {
-        let lines: Vec<&str> = content.lines().collect();
-        if lines.is_empty() || lines[0] != "---" {
-            return Ok(None);
-        }
-
-        // Find the end of frontmatter
-        let mut frontmatter_end = 0;
-        for (i, line) in lines.iter().enumerate().skip(1) {
-            if line == &"---" {
-                frontmatter_end = i;
-                break;
-            }
-        }
-
-        if frontmatter_end == 0 {
-            return Ok(None);
-        }
-
-        // Parse YAML frontmatter
-        let frontmatter = lines[1..frontmatter_end].join("\n");
-        let yaml: serde_yaml::Value = serde_yaml::from_str(&frontmatter)?;
-
-        // Extract basic fields
-        let id = yaml["id"].as_str().unwrap_or_default().to_string();
-        let title = yaml["title"].as_str().unwrap_or_default().to_string();
-        let category = yaml["category"].as_str().unwrap_or_default().to_string();
-
-        if id.is_empty() || category.is_empty() {
-            return Ok(None);
-        }
-
-        // Parse markdown content after frontmatter
-        let markdown_content = lines[frontmatter_end + 1..].join("\n");
-        let description = self.extract_description_from_markdown(&markdown_content)?;
-        let scenarios = self.parse_scenarios_from_markdown_content(&markdown_content)?;
-
-        let mut use_case = UseCase::new(id, title, category, description, Priority::Medium);
-        for scenario in scenarios {
-            use_case.add_scenario(scenario);
-        }
-
-        Ok(Some(use_case))
-    }
-
-    fn parse_use_case_without_frontmatter(&self, content: &str) -> Result<Option<UseCase>> {
-        let lines: Vec<&str> = content.lines().collect();
-        
-        // Look for the ID line pattern: **ID:** UC-XXX-XXX | **Status:** ... | **Priority:** ...
-        let mut id = String::new();
-        let mut title = String::new();
-        let mut priority_str = String::new();
-        
-        for line in lines.iter() {
-            // Look for the title (first # header)
-            if line.starts_with("# ") && title.is_empty() {
-                title = line[2..].trim().to_string();
-            }
-            
-            // Look for the ID line pattern
-            if line.starts_with("**ID:**") && line.contains("|") {
-                let parts: Vec<&str> = line.split('|').collect();
-                
-                // Extract ID
-                if let Some(id_part) = parts.first() {
-                    if let Some(extracted_id) = id_part.strip_prefix("**ID:**").map(|s| s.trim()) {
-                        id = extracted_id.to_string();
-                    }
-                }
-                
-                // Extract priority
-                for part in &parts {
-                    if part.trim().starts_with("**Priority:**") {
-                        priority_str = part.replace("**Priority:**", "").trim().to_string();
-                    }
-                }
-                break;
-            }
-        }
-        
-        // If we don't have basic required fields, this isn't a valid use case
-        if id.is_empty() || title.is_empty() {
-            return Ok(None);
-        }
-        
-        // Extract category from ID (UC-CAT-001 -> CAT)
-        let category = if id.starts_with("UC-") && id.len() > 7 {
-            let parts: Vec<&str> = id.split('-').collect();
-            if parts.len() >= 3 {
-                parts[1].to_lowercase()
-            } else {
-                "general".to_string()
-            }
-        } else {
-            "general".to_string()
-        };
-        
-        // Parse priority
-        let priority = match priority_str.to_uppercase().as_str() {
-            "HIGH" => Priority::High,
-            "LOW" => Priority::Low,
-            _ => Priority::Medium,
-        };
-        
-        // Extract description and scenarios from markdown content
-        let description = self.extract_description_from_markdown(content)?;
-        let scenarios = self.parse_scenarios_from_markdown_content(content)?;
-        
-        let mut use_case = UseCase::new(id, title, category, description, priority);
-        for scenario in scenarios {
-            use_case.add_scenario(scenario);
-        }
-        
-        Ok(Some(use_case))
-    }
-
-    #[allow(clippy::unused_self, clippy::unnecessary_wraps)]
-    fn extract_description_from_markdown(&self, content: &str) -> Result<String> {
-        let lines: Vec<&str> = content.lines().collect();
-
-        for (i, line) in lines.iter().enumerate() {
-            if line.starts_with("## Description") {
-                // Look for the next non-empty line
-                for desc_line in lines.iter().skip(i + 1) {
-                    let desc_line = desc_line.trim();
-                    if !desc_line.is_empty() && !desc_line.starts_with("##") {
-                        return Ok(desc_line.to_string());
-                    }
-                    if desc_line.starts_with("##") {
-                        break;
-                    }
-                }
-            }
-        }
-
-        Ok(String::new())
-    }
-
-    fn parse_scenarios_from_markdown_content(&self, content: &str) -> Result<Vec<Scenario>> {
-        let lines: Vec<&str> = content.lines().collect();
-
-        for (i, line) in lines.iter().enumerate() {
-            if line.starts_with("## Scenarios") {
-                return self.parse_scenarios_from_markdown(&lines[i + 1..]);
-            }
-        }
-
-        Ok(Vec::new())
-    }
-
-    fn parse_scenarios_from_markdown(&self, lines: &[&str]) -> Result<Vec<Scenario>> {
-        let mut scenarios = Vec::new();
-        let mut current_scenario: Option<Scenario> = None;
-
-        for line in lines {
-            if line.starts_with("### ") && line.contains("(") && line.contains(")") {
-                // Save previous scenario if exists
-                if let Some(scenario) = current_scenario.take() {
-                    scenarios.push(scenario);
-                }
-
-                // Parse scenario title and ID
-                let parts: Vec<&str> = line[4..].split('(').collect();
-                if parts.len() >= 2 {
-                    let title = parts[0].trim().to_string();
-                    let id_part = parts[1].replace(')', "");
-                    current_scenario = Some(Scenario::new(id_part, title, String::new()));
-                }
-            } else if line.starts_with("**Status:**") && current_scenario.is_some() {
-                // Parse status - we could enhance this to set the actual status
-            } else if !line.trim().is_empty()
-                && !line.starts_with("**")
-                && !line.starts_with("---")
-                && !line.starts_with("## ")
-                && current_scenario.is_some()
-            {
-                // This is likely the description
-                if let Some(ref mut scenario) = current_scenario {
-                    if scenario.description.is_empty() {
-                        scenario.description = line.trim().to_string();
-                    }
-                }
-            } else if line.starts_with("## ") && line != &"## Scenarios" {
-                // End of scenarios section
-                break;
-            }
-        }
-
-        // Add the last scenario if exists
-        if let Some(scenario) = current_scenario {
-            scenarios.push(scenario);
-        }
-
-        Ok(scenarios)
     }
 }

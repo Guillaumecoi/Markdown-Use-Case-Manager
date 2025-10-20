@@ -65,8 +65,21 @@ impl UseCaseCoordinator {
         let use_case_index = self
             .use_cases
             .iter()
-            .position(|uc| uc.id == use_case_id)
-            .ok_or_else(|| anyhow::anyhow!("Use case {} not found", use_case_id))?;
+            .position(|uc| uc.id == use_case_id);
+
+        let use_case_index = match use_case_index {
+            Some(idx) => idx,
+            None => {
+                // Use case not found - provide helpful suggestions
+                let available_ids: Vec<String> = self.use_cases.iter().map(|uc| uc.id.clone()).collect();
+                let suggestion = crate::core::utils::suggest_alternatives(
+                    &use_case_id,
+                    &available_ids,
+                    "Use case"
+                );
+                anyhow::bail!(suggestion);
+            }
+        };
 
         // Add scenario
         let scenario_id = self.use_case_service.add_scenario_to_use_case(
@@ -704,6 +717,38 @@ impl UseCaseCoordinator {
         let content = self.template_engine.render_overview(&template_data)?;
         self.file_service.save_overview(&content)?;
 
+        Ok(())
+    }
+
+    /// Regenerate markdown for a specific use case from its TOML file
+    /// 
+    /// This reads the use case from the TOML source file and regenerates
+    /// the markdown documentation. Use this after manually editing a TOML file.
+    pub fn regenerate_markdown(&self, use_case_id: &str) -> Result<()> {
+        let use_case = self.use_cases
+            .iter()
+            .find(|uc| uc.id == use_case_id)
+            .ok_or_else(|| anyhow::anyhow!("Use case {} not found", use_case_id))?;
+        
+        let markdown_content = self.generate_use_case_markdown(use_case)?;
+        self.file_service.save_use_case(use_case, &markdown_content)?;
+        
+        println!("📝 Regenerated {}.md from {}.toml", use_case_id, use_case_id);
+        Ok(())
+    }
+
+    /// Regenerate markdown for all use cases from their TOML files
+    /// 
+    /// This reads all use case TOML files and regenerates their markdown
+    /// documentation. Use this after making bulk edits to TOML files.
+    pub fn regenerate_all_markdown(&self) -> Result<()> {
+        for use_case in &self.use_cases {
+            let markdown_content = self.generate_use_case_markdown(use_case)?;
+            self.file_service.save_use_case(use_case, &markdown_content)?;
+            println!("📝 Regenerated {}.md", use_case.id);
+        }
+        self.generate_overview()?;
+        println!("📝 Regenerated overview");
         Ok(())
     }
 }

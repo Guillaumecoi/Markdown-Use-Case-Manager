@@ -91,13 +91,21 @@ pub enum Commands {
         /// Methodology name to get info for
         name: String,
     },
-    /// Regenerate use case with different methodology
+    /// Regenerate markdown documentation from TOML files
+    /// 
+    /// Without arguments, regenerates all use cases with their current methodology.
+    /// With a use case ID, regenerates just that use case.
+    /// With --methodology, changes the methodology during regeneration.
     Regenerate {
-        /// Use case ID (e.g., UC-SEC-001)
-        use_case_id: String,
+        /// Use case ID (e.g., UC-SEC-001). If omitted, regenerates all use cases.
+        use_case_id: Option<String>,
         /// Documentation methodology (feature, business, developer, tester)
+        /// If omitted, uses the use case's current methodology
         #[arg(long)]
-        methodology: String,
+        methodology: Option<String>,
+        /// Regenerate all use cases (explicit flag, same as omitting use_case_id)
+        #[arg(long, short)]
+        all: bool,
     },
     /// Show project status
     Status,

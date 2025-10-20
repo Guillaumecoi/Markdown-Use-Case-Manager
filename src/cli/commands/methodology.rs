@@ -15,13 +15,40 @@ pub fn handle_methodology_info_command(runner: &mut CliRunner, name: String) -> 
     Ok(())
 }
 
-/// Handle the regenerate use case with methodology command
+/// Handle the regenerate command
+/// 
+/// Supports three modes:
+/// 1. No args or --all: Regenerate all use cases with current methodology
+/// 2. With use_case_id: Regenerate single use case with current methodology
+/// 3. With use_case_id + --methodology: Regenerate with different methodology
 pub fn handle_regenerate_command(
     runner: &mut CliRunner,
-    use_case_id: String,
-    methodology: String,
+    use_case_id: Option<String>,
+    methodology: Option<String>,
+    all: bool,
 ) -> Result<()> {
-    let result = runner.regenerate_use_case_with_methodology(use_case_id, methodology)?;
-    println!("{}", result);
-    Ok(())
+    match (use_case_id, methodology, all) {
+        // No args or --all flag: regenerate all use cases
+        (None, None, _) | (None, Some(_), true) => {
+            runner.regenerate_all_use_cases()?;
+            println!("✅ Regenerated all use case documentation");
+            Ok(())
+        }
+        // Use case ID + methodology: regenerate with different methodology
+        (Some(id), Some(method), _) => {
+            let result = runner.regenerate_use_case_with_methodology(id, method)?;
+            println!("{}", result);
+            Ok(())
+        }
+        // Use case ID only: regenerate with current methodology
+        (Some(id), None, _) => {
+            runner.regenerate_use_case(&id)?;
+            println!("✅ Regenerated documentation for {}", id);
+            Ok(())
+        }
+        // --all with methodology but no ID: error (doesn't make sense)
+        (None, Some(_), false) => {
+            anyhow::bail!("Cannot specify --methodology without a use case ID. To regenerate all, use: mucm regenerate")
+        }
+    }
 }
