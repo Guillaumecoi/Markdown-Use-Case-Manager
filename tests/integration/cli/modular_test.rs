@@ -80,7 +80,7 @@ fn test_cli_backward_compatibility() {
     cmd.arg("init");
     cmd.assert()
         .success()
-        .stdout(predicate::str::contains("Project initialized"));
+        .stdout(predicate::str::contains("Configuration file created"));
 
     // Test create
     let mut cmd = Command::cargo_bin("mucm").unwrap();

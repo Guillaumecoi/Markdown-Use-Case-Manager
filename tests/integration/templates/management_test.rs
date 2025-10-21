@@ -10,21 +10,24 @@ use tempfile::TempDir;
 
 /// Test that templates_dir() returns correct path
 #[test]
+#[serial]
 fn test_templates_dir_path() {
     let templates_dir = templates_dir();
     assert_eq!(templates_dir, Path::new(".config/.mucm/templates"));
 }
 
-/// Test config structure includes template settings
+/// Test config structure includes methodology settings
 #[test]
-fn test_config_template_settings() {
+#[serial]
+fn test_config_methodology_settings() {
     let config = Config::default();
-    assert!(config.templates.use_case_style.is_some());
-    assert_eq!(config.templates.use_case_style.unwrap(), "detailed");
+    assert!(!config.templates.methodologies.is_empty());
+    assert!(config.templates.default_methodology.is_some());
 }
 
 /// Test that init_project creates template directory structure
 #[test]
+#[serial]
 fn test_init_creates_template_directory() {
     let temp_dir = TempDir::new().unwrap();
 
@@ -39,52 +42,58 @@ fn test_init_creates_template_directory() {
 
 /// Test template copying functionality - uses built-in templates
 #[test]
+#[serial]
 fn test_template_copying_with_source() {
     let temp_dir = TempDir::new().unwrap();
 
     // Initialize project in temp directory
     init_project_in_dir(temp_dir.path().to_str().unwrap()).expect("Failed to initialize project");
 
-    // Verify core templates were created
+    // Verify templates directory structure
     let config_templates_dir = temp_dir.path().join(".config/.mucm/templates");
     assert!(config_templates_dir.exists());
-    assert!(config_templates_dir.join("use_case_simple.hbs").exists());
-    assert!(config_templates_dir.join("use_case_detailed.hbs").exists());
-    assert!(config_templates_dir.join("overview.hbs").exists());
+    
+    // Verify methodology templates were created (developer and feature by default)
+    assert!(config_templates_dir.join("developer/uc_simple.hbs").exists());
+    assert!(config_templates_dir.join("developer/uc_detailed.hbs").exists());
+    assert!(config_templates_dir.join("feature/uc_simple.hbs").exists());
 
-    // Verify language-specific template directories were NOT created by default
-    assert!(!config_templates_dir.join("rust").exists());
-    assert!(!config_templates_dir.join("python").exists());
+    // Verify language-specific template directory was created for configured language
+    assert!(config_templates_dir.join("languages/rust").exists());
+    assert!(config_templates_dir.join("languages/rust/test.hbs").exists());
 
-    // Verify content was written correctly (should contain built-in template content, not empty)
-    let content = fs::read_to_string(config_templates_dir.join("use_case_simple.hbs")).unwrap();
+    // Verify content was written correctly (should contain template content, not empty)
+    let content = fs::read_to_string(config_templates_dir.join("developer/uc_simple.hbs")).unwrap();
     assert!(!content.is_empty());
-    assert!(content.contains("{{title}}"));
+    assert!(content.contains("{{core.title}}"));
 }
 
 /// Test init with rust language creates rust templates only
 #[test]
+#[serial]
 fn test_init_with_rust_language() {
     let temp_dir = TempDir::new().unwrap();
 
     // Initialize project with rust language
-    let result = Config::init_project_with_language_in_dir(
+    let result = crate::test_utils::init_project_with_language_in_dir(
         temp_dir.path().to_str().unwrap(),
         Some("rust".to_string()),
     );
     assert!(result.is_ok());
 
-    // Verify core templates were created
+    // Verify templates directory structure
     let config_templates_dir = temp_dir.path().join(".config/.mucm/templates");
     assert!(config_templates_dir.exists());
-    assert!(config_templates_dir.join("use_case_simple.hbs").exists());
-    assert!(config_templates_dir.join("use_case_detailed.hbs").exists());
-    assert!(config_templates_dir.join("overview.hbs").exists());
+    
+    // Verify methodology templates were created (developer and feature by default)
+    assert!(config_templates_dir.join("developer/uc_simple.hbs").exists());
+    assert!(config_templates_dir.join("developer/uc_detailed.hbs").exists());
+    assert!(config_templates_dir.join("feature/uc_simple.hbs").exists());
 
     // Verify only rust language templates were created
-    assert!(config_templates_dir.join("lang-rust").exists());
-    assert!(config_templates_dir.join("lang-rust/test.hbs").exists());
-    assert!(!config_templates_dir.join("lang-python").exists());
+    assert!(config_templates_dir.join("languages/rust").exists());
+    assert!(config_templates_dir.join("languages/rust/test.hbs").exists());
+    assert!(!config_templates_dir.join("languages/python").exists());
 
     // Verify config was updated with rust language
     let config = result.unwrap();
@@ -93,27 +102,30 @@ fn test_init_with_rust_language() {
 
 /// Test init with python language creates python templates only
 #[test]
+#[serial]
 fn test_init_with_python_language() {
     let temp_dir = TempDir::new().unwrap();
 
     // Initialize project with python language
-    let result = Config::init_project_with_language_in_dir(
+    let result = crate::test_utils::init_project_with_language_in_dir(
         temp_dir.path().to_str().unwrap(),
         Some("python".to_string()),
     );
     assert!(result.is_ok());
 
-    // Verify core templates were created
+    // Verify templates directory structure
     let config_templates_dir = temp_dir.path().join(".config/.mucm/templates");
     assert!(config_templates_dir.exists());
-    assert!(config_templates_dir.join("use_case_simple.hbs").exists());
-    assert!(config_templates_dir.join("use_case_detailed.hbs").exists());
-    assert!(config_templates_dir.join("overview.hbs").exists());
+    
+    // Verify methodology templates were created (developer and feature by default)
+    assert!(config_templates_dir.join("developer/uc_simple.hbs").exists());
+    assert!(config_templates_dir.join("developer/uc_detailed.hbs").exists());
+    assert!(config_templates_dir.join("feature/uc_simple.hbs").exists());
 
     // Verify only python language templates were created
-    assert!(config_templates_dir.join("lang-python").exists());
-    assert!(config_templates_dir.join("lang-python/test.hbs").exists());
-    assert!(!config_templates_dir.join("lang-rust").exists());
+    assert!(config_templates_dir.join("languages/python").exists());
+    assert!(config_templates_dir.join("languages/python/test.hbs").exists());
+    assert!(!config_templates_dir.join("languages/rust").exists());
 
     // Verify config was updated with python language
     let config = result.unwrap();
@@ -122,11 +134,12 @@ fn test_init_with_python_language() {
 
 /// Test init with invalid language returns error
 #[test]
+#[serial]
 fn test_init_with_invalid_language() {
     let temp_dir = TempDir::new().unwrap();
 
     // Try to initialize project with invalid language
-    let result = Config::init_project_with_language_in_dir(
+    let result = crate::test_utils::init_project_with_language_in_dir(
         temp_dir.path().to_str().unwrap(),
         Some("invalidlang".to_string()),
     );
@@ -139,6 +152,7 @@ fn test_init_with_invalid_language() {
 
 /// Test getting available languages with built-in defaults
 #[test]
+#[serial]
 #[serial]
 fn test_get_available_languages_defaults() {
     let temp_dir = TempDir::new().unwrap();
@@ -155,6 +169,7 @@ fn test_get_available_languages_defaults() {
 
 /// Test language detection with new prefixed folders
 #[test]
+#[serial]
 #[serial]
 fn test_language_detection_prefixed_folders() {
     let temp_dir = TempDir::new().unwrap();
@@ -178,6 +193,7 @@ fn test_language_detection_prefixed_folders() {
 
 /// Test mixed lang- prefixed language folders
 #[test]
+#[serial]
 fn test_language_detection_mixed_folders() {
     with_temp_dir(|temp_dir| {
         // Create prefixed folders

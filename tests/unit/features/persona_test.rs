@@ -2,12 +2,14 @@
 //! This module tests the new persona CLI commands and configuration system
 
 use anyhow::Result;
+use serial_test::serial;
 use std::fs;
 use std::env;
 use tempfile::TempDir;
 use markdown_use_case_manager::config::Config;
 
 #[test]
+#[serial]
 fn test_default_persona_directory_config() -> Result<()> {
     let config = Config::default();
     assert_eq!(config.directories.persona_dir, "docs/personas");
@@ -15,6 +17,7 @@ fn test_default_persona_directory_config() -> Result<()> {
 }
 
 #[test]
+#[serial]
 fn test_custom_persona_directory_config() -> Result<()> {
     // Test that Config can serialize and include custom persona directory
     let mut config = Config::default();
@@ -32,6 +35,7 @@ fn test_custom_persona_directory_config() -> Result<()> {
 }
 
 #[test]
+#[serial]
 fn test_metadata_config_boolean_flags() -> Result<()> {
     let config = Config::default();
     
@@ -51,6 +55,7 @@ fn test_metadata_config_boolean_flags() -> Result<()> {
 }
 
 #[test]
+#[serial]
 fn test_metadata_config_individual_flags() -> Result<()> {
     // Test that individual metadata flags can be serialized and deserialized
     let mut config = Config::default();
@@ -74,6 +79,7 @@ fn test_metadata_config_individual_flags() -> Result<()> {
 }
 
 #[test]
+#[serial]
 fn test_config_no_custom_fields_array() -> Result<()> {
     let temp_dir = TempDir::new()?;
     let original_dir = env::current_dir()?;
@@ -105,6 +111,7 @@ fn test_config_no_custom_fields_array() -> Result<()> {
 }
 
 #[test]
+#[serial]
 fn test_extended_metadata_serialization() -> Result<()> {
     let temp_dir = TempDir::new()?;
     let original_dir = env::current_dir()?;
@@ -143,6 +150,7 @@ fn test_extended_metadata_serialization() -> Result<()> {
 }
 
 #[test]
+#[serial]
 fn test_persona_dir_in_config_toml() -> Result<()> {
     let temp_dir = TempDir::new()?;
     let original_dir = env::current_dir()?;

@@ -183,7 +183,7 @@ fn test_persona_list_empty() -> Result<()> {
         .current_dir(&temp_dir)
         .assert()
         .success()
-        .stdout(predicates::str::contains("No personas found"));
+        .stdout(predicates::str::contains("No personas"));
 
     Ok(())
 }

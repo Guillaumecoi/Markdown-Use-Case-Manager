@@ -39,6 +39,7 @@ fn test_cli_version() {
 fn test_cli_init_creates_project_structure() {
     let temp_dir = TempDir::new().unwrap();
 
+    // Step 1: Initialize config
     let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.arg("init");
@@ -48,17 +49,24 @@ fn test_cli_init_creates_project_structure() {
         .stdout(predicate::str::contains(
             "Initializing use case manager project",
         ))
-        .stdout(predicate::str::contains("Project initialized"))
-        .stdout(predicate::str::contains(
-            "Configuration saved to .config/.mucm/mucm.toml",
-        ));
+        .stdout(predicate::str::contains("Configuration file created"));
 
-    // Verify project structure was created
+    // Verify config was created but not templates yet
     assert!(temp_dir.path().join(".config/.mucm").exists());
     assert!(temp_dir.path().join(".config/.mucm/mucm.toml").exists());
+    assert!(!temp_dir.path().join(".config/.mucm/templates").exists(), "Templates should not exist yet");
+    
+    // Step 2: Finalize to copy templates
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
+    cmd.current_dir(&temp_dir);
+    cmd.arg("init").arg("--finalize");
+    cmd.assert().success();
+
+    // Now verify templates exist
     assert!(temp_dir.path().join(".config/.mucm/templates").exists());
-    assert!(temp_dir.path().join("docs/use-cases").exists());
-    assert!(temp_dir.path().join("tests/use-cases").exists());
+
+    // Note: Directories are created when first use case is created, not during init
+    // This is intentional to allow users to customize paths in config first
 
     // Verify config file content
     let config_content =
@@ -78,6 +86,12 @@ fn test_cli_create_use_case() {
     let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.current_dir(&temp_dir);
     cmd.arg("init");
+    cmd.assert().success();
+
+    // Finalize initialization
+    let mut cmd = Command::cargo_bin("mucm").unwrap();
+    cmd.current_dir(&temp_dir);
+    cmd.arg("init").arg("--finalize");
     cmd.assert().success();
 
     // Then create a use case

@@ -4,16 +4,18 @@ use crate::test_utils::get_available_test_languages;
 use markdown_use_case_manager::config::Config;
 use markdown_use_case_manager::core::templates::TemplateEngine;
 use markdown_use_case_manager::core::use_case_coordinator::UseCaseCoordinator;
+use serial_test::serial;
 use std::collections::HashMap;
 use std::fs;
 
 /// Test end-to-end language support initialization
 #[test]
+#[serial]
 fn test_end_to_end_language_support() {
     with_temp_dir(|_temp_dir| {
         // Test that we can initialize with each supported language
         for language in &["rust", "python", "javascript", "js", "py"] {
-            let result = Config::init_project_with_language_in_dir(".", Some(language.to_string()));
+            let result = crate::test_utils::init_project_with_language_in_dir(".", Some(language.to_string()));
             assert!(
                 result.is_ok(),
                 "Failed to initialize with language: {}",
@@ -42,6 +44,7 @@ fn create_manager_with_config(config: Config) -> UseCaseCoordinator {
 }
 
 #[test]
+#[serial]
 fn test_template_engine_language_map() {
     let template_engine = TemplateEngine::new().unwrap();
 
@@ -58,6 +61,7 @@ fn test_template_engine_language_map() {
 }
 
 #[test]
+#[serial]
 fn test_conditional_template_loading_rust() {
     // Create config with Rust language and tests enabled
     let mut config = Config::default();
@@ -85,6 +89,7 @@ fn test_conditional_template_loading_rust() {
 }
 
 #[test]
+#[serial]
 fn test_conditional_template_loading_python() {
     // Create config with Python language and tests enabled
     let mut config = Config::default();
@@ -117,6 +122,7 @@ fn test_conditional_template_loading_python() {
 }
 
 #[test]
+#[serial]
 fn test_no_tests_generated_without_scenarios() {
     with_temp_dir(|_temp_dir| {
         // Initialize project with tests enabled
@@ -148,6 +154,7 @@ fn test_no_tests_generated_without_scenarios() {
 }
 
 #[test]
+#[serial]
 fn test_tests_generated_with_scenarios_rust() {
     with_temp_dir(|_temp_dir| {
         // Initialize project with Rust tests enabled
@@ -193,6 +200,7 @@ fn test_tests_generated_with_scenarios_rust() {
 }
 
 #[test]
+#[serial]
 fn test_tests_generated_with_scenarios_python() {
     with_temp_dir(|_temp_dir| {
         // Initialize project with Python tests enabled
@@ -239,6 +247,7 @@ fn test_tests_generated_with_scenarios_python() {
 }
 
 #[test]
+#[serial]
 fn test_no_tests_when_disabled() {
     with_temp_dir(|_temp_dir| {
         // Initialize project with tests disabled
@@ -278,6 +287,7 @@ fn test_no_tests_when_disabled() {
 }
 
 #[test]
+#[serial]
 fn test_unsupported_language_warning() {
     with_temp_dir(|_temp_dir| {
         // Initialize project with unsupported language
@@ -315,6 +325,7 @@ fn test_unsupported_language_warning() {
 }
 
 #[test]
+#[serial]
 fn test_one_test_per_scenario() {
     with_temp_dir(|_temp_dir| {
         // Initialize project with Rust tests enabled

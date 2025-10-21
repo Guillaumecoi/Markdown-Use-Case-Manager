@@ -32,11 +32,11 @@ mod regenerate_tests {
     #[serial]
     fn test_regenerate_single_use_case() {
         with_temp_dir(|_| {
-            use markdown_use_case_manager::config::Config;
+            
             use markdown_use_case_manager::core::use_case_coordinator::UseCaseCoordinator;
             
             // Initialize project and create a use case
-            Config::init_project_with_language(Some("rust".to_string())).unwrap();
+            crate::test_utils::init_project_with_language(Some("rust".to_string())).unwrap();
             let mut coordinator = UseCaseCoordinator::load().unwrap();
             
             let use_case_id = coordinator.create_use_case(
@@ -71,11 +71,11 @@ mod regenerate_tests {
     #[serial]
     fn test_regenerate_all_use_cases() {
         with_temp_dir(|_| {
-            use markdown_use_case_manager::config::Config;
+            
             use markdown_use_case_manager::core::use_case_coordinator::UseCaseCoordinator;
             
             // Initialize project and create multiple use cases
-            Config::init_project_with_language(Some("rust".to_string())).unwrap();
+            crate::test_utils::init_project_with_language(Some("rust".to_string())).unwrap();
             let mut coordinator = UseCaseCoordinator::load().unwrap();
             
             let uc1 = coordinator.create_use_case(
@@ -118,11 +118,11 @@ mod regenerate_tests {
     #[serial]
     fn test_regenerate_preserves_toml_changes() {
         with_temp_dir(|_| {
-            use markdown_use_case_manager::config::Config;
+            
             use markdown_use_case_manager::core::use_case_coordinator::UseCaseCoordinator;
             
             // Initialize and create use case
-            Config::init_project_with_language(Some("rust".to_string())).unwrap();
+            crate::test_utils::init_project_with_language(Some("rust".to_string())).unwrap();
             let mut coordinator = UseCaseCoordinator::load().unwrap();
             
             let use_case_id = coordinator.create_use_case(
@@ -184,11 +184,11 @@ updated_at = "2025-10-20T11:00:00.000000000Z"
     #[serial]
     fn test_regenerate_nonexistent_use_case() {
         with_temp_dir(|_| {
-            use markdown_use_case_manager::config::Config;
+            
             use markdown_use_case_manager::core::use_case_coordinator::UseCaseCoordinator;
             
             // Initialize empty project
-            Config::init_project_with_language(Some("rust".to_string())).unwrap();
+            crate::test_utils::init_project_with_language(Some("rust".to_string())).unwrap();
             let coordinator = UseCaseCoordinator::load().unwrap();
             
             // Try to regenerate non-existent use case
@@ -206,11 +206,11 @@ updated_at = "2025-10-20T11:00:00.000000000Z"
     #[serial]
     fn test_regenerate_updates_overview() {
         with_temp_dir(|_| {
-            use markdown_use_case_manager::config::Config;
+            
             use markdown_use_case_manager::core::use_case_coordinator::UseCaseCoordinator;
             
             // Initialize and create use case
-            Config::init_project_with_language(Some("rust".to_string())).unwrap();
+            crate::test_utils::init_project_with_language(Some("rust".to_string())).unwrap();
             let mut coordinator = UseCaseCoordinator::load().unwrap();
             
             let use_case_id = coordinator.create_use_case(
@@ -247,11 +247,11 @@ updated_at = "2025-10-20T11:00:00.000000000Z"
     #[serial]
     fn test_toml_is_source_md_is_output() {
         with_temp_dir(|_| {
-            use markdown_use_case_manager::config::Config;
+            
             use markdown_use_case_manager::core::use_case_coordinator::UseCaseCoordinator;
             
             // Initialize and create use case
-            Config::init_project_with_language(Some("rust".to_string())).unwrap();
+            crate::test_utils::init_project_with_language(Some("rust".to_string())).unwrap();
             let mut coordinator = UseCaseCoordinator::load().unwrap();
             
             let use_case_id = coordinator.create_use_case(

@@ -75,8 +75,8 @@ fn test_template_config() {
     let template_config = TemplateConfig {
         use_case_template: Some("custom_use_case.hbs".to_string()),
         test_template: Some("custom_test.hbs".to_string()),
-        use_case_style: Some("detailed".to_string()),
-        methodology: Some("simple".to_string()),
+        methodologies: vec!["developer".to_string(), "feature".to_string()],
+        default_methodology: Some("developer".to_string()),
     };
 
     assert_eq!(
@@ -87,7 +87,8 @@ fn test_template_config() {
         template_config.test_template,
         Some("custom_test.hbs".to_string())
     );
-    assert_eq!(template_config.use_case_style, Some("detailed".to_string()));
+    assert_eq!(template_config.methodologies.len(), 2);
+    assert_eq!(template_config.default_methodology, Some("developer".to_string()));
 }
 
 /// Test GenerationConfig creation and fields
@@ -246,8 +247,8 @@ fn test_config_custom_values() {
         templates: TemplateConfig {
             use_case_template: Some("my_template.hbs".to_string()),
             test_template: None,
-            use_case_style: Some("simple".to_string()),
-            methodology: Some("business".to_string()),
+            methodologies: vec!["business".to_string()],
+            default_methodology: Some("business".to_string()),
         },
         generation: GenerationConfig {
             test_language: "python".to_string(),

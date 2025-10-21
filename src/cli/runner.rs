@@ -50,7 +50,7 @@ impl CliRunner {
         // Save config file only (no templates, no directories)
         Config::save_config_only(&config)?;
         
-        let recommendations = if let Some(method) = &config.templates.methodology {
+        let recommendations = if let Some(method) = &config.templates.default_methodology {
             format!("\n\n{}", Config::methodology_recommendations(method))
         } else {
             String::new()
@@ -60,17 +60,18 @@ impl CliRunner {
             "✅ Configuration file created at .config/.mucm/mucm.toml\n\n\
              📝 Please review and customize the configuration:\n\
              - Programming language: {}\n\
-             - Methodology: {}\n\
+             - Default Methodology: {}\n\
              - TOML directory: {}\n\
              - Use case directory: {}\n\
              - Test directory: {}\n\n\
              ⚡ When ready, run: mucm init --finalize{}\n\n\
              💡 The finalize step will:\n\
-             - Copy templates based on your language setting\n\
-             - Set up the project structure\n\
+             - Copy ALL methodology templates (business, developer, feature, tester)\n\
+             - Copy ALL language templates\n\
+             - You can use any methodology when creating use cases\n\
              - Directories will be created when you create your first use case",
             config.generation.test_language,
-            config.templates.methodology.as_deref().unwrap_or("default"),
+            config.templates.default_methodology.as_deref().unwrap_or("developer"),
             config.directories.toml_dir.as_deref().unwrap_or("docs/use-cases"),
             config.directories.use_case_dir,
             config.directories.test_dir,
@@ -96,21 +97,33 @@ impl CliRunner {
             );
         }
 
-        // Copy templates based on the configured language
+        // Copy templates - now copies ALL methodologies and ALL languages
         Config::copy_templates_to_config_with_language(Some(config.generation.test_language.clone()))?;
+
+        // List available methodologies
+        let available = Config::list_available_methodologies().unwrap_or_default();
+        let methodologies_list = if available.is_empty() {
+            "Unable to detect".to_string()
+        } else {
+            available.join(", ")
+        };
 
         Ok(format!(
             "✅ Project setup complete!\n\n\
              📁 Templates copied to: .config/.mucm/templates/\n\
              🔧 Language: {}\n\
-             📚 Methodology: {}\n\n\
+             📚 Default Methodology: {}\n\
+             📋 Available Methodologies: {}\n\n\
              🚀 You're ready to create use cases!\n\
-             - Run: mucm create --category <category> \"<title>\"\n\
+             - Run: mucm create --category <category> \"<title>\" --methodology <name>\n\
              - Run: mucm list to see all use cases\n\
+             - Run: mucm methodologies to see all available methodologies\n\
              - Run: mucm --help for all available commands\n\n\
+             💡 Each methodology has its own settings (test generation, metadata, etc.)\n\
              💡 Directories will be created automatically when you create your first use case.",
             config.generation.test_language,
-            config.templates.methodology.as_deref().unwrap_or("default")
+            config.templates.default_methodology.as_deref().unwrap_or("developer"),
+            methodologies_list
         ))
     }
 

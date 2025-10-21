@@ -1,5 +1,4 @@
 // Unit tests for CLI interactive menu logic
-use markdown_use_case_manager::config::Config;
 use markdown_use_case_manager::core::use_case_coordinator::UseCaseCoordinator;
 use serial_test::serial;
 use std::env;
@@ -13,7 +12,7 @@ fn test_interactive_workflow_simulation() -> anyhow::Result<()> {
     env::set_current_dir(&temp_dir)?;
 
     // Initialize project (simulates CLI init)
-    Config::init_project_with_language(None)?;
+    crate::test_utils::init_project_with_language(None)?;
 
     // Load coordinator (simulates CliRunner::new())
     let mut coordinator = UseCaseCoordinator::load()?;
@@ -64,7 +63,7 @@ fn test_interactive_category_suggestions() -> anyhow::Result<()> {
     let temp_dir = TempDir::new()?;
     env::set_current_dir(&temp_dir)?;
 
-    Config::init_project_with_language(None)?;
+    crate::test_utils::init_project_with_language(None)?;
     let mut coordinator = UseCaseCoordinator::load()?;
 
     // Initially no categories
@@ -109,7 +108,7 @@ fn test_interactive_error_scenarios() -> anyhow::Result<()> {
     let temp_dir = TempDir::new()?;
     env::set_current_dir(&temp_dir)?;
 
-    Config::init_project_with_language(None)?;
+    crate::test_utils::init_project_with_language(None)?;
     let mut coordinator = UseCaseCoordinator::load()?;
 
     // Test scenario: try to add scenario when no use cases exist
@@ -149,7 +148,7 @@ fn test_complete_interactive_workflow_simulation() -> anyhow::Result<()> {
     env::set_current_dir(&temp_dir)?;
 
     // Simulate: mucm init
-    Config::init_project_with_language(Some("rust".to_string()))?;
+    crate::test_utils::init_project_with_language(Some("rust".to_string()))?;
 
     // Simulate: enter interactive mode
     let mut coordinator = UseCaseCoordinator::load()?;

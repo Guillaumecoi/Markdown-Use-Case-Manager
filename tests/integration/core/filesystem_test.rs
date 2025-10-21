@@ -2,12 +2,14 @@
 use super::super::test_helpers::with_temp_dir;
 use crate::test_utils::{init_project, init_project_in_dir, load_from_dir, save_config};
 use markdown_use_case_manager::{config::Config, UseCaseCoordinator};
+use serial_test::serial;
 use std::fs;
 use std::path::Path;
 use tempfile::TempDir;
 
 /// Test init_project() creates proper project structure
 #[test]
+#[serial]
 fn test_config_init_project_creates_structure() {
     let temp_dir = TempDir::new().unwrap();
 
@@ -20,12 +22,18 @@ fn test_config_init_project_creates_structure() {
     assert!(temp_path.join(".config/.mucm").exists());
     assert!(temp_path.join(".config/.mucm/mucm.toml").exists());
 
-    // Verify templates directory was created (templates may or may not be copied depending on source availability)
+    // Verify templates directory was created
     assert!(temp_path.join(".config/.mucm/templates").exists());
+    // Verify methodology templates were copied
+    assert!(temp_path.join(".config/.mucm/templates/developer").exists());
+    assert!(temp_path.join(".config/.mucm/templates/feature").exists());
+    // Verify language templates were copied
+    assert!(temp_path.join(".config/.mucm/templates/languages/rust").exists());
 
-    // Verify directories were created
-    assert!(temp_path.join(&config.directories.use_case_dir).exists());
-    assert!(temp_path.join(&config.directories.test_dir).exists());
+    // NOTE: Directories are NOT created during init in the new design
+    // They will be created when the first use case is created
+    assert!(!temp_path.join(&config.directories.use_case_dir).exists());
+    assert!(!temp_path.join(&config.directories.test_dir).exists());
 
     // Verify config content
     let config_content = fs::read_to_string(temp_path.join(".config/.mucm/mucm.toml")).unwrap();
@@ -34,11 +42,12 @@ fn test_config_init_project_creates_structure() {
     assert!(config_content.contains("[directories]"));
     assert!(config_content.contains("use_case_dir = \"docs/use-cases\""));
     assert!(config_content.contains("[templates]"));
-    assert!(config_content.contains("use_case_style = \"detailed\""));
+    assert!(config_content.contains("methodologies = ["));
 }
 
 /// Test Config::load() reads existing configuration
 #[test]
+#[serial]
 fn test_config_load_existing() {
     let temp_dir = TempDir::new().unwrap();
 
@@ -62,6 +71,7 @@ fn test_config_load_existing() {
 
 /// Test Config::load() fails gracefully when no project exists
 #[test]
+#[serial]
 fn test_config_load_no_project() {
     let temp_dir = TempDir::new().unwrap();
 
@@ -78,6 +88,7 @@ fn test_config_load_no_project() {
 
 /// Test Config::save() persists configuration changes
 #[test]
+#[serial]
 fn test_config_save_modifications() {
     let temp_dir = TempDir::new().unwrap();
 
@@ -101,6 +112,7 @@ fn test_config_save_modifications() {
 
 /// Test UseCaseCoordinator::load() works with existing project
 #[test]
+#[serial]
 fn test_use_case_manager_load() {
     with_temp_dir(|_temp_dir| {
         // Initialize project - retry a few times in case of transient filesystem issues
@@ -127,6 +139,7 @@ fn test_use_case_manager_load() {
 
 /// Test UseCaseCoordinator::load() fails without project
 #[test]
+#[serial]
 fn test_use_case_manager_load_no_project() {
     with_temp_dir(|_temp_dir| {
         // Try to load without project
@@ -137,6 +150,7 @@ fn test_use_case_manager_load_no_project() {
 
 /// Test use case file creation and directory structure
 #[test]
+#[serial]
 fn test_use_case_file_creation() {
     with_temp_dir(|_temp_dir| {
         // Initialize project and create use case
@@ -166,6 +180,7 @@ fn test_use_case_file_creation() {
 
 /// Test scenario addition and file updates
 #[test]
+#[serial]
 fn test_scenario_file_updates() {
     with_temp_dir(|temp_dir| {
         // Initialize project with test generation enabled
@@ -234,6 +249,7 @@ fn test_scenario_file_updates() {
 
 /// Test multiple categories create separate directories
 #[test]
+#[serial]
 fn test_multiple_categories() {
     with_temp_dir(|_temp_dir| {
         init_project().unwrap();
@@ -276,6 +292,7 @@ fn test_multiple_categories() {
 
 /// Test overview generation creates README
 #[test]
+#[serial]
 fn test_overview_generation() {
     with_temp_dir(|_temp_dir| {
         init_project().unwrap();
@@ -322,6 +339,7 @@ fn test_overview_generation() {
 
 /// Test file persistence and reload
 #[test]
+#[serial]
 fn test_file_persistence_and_reload() {
     with_temp_dir(|_temp_dir| {
         init_project().unwrap();
@@ -365,6 +383,7 @@ fn test_file_persistence_and_reload() {
 
 /// Test error handling for invalid file operations
 #[test]
+#[serial]
 fn test_file_operation_error_handling() {
     with_temp_dir(|_temp_dir| {
         init_project().unwrap();
@@ -386,6 +405,7 @@ fn test_file_operation_error_handling() {
 
 /// Test custom directory configuration
 #[test]
+#[serial]
 fn test_custom_directory_configuration() {
     with_temp_dir(|_temp_dir| {
         // Initialize project first to create proper structure

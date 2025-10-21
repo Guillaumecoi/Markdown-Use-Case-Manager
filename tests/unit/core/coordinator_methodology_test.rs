@@ -2,6 +2,7 @@
 use markdown_use_case_manager::core::use_case_coordinator::UseCaseCoordinator;
 use markdown_use_case_manager::core::templates::TemplateEngine;
 use markdown_use_case_manager::config::Config;
+use serial_test::serial;
 use std::env;
 use std::path::PathBuf;
 use tempfile::TempDir;
@@ -35,6 +36,7 @@ where
 }
 
 #[test]
+#[serial]
 fn test_template_engine_methodology_methods() {
     // Test methodology methods using TemplateEngine directly
     // These don't require a full coordinator or project initialization
@@ -60,6 +62,7 @@ fn test_template_engine_methodology_methods() {
 }
 
 #[test]
+#[serial]
 fn test_create_use_case_with_methodology() {
     with_temp_dir(|_| {
         // Create test config
@@ -98,6 +101,7 @@ fn test_create_use_case_with_methodology() {
 }
 
 #[test]
+#[serial]
 fn test_regenerate_use_case_with_methodology() {
     with_temp_dir(|_| {
         // Create test config

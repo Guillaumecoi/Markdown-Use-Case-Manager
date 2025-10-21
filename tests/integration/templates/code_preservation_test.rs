@@ -1,10 +1,12 @@
 // Integration tests for code preservation functionality
 use super::super::test_helpers::with_temp_dir;
 use markdown_use_case_manager::core::templates::TemplateEngine;
+use serial_test::serial;
 use serde_json::json;
 use std::collections::HashMap;
 
 #[test]
+#[serial]
 fn test_template_preservation_features() {
     with_temp_dir(|_temp_dir| {
         let engine = TemplateEngine::new().unwrap();
@@ -64,6 +66,7 @@ fn test_template_preservation_features() {
 }
 
 #[test]
+#[serial]
 fn test_marker_granularity() {
     with_temp_dir(|_temp_dir| {
         let engine = TemplateEngine::new().unwrap();

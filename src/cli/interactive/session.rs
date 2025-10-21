@@ -288,15 +288,8 @@ impl InteractiveSession {
                         .with_default(config.generation.auto_generate_tests)
                         .prompt()?;
 
-                    if config.templates.use_case_style.is_some() {
-                        let style_options = vec!["simple", "detailed"];
-                        let selected_style = Select::new("Use case template style:", style_options)
-                            .with_help_message(
-                                "Choose between simple or detailed use case templates",
-                            )
-                            .prompt()?;
-                        config.templates.use_case_style = Some(selected_style.to_string());
-                    }
+                    // Note: use_case_style is now per-methodology in generation_targets
+                    // This configuration has been moved to methodology configs
                 }
                 "Metadata Configuration" => {
                     println!("\n📊 Metadata Configuration");

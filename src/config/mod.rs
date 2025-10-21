@@ -1,10 +1,8 @@
 // src/config/mod.rs
 use crate::core::languages::LanguageRegistry;
-use crate::core::templates::TemplateEngine;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::io::Write;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -44,8 +42,41 @@ impl DirectoryConfig {
 pub struct TemplateConfig {
     pub use_case_template: Option<String>,
     pub test_template: Option<String>,
-    pub use_case_style: Option<String>, // "simple" or "detailed"
-    pub methodology: Option<String>, // "simple", "cockburn", "unified_process", "bdd_gherkin"
+    /// List of methodologies to import and make available
+    pub methodologies: Vec<String>,
+    /// Default methodology to use when none specified
+    pub default_methodology: Option<String>,
+}
+
+/// Per-methodology template configuration
+/// This is loaded from .config/.mucm/methodologies/{name}.toml
+/// Note: Metadata is configured in the main config, not per-methodology
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MethodologyConfig {
+    pub template: MethodologyTemplateInfo,
+    pub generation: GenerationConfig,
+    #[serde(default)]
+    pub custom_fields: std::collections::HashMap<String, CustomFieldConfig>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MethodologyTemplateInfo {
+    pub name: String,
+    pub description: String,
+    /// Preferred/recommended style for this methodology: "simple", "normal", or "detailed"
+    pub preferred_style: String,
+}
+
+/// Configuration for custom fields specific to a methodology
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CustomFieldConfig {
+    pub label: String,
+    #[serde(rename = "type")]
+    pub field_type: String, // "string", "array", "number", "boolean"
+    #[serde(default)]
+    pub required: bool,
+    #[serde(default)]
+    pub default_value: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -102,76 +133,14 @@ pub struct MetadataConfig {
 
 impl Config {
     /// Create a Config with methodology-specific recommended settings
+    /// This sets the default_methodology in the main config
     pub fn new_with_methodology(methodology: &str) -> Self {
         let mut config = Self::default();
         
-        match methodology {
-            "business" => {
-                config.templates.methodology = Some("business".to_string());
-                config.metadata.enabled = true;
-                config.metadata.include_business_value = true;
-                config.metadata.include_personas = true;
-                config.metadata.include_epic = true;
-                config.generation.auto_generate_tests = false; // Business focus, not test-driven
-            },
-            "developer" => {
-                config.templates.methodology = Some("developer".to_string());
-                config.metadata.enabled = true;
-                config.metadata.include_prerequisites = true;
-                config.metadata.include_acceptance_criteria = true;
-                config.metadata.include_complexity = true;
-                config.generation.auto_generate_tests = true; // Developer focus includes testing
-            },
-            "feature" => {
-                config.templates.methodology = Some("feature".to_string());
-                config.metadata.enabled = true;
-                config.metadata.include_epic = true;
-                config.metadata.include_acceptance_criteria = true;
-                config.metadata.include_personas = true;
-                config.generation.auto_generate_tests = false; // Feature tracking, not test generation
-            },
-            "testing" => {
-                config.templates.methodology = Some("testing".to_string());
-                config.metadata.enabled = true;
-                config.metadata.include_acceptance_criteria = true;
-                config.metadata.include_complexity = true;
-                config.generation.auto_generate_tests = true; // Testing methodology needs tests!
-                config.generation.overwrite_test_documentation = true;
-            },
-            _ => {
-                // Default to developer for unknown methodologies
-                config.templates.methodology = Some("developer".to_string());
-            }
-        }
+        // Just set the default methodology - actual settings come from per-template configs
+        config.templates.default_methodology = Some(methodology.to_string());
         
         config
-    }
-
-    /// Initialize project with a pre-configured Config instance
-    pub fn init_project_with_config(config: Config) -> Result<Config> {
-        // Ensure we're not already in a project
-        if Self::load().is_ok() {
-            anyhow::bail!("A use case manager project already exists in this directory or a parent directory");
-        }
-
-        // Create .config/.mucm directory if it doesn't exist
-        let base_path = Path::new(".");
-        let config_dir = base_path.join(Self::CONFIG_DIR);
-        if !config_dir.exists() {
-            fs::create_dir_all(&config_dir).context("Failed to create .config/.mucm directory")?;
-        }
-
-        // Save the configuration first
-        config.save_in_dir(".")?;
-
-        // Copy templates to .config/.mucm/templates/
-        Self::copy_templates_to_config_with_language_in_dir(".", Some(config.generation.test_language.clone()))?;
-
-        // NOTE: Directories are NOT created during init
-        // They will be created automatically when the first use case is created
-        // This gives users a chance to configure directory paths in mucm.toml first
-        
-        Ok(config)
     }
 
     /// Get methodology-specific recommendations as a human-readable string
@@ -211,8 +180,6 @@ impl Config {
     const CONFIG_DIR: &'static str = ".config/.mucm";
     const CONFIG_FILE: &'static str = "mucm.toml";
     const TEMPLATES_DIR: &'static str = "templates";
-    const LANGUAGE_PREFIX: &'static str = "lang-";
-    const SOURCE_TEMPLATES_DIR: &'static str = "templates"; // Source templates in the project
 
     pub fn config_path() -> PathBuf {
         Path::new(Self::CONFIG_DIR).join(Self::CONFIG_FILE)
@@ -250,58 +217,6 @@ impl Config {
         Ok(languages)
     }
 
-    pub fn init_project_with_language(language: Option<String>) -> Result<Self> {
-        Self::init_project_with_language_in_dir(".", language)
-    }
-
-    pub fn init_project_with_language_in_dir(
-        base_dir: &str,
-        language: Option<String>,
-    ) -> Result<Self> {
-        let base_path = Path::new(base_dir);
-        let config_dir = base_path.join(Self::CONFIG_DIR);
-
-        // Validate language if provided - check both current directory and built-ins
-        if let Some(ref lang) = language {
-            let language_registry = LanguageRegistry::new();
-
-            // First check if the language is supported by the built-in registry
-            if language_registry.is_supported(lang) {
-                // Language is supported, continue
-            } else {
-                // Check available languages from current working directory as fallback
-                let available_languages = Self::get_available_languages()?;
-                if !available_languages.contains(lang) {
-                    anyhow::bail!("Unsupported language '{}'. Supported languages: {}. Add templates to .config/.mucm/templates/lang-{}/ to support this language.", 
-                                lang, available_languages.join(", "), lang);
-                }
-            }
-        }
-
-        // Create .config/.mucm directory if it doesn't exist
-        if !config_dir.exists() {
-            fs::create_dir_all(&config_dir).context("Failed to create .config/.mucm directory")?;
-        }
-
-        let mut config = Self::default();
-
-        // Set the test language if provided
-        if let Some(ref lang) = language {
-            config.generation.test_language = lang.clone();
-        }
-
-        config.save_in_dir(base_dir)?;
-
-        // Copy templates to .config/.mucm/templates/
-        Self::copy_templates_to_config_with_language_in_dir(base_dir, language)?;
-
-        // NOTE: Directories are NOT created during init
-        // They will be created automatically when the first use case is created
-        // This gives users a chance to configure directory paths in mucm.toml first
-
-        Ok(config)
-    }
-
     /// Save config file only (without copying templates or creating directories)
     /// Used in the first step of two-step initialization
     pub fn save_config_only(config: &Config) -> Result<()> {
@@ -331,145 +246,159 @@ impl Config {
 
     fn copy_templates_to_config_with_language_in_dir(
         base_dir: &str,
-        language: Option<String>,
+        _language: Option<String>,  // Not currently used - we copy all languages now
     ) -> Result<()> {
         let base_path = Path::new(base_dir);
         let config_templates_dir = base_path.join(Self::CONFIG_DIR).join(Self::TEMPLATES_DIR);
+        let config_methodologies_dir = base_path.join(Self::CONFIG_DIR).join("methodologies");
 
-        // Create templates directory in config
+        // Create directories
         fs::create_dir_all(&config_templates_dir)
             .context("Failed to create config templates directory")?;
+        fs::create_dir_all(&config_methodologies_dir)
+            .context("Failed to create config methodologies directory")?;
 
-        // Define template files and their content
-        let templates = [
-            (
-                "use_case_simple.hbs",
-                TemplateEngine::get_use_case_simple_template(),
-            ),
-            (
-                "use_case_detailed.hbs",
-                TemplateEngine::get_use_case_detailed_template(),
-            ),
-            ("overview.hbs", TemplateEngine::get_overview_template()),
-        ];
-
-        // Copy core templates
-        for (template_name, template_content) in templates {
-            let template_path = config_templates_dir.join(template_name);
-
-            let mut file =
-                std::fs::File::create(&template_path).context("Failed to create template file")?;
-
-            file.write_all(template_content.as_bytes())
-                .context("Failed to write template content")?;
-
-            let template_file = template_path
-                .file_name()
-                .and_then(|name| name.to_str())
-                .unwrap_or("unknown");
-            println!("Created template: {}", template_file);
+        // Load the config from base_dir to see which methodologies to import
+        let config_path = base_path.join(Self::CONFIG_DIR).join("mucm.toml");
+        if !config_path.exists() {
+            anyhow::bail!("Config file not found at {:?} - run 'mucm init' first", config_path);
         }
+        let content = fs::read_to_string(&config_path).context("Failed to read config file")?;
+        let config: Config = toml::from_str(&content).context("Failed to parse config file")?;
 
-        // Create language-specific template directories and files
-        Self::copy_language_templates_selective(&config_templates_dir, language)?;
-
-        Ok(())
-    }
-
-    /// Copy language-specific templates to config directory with optional language filter
-    fn copy_language_templates_selective(
-        config_templates_dir: &Path,
-        language: Option<String>,
-    ) -> Result<()> {
-        let Some(lang) = language else {
-            return Ok(()); // No language specified, don't copy any language templates
-        };
-
-        // First try to copy from source templates (built-in)
-        let source_lang_dir = Path::new(Self::SOURCE_TEMPLATES_DIR).join(format!(
-            "{}{}",
-            Self::LANGUAGE_PREFIX,
-            &lang
-        ));
-
-        if source_lang_dir.exists() {
-            // Copy from source templates
-            let target_lang_dir =
-                config_templates_dir.join(format!("{}{}", Self::LANGUAGE_PREFIX, &lang));
-
-            fs::create_dir_all(&target_lang_dir)
-                .context("Failed to create language templates directory")?;
-
-            // Copy all files from source to target
-            if let Ok(entries) = fs::read_dir(&source_lang_dir) {
-                for entry in entries.flatten() {
-                    let source_file = entry.path();
-                    if source_file.is_file() {
-                        if let Some(filename) = source_file.file_name() {
-                            let target_file = target_lang_dir.join(filename);
-                            fs::copy(&source_file, &target_file)
-                                .context("Failed to copy template file")?;
-
-                            let dir_name = target_lang_dir
-                                .file_name()
-                                .and_then(|n| n.to_str())
-                                .unwrap_or("unknown");
-                            let file_name = filename.to_str().unwrap_or("unknown");
-                            println!("Created template: {}/{}", dir_name, file_name);
+        // Look for templates directory - first check if we're in a dev environment
+        let mut source_templates_dir = None;
+        
+        // Try current directory first
+        let local_templates = Path::new("templates");
+        if local_templates.exists() {
+            source_templates_dir = Some(local_templates.to_path_buf());
+        } else {
+            // Try CARGO_MANIFEST_DIR (set during cargo test and build)
+            if let Ok(manifest_dir) = std::env::var("CARGO_MANIFEST_DIR") {
+                let cargo_templates = Path::new(&manifest_dir).join("templates");
+                if cargo_templates.exists() {
+                    source_templates_dir = Some(cargo_templates);
+                }
+            }
+            
+            // If still not found, try to find templates relative to the executable
+            if source_templates_dir.is_none() {
+                if let Ok(exe_path) = std::env::current_exe() {
+                    if let Some(exe_dir) = exe_path.parent() {
+                        // Check ../../templates (when running from target/release/)
+                        let dev_templates = exe_dir.parent().and_then(|p| p.parent()).map(|p| p.join("templates"));
+                        if let Some(dev_templates) = dev_templates {
+                            if dev_templates.exists() {
+                                source_templates_dir = Some(dev_templates);
+                            }
                         }
                     }
                 }
             }
+        }
+        
+        let Some(source_templates_dir) = source_templates_dir else {
+            anyhow::bail!(
+                "Source templates directory not found. \
+                 Looked for 'templates/' directory. \
+                 This directory should contain methodologies/ and languages/ subdirectories."
+            );
+        };
+
+        // Copy only the selected methodologies
+        let source_methodologies = source_templates_dir.join("methodologies");
+        if source_methodologies.exists() {
+            for methodology in &config.templates.methodologies {
+                let source_method_dir = source_methodologies.join(methodology);
+                if !source_method_dir.exists() {
+                    anyhow::bail!(
+                        "Methodology '{}' not found in templates/methodologies/. \
+                         Available methodologies should be in templates/methodologies/{{name}}/ directories.",
+                        methodology
+                    );
+                }
+
+                // Copy methodology templates to templates/{methodology}/
+                let target_method_templates = config_templates_dir.join(methodology);
+                Self::copy_dir_recursive(&source_method_dir, &target_method_templates)?;
+
+                // Copy methodology config.toml to methodologies/{methodology}.toml
+                let source_config = source_method_dir.join("config.toml");
+                if source_config.exists() {
+                    let target_config = config_methodologies_dir.join(format!("{}.toml", methodology));
+                    fs::copy(&source_config, &target_config)?;
+                    println!("✓ Copied methodology: {}", methodology);
+                } else {
+                    anyhow::bail!(
+                        "Methodology '{}' is missing config.toml file at {:?}",
+                        methodology,
+                        source_config
+                    );
+                }
+            }
         } else {
-            // Fallback to built-in template generation using the language registry
-            let language_registry = LanguageRegistry::new();
-            if let Some(language_impl) = language_registry.get(&lang) {
-                let target_lang_dir =
-                    config_templates_dir.join(format!("{}{}", Self::LANGUAGE_PREFIX, &lang));
+            anyhow::bail!(
+                "Source methodologies directory not found at {:?}",
+                source_methodologies
+            );
+        }
 
-                fs::create_dir_all(&target_lang_dir)
-                    .context("Failed to create language templates directory")?;
-
-                let test_template_content = language_impl.test_template();
-                let template_path = target_lang_dir.join("test.hbs");
-                let mut file = std::fs::File::create(&template_path)
-                    .context("Failed to create language template file")?;
-                file.write_all(test_template_content.as_bytes())
-                    .context("Failed to write language template content")?;
-
-                let dir_name = target_lang_dir
-                    .file_name()
-                    .and_then(|n| n.to_str())
-                    .unwrap_or("unknown");
-                println!("Created template: {}/test.hbs", dir_name);
+        // Copy language templates based on configured language
+        let source_languages = source_templates_dir.join("languages");
+        if source_languages.exists() {
+            let source_lang_dir = source_languages.join(&config.generation.test_language);
+            if source_lang_dir.exists() {
+                let target_languages = config_templates_dir.join("languages");
+                let target_lang_dir = target_languages.join(&config.generation.test_language);
+                Self::copy_dir_recursive(&source_lang_dir, &target_lang_dir)?;
+                println!("✓ Copied language templates: {}", config.generation.test_language);
             } else {
-                // For unsupported languages, create a placeholder directory
-                let lang_dir =
-                    config_templates_dir.join(format!("{}{}", Self::LANGUAGE_PREFIX, lang));
-                fs::create_dir_all(&lang_dir)
-                    .context("Failed to create language templates directory")?;
-
-                // Create a basic test template placeholder
-                let test_template_path = lang_dir.join("test.hbs");
-                let placeholder_content = format!(
-                    "// Test template for {} - customize as needed\n// Use case: {{{{title}}}}\n",
-                    lang
-                );
-
-                let mut file = std::fs::File::create(&test_template_path)
-                    .context("Failed to create language template file")?;
-                file.write_all(placeholder_content.as_bytes())
-                    .context("Failed to write language template content")?;
-                
-                let dir_name = lang_dir
-                    .file_name()
-                    .and_then(|n| n.to_str())
-                    .unwrap_or("unknown");
-                println!("Created template: {}/test.hbs", dir_name);
+                println!("⚠ Language '{}' not found in templates/languages/, skipping", config.generation.test_language);
             }
         }
 
         Ok(())
+    }
+
+    /// Recursively copy a directory and all its contents
+    fn copy_dir_recursive(src: &Path, dst: &Path) -> Result<()> {
+        fs::create_dir_all(dst)?;
+        
+        for entry in fs::read_dir(src)? {
+            let entry = entry?;
+            let src_path = entry.path();
+            let dst_path = dst.join(entry.file_name());
+            
+            if src_path.is_dir() {
+                Self::copy_dir_recursive(&src_path, &dst_path)?;
+            } else {
+                fs::copy(&src_path, &dst_path)?;
+            }
+        }
+        
+        Ok(())
+    }
+
+    /// Find the .config/.mucm directory by walking up the directory tree
+    fn find_config_dir() -> Result<PathBuf> {
+        let mut current_dir = std::env::current_dir()?;
+        
+        loop {
+            let config_dir = current_dir.join(Self::CONFIG_DIR);
+            if config_dir.exists() && config_dir.is_dir() {
+                return Ok(config_dir);
+            }
+            
+            // Try parent directory
+            if let Some(parent) = current_dir.parent() {
+                current_dir = parent.to_path_buf();
+            } else {
+                anyhow::bail!(
+                    "No .config/.mucm directory found. Run 'mucm init' first to initialize a project."
+                );
+            }
+        }
     }
 
     pub fn load() -> Result<Self> {
@@ -495,6 +424,31 @@ impl Config {
 
         Ok(())
     }
+
+    /// Get list of available methodologies (those with config files)
+    pub fn list_available_methodologies() -> Result<Vec<String>> {
+        let methodologies_dir = Self::find_config_dir()?
+            .join("methodologies");
+
+        if !methodologies_dir.exists() {
+            return Ok(Vec::new());
+        }
+
+        let mut methodologies = Vec::new();
+        for entry in fs::read_dir(&methodologies_dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_file() {
+                if let Some(name) = path.file_stem().and_then(|n| n.to_str()) {
+                    // Files are named {methodology}.toml
+                    methodologies.push(name.to_string());
+                }
+            }
+        }
+
+        methodologies.sort();
+        Ok(methodologies)
+    }
 }
 
 impl Default for Config {
@@ -514,8 +468,8 @@ impl Default for Config {
             templates: TemplateConfig {
                 use_case_template: None,
                 test_template: None,
-                use_case_style: Some("detailed".to_string()),
-                methodology: Some("developer".to_string()),
+                methodologies: vec!["developer".to_string(), "feature".to_string()],
+                default_methodology: Some("developer".to_string()),
             },
             generation: GenerationConfig {
                 test_language: "rust".to_string(),

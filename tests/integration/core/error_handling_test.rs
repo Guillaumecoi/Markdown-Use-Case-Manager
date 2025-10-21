@@ -47,11 +47,11 @@ mod error_handling_tests {
     #[serial]
     fn test_invalid_status_update_fails_gracefully() {
         with_temp_dir(|_| {
-            use markdown_use_case_manager::config::Config;
+            
             use markdown_use_case_manager::core::use_case_coordinator::UseCaseCoordinator;
             
             // Initialize project
-            Config::init_project_with_language(Some("rust".to_string()))
+            crate::test_utils::init_project_with_language(Some("rust".to_string()))
                 .expect("Failed to initialize project");
             
             let mut coordinator = UseCaseCoordinator::load()
@@ -91,10 +91,10 @@ mod error_handling_tests {
     #[serial]
     fn test_nonexistent_use_case_scenario_fails() {
         with_temp_dir(|_| {
-            use markdown_use_case_manager::config::Config;
+            
             use markdown_use_case_manager::core::use_case_coordinator::UseCaseCoordinator;
             
-            Config::init_project_with_language(Some("rust".to_string()))
+            crate::test_utils::init_project_with_language(Some("rust".to_string()))
                 .expect("Failed to initialize project");
             
             let mut coordinator = UseCaseCoordinator::load()
@@ -117,15 +117,15 @@ mod error_handling_tests {
     #[serial]
     fn test_duplicate_init_is_idempotent() {
         with_temp_dir(|_| {
-            use markdown_use_case_manager::config::Config;
+            
             
             // First init should succeed
-            let result1 = Config::init_project_with_language(Some("rust".to_string()));
+            let result1 = crate::test_utils::init_project_with_language(Some("rust".to_string()));
             assert!(result1.is_ok());
             
             // Second init should also succeed (idempotent operation)
             // It will just update templates and config
-            let result2 = Config::init_project_with_language(Some("rust".to_string()));
+            let result2 = crate::test_utils::init_project_with_language(Some("rust".to_string()));
             assert!(result2.is_ok());
         });
     }
@@ -134,9 +134,9 @@ mod error_handling_tests {
     #[serial]
     fn test_unsupported_language_fails_gracefully() {
         with_temp_dir(|_| {
-            use markdown_use_case_manager::config::Config;
             
-            let result = Config::init_project_with_language(
+            
+            let result = crate::test_utils::init_project_with_language(
                 Some("totally_fake_language_xyz".to_string())
             );
             

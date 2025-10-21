@@ -322,16 +322,19 @@ fn test_template_engine_render_python_test() {
     assert!(content.contains("END USER IMPLEMENTATION"));
 }
 
-/// Test TemplateEngine with config for template style selection
+// NOTE: Template style tests removed - use_case_style is now per-methodology
+// Style selection is handled through generation_targets in use case TOMLs
+// See generation_targets documentation for the new approach
+
+/// Test TemplateEngine with config using methodology system
 #[test]
-fn test_template_engine_with_config_simple_style() {
+fn test_template_engine_with_methodology_config() {
     use markdown_use_case_manager::config::Config;
 
-    // Create config with simple template style
-    let mut config = Config::default();
-    config.templates.use_case_style = Some("simple".to_string());
+    // Create config with default methodology
+    let config = Config::default();
 
-    // Test that the engine can be created with the config (will use fallback templates)
+    // Test that the engine can be created with the config
     let engine = TemplateEngine::with_config(Some(&config));
 
     let mut data = HashMap::new();
@@ -341,30 +344,6 @@ fn test_template_engine_with_config_simple_style() {
     let result = engine.render_use_case(&data);
     assert!(result.is_ok());
     let content = result.unwrap();
-    // Should use built-in simple template since custom templates don't exist
-    assert!(content.contains("Test Use Case"));
-}
-
-/// Test TemplateEngine with config for detailed template style
-#[test]
-fn test_template_engine_with_config_detailed_style() {
-    use markdown_use_case_manager::config::Config;
-
-    // Create config with detailed template style
-    let mut config = Config::default();
-    config.templates.use_case_style = Some("detailed".to_string());
-
-    // Test that the engine can be created with the config (will use fallback templates)
-    let engine = TemplateEngine::with_config(Some(&config));
-
-    let mut data = HashMap::new();
-    data.insert("title".to_string(), json!("Test Use Case"));
-    data.insert("description".to_string(), json!("Test description"));
-
-    let result = engine.render_use_case(&data);
-    assert!(result.is_ok());
-    let content = result.unwrap();
-    // Should use built-in detailed template since custom templates don't exist
     assert!(content.contains("Test Use Case"));
 }
 

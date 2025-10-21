@@ -40,25 +40,26 @@ fn test_auto_init_process() -> Result<()> {
     assert!(Config::load().is_err());
 
     // 2. Initialize project with language selection
-    let config = Config::init_project_with_language(Some("rust".to_string()))?;
+    let config = crate::test_utils::init_project_with_language(Some("rust".to_string()))?;
 
     // 3. Verify initialization was successful
     assert!(Config::config_path().exists(), "Config file should exist");
     assert_eq!(config.generation.test_language, "rust");
 
-    // 4. Verify directories were created
+    // 4. Verify directories are NOT created during init (created on first use case)
     let use_case_dir = Path::new(&config.directories.use_case_dir);
     let test_dir = Path::new(&config.directories.test_dir);
-    assert!(use_case_dir.exists(), "Use case directory should exist");
-    assert!(test_dir.exists(), "Test directory should exist");
+    assert!(!use_case_dir.exists(), "Use case directory should NOT exist yet");
+    assert!(!test_dir.exists(), "Test directory should NOT exist yet");
 
     // 5. Verify templates were copied
     let templates_dir = Path::new(".config/.mucm/templates");
     assert!(templates_dir.exists(), "Templates directory should exist");
-    assert!(templates_dir.join("use_case_simple.hbs").exists());
-    assert!(templates_dir.join("use_case_detailed.hbs").exists());
-    assert!(templates_dir.join("overview.hbs").exists());
-    assert!(templates_dir.join("lang-rust/test.hbs").exists());
+    
+    // Templates are now in methodologies and languages subdirectories
+    assert!(templates_dir.join("developer/uc_simple.hbs").exists());
+    assert!(templates_dir.join("developer/uc_detailed.hbs").exists());
+    assert!(templates_dir.join("languages/rust/test.hbs").exists());
 
     // 6. Verify that Config::load() now works
     let reloaded_config = Config::load()?;
@@ -76,10 +77,10 @@ fn test_auto_init_language_options() -> Result<()> {
         let temp_dir = TempDir::new()?;
         std::env::set_current_dir(&temp_dir)?;
 
-        let config = Config::init_project_with_language(Some("python".to_string()))?;
+        let config = crate::test_utils::init_project_with_language(Some("python".to_string()))?;
         assert_eq!(config.generation.test_language, "python");
 
-        let python_template = Path::new(".config/.mucm/templates/lang-python/test.hbs");
+        let python_template = Path::new(".config/.mucm/templates/languages/python/test.hbs");
         assert!(python_template.exists(), "Python template should exist");
     }
 
@@ -88,7 +89,7 @@ fn test_auto_init_language_options() -> Result<()> {
         let temp_dir = TempDir::new()?;
         std::env::set_current_dir(&temp_dir)?;
 
-        let config = Config::init_project_with_language(None)?;
+        let config = crate::test_utils::init_project_with_language(None)?;
         assert_eq!(config.generation.test_language, "rust"); // Default fallback
     }
 
@@ -103,7 +104,7 @@ fn test_auto_init_backward_compatibility() -> Result<()> {
     std::env::set_current_dir(&temp_dir)?;
 
     // Initialize project with auto-init
-    Config::init_project_with_language(Some("rust".to_string()))?;
+    crate::test_utils::init_project_with_language(Some("rust".to_string()))?;
 
     // Test that all the existing functionality still works
     use markdown_use_case_manager::core::use_case_coordinator::UseCaseCoordinator;
@@ -141,7 +142,7 @@ fn test_config_management() -> Result<()> {
     std::env::set_current_dir(&temp_dir)?;
 
     // Initialize project
-    let mut config = Config::init_project_with_language(Some("rust".to_string()))?;
+    let mut config = crate::test_utils::init_project_with_language(Some("rust".to_string()))?;
 
     // Test modifying configuration (simulates interactive settings)
     config.project.name = "Modified Project".to_string();
@@ -190,7 +191,7 @@ fn test_available_languages_for_settings() -> Result<()> {
     }
 
     // Initialize project
-    Config::init_project_with_language(Some("rust".to_string()))?;
+    crate::test_utils::init_project_with_language(Some("rust".to_string()))?;
 
     // Test getting available languages after initialization
     let languages = Config::get_available_languages()?;
@@ -208,7 +209,7 @@ fn test_config_validation() -> Result<()> {
     std::env::set_current_dir(&temp_dir)?;
 
     // Initialize with valid configuration
-    let config = Config::init_project_with_language(Some("rust".to_string()))?;
+    let config = crate::test_utils::init_project_with_language(Some("rust".to_string()))?;
 
     // Test that configuration can be serialized and deserialized
     let toml_content = toml::to_string_pretty(&config)?;
@@ -264,7 +265,7 @@ fn test_auto_init_settings_integration() -> Result<()> {
     // Simulate complete auto-init + settings workflow
 
     // 1. Auto-init with default settings
-    let mut config = Config::init_project_with_language(Some("rust".to_string()))?;
+    let mut config = crate::test_utils::init_project_with_language(Some("rust".to_string()))?;
 
     // 2. Modify settings (simulates interactive configuration)
     config.project.name = "Integration Test Project".to_string();

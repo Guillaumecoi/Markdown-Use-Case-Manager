@@ -128,6 +128,7 @@ impl LanguageRegistry {
     }
 
     /// Check if a language is supported
+    #[allow(dead_code)] // Used by test utilities
     pub fn is_supported(&self, name: &str) -> bool {
         self.languages.contains_key(name)
     }

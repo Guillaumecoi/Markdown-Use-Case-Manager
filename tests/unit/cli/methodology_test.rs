@@ -1,6 +1,7 @@
 // tests/unit/cli_methodology_test.rs
 use assert_cmd::Command;
 use predicates::prelude::*;
+use serial_test::serial;
 use std::env;
 use std::path::PathBuf;
 use tempfile::TempDir;
@@ -34,6 +35,7 @@ where
 }
 
 #[test]
+#[serial]
 fn test_cli_methodologies_command_basic() {
     with_temp_dir(|temp_dir| {
         // Initialize project first
@@ -53,7 +55,8 @@ fn test_cli_methodologies_command_basic() {
     });
 }
 
-#[test] 
+#[test]
+#[serial]
 fn test_cli_create_with_methodology_basic() {
     with_temp_dir(|temp_dir| {
         // Initialize project first
@@ -74,6 +77,7 @@ fn test_cli_create_with_methodology_basic() {
 }
 
 #[test]
+#[serial]
 fn test_cli_help_includes_methodology_commands() {
     let mut cmd = Command::cargo_bin("mucm").unwrap();
     cmd.arg("--help");

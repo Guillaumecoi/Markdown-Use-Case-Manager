@@ -343,19 +343,6 @@ impl TemplateEngine {
         Ok(())
     }
 
-    // Public template getters for config copying
-    pub fn get_overview_template() -> &'static str {
-        include_str!("../../../templates/overview.hbs")
-    }
-
-    pub fn get_use_case_simple_template() -> &'static str {
-        include_str!("../../../templates/use_case_simple.hbs")
-    }
-
-    pub fn get_use_case_detailed_template() -> &'static str {
-        include_str!("../../../templates/use_case_detailed.hbs")
-    }
-
 }
 
 impl Default for TemplateEngine {

@@ -10,14 +10,70 @@ use markdown_use_case_manager::core::models::{Priority, Scenario, Status, UseCas
 use std::fs;
 use std::path::{Path, PathBuf};
 
+/// Initialize a new project in the current directory with optional language
+pub fn init_project_with_language(language: Option<String>) -> Result<Config> {
+    init_project_with_language_in_dir(".", language)
+}
+
+/// Initialize a new project in a specific directory with optional language
+pub fn init_project_with_language_in_dir(
+    base_dir: &str,
+    language: Option<String>,
+) -> Result<Config> {
+    let base_path = Path::new(base_dir);
+    let config_dir = base_path.join(".config/.mucm");
+
+    // Validate language if provided - check both current directory and built-ins
+    if let Some(ref lang) = language {
+        let language_registry = LanguageRegistry::new();
+
+        // First check if the language is supported by the built-in registry
+        if !language_registry.is_supported(lang) {
+            // Check available languages from current working directory as fallback
+            let available_languages = Config::get_available_languages()?;
+            if !available_languages.contains(lang) {
+                anyhow::bail!("Unsupported language '{}'. Supported languages: {}. Add templates to .config/.mucm/templates/lang-{}/ to support this language.", 
+                            lang, available_languages.join(", "), lang);
+            }
+        }
+    }
+
+    // Create .config/.mucm directory if it doesn't exist
+    if !config_dir.exists() {
+        fs::create_dir_all(&config_dir).context("Failed to create .config/.mucm directory")?;
+    }
+
+    let mut config = Config::default();
+
+    // Set the test language if provided
+    if let Some(ref lang) = language {
+        config.generation.test_language = lang.clone();
+    }
+
+    config.save_in_dir(base_dir)?;
+
+    // Change to the base_dir temporarily to copy templates
+    let original_dir = std::env::current_dir()?;
+    std::env::set_current_dir(base_dir)?;
+    let result = Config::copy_templates_to_config_with_language(language);
+    std::env::set_current_dir(original_dir)?;
+    result?;
+
+    // NOTE: Directories are NOT created during init
+    // They will be created automatically when the first use case is created
+    // This gives users a chance to configure directory paths in mucm.toml first
+
+    Ok(config)
+}
+
 /// Initialize a new project in the current directory
 pub fn init_project() -> Result<Config> {
-    Config::init_project_with_language_in_dir(".", None)
+    init_project_with_language(None)
 }
 
 /// Initialize a new project in a specific directory
 pub fn init_project_in_dir(base_dir: &str) -> Result<Config> {
-    Config::init_project_with_language_in_dir(base_dir, None)
+    init_project_with_language_in_dir(base_dir, None)
 }
 
 /// Load configuration from a directory
@@ -67,6 +123,31 @@ pub fn get_test_template_for_language(language_name: &str) -> Option<&'static st
 pub fn get_available_test_languages() -> Vec<String> {
     let registry = LanguageRegistry::new();
     registry.available_languages()
+}
+
+/// Load methodology-specific configuration (for testing)
+pub fn load_methodology_config(methodology: &str) -> Result<markdown_use_case_manager::config::MethodologyConfig> {
+    let config_path = Path::new(".config/.mucm")
+        .join("methodologies")
+        .join(format!("{}.toml", methodology));
+
+    if !config_path.exists() {
+        anyhow::bail!(
+            "Methodology config not found for '{}' at {:?}. \
+             Make sure '{}' is in your methodologies list in mucm.toml.",
+            methodology,
+            config_path,
+            methodology
+        );
+    }
+
+    let content = fs::read_to_string(&config_path)
+        .with_context(|| format!("Failed to read methodology config at {:?}", config_path))?;
+    
+    let config: markdown_use_case_manager::config::MethodologyConfig = toml::from_str(&content)
+        .with_context(|| format!("Failed to parse methodology config for '{}'", methodology))?;
+
+    Ok(config)
 }
 
 /// Test helper constructor for UseCase with default priority (Medium)

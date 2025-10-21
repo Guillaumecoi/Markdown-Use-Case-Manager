@@ -4,6 +4,7 @@ use markdown_use_case_manager::core::use_case_coordinator::UseCaseCoordinator;
 use serial_test::serial;
 use std::fs;
 use tempfile::TempDir;
+use crate::test_utils::init_project_with_language;
 
 // Import the CLI components we want to test
 use markdown_use_case_manager::config::Config;
@@ -14,7 +15,7 @@ fn setup_test_environment() -> Result<TempDir> {
 
     // Change to temp directory and initialize project
     std::env::set_current_dir(&temp_dir)?;
-    Config::init_project_with_language(None)?;
+    init_project_with_language(None)?;
 
     Ok(temp_dir)
 }
@@ -236,7 +237,7 @@ fn test_configuration() -> Result<()> {
     std::env::set_current_dir(&temp_dir)?;
 
     // Test initialization with specific language
-    let config = Config::init_project_with_language(Some("rust".to_string()))?;
+    let config = init_project_with_language(Some("rust".to_string()))?;
 
     // Verify configuration
     assert_eq!(config.generation.test_language, "rust");

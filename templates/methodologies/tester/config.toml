@@ -1,0 +1,73 @@
+[template]
+name = "tester"
+description = "QA and testing-focused documentation"
+preferred_style = "detailed"  # Recommended style for this methodology: simple, normal, or detailed
+
+[generation]
+auto_generate_tests = true  # Testing methodology NEEDS tests
+overwrite_test_documentation = true
+
+# Custom data fields specific to tester methodology
+# Focused on test execution, automation, and quality assurance
+[custom_fields]
+
+# --- Simple level: Essential test identifiers ---
+test_type = { label = "Test Type", type = "string", required = true }  # unit, integration, e2e, manual, automated
+test_priority = { label = "Test Priority", type = "string", required = true }  # P0, P1, P2, P3
+
+# --- Normal level: Test execution and automation ---
+automation_status = { label = "Automation Status", type = "string", required = false }  # manual, automated, planned
+test_data_requirements = { label = "Test Data Requirements", type = "string", required = false }
+expected_result = { label = "Expected Result", type = "string", required = true }
+
+# --- Detailed level: Advanced test specifications ---
+test_environment = { label = "Test Environment", type = "string", required = false }
+regression_suite = { label = "Regression Suite", type = "string", required = false }
+performance_baseline = { label = "Performance Baseline", type = "string", required = false }
+test_coverage = { label = "Test Coverage %", type = "number", required = false }
+defect_detection = { label = "Defect Detection Rate", type = "string", required = false }
+
+
+# Metadata fields grouped by detail level
+[metadata]
+enabled = true
+
+# --- Simple level: Minimal metadata for quick test documentation ---
+include_id = true
+include_title = true
+include_category = true
+include_status = true
+include_priority = true
+
+# --- Normal level: Standard test tracking ---
+include_created = true
+include_last_updated = true
+include_author = true              # Who wrote the test case
+include_reviewer = true            # Test review process
+include_complexity = true          # Test complexity for planning
+
+# --- Detailed level: Comprehensive test specification ---
+include_prerequisites = true       # Test dependencies and setup
+include_acceptance_criteria = true # Pass/fail criteria (critical!)
+include_assumptions = true         # Test environment assumptions
+include_constraints = true         # Testing limitations
+
+# --- Excluded: Not relevant for tester methodology ---
+include_personas = false           # Focus on test cases, not user roles
+include_business_value = false     # Technical testing focus
+include_epic = false               # Not tracking epics in test workflow
+
+# Custom fields specific to tester methodology
+# Focused on test execution and automation
+[custom_fields]
+# --- Simple level: Core test identifiers ---
+test_type = { label = "Test Type", type = "string", required = true }  # unit, integration, e2e, etc.
+
+# --- Normal level: Test execution details ---
+automation_status = { label = "Automation Status", type = "string", required = false }  # manual, automated, planned
+test_data_requirements = { label = "Test Data Requirements", type = "string", required = false }
+
+# --- Detailed level: Advanced test specifications ---
+test_environment = { label = "Test Environment", type = "string", required = false }
+regression_suite = { label = "Regression Suite", type = "string", required = false }
+performance_baseline = { label = "Performance Baseline", type = "string", required = false }

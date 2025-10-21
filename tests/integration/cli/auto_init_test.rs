@@ -29,23 +29,36 @@ fn test_cli_auto_init_error_detection() -> anyhow::Result<()> {
 fn test_cli_auto_init_creates_structure() -> anyhow::Result<()> {
     let temp_dir = TempDir::new()?;
 
-    // Test init command
+    // Test init command (step 1 - creates config only)
     let mut cmd = Command::cargo_bin("mucm")?;
     cmd.arg("init")
         .current_dir(&temp_dir)
         .assert()
         .success()
-        .stdout(predicate::str::contains("Project initialized"));
+        .stdout(predicate::str::contains("Configuration file created"));
 
-    // Verify structure was created
+    // Verify config was created
     let config_file = temp_dir.path().join(".config/.mucm/mucm.toml");
     assert!(config_file.exists(), "Config file should exist");
 
+    // Finalize init (step 2 - copies templates)
+    let mut cmd = Command::cargo_bin("mucm")?;
+    cmd.arg("init")
+        .arg("--finalize")
+        .current_dir(&temp_dir)
+        .assert()
+        .success();
+
+    // Verify templates were copied
+    assert!(temp_dir.path().join(".config/.mucm/templates").exists());
+
+    // NOTE: Directories are NOT created during init anymore
+    // They will be created when the first use case is created
     let use_case_dir = temp_dir.path().join("docs/use-cases");
-    assert!(use_case_dir.exists(), "Use case directory should exist");
+    assert!(!use_case_dir.exists(), "Use case directory should NOT exist after init");
 
     let test_dir = temp_dir.path().join("tests/use-cases");
-    assert!(test_dir.exists(), "Test directory should exist");
+    assert!(!test_dir.exists(), "Test directory should NOT exist after init");
 
     // Test that CLI commands now work
     let mut cmd = Command::cargo_bin("mucm")?;
@@ -64,7 +77,7 @@ fn test_cli_auto_init_creates_structure() -> anyhow::Result<()> {
 fn test_cli_auto_init_with_language() -> anyhow::Result<()> {
     let temp_dir = TempDir::new()?;
 
-    // Test init with Python language
+    // Test init with Python language (step 1 - creates config)
     let mut cmd = Command::cargo_bin("mucm")?;
     cmd.arg("init")
         .arg("--language")
@@ -72,17 +85,25 @@ fn test_cli_auto_init_with_language() -> anyhow::Result<()> {
         .current_dir(&temp_dir)
         .assert()
         .success()
-        .stdout(predicate::str::contains("Project initialized"));
-
-    // Verify Python template was created
-    let python_template = temp_dir
-        .path()
-        .join(".config/.mucm/templates/lang-python/test.hbs");
-    assert!(python_template.exists(), "Python template should exist");
+        .stdout(predicate::str::contains("Configuration file created"));
 
     // Verify config has correct language
     let config_content = fs::read_to_string(temp_dir.path().join(".config/.mucm/mucm.toml"))?;
     assert!(config_content.contains("test_language = \"python\""));
+
+    // Finalize init (step 2 - copies templates)
+    let mut cmd = Command::cargo_bin("mucm")?;
+    cmd.arg("init")
+        .arg("--finalize")
+        .current_dir(&temp_dir)
+        .assert()
+        .success();
+
+    // Verify Python template was created in new structure
+    let python_template = temp_dir
+        .path()
+        .join(".config/.mucm/templates/languages/python/test.hbs");
+    assert!(python_template.exists(), "Python template should exist");
 
     Ok(())
 }
@@ -93,9 +114,17 @@ fn test_cli_auto_init_with_language() -> anyhow::Result<()> {
 fn test_cli_auto_init_preserves_functionality() -> anyhow::Result<()> {
     let temp_dir = TempDir::new()?;
 
-    // Initialize project
+    // Initialize project (step 1)
     let mut cmd = Command::cargo_bin("mucm")?;
     cmd.arg("init").current_dir(&temp_dir).assert().success();
+
+    // Finalize initialization (step 2)
+    let mut cmd = Command::cargo_bin("mucm")?;
+    cmd.arg("init")
+        .arg("--finalize")
+        .current_dir(&temp_dir)
+        .assert()
+        .success();
 
     // Test complete CLI workflow
 
@@ -158,9 +187,17 @@ fn test_cli_auto_init_preserves_functionality() -> anyhow::Result<()> {
 fn test_cli_interactive_mode_after_auto_init() -> anyhow::Result<()> {
     let temp_dir = TempDir::new()?;
 
-    // Initialize project
+    // Initialize project (step 1)
     let mut cmd = Command::cargo_bin("mucm")?;
     cmd.arg("init").current_dir(&temp_dir).assert().success();
+
+    // Finalize initialization (step 2)
+    let mut cmd = Command::cargo_bin("mucm")?;
+    cmd.arg("init")
+        .arg("--finalize")
+        .current_dir(&temp_dir)
+        .assert()
+        .success();
 
     // Test various ways to enter interactive mode with timeout
     // Since we can't easily test interactive input, we'll test that the commands
@@ -249,13 +286,14 @@ fn test_cli_auto_init_error_handling() -> anyhow::Result<()> {
         assert!(stderr.contains("language") || stderr.contains("Unsupported"));
     }
 
-    // Test double initialization
+    // Test double initialization (use a fresh temp directory)
+    let temp_dir2 = TempDir::new()?;
     let mut cmd = Command::cargo_bin("mucm")?;
-    cmd.arg("init").current_dir(&temp_dir).assert().success();
+    cmd.arg("init").current_dir(&temp_dir2).assert().success();
 
     // Second init should handle existing project gracefully
     let mut cmd = Command::cargo_bin("mucm")?;
-    let output = cmd.arg("init").current_dir(&temp_dir).output()?;
+    let output = cmd.arg("init").current_dir(&temp_dir2).output()?;
 
     // Check that it handles existing project (either succeeds or warns)
     let stdout = String::from_utf8(output.stdout)?;
@@ -266,7 +304,7 @@ fn test_cli_auto_init_error_handling() -> anyhow::Result<()> {
         output.status.success()
             || stderr.contains("already")
             || stderr.contains("exist")
-            || stdout.contains("Project initialized")
+            || stdout.contains("Configuration file created")
     );
 
     Ok(())
@@ -278,7 +316,7 @@ fn test_cli_auto_init_error_handling() -> anyhow::Result<()> {
 fn test_cli_auto_init_template_creation() -> anyhow::Result<()> {
     let temp_dir = TempDir::new()?;
 
-    // Initialize with Rust
+    // Step 1: Initialize with Rust (creates config only)
     let mut cmd = Command::cargo_bin("mucm")?;
     cmd.arg("init")
         .arg("--language")
@@ -286,24 +324,33 @@ fn test_cli_auto_init_template_creation() -> anyhow::Result<()> {
         .current_dir(&temp_dir)
         .assert()
         .success()
-        .stdout(predicate::str::contains("Created template:"));
+        .stdout(predicate::str::contains("Configuration file created"));
+
+    // Step 2: Finalize (copies templates)
+    let mut cmd = Command::cargo_bin("mucm")?;
+    cmd.arg("init")
+        .arg("--finalize")
+        .current_dir(&temp_dir)
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("Copied methodology"));
 
     let templates_dir = temp_dir.path().join(".config/.mucm/templates");
 
-    // Verify core templates
-    assert!(templates_dir.join("use_case_simple.hbs").exists());
-    assert!(templates_dir.join("use_case_detailed.hbs").exists());
-    assert!(templates_dir.join("overview.hbs").exists());
+    // Verify methodology templates (developer and feature by default)
+    assert!(templates_dir.join("developer/uc_simple.hbs").exists());
+    assert!(templates_dir.join("developer/uc_detailed.hbs").exists());
+    assert!(templates_dir.join("feature/uc_simple.hbs").exists());
 
     // Verify language-specific template
-    assert!(templates_dir.join("lang-rust/test.hbs").exists());
+    assert!(templates_dir.join("languages/rust/test.hbs").exists());
 
     // Verify template content is not empty
-    let simple_template = fs::read_to_string(templates_dir.join("use_case_simple.hbs"))?;
+    let simple_template = fs::read_to_string(templates_dir.join("developer/uc_simple.hbs"))?;
     assert!(!simple_template.is_empty());
     assert!(simple_template.contains("{{")); // Should contain handlebars syntax
 
-    let rust_template = fs::read_to_string(templates_dir.join("lang-rust/test.hbs"))?;
+    let rust_template = fs::read_to_string(templates_dir.join("languages/rust/test.hbs"))?;
     assert!(!rust_template.is_empty());
 
     Ok(())
