@@ -10,8 +10,14 @@ fn with_temp_dir<F, R>(test_fn: F) -> R
 where
     F: FnOnce(&PathBuf) -> R,
 {
+    // IMPORTANT: Get original directory BEFORE creating TempDir to avoid issues
+    // if a previous test left us in a deleted directory
+    let original_dir = env::current_dir().unwrap_or_else(|_| {
+        // If current dir is invalid, use temp dir as fallback
+        std::env::temp_dir()
+    });
+    
     let temp_dir = TempDir::new().expect("Failed to create temp directory");
-    let original_dir = env::current_dir().expect("Failed to get current directory");
     
     // Change to temp directory
     env::set_current_dir(temp_dir.path()).expect("Failed to change to temp directory");
@@ -24,8 +30,8 @@ where
         test_fn(&temp_dir.path().to_path_buf())
     }));
     
-    // Always try to restore original directory, but don't panic if it fails
-    let _ = env::set_current_dir(original_dir);
+    // CRITICAL: Restore directory BEFORE TempDir drops to avoid "current dir deleted" issues
+    let _ = env::set_current_dir(&original_dir);
     
     // Re-throw any panic that occurred in the test
     match result {

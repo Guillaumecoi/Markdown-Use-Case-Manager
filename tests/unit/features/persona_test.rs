@@ -81,8 +81,10 @@ fn test_metadata_config_individual_flags() -> Result<()> {
 #[test]
 #[serial]
 fn test_config_no_custom_fields_array() -> Result<()> {
+    // Get original dir FIRST, before any test might have corrupted it
+    let original_dir = env::current_dir().unwrap_or_else(|_| std::env::temp_dir());
+    
     let temp_dir = TempDir::new()?;
-    let original_dir = env::current_dir()?;
     
     // Change to temp directory for the test
     env::set_current_dir(&temp_dir)?;
@@ -105,16 +107,18 @@ fn test_config_no_custom_fields_array() -> Result<()> {
     assert!(config_content.contains("include_author"));
     assert!(config_content.contains("include_reviewer"));
     
-    // Restore original directory
-    env::set_current_dir(original_dir)?;
+    // Restore original directory BEFORE TempDir drops
+    env::set_current_dir(&original_dir)?;
     Ok(())
 }
 
 #[test]
 #[serial]
 fn test_extended_metadata_serialization() -> Result<()> {
+    // Get original dir FIRST, before any test might have corrupted it
+    let original_dir = env::current_dir().unwrap_or_else(|_| std::env::temp_dir());
+    
     let temp_dir = TempDir::new()?;
-    let original_dir = env::current_dir()?;
     
     // Change to temp directory for the test
     env::set_current_dir(&temp_dir)?;
@@ -144,16 +148,18 @@ fn test_extended_metadata_serialization() -> Result<()> {
     assert!(!loaded_config.metadata.include_assumptions);
     assert!(loaded_config.metadata.include_constraints);
     
-    // Restore original directory
-    env::set_current_dir(original_dir)?;
+    // Restore original directory BEFORE TempDir drops
+    env::set_current_dir(&original_dir)?;
     Ok(())
 }
 
 #[test]
 #[serial]
 fn test_persona_dir_in_config_toml() -> Result<()> {
+    // Get original dir FIRST, before any test might have corrupted it
+    let original_dir = env::current_dir().unwrap_or_else(|_| std::env::temp_dir());
+    
     let temp_dir = TempDir::new()?;
-    let original_dir = env::current_dir()?;
     
     // Change to temp directory for the test
     env::set_current_dir(&temp_dir)?;
@@ -171,7 +177,7 @@ fn test_persona_dir_in_config_toml() -> Result<()> {
     // Ensure persona_dir is saved in the TOML file
     assert!(config_content.contains("persona_dir = \"docs/stakeholders\""));
     
-    // Restore original directory
-    env::set_current_dir(original_dir)?;
+    // Restore original directory BEFORE TempDir drops
+    env::set_current_dir(&original_dir)?;
     Ok(())
 }
