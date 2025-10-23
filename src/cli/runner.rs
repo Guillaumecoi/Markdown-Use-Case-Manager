@@ -37,29 +37,17 @@ impl CliRunner {
             let language_registry = LanguageRegistry::new();
             if let Some(lang_def) = language_registry.get(&lang) {
                 // Use the primary name (not alias)
-                Some(lang_def.name().to_string())
+                lang_def.name().to_string()
             } else {
                 // Keep original if not found in registry (might be user-defined)
-                Some(lang)
+                lang
             }
         } else {
-            None
+            "rust".to_string() // Default language
         };
 
-        let config = if let Some(method) = methodology {
-            // Create config with methodology-specific recommendations
-            let mut config = Config::new_with_methodology(&method);
-            if let Some(ref lang) = resolved_language {
-                config.generation.test_language = lang.clone();
-            }
-            config
-        } else {
-            let mut config = Config::default();
-            if let Some(ref lang) = resolved_language {
-                config.generation.test_language = lang.clone();
-            }
-            config
-        };
+        // Create minimal config for template processing
+        let config = Config::for_template(resolved_language, methodology);
         
         // Save config file only (no templates, no directories)
         Config::save_config_only(&config)?;

@@ -98,8 +98,8 @@ fn test_config_no_custom_fields_array() -> Result<()> {
     let config_path = temp_dir.path().join(".config/.mucm/mucm.toml");
     let config_content = fs::read_to_string(&config_path)?;
     
-    // Ensure the old custom_fields array is not present
-    assert!(!config_content.contains("custom_fields"));
+    // Ensure the custom_fields array is present (should be empty by default)
+    assert!(config_content.contains("custom_fields"));
     
     // Ensure the new boolean flags are present
     assert!(config_content.contains("include_prerequisites"));

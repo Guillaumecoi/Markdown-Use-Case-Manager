@@ -275,6 +275,7 @@ fn test_config_custom_values() {
             include_assumptions: false,
             include_constraints: false,
         },
+        custom_fields: vec!["author".to_string(), "epic".to_string()],
     };
 
     assert_eq!(config.project.name, "Custom Project");
