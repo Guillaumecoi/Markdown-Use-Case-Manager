@@ -1,6 +1,6 @@
 // tests/unit/coordinator_methodology_test.rs
 use markdown_use_case_manager::core::use_case_coordinator::UseCaseCoordinator;
-use markdown_use_case_manager::core::templates::TemplateEngine;
+use markdown_use_case_manager::core::template_engine::TemplateEngine;
 use markdown_use_case_manager::config::Config;
 use serial_test::serial;
 use std::env;

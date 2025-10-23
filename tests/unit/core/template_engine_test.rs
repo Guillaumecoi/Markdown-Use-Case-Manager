@@ -1,5 +1,5 @@
 // Unit tests for template engine and template utilities
-use markdown_use_case_manager::core::templates::{to_snake_case, TemplateEngine};
+use markdown_use_case_manager::core::template_engine::{to_snake_case, TemplateEngine};
 use serde_json::json;
 use std::collections::HashMap;
 

@@ -1,6 +1,6 @@
 use crate::config::Config;
 use crate::core::languages::LanguageRegistry;
-use crate::core::templates::TemplateEngine;
+use crate::core::template_engine::TemplateEngine;
 use crate::core::use_case_coordinator::UseCaseCoordinator;
 use anyhow::Result;
 

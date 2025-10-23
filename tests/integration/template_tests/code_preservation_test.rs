@@ -1,6 +1,6 @@
 // Integration tests for code preservation functionality
 use super::super::test_helpers::with_temp_dir;
-use markdown_use_case_manager::core::templates::TemplateEngine;
+use markdown_use_case_manager::core::template_engine::TemplateEngine;
 use serial_test::serial;
 use serde_json::json;
 use std::collections::HashMap;

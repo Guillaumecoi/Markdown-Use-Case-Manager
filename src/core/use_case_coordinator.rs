@@ -2,7 +2,7 @@
 use crate::config::Config;
 use crate::core::models::{UseCase, Status};
 use crate::core::services::{FileService, UseCaseService};
-use crate::core::templates::{TemplateEngine, to_snake_case};
+use crate::core::template_engine::{TemplateEngine, to_snake_case};
 use crate::core::languages::LanguageRegistry;
 use anyhow::Result;
 use colored::Colorize;

@@ -1,6 +1,6 @@
 // src/core/services/use_case_service.rs
 use crate::core::models::{Priority, Scenario, Status, UseCase};
-use crate::core::templates::to_snake_case;
+use crate::core::template_engine::to_snake_case;
 use std::path::Path;
 use anyhow::Result;
 

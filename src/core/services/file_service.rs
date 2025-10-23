@@ -1,7 +1,7 @@
 // src/core/services/file_service.rs
 use crate::config::Config;
 use crate::core::models::UseCase;
-use crate::core::templates::to_snake_case;
+use crate::core::template_engine::to_snake_case;
 use anyhow::Result;
 use std::fs;
 use std::path::Path;

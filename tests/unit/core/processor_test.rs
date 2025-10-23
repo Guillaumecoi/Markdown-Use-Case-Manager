@@ -1,5 +1,5 @@
 // tests/unit/processor_integration_test.rs
-use markdown_use_case_manager::core::templates::TemplateEngine;
+use markdown_use_case_manager::core::template_engine::TemplateEngine;
 use serde_json::json;
 use std::collections::HashMap;
 

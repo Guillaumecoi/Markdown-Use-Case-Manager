@@ -2,7 +2,7 @@
 use super::super::test_helpers::with_temp_dir;
 use crate::test_utils::get_available_test_languages;
 use markdown_use_case_manager::config::Config;
-use markdown_use_case_manager::core::templates::TemplateEngine;
+use markdown_use_case_manager::core::template_engine::TemplateEngine;
 use markdown_use_case_manager::core::use_case_coordinator::UseCaseCoordinator;
 use serial_test::serial;
 use std::collections::HashMap;
