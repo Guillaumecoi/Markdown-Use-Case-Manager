@@ -1,14 +1,13 @@
 [template]
 name = "developer"
 description = "Technical implementation focused documentation"
-preferred_style = "detailed"  # Recommended style for this methodology: simple, normal, or detailed
+preferred_style = "simple"  # simple, normal, or detailed
 
 [generation]
 auto_generate_tests = true
 overwrite_test_documentation = true
 
 # Custom data fields specific to developer methodology
-# Grouped by detail level for selective use
 [custom_fields]
 
 # --- Simple level ---

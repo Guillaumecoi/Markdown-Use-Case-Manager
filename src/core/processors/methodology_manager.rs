@@ -6,38 +6,34 @@ pub struct MethodologyManager;
 
 impl MethodologyManager {
     /// Get methodology-specific recommendations as a human-readable string
+    /// This method reads recommendations from the methodology's config.toml file
     pub fn get_recommendations(methodology: &str) -> String {
-        match methodology {
-            "business" => {
-                "Business Methodology Recommendations:
-- Focus on business value and stakeholder needs
-- Business-oriented language and structure
-- Emphasis on ROI and business outcomes
-- Best for: Business analysts, product managers, stakeholder documentation".to_string()
-            },
-            "developer" => {
-                "Developer Methodology Recommendations:
-- Technical implementation focus
-- System behavior and API documentation
-- Code-centric perspective
-- Best for: Development teams, technical documentation, API design".to_string()
-            },
-            "feature" => {
-                "Feature Methodology Recommendations:
-- Feature-oriented documentation
-- User story and epic integration
-- Agile-friendly structure
-- Best for: Product development, agile teams, feature tracking".to_string()
-            },
-            "testing" => {
-                "Testing Methodology Recommendations:
-- Test-focused documentation
-- Test scenarios and coverage tracking
-- Quality assurance emphasis
-- Best for: QA teams, test automation, quality metrics".to_string()
-            },
-            _ => "Unknown methodology. Using developer methodology defaults.".to_string()
+        // Try to read from config file
+        if let Ok(config_dir) = Self::find_config_dir() {
+            let config_path = config_dir
+                .join("methodologies")
+                .join(methodology)
+                .join("config.toml");
+            
+            if let Ok(content) = fs::read_to_string(&config_path) {
+                if let Ok(value) = toml::from_str::<toml::Value>(&content) {
+                    if let Some(desc) = value.get("description").and_then(|v| v.as_str()) {
+                        return format!(
+                            "{} Methodology:\n{}",
+                            methodology,
+                            desc
+                        );
+                    }
+                }
+            }
         }
+        
+        // Fallback if config not found
+        format!(
+            "{} Methodology\n\
+            Configuration-driven methodology. See source-templates/methodologies/{} for details.",
+            methodology, methodology
+        )
     }
 
     /// Get list of available methodologies (those with config files)

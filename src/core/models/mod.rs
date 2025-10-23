@@ -7,7 +7,5 @@ pub mod use_case;
 
 pub use metadata::Metadata;
 pub use scenario::Scenario;
-pub use scenario_types::ScenarioType;
 pub use status::Status;
-#[allow(unused_imports)] // Used in tests
 pub use use_case::{Priority, UseCase};

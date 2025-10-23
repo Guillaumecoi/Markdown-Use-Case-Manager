@@ -1,28 +1,15 @@
 [template]
 name = "business"
 description = "Business-focused documentation for stakeholders"
-preferred_style = "normal"  # Recommended style for this methodology: simple, normal, or detailed
+preferred_style = "detailed"
 
 [generation]
-auto_generate_tests = false  # Business docs don't generate tests
+auto_generate_tests = false
 overwrite_test_documentation = false
 
 # Custom data fields specific to business methodology
-# Focused on ROI, stakeholder value, and business justification
 [custom_fields]
-
-# --- Simple level: Core business metrics ---
-business_value = { label = "Business Value", type = "string", required = true }
+business_value = { label = "Business Value", type = "string", required = false }
 roi_estimate = { label = "ROI Estimate", type = "string", required = false }
-
-# --- Normal level: Stakeholder and impact analysis ---
 stakeholders = { label = "Key Stakeholders", type = "array", required = false }
-business_impact = { label = "Business Impact", type = "string", required = false }
-target_audience = { label = "Target Audience", type = "string", required = false }
-
-# --- Detailed level: Financial and strategic analysis ---
 cost_estimate = { label = "Cost Estimate", type = "string", required = false }
-revenue_impact = { label = "Revenue Impact", type = "string", required = false }
-strategic_alignment = { label = "Strategic Alignment", type = "string", required = false }
-market_analysis = { label = "Market Analysis", type = "string", required = false }
-competitive_advantage = { label = "Competitive Advantage", type = "string", required = false }

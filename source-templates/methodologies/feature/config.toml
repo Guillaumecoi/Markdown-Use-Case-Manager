@@ -1,7 +1,7 @@
 [template]
 name = "feature"
 description = "Feature-oriented documentation for product management"
-preferred_style = "simple"  # Recommended style for this methodology: simple, normal, or detailed
+preferred_style = "simple"  # simple, normal, or detailed
 
 [generation]
 auto_generate_tests = false  # Features are about requirements, not tests

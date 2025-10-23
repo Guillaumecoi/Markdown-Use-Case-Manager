@@ -20,7 +20,6 @@ pub struct ProjectConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[allow(clippy::struct_field_names)]
 pub struct DirectoryConfig {
     pub use_case_dir: String,
     pub test_dir: String,

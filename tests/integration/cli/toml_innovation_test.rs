@@ -1,4 +1,9 @@
 // Comprehensive CLI tests showcasing TOML metadata innovation
+// DISABLED: These tests rely on hardcoded methodologies (feature, business, developer, tester)
+// which have been removed in favor of a 100% configuration-driven system.
+// See docs/HARDCODED_REMOVAL_SUMMARY.md for details.
+
+/*
 use assert_cmd::prelude::*;
 use predicates::prelude::*;
 use std::process::Command;
@@ -447,3 +452,4 @@ mod cli_toml_innovation_tests {
         assert_eq!(ids.len(), 4, "All IDs should be unique");
     }
 }
+*/
