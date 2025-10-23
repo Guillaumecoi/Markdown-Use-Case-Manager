@@ -4,7 +4,7 @@
 // - cli/: Command-line interface tests
 // - config/: Configuration and settings tests
 // - core/: Core functionality (filesystem, regeneration, initialization, errors)
-// - templates/: Template system tests (management, languages, code preservation)
+// - template_tests/: Template system tests (management, languages, code preservation)
 
 // Test utilities
 pub mod test_helpers;
@@ -19,4 +19,4 @@ pub mod config;
 pub mod core;
 
 // Template system tests
-pub mod templates;
+pub mod template_tests;

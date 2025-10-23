@@ -32,17 +32,31 @@ impl CliRunner {
             anyhow::bail!("A use case manager project already exists in this directory or a parent directory");
         }
 
+        // Resolve language aliases to primary names
+        let resolved_language = if let Some(lang) = language {
+            let language_registry = LanguageRegistry::new();
+            if let Some(lang_def) = language_registry.get(&lang) {
+                // Use the primary name (not alias)
+                Some(lang_def.name().to_string())
+            } else {
+                // Keep original if not found in registry (might be user-defined)
+                Some(lang)
+            }
+        } else {
+            None
+        };
+
         let config = if let Some(method) = methodology {
             // Create config with methodology-specific recommendations
             let mut config = Config::new_with_methodology(&method);
-            if let Some(lang) = language {
-                config.generation.test_language = lang;
+            if let Some(ref lang) = resolved_language {
+                config.generation.test_language = lang.clone();
             }
             config
         } else {
             let mut config = Config::default();
-            if let Some(lang) = language {
-                config.generation.test_language = lang;
+            if let Some(ref lang) = resolved_language {
+                config.generation.test_language = lang.clone();
             }
             config
         };
@@ -93,7 +107,7 @@ impl CliRunner {
         if Config::check_templates_exist() {
             anyhow::bail!(
                 "Project already finalized. Templates directory exists.\n\
-                 If you want to re-copy templates, delete .config/.mucm/templates/ first."
+                 If you want to re-copy templates, delete .config/.mucm/handlebars/ first."
             );
         }
 
@@ -110,7 +124,7 @@ impl CliRunner {
 
         Ok(format!(
             "✅ Project setup complete!\n\n\
-             📁 Templates copied to: .config/.mucm/templates/\n\
+             📁 Templates copied to: .config/.mucm/handlebars/\n\
              🔧 Language: {}\n\
              📚 Default Methodology: {}\n\
              📋 Available Methodologies: {}\n\n\
@@ -206,7 +220,7 @@ impl CliRunner {
                 output.push_str(
                     "\nTo initialize with a specific language: mucm init -l <language>\n",
                 );
-                output.push_str("To add a new language manually, create a directory: .config/.mucm/templates/lang-<language>/\n");
+                output.push_str("To add a new language manually, create a directory: .config/.mucm/handlebars/lang-<language>/\n");
             }
             Err(e) => {
                 output.push_str(&format!("Error getting available languages: {}\n", e));

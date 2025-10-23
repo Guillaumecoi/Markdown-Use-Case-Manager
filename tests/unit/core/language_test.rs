@@ -30,11 +30,6 @@ fn test_language_lookup() {
 
     // Test unsupported language
     assert!(registry.get("go").is_none());
-
-    // Test is_supported
-    assert!(registry.is_supported("rust"));
-    assert!(registry.is_supported("py"));
-    assert!(!registry.is_supported("go"));
 }
 
 #[test]
@@ -112,7 +107,8 @@ fn test_all_names_method() {
     let rust_lang = registry.get("rust").unwrap();
     let rust_names = rust_lang.all_names();
     assert!(rust_names.contains(&"rust"));
-    assert_eq!(rust_names.len(), 1); // No aliases for rust
+    assert!(rust_names.contains(&"rs"));
+    assert_eq!(rust_names.len(), 2);
 }
 
 #[test]

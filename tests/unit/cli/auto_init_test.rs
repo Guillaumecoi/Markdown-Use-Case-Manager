@@ -53,7 +53,7 @@ fn test_auto_init_process() -> Result<()> {
     assert!(!test_dir.exists(), "Test directory should NOT exist yet");
 
     // 5. Verify templates were copied
-    let templates_dir = Path::new(".config/.mucm/templates");
+    let templates_dir = Path::new(".config/.mucm/handlebars");
     assert!(templates_dir.exists(), "Templates directory should exist");
     
     // Templates are now in methodologies and languages subdirectories
@@ -80,7 +80,7 @@ fn test_auto_init_language_options() -> Result<()> {
         let config = crate::test_utils::init_project_with_language(Some("python".to_string()))?;
         assert_eq!(config.generation.test_language, "python");
 
-        let python_template = Path::new(".config/.mucm/templates/languages/python/test.hbs");
+        let python_template = Path::new(".config/.mucm/handlebars/languages/python/test.hbs");
         assert!(python_template.exists(), "Python template should exist");
     }
 

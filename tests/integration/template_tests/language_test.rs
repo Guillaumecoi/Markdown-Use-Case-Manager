@@ -14,7 +14,7 @@ use std::fs;
 fn test_end_to_end_language_support() {
     with_temp_dir(|_temp_dir| {
         // Test that we can initialize with each supported language
-        for language in &["rust", "python", "javascript", "js", "py"] {
+        for language in &["rust", "python", "javascript", "rs", "js", "py"] {
             let result = crate::test_utils::init_project_with_language_in_dir(".", Some(language.to_string()));
             assert!(
                 result.is_ok(),

@@ -54,7 +54,7 @@ fn test_cli_init_creates_project_structure() {
     // Verify config was created but not templates yet
     assert!(temp_dir.path().join(".config/.mucm").exists());
     assert!(temp_dir.path().join(".config/.mucm/mucm.toml").exists());
-    assert!(!temp_dir.path().join(".config/.mucm/templates").exists(), "Templates should not exist yet");
+    assert!(!temp_dir.path().join(".config/.mucm/handlebars").exists(), "Templates should not exist yet");
     
     // Step 2: Finalize to copy templates
     let mut cmd = Command::cargo_bin("mucm").unwrap();
@@ -63,7 +63,7 @@ fn test_cli_init_creates_project_structure() {
     cmd.assert().success();
 
     // Now verify templates exist
-    assert!(temp_dir.path().join(".config/.mucm/templates").exists());
+    assert!(temp_dir.path().join(".config/.mucm/handlebars").exists());
 
     // Note: Directories are created when first use case is created, not during init
     // This is intentional to allow users to customize paths in config first

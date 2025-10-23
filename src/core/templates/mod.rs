@@ -18,107 +18,107 @@ impl TemplateEngine {
         // Feature methodology
         handlebars.register_template_string(
             "feature-simple",
-            include_str!("../../../templates/methodologies/feature/uc_simple.hbs"),
+            include_str!("../../../source-templates/methodologies/feature/uc_simple.hbs"),
         )?;
         handlebars.register_template_string(
             "feature-normal",
-            include_str!("../../../templates/methodologies/feature/uc_normal.hbs"),
+            include_str!("../../../source-templates/methodologies/feature/uc_normal.hbs"),
         )?;
         handlebars.register_template_string(
             "feature-detailed",
-            include_str!("../../../templates/methodologies/feature/uc_detailed.hbs"),
+            include_str!("../../../source-templates/methodologies/feature/uc_detailed.hbs"),
         )?;
 
         // Business methodology
         handlebars.register_template_string(
             "business-simple",
-            include_str!("../../../templates/methodologies/business/uc_simple.hbs"),
+            include_str!("../../../source-templates/methodologies/business/uc_simple.hbs"),
         )?;
         handlebars.register_template_string(
             "business-normal",
-            include_str!("../../../templates/methodologies/business/uc_normal.hbs"),
+            include_str!("../../../source-templates/methodologies/business/uc_normal.hbs"),
         )?;
         handlebars.register_template_string(
             "business-detailed",
-            include_str!("../../../templates/methodologies/business/uc_detailed.hbs"),
+            include_str!("../../../source-templates/methodologies/business/uc_detailed.hbs"),
         )?;
 
         // Developer methodology
         handlebars.register_template_string(
             "developer-simple",
-            include_str!("../../../templates/methodologies/developer/uc_simple.hbs"),
+            include_str!("../../../source-templates/methodologies/developer/uc_simple.hbs"),
         )?;
         handlebars.register_template_string(
             "developer-normal",
-            include_str!("../../../templates/methodologies/developer/uc_normal.hbs"),
+            include_str!("../../../source-templates/methodologies/developer/uc_normal.hbs"),
         )?;
         handlebars.register_template_string(
             "developer-detailed",
-            include_str!("../../../templates/methodologies/developer/uc_detailed.hbs"),
+            include_str!("../../../source-templates/methodologies/developer/uc_detailed.hbs"),
         )?;
 
         // Tester methodology
         handlebars.register_template_string(
             "tester-simple",
-            include_str!("../../../templates/methodologies/tester/uc_simple.hbs"),
+            include_str!("../../../source-templates/methodologies/tester/uc_simple.hbs"),
         )?;
         handlebars.register_template_string(
             "tester-normal",
-            include_str!("../../../templates/methodologies/tester/uc_normal.hbs"),
+            include_str!("../../../source-templates/methodologies/tester/uc_normal.hbs"),
         )?;
         handlebars.register_template_string(
             "tester-detailed",
-            include_str!("../../../templates/methodologies/tester/uc_detailed.hbs"),
+            include_str!("../../../source-templates/methodologies/tester/uc_detailed.hbs"),
         )?;
 
         // Register overview templates
         handlebars.register_template_string(
             "feature-overview",
-            include_str!("../../../templates/methodologies/feature/overview.hbs"),
+            include_str!("../../../source-templates/methodologies/feature/overview.hbs"),
         )?;
         handlebars.register_template_string(
             "business-overview",
-            include_str!("../../../templates/methodologies/business/overview.hbs"),
+            include_str!("../../../source-templates/methodologies/business/overview.hbs"),
         )?;
         handlebars.register_template_string(
             "developer-overview",
-            include_str!("../../../templates/methodologies/developer/overview.hbs"),
+            include_str!("../../../source-templates/methodologies/developer/overview.hbs"),
         )?;
         handlebars.register_template_string(
             "tester-overview",
-            include_str!("../../../templates/methodologies/tester/overview.hbs"),
+            include_str!("../../../source-templates/methodologies/tester/overview.hbs"),
         )?;
 
         // Register persona templates
         handlebars.register_template_string(
             "feature-persona",
-            include_str!("../../../templates/methodologies/feature/persona.hbs"),
+            include_str!("../../../source-templates/methodologies/feature/persona.hbs"),
         )?;
         handlebars.register_template_string(
             "business-persona",
-            include_str!("../../../templates/methodologies/business/persona.hbs"),
+            include_str!("../../../source-templates/methodologies/business/persona.hbs"),
         )?;
         handlebars.register_template_string(
             "developer-persona",
-            include_str!("../../../templates/methodologies/developer/persona.hbs"),
+            include_str!("../../../source-templates/methodologies/developer/persona.hbs"),
         )?;
         handlebars.register_template_string(
             "tester-persona",
-            include_str!("../../../templates/methodologies/tester/persona.hbs"),
+            include_str!("../../../source-templates/methodologies/tester/persona.hbs"),
         )?;
 
         // Register legacy templates for backwards compatibility
         handlebars.register_template_string(
             "use_case_simple",
-            include_str!("../../../templates/use_case_simple.hbs"),
+            include_str!("../../../source-templates/use_case_simple.hbs"),
         )?;
         handlebars.register_template_string(
             "use_case_detailed",
-            include_str!("../../../templates/use_case_detailed.hbs"),
+            include_str!("../../../source-templates/use_case_detailed.hbs"),
         )?;
         handlebars.register_template_string(
             "overview",
-            include_str!("../../../templates/overview.hbs"),
+            include_str!("../../../source-templates/overview.hbs"),
         )?;
 
         // Register language test templates using LanguageRegistry

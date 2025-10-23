@@ -27,12 +27,12 @@ pub fn init_project_with_language_in_dir(
     if let Some(ref lang) = language {
         let language_registry = LanguageRegistry::new();
 
-        // First check if the language is supported by the built-in registry
-        if !language_registry.is_supported(lang) {
+        // First check if the language is supported by the built-in registry (including aliases)
+        if language_registry.get(lang).is_none() {
             // Check available languages from current working directory as fallback
             let available_languages = Config::get_available_languages()?;
             if !available_languages.contains(lang) {
-                anyhow::bail!("Unsupported language '{}'. Supported languages: {}. Add templates to .config/.mucm/templates/lang-{}/ to support this language.", 
+                anyhow::bail!("Unsupported language '{}'. Supported languages: {}. Add templates to .config/.mucm/handlebars/lang-{}/ to support this language.", 
                             lang, available_languages.join(", "), lang);
             }
         }
@@ -45,17 +45,29 @@ pub fn init_project_with_language_in_dir(
 
     let mut config = Config::default();
 
-    // Set the test language if provided
-    if let Some(ref lang) = language {
-        config.generation.test_language = lang.clone();
-    }
+    // Set the test language if provided, resolving aliases to primary names
+    let resolved_language = if let Some(ref lang) = language {
+        let language_registry = LanguageRegistry::new();
+        if let Some(lang_def) = language_registry.get(lang) {
+            // Use the primary name (not alias)
+            let primary_name = lang_def.name().to_string();
+            config.generation.test_language = primary_name.clone();
+            Some(primary_name)
+        } else {
+            // Keep original if not found in registry (might be user-defined)
+            config.generation.test_language = lang.clone();
+            Some(lang.clone())
+        }
+    } else {
+        None
+    };
 
     config.save_in_dir(base_dir)?;
 
     // Change to the base_dir temporarily to copy templates
     let original_dir = std::env::current_dir()?;
     std::env::set_current_dir(base_dir)?;
-    let result = Config::copy_templates_to_config_with_language(language);
+    let result = Config::copy_templates_to_config_with_language(resolved_language);
     std::env::set_current_dir(original_dir)?;
     result?;
 
@@ -99,7 +111,7 @@ pub fn save_config(config: &Config) -> Result<()> {
 
 /// Get templates directory path
 pub fn templates_dir() -> PathBuf {
-    Path::new(".config/.mucm").join("templates")
+    Path::new(".config/.mucm").join("handlebars")
 }
 
 /// Set status on a scenario

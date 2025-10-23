@@ -179,7 +179,7 @@ impl Config {
     }
     const CONFIG_DIR: &'static str = ".config/.mucm";
     const CONFIG_FILE: &'static str = "mucm.toml";
-    const TEMPLATES_DIR: &'static str = "templates";
+    const TEMPLATES_DIR: &'static str = "handlebars";
 
     pub fn config_path() -> PathBuf {
         Path::new(Self::CONFIG_DIR).join(Self::CONFIG_FILE)
@@ -232,14 +232,14 @@ impl Config {
         Ok(())
     }
 
-    /// Check if templates have already been copied to .config/.mucm/templates/
+    /// Check if templates have already been copied to .config/.mucm/handlebars/
     pub fn check_templates_exist() -> bool {
         let base_path = Path::new(".");
         let templates_dir = base_path.join(Self::CONFIG_DIR).join(Self::TEMPLATES_DIR);
         templates_dir.exists() && templates_dir.is_dir()
     }
 
-    /// Copy templates to .config/.mucm/templates/ with language (wrapper for _in_dir version)
+    /// Copy templates to .config/.mucm/handlebars/ with language (wrapper for _in_dir version)
     pub fn copy_templates_to_config_with_language(language: Option<String>) -> Result<()> {
         Self::copy_templates_to_config_with_language_in_dir(".", language)
     }
@@ -270,13 +270,13 @@ impl Config {
         let mut source_templates_dir = None;
         
         // Try current directory first
-        let local_templates = Path::new("templates");
+        let local_templates = Path::new("source-templates");
         if local_templates.exists() {
             source_templates_dir = Some(local_templates.to_path_buf());
         } else {
             // Try CARGO_MANIFEST_DIR (set during cargo test and build)
             if let Ok(manifest_dir) = std::env::var("CARGO_MANIFEST_DIR") {
-                let cargo_templates = Path::new(&manifest_dir).join("templates");
+                let cargo_templates = Path::new(&manifest_dir).join("source-templates");
                 if cargo_templates.exists() {
                     source_templates_dir = Some(cargo_templates);
                 }
@@ -287,7 +287,7 @@ impl Config {
                 if let Ok(exe_path) = std::env::current_exe() {
                     if let Some(exe_dir) = exe_path.parent() {
                         // Check ../../templates (when running from target/release/)
-                        let dev_templates = exe_dir.parent().and_then(|p| p.parent()).map(|p| p.join("templates"));
+                        let dev_templates = exe_dir.parent().and_then(|p| p.parent()).map(|p| p.join("source-templates"));
                         if let Some(dev_templates) = dev_templates {
                             if dev_templates.exists() {
                                 source_templates_dir = Some(dev_templates);
@@ -301,7 +301,7 @@ impl Config {
         let Some(source_templates_dir) = source_templates_dir else {
             anyhow::bail!(
                 "Source templates directory not found. \
-                 Looked for 'templates/' directory. \
+                 Looked for 'source-templates/' directory. \
                  This directory should contain methodologies/ and languages/ subdirectories."
             );
         };
@@ -313,15 +313,15 @@ impl Config {
                 let source_method_dir = source_methodologies.join(methodology);
                 if !source_method_dir.exists() {
                     anyhow::bail!(
-                        "Methodology '{}' not found in templates/methodologies/. \
-                         Available methodologies should be in templates/methodologies/{{name}}/ directories.",
+                        "Methodology '{}' not found in source-templates/methodologies/. \
+                         Available methodologies should be in source-templates/methodologies/{{name}}/ directories.",
                         methodology
                     );
                 }
 
-                // Copy methodology templates to templates/{methodology}/
+                // Copy methodology templates to handlebars/{methodology}/ (skip config.toml files)
                 let target_method_templates = config_templates_dir.join(methodology);
-                Self::copy_dir_recursive(&source_method_dir, &target_method_templates)?;
+                Self::copy_dir_recursive_skip_config(&source_method_dir, &target_method_templates)?;
 
                 // Copy methodology config.toml to methodologies/{methodology}.toml
                 let source_config = source_method_dir.join("config.toml");
@@ -354,7 +354,7 @@ impl Config {
                 Self::copy_dir_recursive(&source_lang_dir, &target_lang_dir)?;
                 println!("✓ Copied language templates: {}", config.generation.test_language);
             } else {
-                println!("⚠ Language '{}' not found in templates/languages/, skipping", config.generation.test_language);
+                println!("⚠ Language '{}' not found in source-templates/languages/, skipping", config.generation.test_language);
             }
         }
 
@@ -372,6 +372,31 @@ impl Config {
             
             if src_path.is_dir() {
                 Self::copy_dir_recursive(&src_path, &dst_path)?;
+            } else {
+                fs::copy(&src_path, &dst_path)?;
+            }
+        }
+        
+        Ok(())
+    }
+
+    /// Recursively copy a directory but skip config.toml files (used for methodology template copying)
+    fn copy_dir_recursive_skip_config(src: &Path, dst: &Path) -> Result<()> {
+        fs::create_dir_all(dst)?;
+        
+        for entry in fs::read_dir(src)? {
+            let entry = entry?;
+            let src_path = entry.path();
+            let file_name = entry.file_name();
+            let dst_path = dst.join(&file_name);
+            
+            // Skip config.toml files - these are handled separately
+            if file_name == "config.toml" {
+                continue;
+            }
+            
+            if src_path.is_dir() {
+                Self::copy_dir_recursive_skip_config(&src_path, &dst_path)?;
             } else {
                 fs::copy(&src_path, &dst_path)?;
             }

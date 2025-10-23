@@ -23,12 +23,12 @@ fn test_config_init_project_creates_structure() {
     assert!(temp_path.join(".config/.mucm/mucm.toml").exists());
 
     // Verify templates directory was created
-    assert!(temp_path.join(".config/.mucm/templates").exists());
+    assert!(temp_path.join(".config/.mucm/handlebars").exists());
     // Verify methodology templates were copied
-    assert!(temp_path.join(".config/.mucm/templates/developer").exists());
-    assert!(temp_path.join(".config/.mucm/templates/feature").exists());
+    assert!(temp_path.join(".config/.mucm/handlebars/developer").exists());
+    assert!(temp_path.join(".config/.mucm/handlebars/feature").exists());
     // Verify language templates were copied
-    assert!(temp_path.join(".config/.mucm/templates/languages/rust").exists());
+    assert!(temp_path.join(".config/.mucm/handlebars/languages/rust").exists());
 
     // NOTE: Directories are NOT created during init in the new design
     // They will be created when the first use case is created

@@ -56,18 +56,3 @@ include_constraints = true         # Testing limitations
 include_personas = false           # Focus on test cases, not user roles
 include_business_value = false     # Technical testing focus
 include_epic = false               # Not tracking epics in test workflow
-
-# Custom fields specific to tester methodology
-# Focused on test execution and automation
-[custom_fields]
-# --- Simple level: Core test identifiers ---
-test_type = { label = "Test Type", type = "string", required = true }  # unit, integration, e2e, etc.
-
-# --- Normal level: Test execution details ---
-automation_status = { label = "Automation Status", type = "string", required = false }  # manual, automated, planned
-test_data_requirements = { label = "Test Data Requirements", type = "string", required = false }
-
-# --- Detailed level: Advanced test specifications ---
-test_environment = { label = "Test Environment", type = "string", required = false }
-regression_suite = { label = "Regression Suite", type = "string", required = false }
-performance_baseline = { label = "Performance Baseline", type = "string", required = false }

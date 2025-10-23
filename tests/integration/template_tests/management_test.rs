@@ -13,7 +13,7 @@ use tempfile::TempDir;
 #[serial]
 fn test_templates_dir_path() {
     let templates_dir = templates_dir();
-    assert_eq!(templates_dir, Path::new(".config/.mucm/templates"));
+    assert_eq!(templates_dir, Path::new(".config/.mucm/handlebars"));
 }
 
 /// Test config structure includes methodology settings
@@ -35,8 +35,8 @@ fn test_init_creates_template_directory() {
     let result = init_project_in_dir(temp_dir.path().to_str().unwrap());
     assert!(result.is_ok());
 
-    // Verify template directory structure was created
-    let templates_dir = temp_dir.path().join(".config/.mucm/templates");
+    // Verify templates directory structure was created
+    let templates_dir = temp_dir.path().join(".config/.mucm/handlebars");
     assert!(templates_dir.exists());
 }
 
@@ -50,7 +50,7 @@ fn test_template_copying_with_source() {
     init_project_in_dir(temp_dir.path().to_str().unwrap()).expect("Failed to initialize project");
 
     // Verify templates directory structure
-    let config_templates_dir = temp_dir.path().join(".config/.mucm/templates");
+    let config_templates_dir = temp_dir.path().join(".config/.mucm/handlebars");
     assert!(config_templates_dir.exists());
     
     // Verify methodology templates were created (developer and feature by default)
@@ -82,7 +82,7 @@ fn test_init_with_rust_language() {
     assert!(result.is_ok());
 
     // Verify templates directory structure
-    let config_templates_dir = temp_dir.path().join(".config/.mucm/templates");
+    let config_templates_dir = temp_dir.path().join(".config/.mucm/handlebars");
     assert!(config_templates_dir.exists());
     
     // Verify methodology templates were created (developer and feature by default)
@@ -114,7 +114,7 @@ fn test_init_with_python_language() {
     assert!(result.is_ok());
 
     // Verify templates directory structure
-    let config_templates_dir = temp_dir.path().join(".config/.mucm/templates");
+    let config_templates_dir = temp_dir.path().join(".config/.mucm/handlebars");
     assert!(config_templates_dir.exists());
     
     // Verify methodology templates were created (developer and feature by default)
@@ -147,7 +147,7 @@ fn test_init_with_invalid_language() {
     assert!(result.is_err());
     let error_msg = result.unwrap_err().to_string();
     assert!(error_msg.contains("Unsupported language 'invalidlang'"));
-    assert!(error_msg.contains("Add templates to .config/.mucm/templates/lang-invalidlang/"));
+    assert!(error_msg.contains("Add templates to .config/.mucm/handlebars/lang-invalidlang/"));
 }
 
 /// Test getting available languages with built-in defaults
@@ -177,7 +177,7 @@ fn test_language_detection_prefixed_folders() {
     std::env::set_current_dir(&temp_dir).unwrap();
 
     // Create new prefixed language folders
-    let templates_dir = temp_dir.path().join(".config/.mucm/templates");
+    let templates_dir = temp_dir.path().join(".config/.mucm/handlebars");
     fs::create_dir_all(&templates_dir).unwrap();
     fs::create_dir_all(templates_dir.join("lang-javascript")).unwrap();
     fs::create_dir_all(templates_dir.join("lang-go")).unwrap();
@@ -197,7 +197,7 @@ fn test_language_detection_prefixed_folders() {
 fn test_language_detection_mixed_folders() {
     with_temp_dir(|temp_dir| {
         // Create prefixed folders
-        let templates_dir = temp_dir.path().join(".config/.mucm/templates");
+        let templates_dir = temp_dir.path().join(".config/.mucm/handlebars");
         fs::create_dir_all(&templates_dir).unwrap();
         fs::create_dir_all(templates_dir.join("lang-go")).unwrap();
         fs::create_dir_all(templates_dir.join("lang-java")).unwrap();

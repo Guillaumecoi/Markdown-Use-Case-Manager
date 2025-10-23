@@ -50,7 +50,7 @@ fn test_cli_auto_init_creates_structure() -> anyhow::Result<()> {
         .success();
 
     // Verify templates were copied
-    assert!(temp_dir.path().join(".config/.mucm/templates").exists());
+    assert!(temp_dir.path().join(".config/.mucm/handlebars").exists());
 
     // NOTE: Directories are NOT created during init anymore
     // They will be created when the first use case is created
@@ -102,7 +102,7 @@ fn test_cli_auto_init_with_language() -> anyhow::Result<()> {
     // Verify Python template was created in new structure
     let python_template = temp_dir
         .path()
-        .join(".config/.mucm/templates/languages/python/test.hbs");
+        .join(".config/.mucm/handlebars/languages/python/test.hbs");
     assert!(python_template.exists(), "Python template should exist");
 
     Ok(())
@@ -335,7 +335,7 @@ fn test_cli_auto_init_template_creation() -> anyhow::Result<()> {
         .success()
         .stdout(predicate::str::contains("Copied methodology"));
 
-    let templates_dir = temp_dir.path().join(".config/.mucm/templates");
+    let templates_dir = temp_dir.path().join(".config/.mucm/handlebars");
 
     // Verify methodology templates (developer and feature by default)
     assert!(templates_dir.join("developer/uc_simple.hbs").exists());
