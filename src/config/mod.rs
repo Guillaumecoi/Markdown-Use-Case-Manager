@@ -4,19 +4,18 @@
 pub mod types;
 pub mod template_manager;
 pub mod file_manager;
-pub mod methodology;
-pub mod language;
 
 // Re-export main types and functionality
 pub use types::*;
 pub use template_manager::TemplateManager;
 pub use file_manager::ConfigFileManager;
-pub use methodology::MethodologyManager;
-pub use language::LanguageManager;
+pub use crate::core::processors::MethodologyManager;
+
 
 use anyhow::{Context, Result};
 use std::fs;
 use std::path::{Path, PathBuf};
+use crate::core::languages::LanguageRegistry;
 
 impl Config {
     // Constants
@@ -85,7 +84,7 @@ impl Config {
 
     /// Get list of available programming languages from source templates and local config
     pub fn get_available_languages() -> Result<Vec<String>> {
-        LanguageManager::get_available_languages()
+        LanguageRegistry::get_all_available_languages()
     }
 
     /// Get methodology-specific recommendations as a human-readable string

@@ -126,6 +126,43 @@ impl LanguageRegistry {
         names.dedup();
         names
     }
+
+    /// Get comprehensive list of available languages including user-defined ones from templates
+    /// This consolidates built-in languages with user-defined languages found in template directories
+    pub fn get_all_available_languages() -> anyhow::Result<Vec<String>> {
+        use std::fs;
+        use std::path::Path;
+        
+        let mut languages = Vec::new();
+
+        // Start with built-in language registry
+        let language_registry = LanguageRegistry::new();
+        languages.extend(language_registry.available_languages());
+
+        // Look for user-defined languages in current directory
+        // Using constants from Config - we'll import these when needed
+        let config_dir = Path::new(".config/.mucm");
+        let templates_dir = config_dir.join("handlebars");
+
+        if templates_dir.exists() {
+            for entry in fs::read_dir(&templates_dir)? {
+                let entry = entry?;
+                if entry.file_type()?.is_dir() {
+                    let dir_name = entry.file_name().to_string_lossy().to_string();
+
+                    // Check for "lang-{language}" pattern (preferred)
+                    if let Some(lang) = dir_name.strip_prefix("lang-") {
+                        if !languages.contains(&lang.to_string()) {
+                            languages.push(lang.to_string());
+                        }
+                    }
+                }
+            }
+        }
+
+        languages.sort();
+        Ok(languages)
+    }
 }
 
 impl Default for LanguageRegistry {

@@ -2,32 +2,11 @@
 use crate::config::types::Config;
 use anyhow::{Context, Result};
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::{Path};
 
 pub struct ConfigFileManager;
 
 impl ConfigFileManager {
-    /// Find the .config/.mucm directory by walking up the directory tree
-    pub fn find_config_dir() -> Result<PathBuf> {
-        let mut current_dir = std::env::current_dir()?;
-        
-        loop {
-            let config_dir = current_dir.join(Config::CONFIG_DIR);
-            if config_dir.exists() && config_dir.is_dir() {
-                return Ok(config_dir);
-            }
-            
-            // Try parent directory
-            if let Some(parent) = current_dir.parent() {
-                current_dir = parent.to_path_buf();
-            } else {
-                anyhow::bail!(
-                    "No .config/.mucm directory found. Run 'mucm init' first to initialize a project."
-                );
-            }
-        }
-    }
-
     /// Load configuration from file
     pub fn load() -> Result<Config> {
         let config_path = Config::config_path();
