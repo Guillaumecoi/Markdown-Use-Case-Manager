@@ -295,29 +295,16 @@ impl InteractiveSession {
                     println!("\n📊 Metadata Configuration");
                     println!("────────────────────────────");
 
-                    config.metadata.enabled = Confirm::new("Enable metadata generation?")
-                        .with_default(config.metadata.enabled)
+                    config.metadata.created = Confirm::new("Auto-set 'created' timestamp?")
+                        .with_default(config.metadata.created)
                         .prompt()?;
 
-                    if config.metadata.enabled {
-                        println!("\nWhich auto-generated fields to include:");
+                    config.metadata.last_updated = Confirm::new("Auto-update 'last_updated' timestamp?")
+                        .with_default(config.metadata.last_updated)
+                        .prompt()?;
 
-                        config.metadata.include_id = Confirm::new("Include ID?")
-                            .with_default(config.metadata.include_id)
-                            .prompt()?;
-
-                        config.metadata.include_status = Confirm::new("Include status?")
-                            .with_default(config.metadata.include_status)
-                            .prompt()?;
-
-                        config.metadata.include_priority = Confirm::new("Include priority?")
-                            .with_default(config.metadata.include_priority)
-                            .prompt()?;
-
-                        config.metadata.include_created = Confirm::new("Include creation date?")
-                            .with_default(config.metadata.include_created)
-                            .prompt()?;
-                    }
+                    println!("\n💡 To configure additional fields (author, reviewer, status, priority, etc.),");
+                    println!("   edit [base_fields] section in .config/.mucm/mucm.toml after saving.\n");
                 }
                 "View Current Config" => {
                     println!("\n📄 Current Configuration");
@@ -333,7 +320,8 @@ impl InteractiveSession {
                         "Auto Generate Tests: {}",
                         config.generation.auto_generate_tests
                     );
-                    println!("Metadata Enabled: {}", config.metadata.enabled);
+                    println!("Auto-set 'created': {}", config.metadata.created);
+                    println!("Auto-update 'last_updated': {}", config.metadata.last_updated);
 
                     self.pause_for_input()?;
                 }

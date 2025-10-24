@@ -52,11 +52,7 @@ impl CliRunner {
         // Save config file only (no templates, no directories)
         Config::save_config_only(&config)?;
         
-        let recommendations = if let Some(method) = &config.templates.default_methodology {
-            format!("\n\n{}", Config::methodology_recommendations(method))
-        } else {
-            String::new()
-        };
+        let recommendations = format!("\n\n{}", Config::methodology_recommendations(&config.templates.default_methodology));
 
         Ok(format!(
             "✅ Configuration file created at .config/.mucm/mucm.toml\n\n\
@@ -68,12 +64,12 @@ impl CliRunner {
              - Test directory: {}\n\n\
              ⚡ When ready, run: mucm init --finalize{}\n\n\
              💡 The finalize step will:\n\
-             - Copy ALL methodology templates (business, developer, feature, tester)\n\
-             - Copy ALL language templates\n\
+             - Copy the used methodology templates\n\
+             - Copy the used language templates\n\
              - You can use any methodology when creating use cases\n\
              - Directories will be created when you create your first use case",
-            config.generation.test_language,
-            config.templates.default_methodology.as_deref().unwrap_or("developer"),
+            config.templates.test_language,
+            &config.templates.default_methodology,
             config.directories.toml_dir.as_deref().unwrap_or("docs/use-cases"),
             config.directories.use_case_dir,
             config.directories.test_dir,
@@ -82,7 +78,6 @@ impl CliRunner {
     }
 
     /// Finalize initialization (Step 2: Copy templates after config review)
-    #[allow(clippy::unused_self)]
     pub fn finalize_init(&mut self) -> Result<String> {
         // Load the config that should have been created in step 1
         let config = Config::load().map_err(|_| {
@@ -100,7 +95,7 @@ impl CliRunner {
         }
 
         // Copy templates - now copies ALL methodologies and ALL languages
-        Config::copy_templates_to_config_with_language(Some(config.generation.test_language.clone()))?;
+        Config::copy_templates_to_config_with_language(Some(config.templates.test_language.clone()))?;
 
         // List available methodologies
         let available = Config::list_available_methodologies().unwrap_or_default();
@@ -121,31 +116,31 @@ impl CliRunner {
              - Run: mucm list to see all use cases\n\
              - Run: mucm methodologies to see all available methodologies\n\
              - Run: mucm --help for all available commands\n\n\
-             💡 Each methodology has its own settings (test generation, metadata, etc.)\n\
-             💡 Directories will be created automatically when you create your first use case.",
-            config.generation.test_language,
-            config.templates.default_methodology.as_deref().unwrap_or("developer"),
+             💡 Each methodology has its own settings (test generation, metadata, etc.)\n",
+            config.templates.test_language,
+            &config.templates.default_methodology,
             methodologies_list
         ))
     }
 
 
-    /// Create a new use case
+    /// Create a new use case (uses default methodology from config)
     pub fn create_use_case(
         &mut self,
         title: String,
         category: String,
         description: Option<String>,
     ) -> Result<String> {
+        // Load config to get default methodology
+        let config = Config::load()?;
+        let default_methodology = config.templates.default_methodology.clone();
+        
         let coordinator = self.ensure_coordinator()?;
-        let use_case_id = coordinator.create_use_case(title, category, description)?;
-        Ok(format!(
-            "Created use case: {}\n\n💡 Tip: Use this exact ID ('{}') when adding scenarios or updating status.",
-            use_case_id, use_case_id
-        ))
+        let use_case_id = coordinator.create_use_case_with_methodology(title, category, description, &default_methodology)?;
+        Ok(format!("Created use case: {}", use_case_id ))
     }
 
-    /// Create a new use case with extended metadata
+    /// Create a new use case with extended metadata (uses default methodology)
     pub fn create_use_case_with_metadata(
         &mut self,
         title: String,
@@ -154,13 +149,8 @@ impl CliRunner {
         _extended_metadata: crate::cli::interactive::menu::ExtendedMetadata,
     ) -> Result<String> {
         // Note: Extended metadata functionality removed as it's now handled by TOML files
-        let coordinator = self.ensure_coordinator()?;
-        let use_case_id = coordinator.create_use_case(
-            title, 
-            category, 
-            description,
-        )?;
-        Ok(format!("Created use case: {}", use_case_id))
+        // Just use default methodology
+        self.create_use_case(title, category, description)
     }
 
     /// Add a scenario to a use case
@@ -196,7 +186,6 @@ impl CliRunner {
     }
 
     /// Show available languages
-    #[allow(clippy::unnecessary_wraps)]
     pub fn show_languages() -> Result<String> {
         let mut output = String::from("Available programming languages:\n");
 
@@ -261,7 +250,6 @@ impl CliRunner {
     }
 
     /// List available methodologies
-    #[allow(clippy::unused_self)]
     pub fn list_methodologies(&mut self) -> Result<String> {
         // Create a temporary template engine just to list methodologies
         // This doesn't require a full project initialization
@@ -282,7 +270,6 @@ impl CliRunner {
     }
 
     /// Get information about a specific methodology
-    #[allow(clippy::unused_self)]
     pub fn get_methodology_info(&mut self, methodology: String) -> Result<String> {
         // Create a temporary template engine just to get methodology info
         // This doesn't require a full project initialization

@@ -1,5 +1,7 @@
 // src/config/mod.rs - Configuration module entry point
 
+use std::collections::HashMap;
+
 // Sub-modules
 pub mod types;
 pub mod template_manager;
@@ -26,9 +28,10 @@ impl Config {
     /// Create a config for template processing (minimal config used only for template variables)
     pub fn for_template(test_language: String, methodology: Option<String>) -> Self {
         let mut config = Self::default();
-        config.generation.test_language = test_language;
+        config.templates.test_language = test_language.clone();
+        config.generation.test_language = test_language; // Keep generation in sync
         if let Some(method) = methodology {
-            config.templates.default_methodology = Some(method);
+            config.templates.default_methodology = method;
         }
         config
     }
@@ -102,6 +105,40 @@ impl Default for Config {
     fn default() -> Self {
         // Minimal config used only for tests and template variable processing
         // Production configs are created from source-templates/config.toml
+        let mut base_fields = HashMap::new();
+        
+        // Add standard base fields
+        base_fields.insert("description".to_string(), BaseFieldConfig {
+            label: "Description".to_string(),
+            field_type: "string".to_string(),
+            required: true,
+            default: None,
+        });
+        base_fields.insert("status".to_string(), BaseFieldConfig {
+            label: "Status".to_string(),
+            field_type: "string".to_string(),
+            required: false,
+            default: Some("draft".to_string()),
+        });
+        base_fields.insert("priority".to_string(), BaseFieldConfig {
+            label: "Priority".to_string(),
+            field_type: "string".to_string(),
+            required: false,
+            default: Some("medium".to_string()),
+        });
+        base_fields.insert("author".to_string(), BaseFieldConfig {
+            label: "Author".to_string(),
+            field_type: "string".to_string(),
+            required: false,
+            default: None,
+        });
+        base_fields.insert("reviewer".to_string(), BaseFieldConfig {
+            label: "Reviewer".to_string(),
+            field_type: "string".to_string(),
+            required: false,
+            default: None,
+        });
+        
         Config {
             project: ProjectConfig {
                 name: "My Project".to_string(),
@@ -115,37 +152,20 @@ impl Default for Config {
                 toml_dir: Some("use-cases-data".to_string()),
             },
             templates: TemplateConfig {
-                use_case_template: None,
-                test_template: None,
                 methodologies: vec!["developer".to_string(), "feature".to_string()],
-                default_methodology: Some("developer".to_string()),
+                default_methodology: "feature".to_string(),
+                test_language: "python".to_string(),
+            },
+            base_fields,
+            metadata: MetadataConfig {
+                created: true,
+                last_updated: true,
             },
             generation: GenerationConfig {
-                test_language: "rust".to_string(),
+                test_language: "python".to_string(),
                 auto_generate_tests: false,
                 overwrite_test_documentation: false,
             },
-            metadata: MetadataConfig {
-                enabled: true,
-                include_id: true,
-                include_title: true,
-                include_category: true,
-                include_status: true,
-                include_priority: true,
-                include_created: true,
-                include_last_updated: true,
-                include_prerequisites: true,
-                include_personas: true,
-                include_author: true,
-                include_reviewer: true,
-                include_business_value: true,
-                include_complexity: true,
-                include_epic: true,
-                include_acceptance_criteria: true,
-                include_assumptions: true,
-                include_constraints: true,
-            },
-            custom_fields: Vec::new(),
         }
     }
 }

@@ -134,10 +134,11 @@ fn test_no_tests_generated_without_scenarios() {
 
         // Create use case without scenarios
         let _use_case_id = manager
-            .create_use_case(
+            .create_use_case_with_methodology(
                 "Empty Use Case".to_string(),
                 "testing".to_string(),
                 Some("A use case with no scenarios".to_string()),
+                "feature"
             )
             .unwrap();
 
@@ -166,10 +167,11 @@ fn test_tests_generated_with_scenarios_rust() {
 
         // Create use case
         let use_case_id = manager
-            .create_use_case(
+            .create_use_case_with_methodology(
                 "Use Case With Scenarios".to_string(),
                 "testing".to_string(),
                 Some("A use case that will have scenarios".to_string()),
+                "feature"
             )
             .unwrap();
 
@@ -212,10 +214,11 @@ fn test_tests_generated_with_scenarios_python() {
 
         // Create use case
         let use_case_id = manager
-            .create_use_case(
+            .create_use_case_with_methodology(
                 "Python Use Case".to_string(),
                 "testing".to_string(),
                 Some("A use case for Python testing".to_string()),
+                "feature"
             )
             .unwrap();
 
@@ -259,10 +262,11 @@ fn test_no_tests_when_disabled() {
 
         // Create use case
         let use_case_id = manager
-            .create_use_case(
+            .create_use_case_with_methodology(
                 "Disabled Tests Use Case".to_string(),
                 "testing".to_string(),
                 Some("A use case with tests disabled".to_string()),
+                "feature"
             )
             .unwrap();
 
@@ -299,10 +303,11 @@ fn test_unsupported_language_warning() {
 
         // Create use case
         let use_case_id = manager
-            .create_use_case(
+            .create_use_case_with_methodology(
                 "Unsupported Language Use Case".to_string(),
                 "testing".to_string(),
                 Some("A use case with unsupported test language".to_string()),
+                "feature"
             )
             .unwrap();
 
@@ -337,10 +342,11 @@ fn test_one_test_per_scenario() {
 
         // Create use case
         let use_case_id = manager
-            .create_use_case(
+            .create_use_case_with_methodology(
                 "Multi Scenario Use Case".to_string(),
                 "testing".to_string(),
                 Some("A use case with multiple scenarios".to_string()),
+                "feature"
             )
             .unwrap();
 

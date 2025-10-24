@@ -36,120 +36,33 @@ fn test_custom_persona_directory_config() -> Result<()> {
 
 #[test]
 #[serial]
-fn test_metadata_config_boolean_flags() -> Result<()> {
+fn test_metadata_config_timestamps() -> Result<()> {
     let config = Config::default();
     
-    // Test that all boolean flags exist and are accessible
-    assert!(config.metadata.include_prerequisites);
-    assert!(config.metadata.include_personas);
-    assert!(config.metadata.include_author);
-    assert!(config.metadata.include_reviewer);
-    assert!(config.metadata.include_business_value);
-    assert!(config.metadata.include_complexity);
-    assert!(config.metadata.include_epic);
-    assert!(config.metadata.include_acceptance_criteria);
-    assert!(config.metadata.include_assumptions);
-    assert!(config.metadata.include_constraints);
+    // Test that timestamp flags exist and are accessible
+    assert!(config.metadata.created);
+    assert!(config.metadata.last_updated);
     
     Ok(())
 }
 
 #[test]
 #[serial]
-fn test_metadata_config_individual_flags() -> Result<()> {
-    // Test that individual metadata flags can be serialized and deserialized
+fn test_metadata_config_serialization() -> Result<()> {
+    // Test that metadata flags can be serialized and deserialized
     let mut config = Config::default();
     
-    // Test setting individual flags
-    config.metadata.include_prerequisites = false;
-    config.metadata.include_personas = true;
-    config.metadata.include_author = false;
-    config.metadata.include_reviewer = true;
+    // Test setting flags
+    config.metadata.created = false;
+    config.metadata.last_updated = true;
     
     // Serialize and deserialize to test persistence
     let toml_content = toml::to_string(&config)?;
     let loaded_config: Config = toml::from_str(&toml_content)?;
     
-    assert!(!loaded_config.metadata.include_prerequisites);
-    assert!(loaded_config.metadata.include_personas);
-    assert!(!loaded_config.metadata.include_author);
-    assert!(loaded_config.metadata.include_reviewer);
+    assert!(!loaded_config.metadata.created);
+    assert!(loaded_config.metadata.last_updated);
     
-    Ok(())
-}
-
-#[test]
-#[serial]
-fn test_config_no_custom_fields_array() -> Result<()> {
-    // Get original dir FIRST, before any test might have corrupted it
-    let original_dir = env::current_dir().unwrap_or_else(|_| std::env::temp_dir());
-    
-    let temp_dir = TempDir::new()?;
-    
-    // Change to temp directory for the test
-    env::set_current_dir(&temp_dir)?;
-    
-    // Create the config directory structure
-    std::fs::create_dir_all(".config/.mucm")?;
-    
-    let config = Config::default();
-    config.save_in_dir(".")?;
-    
-    let config_path = temp_dir.path().join(".config/.mucm/mucm.toml");
-    let config_content = fs::read_to_string(&config_path)?;
-    
-    // Ensure the custom_fields array is present (should be empty by default)
-    assert!(config_content.contains("custom_fields"));
-    
-    // Ensure the new boolean flags are present
-    assert!(config_content.contains("include_prerequisites"));
-    assert!(config_content.contains("include_personas"));
-    assert!(config_content.contains("include_author"));
-    assert!(config_content.contains("include_reviewer"));
-    
-    // Restore original directory BEFORE TempDir drops
-    env::set_current_dir(&original_dir)?;
-    Ok(())
-}
-
-#[test]
-#[serial]
-fn test_extended_metadata_serialization() -> Result<()> {
-    // Get original dir FIRST, before any test might have corrupted it
-    let original_dir = env::current_dir().unwrap_or_else(|_| std::env::temp_dir());
-    
-    let temp_dir = TempDir::new()?;
-    
-    // Change to temp directory for the test
-    env::set_current_dir(&temp_dir)?;
-    
-    // Create the config directory structure
-    std::fs::create_dir_all(".config/.mucm")?;
-    
-    let mut config = Config::default();
-    
-    // Set specific extended metadata flags
-    config.metadata.include_business_value = false;
-    config.metadata.include_complexity = true;
-    config.metadata.include_epic = false;
-    config.metadata.include_acceptance_criteria = true;
-    config.metadata.include_assumptions = false;
-    config.metadata.include_constraints = true;
-    
-    // Save and reload
-    config.save_in_dir(".")?;
-    let loaded_config = Config::load()?;
-    
-    // Verify extended metadata flags are preserved
-    assert!(!loaded_config.metadata.include_business_value);
-    assert!(loaded_config.metadata.include_complexity);
-    assert!(!loaded_config.metadata.include_epic);
-    assert!(loaded_config.metadata.include_acceptance_criteria);
-    assert!(!loaded_config.metadata.include_assumptions);
-    assert!(loaded_config.metadata.include_constraints);
-    
-    // Restore original directory BEFORE TempDir drops
-    env::set_current_dir(&original_dir)?;
     Ok(())
 }
 

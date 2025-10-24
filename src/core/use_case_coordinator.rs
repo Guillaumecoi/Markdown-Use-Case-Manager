@@ -42,19 +42,6 @@ impl UseCaseCoordinator {
         Self::new(config)
     }
 
-    pub fn create_use_case(
-        &mut self,
-        title: String,
-        category: String,
-        description: Option<String>,
-    ) -> Result<String> {
-        let use_case = self.create_use_case_internal(title, category, description)?;
-        let use_case_id = use_case.id.clone();
-        self.use_cases.push(use_case);
-        self.generate_overview()?;
-        Ok(use_case_id)
-    }
-
     pub fn add_scenario_to_use_case(
         &mut self,
         use_case_id: String,
@@ -133,7 +120,6 @@ impl UseCaseCoordinator {
     }
 
     /// Get all use case IDs
-    #[allow(clippy::unnecessary_wraps)]
     pub fn get_all_use_case_ids(&self) -> Result<Vec<String>> {
         Ok(self.use_cases.iter().map(|uc| uc.id.clone()).collect())
     }
@@ -150,7 +136,6 @@ impl UseCaseCoordinator {
     }
 
     /// Get all categories in use
-    #[allow(clippy::unnecessary_wraps)]
     pub fn get_all_categories(&self) -> Result<Vec<String>> {
         let mut categories: Vec<String> = self
             .use_cases
@@ -368,55 +353,10 @@ impl UseCaseCoordinator {
             json!(use_case.metadata.updated_at.format("%Y-%m-%d").to_string()),
         );
 
-        // Add metadata configuration
+        // Add metadata configuration (simplified - only created/last_updated timestamps)
         let metadata_config = &self.config.metadata;
-        data.insert(
-            "metadata_enabled".to_string(),
-            json!(metadata_config.enabled),
-        );
-        data.insert("include_id".to_string(), json!(metadata_config.include_id));
-        data.insert(
-            "include_title".to_string(),
-            json!(metadata_config.include_title),
-        );
-        data.insert(
-            "include_category".to_string(),
-            json!(metadata_config.include_category),
-        );
-        data.insert(
-            "include_status".to_string(),
-            json!(metadata_config.include_status),
-        );
-        data.insert(
-            "include_priority".to_string(),
-            json!(metadata_config.include_priority),
-        );
-        data.insert(
-            "include_created".to_string(),
-            json!(metadata_config.include_created),
-        );
-        data.insert(
-            "include_last_updated".to_string(),
-            json!(metadata_config.include_last_updated),
-        );
-        
-        // Create dynamic list of enabled custom fields
-        let mut enabled_fields = Vec::new();
-        if metadata_config.include_prerequisites { enabled_fields.push("prerequisites"); }
-        if metadata_config.include_personas { enabled_fields.push("personas"); }
-        if metadata_config.include_author { enabled_fields.push("author"); }
-        if metadata_config.include_reviewer { enabled_fields.push("reviewer"); }
-        if metadata_config.include_business_value { enabled_fields.push("business_value"); }
-        if metadata_config.include_complexity { enabled_fields.push("complexity"); }
-        if metadata_config.include_epic { enabled_fields.push("epic"); }
-        if metadata_config.include_acceptance_criteria { enabled_fields.push("acceptance_criteria"); }
-        if metadata_config.include_assumptions { enabled_fields.push("assumptions"); }
-        if metadata_config.include_constraints { enabled_fields.push("constraints"); }
-        
-        data.insert(
-            "custom_fields".to_string(),
-            json!(enabled_fields),
-        );
+        data.insert("include_created".to_string(), json!(metadata_config.created));
+        data.insert("include_last_updated".to_string(), json!(metadata_config.last_updated));
 
         self.template_engine.render_use_case(&data)
     }
@@ -483,52 +423,10 @@ impl UseCaseCoordinator {
         data.insert("created_date".to_string(), json!(use_case.metadata.created_at.format("%Y-%m-%d").to_string()));
         data.insert("updated_date".to_string(), json!(use_case.metadata.updated_at.format("%Y-%m-%d").to_string()));
 
-        // Add metadata configuration for legacy compatibility
+        // Add metadata configuration (simplified - only created/last_updated timestamps)
         let metadata_config = &self.config.metadata;
-        data.insert("metadata_enabled".to_string(), json!(metadata_config.enabled));
-        data.insert("include_id".to_string(), json!(metadata_config.include_id));
-        data.insert(
-            "include_title".to_string(),
-            json!(metadata_config.include_title),
-        );
-        data.insert(
-            "include_category".to_string(),
-            json!(metadata_config.include_category),
-        );
-        data.insert(
-            "include_status".to_string(),
-            json!(metadata_config.include_status),
-        );
-        data.insert(
-            "include_priority".to_string(),
-            json!(metadata_config.include_priority),
-        );
-        data.insert(
-            "include_created".to_string(),
-            json!(metadata_config.include_created),
-        );
-        data.insert(
-            "include_last_updated".to_string(),
-            json!(metadata_config.include_last_updated),
-        );
-        
-        // Create dynamic list of enabled custom fields
-        let mut enabled_fields = Vec::new();
-        if metadata_config.include_prerequisites { enabled_fields.push("prerequisites"); }
-        if metadata_config.include_personas { enabled_fields.push("personas"); }
-        if metadata_config.include_author { enabled_fields.push("author"); }
-        if metadata_config.include_reviewer { enabled_fields.push("reviewer"); }
-        if metadata_config.include_business_value { enabled_fields.push("business_value"); }
-        if metadata_config.include_complexity { enabled_fields.push("complexity"); }
-        if metadata_config.include_epic { enabled_fields.push("epic"); }
-        if metadata_config.include_acceptance_criteria { enabled_fields.push("acceptance_criteria"); }
-        if metadata_config.include_assumptions { enabled_fields.push("assumptions"); }
-        if metadata_config.include_constraints { enabled_fields.push("constraints"); }
-        
-        data.insert(
-            "custom_fields".to_string(),
-            json!(enabled_fields),
-        );
+        data.insert("include_created".to_string(), json!(metadata_config.created));
+        data.insert("include_last_updated".to_string(), json!(metadata_config.last_updated));
 
         // Use methodology-specific rendering
         self.template_engine.render_use_case_with_methodology(&data, methodology)

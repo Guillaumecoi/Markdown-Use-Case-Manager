@@ -2,6 +2,7 @@
 use markdown_use_case_manager::config::{
     Config, DirectoryConfig, GenerationConfig, MetadataConfig, ProjectConfig, TemplateConfig,
 };
+use std::collections::HashMap;
 use std::path::Path;
 
 /// Test Config::default() creates valid default configuration
@@ -18,14 +19,11 @@ fn test_config_default() {
     assert_eq!(config.directories.test_dir, "tests/use-cases");
     assert_eq!(config.directories.persona_dir, "docs/personas");
     assert!(config.directories.template_dir.is_none());
-    assert_eq!(config.generation.test_language, "rust");
+    assert_eq!(config.generation.test_language, "python");
     assert!(!config.generation.auto_generate_tests);
     assert!(!config.generation.overwrite_test_documentation);
-    assert!(config.metadata.enabled);
-    assert!(config.metadata.include_id);
-    assert!(config.metadata.include_prerequisites);
-    assert!(config.metadata.include_personas);
-    assert!(config.metadata.include_author);
+    assert!(config.metadata.created);
+    assert!(config.metadata.last_updated);
 }
 
 /// Test Config::config_path() returns correct path
@@ -69,26 +67,18 @@ fn test_directory_config() {
     );
 }
 
-/// Test TemplateConfig creation and fields
+/// Test TemplateConfig creation and fields - simplified structure
 #[test]
 fn test_template_config() {
     let template_config = TemplateConfig {
-        use_case_template: Some("custom_use_case.hbs".to_string()),
-        test_template: Some("custom_test.hbs".to_string()),
         methodologies: vec!["developer".to_string(), "feature".to_string()],
-        default_methodology: Some("developer".to_string()),
+        default_methodology: "developer".to_string(),
+        test_language: "python".to_string(),
     };
 
-    assert_eq!(
-        template_config.use_case_template,
-        Some("custom_use_case.hbs".to_string())
-    );
-    assert_eq!(
-        template_config.test_template,
-        Some("custom_test.hbs".to_string())
-    );
     assert_eq!(template_config.methodologies.len(), 2);
-    assert_eq!(template_config.default_methodology, Some("developer".to_string()));
+    assert_eq!(template_config.default_methodology, "developer");
+    assert_eq!(template_config.test_language, "python");
 }
 
 /// Test GenerationConfig creation and fields
@@ -105,43 +95,25 @@ fn test_generation_config() {
     assert!(gen_config.overwrite_test_documentation);
 }
 
-/// Test MetadataConfig creation and all fields
+/// Test MetadataConfig creation - simplified to only created/last_updated timestamps
 #[test]
 fn test_metadata_config() {
     let metadata_config = MetadataConfig {
-        enabled: true,
-        include_id: true,
-        include_title: true,
-        include_category: true,
-        include_status: true,
-        include_priority: true,
-        include_created: true,
-        include_last_updated: true,
-        include_prerequisites: false,
-        include_personas: false,
-        include_author: true,
-        include_reviewer: true,
-        include_business_value: false,
-        include_complexity: false,
-        include_epic: false,
-        include_acceptance_criteria: false,
-        include_assumptions: false,
-        include_constraints: false,
+        created: true,
+        last_updated: true,
     };
 
-    assert!(metadata_config.enabled);
-    assert!(metadata_config.include_id);
-    assert!(metadata_config.include_title);
-    assert!(metadata_config.include_category);
-    assert!(metadata_config.include_status);
-    assert!(metadata_config.include_priority);
-    assert!(metadata_config.include_created);
-    assert!(metadata_config.include_last_updated);
-    // Test boolean metadata configuration
-    assert!(metadata_config.include_author);
-    assert!(metadata_config.include_reviewer);
-    assert!(!metadata_config.include_prerequisites);
-    assert!(!metadata_config.include_personas);
+    assert!(metadata_config.created);
+    assert!(metadata_config.last_updated);
+    
+    // Test with timestamps disabled
+    let metadata_disabled = MetadataConfig {
+        created: false,
+        last_updated: false,
+    };
+    
+    assert!(!metadata_disabled.created);
+    assert!(!metadata_disabled.last_updated);
 }
 
 /// Test Config serialization and deserialization
@@ -162,7 +134,8 @@ fn test_config_serialization() {
         config.generation.test_language,
         deserialized.generation.test_language
     );
-    assert_eq!(config.metadata.enabled, deserialized.metadata.enabled);
+    assert_eq!(config.metadata.created, deserialized.metadata.created);
+    assert_eq!(config.metadata.last_updated, deserialized.metadata.last_updated);
 }
 
 /// Test Config clone functionality
@@ -182,7 +155,8 @@ fn test_config_clone() {
         config.generation.test_language,
         cloned.generation.test_language
     );
-    assert_eq!(config.metadata.enabled, cloned.metadata.enabled);
+    assert_eq!(config.metadata.created, cloned.metadata.created);
+    assert_eq!(config.metadata.last_updated, cloned.metadata.last_updated);
 }
 
 /// Test Config debug formatting
@@ -197,36 +171,6 @@ fn test_config_debug() {
     assert!(debug_str.contains("templates"));
     assert!(debug_str.contains("generation"));
     assert!(debug_str.contains("metadata"));
-}
-
-/// Test MetadataConfig with disabled metadata
-#[test]
-fn test_metadata_config_disabled() {
-    let metadata_config = MetadataConfig {
-        enabled: false,
-        include_id: false,
-        include_title: false,
-        include_category: false,
-        include_status: false,
-        include_priority: false,
-        include_created: false,
-        include_last_updated: false,
-        include_prerequisites: false,
-        include_personas: false,
-        include_author: false,
-        include_reviewer: false,
-        include_business_value: false,
-        include_complexity: false,
-        include_epic: false,
-        include_acceptance_criteria: false,
-        include_assumptions: false,
-        include_constraints: false,
-    };
-
-    assert!(!metadata_config.enabled);
-    assert!(!metadata_config.include_id);
-    assert!(!metadata_config.include_title);
-    assert!(!metadata_config.include_prerequisites);
 }
 
 /// Test Config with custom values
@@ -245,37 +189,20 @@ fn test_config_custom_values() {
             toml_dir: None,
         },
         templates: TemplateConfig {
-            use_case_template: Some("my_template.hbs".to_string()),
-            test_template: None,
             methodologies: vec!["business".to_string()],
-            default_methodology: Some("business".to_string()),
+            default_methodology: "business".to_string(),
+            test_language: "python".to_string(),
         },
+        base_fields: HashMap::new(),
         generation: GenerationConfig {
             test_language: "python".to_string(),
             auto_generate_tests: true,
             overwrite_test_documentation: false,
         },
         metadata: MetadataConfig {
-            enabled: true,
-            include_id: true,
-            include_title: true,
-            include_category: false,
-            include_status: true,
-            include_priority: false,
-            include_created: false,
-            include_last_updated: true,
-            include_prerequisites: false,
-            include_personas: false,
-            include_author: false,
-            include_reviewer: false,
-            include_business_value: false,
-            include_complexity: false,
-            include_epic: true,
-            include_acceptance_criteria: false,
-            include_assumptions: false,
-            include_constraints: false,
+            created: true,
+            last_updated: true,
         },
-        custom_fields: vec!["author".to_string(), "epic".to_string()],
     };
 
     assert_eq!(config.project.name, "Custom Project");
@@ -284,19 +211,13 @@ fn test_config_custom_values() {
         config.directories.template_dir,
         Some("src/templates".to_string())
     );
-    assert_eq!(
-        config.templates.use_case_template,
-        Some("my_template.hbs".to_string())
-    );
-    assert!(config.templates.test_template.is_none());
+    assert_eq!(config.templates.test_language, "python");
+    assert_eq!(config.templates.default_methodology, "business");
     assert_eq!(config.generation.test_language, "python");
     assert!(config.generation.auto_generate_tests);
     assert!(!config.generation.overwrite_test_documentation);
-    assert!(!config.metadata.include_category);
-    // Test boolean metadata configuration
-    assert!(config.metadata.include_epic);
-    assert!(!config.metadata.include_category);
-    assert!(!config.metadata.include_priority);
+    assert!(config.metadata.created);
+    assert!(config.metadata.last_updated);
 }
 
 /// Test Config field access and modification
@@ -314,6 +235,6 @@ fn test_config_field_access() {
     config.generation.auto_generate_tests = true;
     assert!(config.generation.auto_generate_tests);
 
-    config.metadata.include_personas = true;
-    assert!(config.metadata.include_personas);
+    config.metadata.created = false;
+    assert!(!config.metadata.created);
 }

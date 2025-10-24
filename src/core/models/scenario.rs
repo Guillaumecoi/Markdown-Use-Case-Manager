@@ -8,12 +8,8 @@ pub struct Scenario {
     pub id: String,
     pub title: String,
     pub description: String,
-    /// NEW: Semantic categorization for methodology processing
-    #[allow(clippy::struct_field_names)]
     pub scenario_type: ScenarioType,
-    /// NEW: Flexible tagging system for custom categorization
     pub tags: Vec<String>,
-    /// NEW: Structured steps for enhanced test generation
     pub steps: Vec<ScenarioStep>,
     pub status: Status,
     pub metadata: Metadata,

@@ -16,7 +16,10 @@ impl ConfigFileManager {
         }
 
         let content = fs::read_to_string(&config_path).context("Failed to read config file")?;
-        let config: Config = toml::from_str(&content).context("Failed to parse config file")?;
+        let mut config: Config = toml::from_str(&content).context("Failed to parse config file")?;
+
+        // Populate the generation field from templates (for backwards compatibility)
+        config.generation.test_language = config.templates.test_language.clone();
 
         Ok(config)
     }

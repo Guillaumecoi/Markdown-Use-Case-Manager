@@ -9,39 +9,17 @@ pub struct TemplateManager;
 impl TemplateManager {
     /// Create config file from template
     pub fn create_config_from_template(config: &Config) -> Result<()> {
-        let template_path = Self::find_config_template()?;
-        
-        // Read and process the template
-        let template_content = fs::read_to_string(&template_path)
-            .context("Failed to read config template")?;
+        // Serialize the config to TOML instead of copying the template
+        // This ensures the user's chosen language and methodology are saved
+        let config_content = toml::to_string_pretty(config)
+            .context("Failed to serialize config to TOML")?;
 
-        // Replace template variables
-        let default_methodology = config.templates.default_methodology
-            .as_deref()
-            .unwrap_or("developer");
-        
-        let processed_content = template_content
-            .replace("{{test_language}}", &config.generation.test_language)
-            .replace("{{default_methodology}}", default_methodology);
-
-        // Write the processed config
+        // Write the config
         let config_path = Config::config_path();
-        fs::write(&config_path, processed_content)
+        fs::write(&config_path, config_content)
             .context("Failed to write config file")?;
 
         Ok(())
-    }
-
-    /// Find the source templates directory and config template
-    fn find_config_template() -> Result<PathBuf> {
-        let source_templates_dir = Self::find_source_templates_dir()?;
-        let template_path = source_templates_dir.join("config.toml");
-        
-        if !template_path.exists() {
-            anyhow::bail!("Config template not found at {:?}", template_path);
-        }
-        
-        Ok(template_path)
     }
 
     /// Find the source templates directory
@@ -162,14 +140,14 @@ impl TemplateManager {
             return Ok(()); // Languages are optional
         }
 
-        let source_lang_dir = source_languages.join(&config.generation.test_language);
+        let source_lang_dir = source_languages.join(&config.templates.test_language);
         if source_lang_dir.exists() {
             let target_languages = config_templates_dir.join("languages");
-            let target_lang_dir = target_languages.join(&config.generation.test_language);
+            let target_lang_dir = target_languages.join(&config.templates.test_language);
             Self::copy_dir_recursive(&source_lang_dir, &target_lang_dir)?;
-            println!("✓ Copied language templates: {}", config.generation.test_language);
+            println!("✓ Copied language templates: {}", config.templates.test_language);
         } else {
-            println!("⚠ Language '{}' not found in source-templates/languages/, skipping", config.generation.test_language);
+            println!("⚠ Language '{}' not found in source-templates/languages/, skipping", config.templates.test_language);
         }
 
         Ok(())

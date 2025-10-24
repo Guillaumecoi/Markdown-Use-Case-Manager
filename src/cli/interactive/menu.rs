@@ -1,9 +1,9 @@
 use crate::cli::runner::CliRunner;
-use crate::config::Config;
 use anyhow::Result;
 use inquire::{Confirm, Select, Text};
 
 #[derive(Debug, Default)]
+#[allow(dead_code)]
 pub struct ExtendedMetadata {
     pub personas: Vec<String>,
     pub prerequisites: Vec<String>,
@@ -268,94 +268,18 @@ fn extract_use_case_id(result: &str) -> Option<String> {
 fn collect_extended_metadata() -> Result<ExtendedMetadata> {
     println!("\n📋 Extended Metadata Collection\n");
     
-    let mut metadata = ExtendedMetadata::default();
+    let metadata = ExtendedMetadata::default();
     
-    // Load config to check which fields are enabled
-    let config = Config::load()?;
-    let metadata_config = &config.metadata;
-
-    // Only show fields that are enabled in config
-    if metadata_config.include_personas {
-        let add_personas = Confirm::new("Add personas (target users)?")
-            .with_default(false)
-            .prompt()?;
-        
-        if add_personas {
-            metadata.personas = collect_list_items("persona", "e.g., 'Admin User', 'Customer', 'Support Agent'")?;
-        }
-    }
-
-    if metadata_config.include_prerequisites {
-        let add_prerequisites = Confirm::new("Add prerequisites?")
-            .with_default(false)
-            .prompt()?;
-        
-        if add_prerequisites {
-            metadata.prerequisites = collect_list_items("prerequisite", "e.g., 'User must be logged in (UC-AUTH-001)', 'Valid payment method required'")?;
-        }
-    }
-
-    // Single-value fields with config check
-    let single_fields = vec![
-        ("author", "Author name", "Who is the author of this use case?", metadata_config.include_author),
-        ("reviewer", "Reviewer name", "Who should review this use case?", metadata_config.include_reviewer),
-        ("business_value", "Business value", "What business value does this provide?", metadata_config.include_business_value),
-        ("complexity", "Complexity level", "e.g., 'Low', 'Medium', 'High'", metadata_config.include_complexity),
-        ("epic", "Epic name/ID", "Which epic does this belong to?", metadata_config.include_epic),
-    ];
-
-    for (field, label, help, enabled) in single_fields {
-        if enabled {
-            let add_field = Confirm::new(&format!("Add {}?", label.to_lowercase()))
-                .with_default(false)
-                .prompt()?;
-            
-            if add_field {
-                let value = Text::new(&format!("Enter {}:", label.to_lowercase()))
-                    .with_help_message(help)
-                    .prompt()?;
-                
-                match field {
-                    "author" => metadata.author = Some(value),
-                    "reviewer" => metadata.reviewer = Some(value),
-                    "business_value" => metadata.business_value = Some(value),
-                    "complexity" => metadata.complexity = Some(value),
-                    "epic" => metadata.epic = Some(value),
-                    _ => {}
-                }
-            }
-        }
-    }
-
-    // List fields with config check
-    let list_fields = vec![
-        ("acceptance_criteria", "acceptance criteria", "e.g., 'System validates input', 'User receives confirmation'", metadata_config.include_acceptance_criteria),
-        ("assumptions", "assumptions", "e.g., 'User has internet connection', 'Database is available'", metadata_config.include_assumptions),
-        ("constraints", "constraints", "e.g., 'Must complete within 30 seconds', 'Mobile-friendly interface'", metadata_config.include_constraints),
-    ];
-
-    for (field, label, help, enabled) in list_fields {
-        if enabled {
-            let add_field = Confirm::new(&format!("Add {}?", label))
-                .with_default(false)
-                .prompt()?;
-            
-            if add_field {
-                let items = collect_list_items(label, help)?;
-                match field {
-                    "acceptance_criteria" => metadata.acceptance_criteria = items,
-                    "assumptions" => metadata.assumptions = items,
-                    "constraints" => metadata.constraints = items,
-                    _ => {}
-                }
-            }
-        }
-    }
+    // Inform user about additional fields they can configure in config file
+    println!("💡 To configure additional fields (author, reviewer, business_value, etc.),");
+    println!("   edit your config file: .config/.mucm/mucm.toml");
+    println!("   See [base_fields] and methodology-specific [custom_fields] sections.\n");
 
     Ok(metadata)
 }
 
 /// Helper function to collect a list of items
+#[allow(dead_code)]
 fn collect_list_items(item_type: &str, help: &str) -> Result<Vec<String>> {
     let mut items = Vec::new();
     

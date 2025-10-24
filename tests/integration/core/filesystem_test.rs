@@ -64,8 +64,12 @@ fn test_config_load_existing() {
         loaded_config.directories.use_case_dir
     );
     assert_eq!(
-        original_config.metadata.enabled,
-        loaded_config.metadata.enabled
+        original_config.metadata.created,
+        loaded_config.metadata.created
+    );
+    assert_eq!(
+        original_config.metadata.last_updated,
+        loaded_config.metadata.last_updated
     );
 }
 
@@ -96,7 +100,8 @@ fn test_config_save_modifications() {
     let mut config = init_project_in_dir(temp_dir.path().to_str().unwrap()).unwrap();
     config.project.name = "Modified Project".to_string();
     config.generation.test_language = "javascript".to_string();
-    config.metadata.enabled = false;
+    config.metadata.created = false;
+    config.metadata.last_updated = true;
 
     // Save changes
     config
@@ -107,7 +112,8 @@ fn test_config_save_modifications() {
     let loaded_config = load_from_dir(temp_dir.path().to_str().unwrap()).unwrap();
     assert_eq!(loaded_config.project.name, "Modified Project");
     assert_eq!(loaded_config.generation.test_language, "javascript");
-    assert!(!loaded_config.metadata.enabled);
+    assert!(!loaded_config.metadata.created);
+    assert!(loaded_config.metadata.last_updated);
 }
 
 /// Test UseCaseCoordinator::load() works with existing project
@@ -158,10 +164,11 @@ fn test_use_case_file_creation() {
         let mut manager = UseCaseCoordinator::load().unwrap();
 
         let use_case_id = manager
-            .create_use_case(
+            .create_use_case_with_methodology(
                 "Test Use Case".to_string(),
                 "testing".to_string(),
                 Some("Test description".to_string()),
+                "feature"
             )
             .expect("Failed to create use case");
 
@@ -201,10 +208,11 @@ fn test_scenario_file_updates() {
 
         // Create use case
         let use_case_id = manager
-            .create_use_case(
+            .create_use_case_with_methodology(
                 "Scenario Test".to_string(),
                 "testing".to_string(),
                 Some("Test with scenarios".to_string()),
+                "feature"
             )
             .unwrap();
 
@@ -257,19 +265,20 @@ fn test_multiple_categories() {
 
         // Create use cases in different categories
         let auth_id = manager
-            .create_use_case("Login".to_string(), "authentication".to_string(), None)
+            .create_use_case_with_methodology("Login".to_string(), "authentication".to_string(), None, "feature")
             .unwrap();
 
         let profile_id = manager
-            .create_use_case(
+            .create_use_case_with_methodology(
                 "Update Profile".to_string(),
                 "user_profile".to_string(),
                 None,
+                "feature"
             )
             .unwrap();
 
         let api_id = manager
-            .create_use_case("API Endpoint".to_string(), "api".to_string(), None)
+            .create_use_case_with_methodology("API Endpoint".to_string(), "api".to_string(), None, "feature")
             .unwrap();
 
         // Verify separate directories were created
@@ -300,23 +309,25 @@ fn test_overview_generation() {
 
         // Create multiple use cases
         manager
-            .create_use_case(
+            .create_use_case_with_methodology(
                 "Login".to_string(),
                 "auth".to_string(),
                 Some("User authentication".to_string()),
+                "feature",
             )
             .unwrap();
 
         manager
-            .create_use_case(
+            .create_use_case_with_methodology(
                 "Register".to_string(),
                 "auth".to_string(),
                 Some("User registration".to_string()),
+                "feature",
             )
             .unwrap();
 
         manager
-            .create_use_case("Update Profile".to_string(), "profile".to_string(), None)
+            .create_use_case_with_methodology("Update Profile".to_string(), "profile".to_string(), None, "feature")
             .unwrap();
 
         // Verify overview file was automatically generated
@@ -348,10 +359,11 @@ fn test_file_persistence_and_reload() {
         {
             let mut manager = UseCaseCoordinator::load().unwrap();
             manager
-                .create_use_case(
+                .create_use_case_with_methodology(
                     "Persistent Test".to_string(),
                     "persistence".to_string(),
                     Some("Testing file persistence".to_string()),
+                    "feature"
                 )
                 .unwrap();
 
@@ -426,7 +438,7 @@ fn test_custom_directory_configuration() {
         // Use manager with custom config
         let mut manager = UseCaseCoordinator::load().unwrap();
         let use_case_id = manager
-            .create_use_case("Custom Dir Test".to_string(), "custom".to_string(), None)
+            .create_use_case_with_methodology("Custom Dir Test".to_string(), "custom".to_string(), None, "feature")
             .unwrap();
 
         // Verify files created in custom directories

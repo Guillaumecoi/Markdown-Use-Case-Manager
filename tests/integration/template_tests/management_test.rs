@@ -22,7 +22,7 @@ fn test_templates_dir_path() {
 fn test_config_methodology_settings() {
     let config = Config::default();
     assert!(!config.templates.methodologies.is_empty());
-    assert!(config.templates.default_methodology.is_some());
+    assert!(!config.templates.default_methodology.is_empty());
 }
 
 /// Test that init_project creates template directory structure

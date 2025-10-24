@@ -39,10 +39,11 @@ mod regenerate_tests {
             crate::test_utils::init_project_with_language(Some("rust".to_string())).unwrap();
             let mut coordinator = UseCaseCoordinator::load().unwrap();
             
-            let use_case_id = coordinator.create_use_case(
+            let use_case_id = coordinator.create_use_case_with_methodology(
                 "Test Use Case".to_string(),
                 "Testing".to_string(),
                 Some("Initial description".to_string()),
+                "feature"
             ).unwrap();
             
                         // Manually edit the TOML file to add a new scenario
@@ -78,16 +79,18 @@ mod regenerate_tests {
             crate::test_utils::init_project_with_language(Some("rust".to_string())).unwrap();
             let mut coordinator = UseCaseCoordinator::load().unwrap();
             
-            let uc1 = coordinator.create_use_case(
+            let uc1 = coordinator.create_use_case_with_methodology(
                 "Use Case 1".to_string(),
                 "Testing".to_string(),
                 Some("Description 1".to_string()),
+                "feature"
             ).unwrap();
             
-            let uc2 = coordinator.create_use_case(
+            let uc2 = coordinator.create_use_case_with_methodology(
                 "Use Case 2".to_string(),
                 "Testing".to_string(),
                 Some("Description 2".to_string()),
+                "feature"
             ).unwrap();
             
             // Edit both TOML files
@@ -125,10 +128,11 @@ mod regenerate_tests {
             crate::test_utils::init_project_with_language(Some("rust".to_string())).unwrap();
             let mut coordinator = UseCaseCoordinator::load().unwrap();
             
-            let use_case_id = coordinator.create_use_case(
+            let use_case_id = coordinator.create_use_case_with_methodology(
                 "Complex Use Case".to_string(),
                 "Testing".to_string(),
                 None,
+                "feature"
             ).unwrap();
             
             // Edit TOML with rich metadata
@@ -213,10 +217,11 @@ updated_at = "2025-10-20T11:00:00.000000000Z"
             crate::test_utils::init_project_with_language(Some("rust".to_string())).unwrap();
             let mut coordinator = UseCaseCoordinator::load().unwrap();
             
-            let use_case_id = coordinator.create_use_case(
+            let use_case_id = coordinator.create_use_case_with_methodology(
                 "Feature X".to_string(),
                 "Features".to_string(),
                 Some("Original description".to_string()),
+                "feature"
             ).unwrap();
             
             // Check initial overview
@@ -254,10 +259,11 @@ updated_at = "2025-10-20T11:00:00.000000000Z"
             crate::test_utils::init_project_with_language(Some("rust".to_string())).unwrap();
             let mut coordinator = UseCaseCoordinator::load().unwrap();
             
-            let use_case_id = coordinator.create_use_case(
+            let use_case_id = coordinator.create_use_case_with_methodology(
                 "Source Test".to_string(),
                 "Testing".to_string(),
                 Some("Initial".to_string()),
+                "feature"
             ).unwrap();
             
             let toml_path = format!("use-cases-data/testing/{}.toml", use_case_id);

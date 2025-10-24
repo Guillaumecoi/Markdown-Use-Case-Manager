@@ -59,10 +59,11 @@ mod error_handling_tests {
             
             // Create a use case
             let use_case_id = coordinator
-                .create_use_case(
+                .create_use_case_with_methodology(
                     "Test Case".to_string(),
                     "Testing".to_string(),
                     Some("Test description".to_string()),
+                    "feature",
                 )
                 .expect("Failed to create use case");
             

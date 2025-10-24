@@ -112,10 +112,11 @@ fn test_auto_init_backward_compatibility() -> Result<()> {
     let mut coordinator = UseCaseCoordinator::load()?;
 
     // Create use case
-    let uc_id = coordinator.create_use_case(
+    let uc_id = coordinator.create_use_case_with_methodology(
         "Auto Init Test".to_string(),
         "testing".to_string(),
         Some("Testing auto init compatibility".to_string()),
+        "feature",
     )?;
     assert_eq!(uc_id, "UC-TES-001");
 
@@ -151,7 +152,8 @@ fn test_config_management() -> Result<()> {
     config.directories.test_dir = "custom/tests".to_string();
     config.generation.test_language = "python".to_string();
     config.generation.auto_generate_tests = true;
-    config.metadata.enabled = false;
+    config.metadata.created = false;
+    config.metadata.last_updated = false;
 
     // Save modified configuration
     config.save_in_dir(".")?;
@@ -164,7 +166,8 @@ fn test_config_management() -> Result<()> {
     assert_eq!(reloaded_config.directories.test_dir, "custom/tests");
     assert_eq!(reloaded_config.generation.test_language, "python");
     assert!(reloaded_config.generation.auto_generate_tests);
-    assert!(!reloaded_config.metadata.enabled);
+    assert!(!reloaded_config.metadata.created);
+    assert!(!reloaded_config.metadata.last_updated);
 
     Ok(())
 }
@@ -221,7 +224,8 @@ fn test_config_validation() -> Result<()> {
         parsed_config.generation.test_language,
         config.generation.test_language
     );
-    assert_eq!(parsed_config.metadata.enabled, config.metadata.enabled);
+    assert_eq!(parsed_config.metadata.created, config.metadata.created);
+    assert_eq!(parsed_config.metadata.last_updated, config.metadata.last_updated);
 
     Ok(())
 }
@@ -271,8 +275,8 @@ fn test_auto_init_settings_integration() -> Result<()> {
     config.project.name = "Integration Test Project".to_string();
     config.directories.use_case_dir = "docs/custom-use-cases".to_string();
     config.generation.auto_generate_tests = true;
-    config.metadata.include_author = true;
-    config.metadata.include_complexity = true;
+    config.metadata.created = true;
+    config.metadata.last_updated = true;
 
     // 3. Save updated settings
     config.save_in_dir(".")?;
@@ -290,10 +294,11 @@ fn test_auto_init_settings_integration() -> Result<()> {
 
     let mut coordinator = UseCaseCoordinator::load()?;
 
-    let _uc_id = coordinator.create_use_case(
+    let _uc_id = coordinator.create_use_case_with_methodology(
         "Integration Test Use Case".to_string(),
         "integration".to_string(),
         Some("Testing integration between auto-init and settings".to_string()),
+        "feature",
     )?;
 
     // 6. Verify that files are created in the custom directory
@@ -311,8 +316,8 @@ fn test_auto_init_settings_integration() -> Result<()> {
         "docs/custom-use-cases"
     );
     assert!(final_config.generation.auto_generate_tests);
-    assert!(final_config.metadata.include_author);
-    assert!(final_config.metadata.include_complexity);
+    assert!(final_config.metadata.created);
+    assert!(final_config.metadata.last_updated);
 
     Ok(())
 }

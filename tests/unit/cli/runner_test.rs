@@ -50,17 +50,19 @@ fn test_use_case_operations() -> Result<()> {
     let mut coordinator = UseCaseCoordinator::load()?;
 
     // Test creating use cases
-    let uc_id1 = coordinator.create_use_case(
+    let uc_id1 = coordinator.create_use_case_with_methodology(
         "First Use Case".to_string(),
         "auth".to_string(), // Different prefix: AUT
         Some("First description".to_string()),
+        "feature",
     )?;
     assert_eq!(uc_id1, "UC-AUT-001");
 
-    let uc_id2 = coordinator.create_use_case(
+    let uc_id2 = coordinator.create_use_case_with_methodology(
         "Second Use Case".to_string(),
         "api".to_string(), // Different prefix: API
         None,
+        "feature",
     )?;
     assert_eq!(uc_id2, "UC-API-001");
 
@@ -88,7 +90,7 @@ fn test_scenario_operations() -> Result<()> {
 
     // Create a use case first
     let uc_id =
-        coordinator.create_use_case("Test Use Case".to_string(), "test".to_string(), None)?;
+        coordinator.create_use_case_with_methodology("Test Use Case".to_string(), "test".to_string(), None, "feature")?;
 
     // Test adding scenarios
     let scenario_id1 = coordinator.add_scenario_to_use_case(
@@ -151,18 +153,20 @@ fn test_category_suggestions() -> Result<()> {
     let mut coordinator = UseCaseCoordinator::load()?;
 
     // Create use cases with different categories
-    coordinator.create_use_case(
+    coordinator.create_use_case_with_methodology(
         "Auth Use Case".to_string(),
         "authentication".to_string(),
         None,
+        "feature",
     )?;
 
-    coordinator.create_use_case("API Use Case".to_string(), "api".to_string(), None)?;
+    coordinator.create_use_case_with_methodology("API Use Case".to_string(), "api".to_string(), None, "feature")?;
 
-    coordinator.create_use_case(
+    coordinator.create_use_case_with_methodology(
         "Security Use Case".to_string(),
         "authentication".to_string(), // Duplicate category
         None,
+        "feature",
     )?;
 
     // Test category retrieval (should be deduplicated and sorted)
@@ -183,10 +187,11 @@ fn test_file_persistence() -> Result<()> {
     let mut coordinator = UseCaseCoordinator::load()?;
 
     // Create a use case
-    let uc_id = coordinator.create_use_case(
+    let uc_id = coordinator.create_use_case_with_methodology(
         "Persistence Test".to_string(),
         "testing".to_string(),
         Some("Testing file persistence".to_string()),
+        "feature",
     )?;
 
     // Add a scenario

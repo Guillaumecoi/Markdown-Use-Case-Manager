@@ -7,10 +7,12 @@ pub struct Config {
     pub project: ProjectConfig,
     pub directories: DirectoryConfig,
     pub templates: TemplateConfig,
-    pub generation: GenerationConfig,
-    pub metadata: MetadataConfig,
     #[serde(default)]
-    pub custom_fields: Vec<String>,
+    pub base_fields: HashMap<String, BaseFieldConfig>,
+    pub metadata: MetadataConfig,
+    /// Internal field for backwards compatibility - derived from methodology config
+    #[serde(skip)]
+    pub generation: GenerationConfig,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -38,12 +40,12 @@ impl DirectoryConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TemplateConfig {
-    pub use_case_template: Option<String>,
-    pub test_template: Option<String>,
     /// List of methodologies to import and make available
     pub methodologies: Vec<String>,
     /// Default methodology to use when none specified
-    pub default_methodology: Option<String>,
+    pub default_methodology: String,
+    /// Default test language
+    pub test_language: String,
 }
 
 /// Per-methodology template configuration
@@ -65,6 +67,18 @@ pub struct MethodologyTemplateInfo {
     pub preferred_style: String,
 }
 
+/// Configuration for base fields that all use cases have (beyond mandatory id/title/category)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BaseFieldConfig {
+    pub label: String,
+    #[serde(rename = "type")]
+    pub field_type: String, // "string", "array", "number", "boolean"
+    #[serde(default)]
+    pub required: bool,
+    #[serde(default)]
+    pub default: Option<String>,
+}
+
 /// Configuration for custom fields specific to a methodology
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CustomFieldConfig {
@@ -84,47 +98,20 @@ pub struct GenerationConfig {
     pub overwrite_test_documentation: bool,
 }
 
+impl Default for GenerationConfig {
+    fn default() -> Self {
+        Self {
+            test_language: "python".to_string(),
+            auto_generate_tests: false,
+            overwrite_test_documentation: false,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MetadataConfig {
-    /// Enable or disable metadata generation entirely
-    pub enabled: bool,
-
-    // Auto-populated fields (true/false to include or not)
-    // These fields are automatically filled by the system when creating use cases:
-    /// Auto-generated unique identifier
-    pub include_id: bool,
-    /// Use case title from command line argument
-    pub include_title: bool,
-    /// Category derived from directory structure
-    pub include_category: bool,
-    /// Current status (automatically set to "draft")
-    pub include_status: bool,
-    /// Priority level (automatically set to "medium")
-    pub include_priority: bool,
-    /// Creation timestamp (automatically set to current time)
-    pub include_created: bool,
-    /// Last updated timestamp (automatically set to current time)  
-    pub include_last_updated: bool,
-
-    // Extended metadata fields (true/false to enable/disable each field)
-    /// Prerequisites and dependencies for the use case
-    pub include_prerequisites: bool,
-    /// Target users and stakeholders
-    pub include_personas: bool,
-    /// Author of the use case
-    pub include_author: bool,
-    /// Reviewer of the use case
-    pub include_reviewer: bool,
-    /// Business value and justification
-    pub include_business_value: bool,
-    /// Implementation complexity assessment
-    pub include_complexity: bool,
-    /// Associated epic or project
-    pub include_epic: bool,
-    /// Acceptance criteria for completion
-    pub include_acceptance_criteria: bool,
-    /// Assumptions made in the use case
-    pub include_assumptions: bool,
-    /// Constraints and limitations
-    pub include_constraints: bool,
+    /// Auto-set when use case is created
+    pub created: bool,
+    /// Auto-updated when use case is modified
+    pub last_updated: bool,
 }

@@ -16,8 +16,17 @@ impl TemplateEngine {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let mut handlebars = Handlebars::new();
 
-        // Dynamically discover and register methodologies from source-templates/methodologies/
-        let methodologies_path = Path::new("source-templates/methodologies");
+        // First try to load templates from user's config directory
+        // Then fall back to source-templates if not found
+        let user_templates_path = Path::new(".config/.mucm/handlebars");
+        let source_templates_path = Path::new("source-templates/methodologies");
+        
+        let methodologies_path = if user_templates_path.exists() {
+            user_templates_path
+        } else {
+            source_templates_path
+        };
+        
         let mut methodologies = Vec::new();
 
         if methodologies_path.exists() {
@@ -26,6 +35,12 @@ impl TemplateEngine {
                 let path = entry.path();
                 
                 if path.is_dir() {
+                    // Skip non-methodology directories like "languages"
+                    let dir_name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+                    if dir_name == "languages" {
+                        continue;
+                    }
+                    
                     if let Some(methodology_name) = path.file_name().and_then(|n| n.to_str()) {
                         // Register templates for this methodology: uc_simple.hbs, uc_normal.hbs, uc_detailed.hbs
                         let simple_path = path.join("uc_simple.hbs");
@@ -54,14 +69,22 @@ impl TemplateEngine {
         }
 
         // Register general overview template (not methodology-specific)
-        let overview_path = Path::new("source-templates/overview.hbs");
+        let overview_path = if user_templates_path.exists() {
+            user_templates_path.join("../overview.hbs") // .config/.mucm/overview.hbs
+        } else {
+            Path::new("source-templates/overview.hbs").to_path_buf()
+        };
         if overview_path.exists() {
             let template = fs::read_to_string(overview_path)?;
             handlebars.register_template_string("overview", template)?;
         }
 
         // Register general persona template (not methodology-specific)
-        let persona_path = Path::new("source-templates/persona.hbs");
+        let persona_path = if user_templates_path.exists() {
+            user_templates_path.join("../persona.hbs") // .config/.mucm/persona.hbs
+        } else {
+            Path::new("source-templates/persona.hbs").to_path_buf()
+        };
         if persona_path.exists() {
             let template = fs::read_to_string(persona_path)?;
             handlebars.register_template_string("persona", template)?;
@@ -147,10 +170,19 @@ impl TemplateEngine {
     pub fn get_methodology_info(&self, methodology_id: &str) -> Option<(String, String)> {
         // Check if this methodology exists
         if self.methodologies.contains(&methodology_id.to_string()) {
-            // Try to read config.toml for this methodology
-            let config_path = Path::new("source-templates/methodologies")
+            // Try to read config.toml for this methodology - check user config first
+            let user_config_path = Path::new(".config/.mucm/handlebars")
                 .join(methodology_id)
                 .join("config.toml");
+            let source_config_path = Path::new("source-templates/methodologies")
+                .join(methodology_id)
+                .join("config.toml");
+            
+            let config_path = if user_config_path.exists() {
+                user_config_path
+            } else {
+                source_config_path
+            };
             
             if let Ok(config_content) = fs::read_to_string(&config_path) {
                 // Parse TOML to get name and description

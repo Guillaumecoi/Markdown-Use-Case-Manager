@@ -243,11 +243,11 @@ fn test_cli_auto_init_config_format() -> anyhow::Result<()> {
     let config_path = temp_dir.path().join(".config/.mucm/mucm.toml");
     let config_content = fs::read_to_string(&config_path)?;
 
-    // Verify TOML structure
+    // Verify TOML structure - new simplified format
     assert!(config_content.contains("[project]"));
     assert!(config_content.contains("[directories]"));
     assert!(config_content.contains("[templates]"));
-    assert!(config_content.contains("[generation]"));
+    assert!(config_content.contains("[base_fields.")); // base_fields are serialized as subsections
     assert!(config_content.contains("[metadata]"));
 
     // Verify default values
@@ -255,12 +255,15 @@ fn test_cli_auto_init_config_format() -> anyhow::Result<()> {
     assert!(config_content.contains("use_case_dir = \"docs/use-cases\""));
     assert!(config_content.contains("test_dir = \"tests/use-cases\""));
     assert!(config_content.contains("test_language = \"rust\""));
-    assert!(config_content.contains("enabled = true"));
 
-    // Verify boolean metadata fields
-    assert!(config_content.contains("include_author = true"));
-    assert!(config_content.contains("include_prerequisites = true"));
-    assert!(config_content.contains("include_personas = true"));
+    // Verify simplified metadata fields (only created and last_updated)
+    assert!(config_content.contains("created = true"));
+    assert!(config_content.contains("last_updated = true"));
+    
+    // Verify base_fields subsections exist
+    assert!(config_content.contains("[base_fields.description]"));
+    assert!(config_content.contains("[base_fields.status]"));
+    assert!(config_content.contains("[base_fields.priority]"));
 
     Ok(())
 }

@@ -9,34 +9,20 @@ persona_dir = "docs/personas"
 toml_dir = "use-cases-data"
 
 [templates]
-methodologies = [
-    "developer",
-    "feature",
-]
-default_methodology = "{{default_methodology}}"
+methodologies = ["developer", "feature", "business", "tester"]
+default_methodology = "feature"
+test_language = "python"
 
-[generation]
-test_language = "{{test_language}}"
-auto_generate_tests = false
-overwrite_test_documentation = false
+# Base fields that all use cases can have (beyond mandatory id/title/category)
+[base_fields]
+description = { label = "Description", type = "string", required = true }
+status = { label = "Status", type = "string", required = false, default = "draft" }
+priority = { label = "Priority", type = "string", required = false, default = "medium" }
+author = { label = "Author", type = "string", required = false }
+reviewer = { label = "Reviewer", type = "string", required = false }
 
+# Automatically managed metadata fields
 [metadata]
-enabled = true
-include_id = true
-include_title = true
-include_category = true
-include_status = true
-include_priority = true
-include_created = true
-include_last_updated = true
-include_prerequisites = true
-include_personas = true
-include_author = true
-include_reviewer = true
-include_business_value = true
-include_complexity = true
-include_epic = true
-include_acceptance_criteria = true
-include_assumptions = true
-include_constraints = true
-custom_fields = []
+created = true      # Auto-set when use case is created
+last_updated = true # Auto-updated when use case is modified
+

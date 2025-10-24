@@ -18,10 +18,11 @@ fn test_interactive_workflow_simulation() -> anyhow::Result<()> {
     let mut coordinator = UseCaseCoordinator::load()?;
 
     // Simulate interactive create use case workflow
-    let use_case_id = coordinator.create_use_case(
+    let use_case_id = coordinator.create_use_case_with_methodology(
         "Interactive Test".to_string(),
         "testing".to_string(),
         Some("Created via interactive mode".to_string()),
+        "feature",
     )?;
     assert_eq!(use_case_id, "UC-TES-001");
 
@@ -71,18 +72,20 @@ fn test_interactive_category_suggestions() -> anyhow::Result<()> {
     assert!(categories.is_empty());
 
     // Create use cases with different categories
-    coordinator.create_use_case(
+    coordinator.create_use_case_with_methodology(
         "Auth Use Case".to_string(),
         "authentication".to_string(),
         None,
+        "feature",
     )?;
 
-    coordinator.create_use_case("API Use Case".to_string(), "api".to_string(), None)?;
+    coordinator.create_use_case_with_methodology("API Use Case".to_string(), "api".to_string(), None, "feature")?;
 
-    coordinator.create_use_case(
+    coordinator.create_use_case_with_methodology(
         "Another Auth Use Case".to_string(),
         "authentication".to_string(), // Duplicate
         None,
+        "feature",
     )?;
 
     // Test category suggestions (should be deduplicated and sorted)
@@ -126,7 +129,7 @@ fn test_interactive_error_scenarios() -> anyhow::Result<()> {
     assert!(result.is_err());
 
     // Create a use case first
-    coordinator.create_use_case("Test Use Case".to_string(), "test".to_string(), None)?;
+    coordinator.create_use_case_with_methodology("Test Use Case".to_string(), "test".to_string(), None, "feature")?;
 
     // Now use cases exist but no scenarios
     let scenario_ids = coordinator.get_scenario_ids_for_use_case("UC-TES-001")?;
@@ -154,16 +157,18 @@ fn test_complete_interactive_workflow_simulation() -> anyhow::Result<()> {
     let mut coordinator = UseCaseCoordinator::load()?;
 
     // Simulate: interactive workflow - create multiple use cases
-    let uc1 = coordinator.create_use_case(
+    let uc1 = coordinator.create_use_case_with_methodology(
         "User Authentication".to_string(),
         "auth".to_string(),
         Some("Handle user login and logout".to_string()),
+        "feature",
     )?;
 
-    let uc2 = coordinator.create_use_case(
+    let uc2 = coordinator.create_use_case_with_methodology(
         "Data Export".to_string(),
         "api".to_string(),
         Some("Export data in various formats".to_string()),
+        "feature",
     )?;
 
     // Simulate: add scenarios to first use case
