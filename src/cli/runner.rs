@@ -1,128 +1,47 @@
-use crate::config::Config;
-use crate::core::languages::LanguageRegistry;
-use crate::core::template_engine::TemplateEngine;
-use crate::core::use_case_coordinator::UseCaseCoordinator;
 use anyhow::Result;
 
-/// CLI runner that can be used both programmatically and interactively
+use crate::controller::ProjectController;
+use crate::controller::UseCaseController;
+
+/// CLI runner that delegates to controllers
+/// This is a thin adapter between CLI interface and business logic
 pub struct CliRunner {
-    coordinator: Option<UseCaseCoordinator>,
+    use_case_controller: Option<UseCaseController>,
 }
 
 impl CliRunner {
     /// Create a new CLI runner
     pub fn new() -> Self {
-        Self { coordinator: None }
+        Self {
+            use_case_controller: None,
+        }
     }
 
-    /// Load or initialize the coordinator
-    fn ensure_coordinator(&mut self) -> Result<&mut UseCaseCoordinator> {
-        if self.coordinator.is_none() {
-            self.coordinator = Some(UseCaseCoordinator::load()?);
+    /// Load or initialize the use case controller
+    fn ensure_use_case_controller(&mut self) -> Result<&mut UseCaseController> {
+        if self.use_case_controller.is_none() {
+            self.use_case_controller = Some(UseCaseController::new()?);
         }
-        // Safe unwrap: we just ensured coordinator is Some above
-        Ok(self.coordinator.as_mut().expect("coordinator was just initialized"))
+        Ok(self
+            .use_case_controller
+            .as_mut()
+            .expect("controller was just initialized"))
     }
 
     /// Initialize a new use case manager project (Step 1: Create config only)
     #[allow(clippy::unused_self)]
     pub fn init_project(&mut self, language: Option<String>, methodology: Option<String>) -> Result<String> {
-        // Ensure we're not already in a project
-        if Config::load().is_ok() {
-            anyhow::bail!("A use case manager project already exists in this directory or a parent directory");
-        }
-
-        // Resolve language aliases to primary names
-        let resolved_language = if let Some(lang) = language {
-            let language_registry = LanguageRegistry::new();
-            if let Some(lang_def) = language_registry.get(&lang) {
-                // Use the primary name (not alias)
-                lang_def.name().to_string()
-            } else {
-                // Keep original if not found in registry (might be user-defined)
-                lang
-            }
-        } else {
-            "rust".to_string() // Default language
-        };
-
-        // Create minimal config for template processing
-        let config = Config::for_template(resolved_language, methodology);
-        
-        // Save config file only (no templates, no directories)
-        Config::save_config_only(&config)?;
-        
-        let recommendations = format!("\n\n{}", Config::methodology_recommendations(&config.templates.default_methodology));
-
-        Ok(format!(
-            "✅ Configuration file created at .config/.mucm/mucm.toml\n\n\
-             📝 Please review and customize the configuration:\n\
-             - Programming language: {}\n\
-             - Default Methodology: {}\n\
-             - TOML directory: {}\n\
-             - Use case directory: {}\n\
-             - Test directory: {}\n\n\
-             ⚡ When ready, run: mucm init --finalize{}\n\n\
-             💡 The finalize step will:\n\
-             - Copy the used methodology templates\n\
-             - Copy the used language templates\n\
-             - You can use any methodology when creating use cases\n\
-             - Directories will be created when you create your first use case",
-            config.templates.test_language,
-            &config.templates.default_methodology,
-            config.directories.toml_dir.as_deref().unwrap_or("docs/use-cases"),
-            config.directories.use_case_dir,
-            config.directories.test_dir,
-            recommendations
-        ))
+        let default_methodology = methodology.unwrap_or_else(|| "business".to_string());
+        let result = ProjectController::init_project(language, default_methodology)?;
+        Ok(result.message)
     }
 
     /// Finalize initialization (Step 2: Copy templates after config review)
+    #[allow(clippy::unused_self)]
     pub fn finalize_init(&mut self) -> Result<String> {
-        // Load the config that should have been created in step 1
-        let config = Config::load().map_err(|_| {
-            anyhow::anyhow!(
-                "No configuration file found. Please run 'mucm init' first to create the configuration."
-            )
-        })?;
-
-        // Check if already finalized (templates directory exists)
-        if Config::check_templates_exist() {
-            anyhow::bail!(
-                "Project already finalized. Templates directory exists.\n\
-                 If you want to re-copy templates, delete .config/.mucm/handlebars/ first."
-            );
-        }
-
-        // Copy templates - now copies ALL methodologies and ALL languages
-        Config::copy_templates_to_config_with_language(Some(config.templates.test_language.clone()))?;
-
-        // List available methodologies
-        let available = Config::list_available_methodologies().unwrap_or_default();
-        let methodologies_list = if available.is_empty() {
-            "Unable to detect".to_string()
-        } else {
-            available.join(", ")
-        };
-
-        Ok(format!(
-            "✅ Project setup complete!\n\n\
-             📁 Templates copied to: .config/.mucm/handlebars/\n\
-             🔧 Language: {}\n\
-             📚 Default Methodology: {}\n\
-             📋 Available Methodologies: {}\n\n\
-             🚀 You're ready to create use cases!\n\
-             - Run: mucm create --category <category> \"<title>\" --methodology <name>\n\
-             - Run: mucm list to see all use cases\n\
-             - Run: mucm methodologies to see all available methodologies\n\
-             - Run: mucm --help for all available commands\n\n\
-             💡 Each methodology has its own settings (test generation, metadata, etc.)\n",
-            config.templates.test_language,
-            &config.templates.default_methodology,
-            methodologies_list
-        ))
+        let result = ProjectController::finalize_init()?;
+        Ok(result.message)
     }
-
 
     /// Create a new use case (uses default methodology from config)
     pub fn create_use_case(
@@ -131,26 +50,22 @@ impl CliRunner {
         category: String,
         description: Option<String>,
     ) -> Result<String> {
-        // Load config to get default methodology
-        let config = Config::load()?;
-        let default_methodology = config.templates.default_methodology.clone();
-        
-        let coordinator = self.ensure_coordinator()?;
-        let use_case_id = coordinator.create_use_case_with_methodology(title, category, description, &default_methodology)?;
-        Ok(format!("Created use case: {}", use_case_id ))
+        let controller = self.ensure_use_case_controller()?;
+        let result = controller.create_use_case(title, category, description)?;
+        Ok(result.message)
     }
 
-    /// Create a new use case with extended metadata (uses default methodology)
-    pub fn create_use_case_with_metadata(
+    /// Create a new use case with specific methodology
+    pub fn create_use_case_with_methodology(
         &mut self,
         title: String,
         category: String,
         description: Option<String>,
-        _extended_metadata: crate::cli::interactive::menu::ExtendedMetadata,
+        methodology: String,
     ) -> Result<String> {
-        // Note: Extended metadata functionality removed as it's now handled by TOML files
-        // Just use default methodology
-        self.create_use_case(title, category, description)
+        let controller = self.ensure_use_case_controller()?;
+        let result = controller.create_use_case_with_methodology(title, category, description, methodology)?;
+        Ok(result.message)
     }
 
     /// Add a scenario to a use case
@@ -160,130 +75,93 @@ impl CliRunner {
         title: String,
         description: Option<String>,
     ) -> Result<String> {
-        let coordinator = self.ensure_coordinator()?;
-        let scenario_id = coordinator.add_scenario_to_use_case(use_case_id, title, description)?;
-        Ok(format!("Added scenario: {}", scenario_id))
+        let controller = self.ensure_use_case_controller()?;
+        let result = controller.add_scenario(use_case_id, title, description)?;
+        Ok(result.message)
     }
 
     /// Update scenario status
-    pub fn update_scenario_status(
-        &mut self,
-        scenario_id: String,
-        status: String,
-    ) -> Result<String> {
-        let coordinator = self.ensure_coordinator()?;
-        coordinator.update_scenario_status(scenario_id.clone(), status.clone())?;
-        Ok(format!(
-            "Updated scenario {} status to {}",
-            scenario_id, status
-        ))
+    pub fn update_scenario_status(&mut self, scenario_id: String, status: String) -> Result<String> {
+        let controller = self.ensure_use_case_controller()?;
+        let result = controller.update_scenario_status(scenario_id, status)?;
+        Ok(result.message)
     }
 
     /// List all use cases
     pub fn list_use_cases(&mut self) -> Result<()> {
-        let coordinator = self.ensure_coordinator()?;
-        coordinator.list_use_cases()
-    }
-
-    /// Show available languages
-    pub fn show_languages() -> Result<String> {
-        let mut output = String::from("Available programming languages:\n");
-
-        match Config::get_available_languages() {
-            Ok(languages) => {
-                for lang in languages {
-                    output.push_str(&format!("  - {}\n", lang));
-                }
-                output.push_str(
-                    "\nTo initialize with a specific language: mucm init -l <language>\n",
-                );
-                output.push_str("To add a new language manually, create a directory: .config/.mucm/handlebars/lang-<language>/\n");
-            }
-            Err(e) => {
-                output.push_str(&format!("Error getting available languages: {}\n", e));
-                let language_registry = LanguageRegistry::new();
-                let builtin_languages = language_registry.available_languages();
-                output.push_str(&format!(
-                    "Built-in languages: {}\n",
-                    builtin_languages.join(", ")
-                ));
-            }
-        }
-
-        Ok(output)
+        let controller = self.ensure_use_case_controller()?;
+        controller.list_use_cases()
     }
 
     /// Show project status
     pub fn show_status(&mut self) -> Result<()> {
-        let coordinator = self.ensure_coordinator()?;
-        coordinator.show_status()
+        let controller = self.ensure_use_case_controller()?;
+        controller.show_status()
     }
 
     /// Get all use case IDs for selection
     pub fn get_use_case_ids(&mut self) -> Result<Vec<String>> {
-        let coordinator = self.ensure_coordinator()?;
-        coordinator.get_all_use_case_ids()
+        let controller = self.ensure_use_case_controller()?;
+        let options = controller.get_use_case_ids()?;
+        Ok(options.items)
     }
 
     /// Get all scenario IDs for a specific use case
     pub fn get_scenario_ids(&mut self, use_case_id: &str) -> Result<Vec<String>> {
-        let coordinator = self.ensure_coordinator()?;
-        coordinator.get_scenario_ids_for_use_case(use_case_id)
+        let controller = self.ensure_use_case_controller()?;
+        let options = controller.get_scenario_ids(use_case_id)?;
+        Ok(options.items)
     }
 
     /// Get all categories in use
     pub fn get_categories(&mut self) -> Result<Vec<String>> {
-        let coordinator = self.ensure_coordinator()?;
-        coordinator.get_all_categories()
+        let controller = self.ensure_use_case_controller()?;
+        let options = controller.get_categories()?;
+        Ok(options.items)
     }
-    /// Create a new use case with specific methodology
-    pub fn create_use_case_with_methodology(
-        &mut self,
-        title: String,
-        category: String,
-        description: Option<String>,
-        methodology: String,
-    ) -> Result<String> {
-        let coordinator = self.ensure_coordinator()?;
-        let use_case_id = coordinator.create_use_case_with_methodology(title, category, description, &methodology)?;
-        Ok(format!("Created use case: {} with {} methodology", use_case_id, methodology))
+
+    /// Show available languages
+    pub fn show_languages() -> Result<String> {
+        ProjectController::show_languages()
     }
 
     /// List available methodologies
+    #[allow(clippy::unused_self)]
     pub fn list_methodologies(&mut self) -> Result<String> {
-        // Create a temporary template engine just to list methodologies
-        // This doesn't require a full project initialization
-        let template_engine = TemplateEngine::new()
-            .map_err(|e| anyhow::anyhow!("Failed to create template engine: {}", e))?;
-        let methodologies = template_engine.available_methodologies();
+        let methodologies = ProjectController::get_available_methodologies()?;
         
         if methodologies.is_empty() {
             return Ok("No methodologies available.".to_string());
         }
         
         let mut result = String::from("Available methodologies:\n");
-        for methodology in methodologies {
-            result.push_str(&format!("  - {}\n", methodology));
+        for info in methodologies {
+            result.push_str(&format!("  - {}: {}\n", info.name, info.description));
         }
         
         Ok(result)
     }
 
     /// Get information about a specific methodology
+    #[allow(clippy::unused_self)]
     pub fn get_methodology_info(&mut self, methodology: String) -> Result<String> {
-        // Create a temporary template engine just to get methodology info
-        // This doesn't require a full project initialization
-        let template_engine = TemplateEngine::new()
-            .map_err(|e| anyhow::anyhow!("Failed to create template engine: {}", e))?;
+        let methodologies = ProjectController::get_available_methodologies()?;
         
-        match template_engine.get_methodology_info(&methodology) {
-            Some((name, description)) => {
-                Ok(format!("Methodology: {}\nDescription: {}", name, description))
+        match methodologies.iter().find(|m| m.name == methodology) {
+            Some(info) => {
+                Ok(format!(
+                    "Methodology: {}\nDisplay Name: {}\nDescription: {}",
+                    info.name, info.display_name, info.description
+                ))
             }
-            None => {
-                Ok(format!("Methodology '{}' not found.", methodology))
-            }
+            None => Ok(format!("Methodology '{}' not found.", methodology)),
         }
+    }
+
+    /// Get default methodology from config
+    #[allow(clippy::unused_self)]
+    pub fn get_default_methodology(&mut self) -> Result<String> {
+        ProjectController::get_default_methodology()
     }
 
     /// Regenerate use case with different methodology
@@ -292,20 +170,20 @@ impl CliRunner {
         use_case_id: String,
         methodology: String,
     ) -> Result<String> {
-        let coordinator = self.ensure_coordinator()?;
-        coordinator.regenerate_use_case_with_methodology(&use_case_id, &methodology)?;
-        Ok(format!("Regenerated use case {} with {} methodology", use_case_id, methodology))
+        let controller = self.ensure_use_case_controller()?;
+        let result = controller.regenerate_use_case_with_methodology(use_case_id, methodology)?;
+        Ok(result.message)
     }
 
     /// Regenerate markdown for a single use case from its TOML file
     pub fn regenerate_use_case(&mut self, use_case_id: &str) -> Result<()> {
-        let coordinator = self.ensure_coordinator()?;
-        coordinator.regenerate_markdown(use_case_id)
+        let controller = self.ensure_use_case_controller()?;
+        controller.regenerate_use_case(use_case_id)
     }
 
     /// Regenerate markdown for all use cases from their TOML files
     pub fn regenerate_all_use_cases(&mut self) -> Result<()> {
-        let coordinator = self.ensure_coordinator()?;
-        coordinator.regenerate_all_markdown()
+        let controller = self.ensure_use_case_controller()?;
+        controller.regenerate_all_use_cases()
     }
 }

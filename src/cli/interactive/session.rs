@@ -1,15 +1,12 @@
 use anyhow::Result;
-use crossterm::{
-    execute,
-    style::{Color, Print, ResetColor, SetForegroundColor},
-    terminal::{Clear, ClearType},
-};
-use std::io::stdout;
 
-use crate::cli::interactive::menu::{
-    guided_add_scenario, guided_create_use_case, guided_update_scenario_status, show_main_menu,
-    MainMenuOption,
+use crate::cli::interactive::menu::{show_main_menu, MainMenuOption};
+use crate::cli::interactive::workflows::{
+    guided_add_scenario, guided_create_use_case, guided_update_scenario_status,
 };
+use crate::cli::interactive::ui::UI;
+use crate::cli::interactive::initialization::Initialization;
+use crate::cli::interactive::settings::Settings;
 use crate::cli::runner::CliRunner;
 
 /// Interactive session manager
@@ -28,320 +25,59 @@ impl InteractiveSession {
     /// Run the interactive session
     pub fn run(&mut self) -> Result<()> {
         // Check if project is initialized, if not offer to initialize
-        if self.check_initialization().is_err() {
+        if Initialization::check_and_initialize(&mut self.runner).is_err() {
             return Ok(());
         }
 
-        self.show_welcome()?;
+        UI::show_welcome()?;
 
         loop {
             match show_main_menu()? {
                 MainMenuOption::CreateUseCase => {
                     if let Err(e) = guided_create_use_case(&mut self.runner) {
-                        self.show_error(&format!("Error creating use case: {}", e))?;
+                        UI::show_error(&format!("Error creating use case: {}", e))?;
                     }
                 }
                 MainMenuOption::AddScenario => {
                     if let Err(e) = guided_add_scenario(&mut self.runner) {
-                        self.show_error(&format!("Error adding scenario: {}", e))?;
+                        UI::show_error(&format!("Error adding scenario: {}", e))?;
                     }
                 }
                 MainMenuOption::UpdateScenarioStatus => {
                     if let Err(e) = guided_update_scenario_status(&mut self.runner) {
-                        self.show_error(&format!("Error updating scenario status: {}", e))?;
+                        UI::show_error(&format!("Error updating scenario status: {}", e))?;
                     }
                 }
                 MainMenuOption::ConfigureSettings => {
-                    if let Err(e) = self.configure_settings() {
-                        self.show_error(&format!("Error configuring settings: {}", e))?;
+                    if let Err(e) = Settings::configure(&mut self.runner) {
+                        UI::show_error(&format!("Error configuring settings: {}", e))?;
                     }
                 }
                 MainMenuOption::ListUseCases => {
                     if let Err(e) = self.runner.list_use_cases() {
-                        self.show_error(&format!("Error listing use cases: {}", e))?;
+                        UI::show_error(&format!("Error listing use cases: {}", e))?;
                     }
                 }
                 MainMenuOption::ShowStatus => {
                     if let Err(e) = self.runner.show_status() {
-                        self.show_error(&format!("Error showing status: {}", e))?;
+                        UI::show_error(&format!("Error showing status: {}", e))?;
                     }
                 }
                 MainMenuOption::ShowLanguages => match CliRunner::show_languages() {
                     Ok(languages) => println!("\n{}", languages),
-                    Err(e) => self.show_error(&format!("Error showing languages: {}", e))?,
+                    Err(e) => UI::show_error(&format!("Error showing languages: {}", e))?,
                 },
                 MainMenuOption::Exit => {
-                    self.show_goodbye()?;
+                    UI::show_goodbye()?;
                     break;
                 }
             }
 
             // Pause before showing menu again
-            self.pause_for_input()?;
-        }
-
-        Ok(())
-    }
-
-    /// Show welcome message
-    fn show_welcome(&self) -> Result<()> {
-        self.clear_screen()?;
-
-        execute!(
-            stdout(),
-            SetForegroundColor(Color::Cyan),
-            Print("╔══════════════════════════════════════════════════════════════╗\n"),
-            Print("║                                                              ║\n"),
-            Print("║        📝 Markdown Use Case Manager - Interactive Mode       ║\n"),
-            Print("║                                                              ║\n"),
-            Print("║          Manage your use cases and scenarios with ease       ║\n"),
-            Print("║                                                              ║\n"),
-            Print("╚══════════════════════════════════════════════════════════════╝\n"),
-            ResetColor,
-            Print("\n")
-        )?;
-
-        Ok(())
-    }
-
-    /// Show goodbye message
-    #[allow(clippy::unused_self)]
-    fn show_goodbye(&self) -> Result<()> {
-        println!("👋 Thanks for using MD Use Case Manager!");
-        Ok(())
-    }
-
-    /// Show error message
-    #[allow(clippy::unused_self)]
-    fn show_error(&self, message: &str) -> Result<()> {
-        execute!(
-            stdout(),
-            Print(&format!("\n❌ {message}\n")),
-            Print("Press Enter to continue..."),
-        )?;
-        let mut _input = String::new();
-        std::io::stdin().read_line(&mut _input)?;
-        Ok(())
-    }
-
-    /// Clear the screen
-    #[allow(clippy::unused_self)]
-    fn clear_screen(&self) -> Result<()> {
-        execute!(stdout(), Clear(ClearType::All))?;
-        Ok(())
-    }
-
-    /// Pause for user input before continuing
-    #[allow(clippy::unused_self)]
-    fn pause_for_input(&self) -> Result<()> {
-        execute!(
-            stdout(),
-            SetForegroundColor(Color::DarkGrey),
-            Print("\nPress Enter to continue..."),
-            ResetColor
-        )?;
-
-        let mut input = String::new();
-        std::io::stdin().read_line(&mut input)?;
-
-        Ok(())
-    }
-
-    /// Check if project is initialized, offer to initialize if not
-    fn check_initialization(&mut self) -> Result<()> {
-        use crate::config::Config;
-        use inquire::Confirm;
-
-        // Try to load config
-        if Config::load().is_err() {
-            self.clear_screen()?;
-
-            execute!(
-                stdout(),
-                SetForegroundColor(Color::Yellow),
-                Print("🔧 No use case manager project found in this directory.\n"),
-                ResetColor,
-                Print("Would you like to initialize a new project here?\n")
-            )?;
-
-            let should_init = Confirm::new("Initialize project?")
-                .with_default(true)
-                .prompt()?;
-
-            if should_init {
-                // Ask for language
-                let languages = Config::get_available_languages()?;
-                let mut language_options = vec!["none".to_string()];
-                language_options.extend(languages);
-
-                let language = inquire::Select::new("Choose test language:", language_options)
-                    .with_help_message("Select a programming language for test generation, or 'none' to skip test generation")
-                    .prompt()?;
-
-                let language = if language == "none" {
-                    None
-                } else {
-                    Some(language)
-                };
-
-                match self.runner.init_project(language, None) {
-                    Ok(message) => {
-                        execute!(
-                            stdout(),
-                            SetForegroundColor(Color::Green),
-                            Print(&format!("\n✅ {}\n", message)),
-                            ResetColor
-                        )?;
-                        self.pause_for_input()?;
-                    }
-                    Err(e) => {
-                        self.show_error(&format!("Failed to initialize project: {}", e))?;
-                        return Err(e);
-                    }
-                }
-            } else {
-                execute!(
-                    stdout(),
-                    SetForegroundColor(Color::Yellow),
-                    Print("\nExiting without initializing. Run 'mucm init' to initialize later.\n"),
-                    ResetColor
-                )?;
-                return Err(anyhow::anyhow!("Project not initialized"));
-            }
-        }
-
-        Ok(())
-    }
-
-    /// Interactive settings configuration
-    #[allow(clippy::too_many_lines)]
-    fn configure_settings(&mut self) -> Result<()> {
-        use crate::config::Config;
-        use inquire::{Confirm, Select, Text};
-
-        self.clear_screen()?;
-
-        execute!(
-            stdout(),
-            SetForegroundColor(Color::Cyan),
-            Print("⚙️  Configuration Settings\n"),
-            Print("═══════════════════════\n\n"),
-            ResetColor
-        )?;
-
-        // Load current config
-        let mut config = Config::load()?;
-
-        loop {
-            let options = vec![
-                "Project Information",
-                "Directory Settings",
-                "Generation Settings",
-                "Metadata Configuration",
-                "View Current Config",
-                "Save & Exit",
-            ];
-
-            let choice = Select::new("What would you like to configure?", options).prompt()?;
-
-            match choice {
-                "Project Information" => {
-                    println!("\n📋 Project Information");
-                    println!("────────────────────────");
-
-                    config.project.name = Text::new("Project name:")
-                        .with_default(&config.project.name)
-                        .prompt()?;
-
-                    config.project.description = Text::new("Project description:")
-                        .with_default(&config.project.description)
-                        .prompt()?;
-                }
-                "Directory Settings" => {
-                    println!("\n📁 Directory Settings");
-                    println!("───────────────────────");
-
-                    config.directories.use_case_dir = Text::new("Use case directory:")
-                        .with_default(&config.directories.use_case_dir)
-                        .with_help_message("Where to store use case markdown files")
-                        .prompt()?;
-
-                    config.directories.test_dir = Text::new("Test directory:")
-                        .with_default(&config.directories.test_dir)
-                        .with_help_message("Where to generate test scaffolding")
-                        .prompt()?;
-                }
-                "Generation Settings" => {
-                    println!("\n🔧 Generation Settings");
-                    println!("────────────────────────");
-
-                    let languages = Config::get_available_languages()?;
-                    let mut language_options = vec!["none".to_string()];
-                    language_options.extend(languages);
-
-                    config.generation.test_language =
-                        Select::new("Test language:", language_options)
-                            .with_help_message("Programming language for test generation")
-                            .prompt()?;
-
-                    config.generation.auto_generate_tests = Confirm::new("Auto-generate tests?")
-                        .with_default(config.generation.auto_generate_tests)
-                        .prompt()?;
-
-                    // Note: use_case_style is now per-methodology in generation_targets
-                    // This configuration has been moved to methodology configs
-                }
-                "Metadata Configuration" => {
-                    println!("\n📊 Metadata Configuration");
-                    println!("────────────────────────────");
-
-                    config.metadata.created = Confirm::new("Auto-set 'created' timestamp?")
-                        .with_default(config.metadata.created)
-                        .prompt()?;
-
-                    config.metadata.last_updated = Confirm::new("Auto-update 'last_updated' timestamp?")
-                        .with_default(config.metadata.last_updated)
-                        .prompt()?;
-
-                    println!("\n💡 To configure additional fields (author, reviewer, status, priority, etc.),");
-                    println!("   edit [base_fields] section in .config/.mucm/mucm.toml after saving.\n");
-                }
-                "View Current Config" => {
-                    println!("\n📄 Current Configuration");
-                    println!("═══════════════════════════");
-                    println!(
-                        "Project: {} - {}",
-                        config.project.name, config.project.description
-                    );
-                    println!("Use Case Dir: {}", config.directories.use_case_dir);
-                    println!("Test Dir: {}", config.directories.test_dir);
-                    println!("Test Language: {}", config.generation.test_language);
-                    println!(
-                        "Auto Generate Tests: {}",
-                        config.generation.auto_generate_tests
-                    );
-                    println!("Auto-set 'created': {}", config.metadata.created);
-                    println!("Auto-update 'last_updated': {}", config.metadata.last_updated);
-
-                    self.pause_for_input()?;
-                }
-                "Save & Exit" => {
-                    config.save_in_dir(".")?;
-
-                    execute!(
-                        stdout(),
-                        SetForegroundColor(Color::Green),
-                        Print("\n✅ Configuration saved successfully!\n"),
-                        ResetColor
-                    )?;
-
-                    self.pause_for_input()?;
-                    break;
-                }
-                _ => {}
-            }
+            UI::pause_for_input()?;
         }
 
         Ok(())
     }
 }
+
