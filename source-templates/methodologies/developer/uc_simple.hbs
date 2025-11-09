@@ -1,0 +1,56 @@
+# Tech Spec: {{title}}
+
+**ID:** {{id}} | **Status:** PLANNED | **Priority:** {{priority}}
+
+## Overview
+{{#if description}}
+{{description}}
+{{else}}
+_What needs to be built and why?_
+{{/if}}
+
+## Technical Approach
+{{#if architecture_overview}}
+{{architecture_overview}}
+{{else}}
+_High-level technical solution approach._
+{{/if}}
+
+## Key Requirements
+{{#if objectives}}
+{{#each objectives}}
+- {{this}}
+{{/each}}
+{{else}}
+_Core technical requirements:_
+- _Requirement 1_
+- _Requirement 2_
+{{/if}}
+
+## Implementation Notes
+{{#if development_approach}}
+{{development_approach}}
+{{else}}
+**Technology Stack:** _Framework, database, etc._
+**Key Components:** _Main parts to build_
+**Dependencies:** _External services or libraries_
+{{/if}}
+
+## Testing
+{{#if test_scenarios}}
+**Test Cases:**
+{{#each test_scenarios}}
+- {{this}}
+{{/each}}
+{{else}}
+**Test Cases:**
+- _Happy path scenario_
+- _Error handling scenario_
+- _Performance test_
+{{/if}}
+
+## Definition of Done
+- [ ] _Code complete and reviewed_
+- [ ] _Tests passing_
+- [ ] _Documentation updated_
+- [ ] _Deployed to staging_

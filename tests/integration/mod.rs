@@ -1,19 +1,22 @@
 // Integration tests module organization
+//
+// Tests are organized into logical subdirectories for better maintainability:
+// - cli/: Command-line interface tests
+// - config/: Configuration and settings tests
+// - core/: Core functionality (filesystem, regeneration, initialization, errors)
+// - template_tests/: Template system tests (management, languages, code preservation)
 
 // Test utilities
 pub mod test_helpers;
 
 // CLI integration tests
-pub mod cli_comprehensive_test;
+pub mod cli;
 
-// File system and workflow integration tests
-pub mod filesystem_comprehensive_test;
+// Configuration integration tests
+pub mod config;
 
-// Template management integration tests
-pub mod template_management_test;
+// Core functionality tests
+pub mod core;
 
-// Template language integration tests
-pub mod template_language_tests;
-
-// Code preservation integration tests
-pub mod code_preservation_test;
+// Template system tests
+pub mod template_tests;

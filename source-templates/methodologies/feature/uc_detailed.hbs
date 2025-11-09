@@ -1,0 +1,155 @@
+# Feature Proposal: {{title}}
+
+**ID:** {{id}}  
+**Status:** PLANNED  
+**Priority:** {{priority}}  
+**Created:** {{created_date}}
+
+---
+
+## Overview
+
+{{#if summary}}
+{{summary}}
+{{else}}
+### Brief Summary
+_Provide a concise description of the feature and its value proposition._
+{{/if}}
+
+## Business Value
+
+{{#if value_proposition}}
+{{value_proposition}}
+{{else}}
+### Value Proposition
+_How does this feature benefit users or the business? What problem does it solve?_
+{{/if}}
+
+{{#if roi_analysis}}
+### Return on Investment
+{{roi_analysis}}
+{{else}}
+### ROI Considerations
+_What is the expected return on investment? Consider development costs vs. benefits._
+{{/if}}
+
+## Target Users
+
+{{#if primary_users}}
+### Primary Users
+{{#each primary_users}}
+- {{this}}
+{{/each}}
+{{else}}
+### Primary Users
+_Who are the main users that will benefit from this feature?_
+{{/if}}
+
+{{#if secondary_users}}
+### Secondary Users
+{{#each secondary_users}}
+- {{this}}
+{{/each}}
+{{else}}
+### Secondary Users
+_Who are the additional users that might be impacted?_
+{{/if}}
+
+## Key Requirements
+
+{{#if objectives}}
+### Objectives
+{{#each objectives}}
+- {{this}}
+{{/each}}
+{{else}}
+### Core Objectives
+_What are the main goals this feature should achieve?_
+{{/if}}
+
+{{#if success_criteria}}
+### Success Criteria
+{{#each success_criteria}}
+- {{this}}
+{{/each}}
+{{else}}
+### Success Metrics
+_How will you measure if this feature is successful?_
+{{/if}}
+
+## High-Level Approach
+
+{{#if solution_overview}}
+{{solution_overview}}
+{{else}}
+### Solution Overview
+_What is the high-level approach to implementing this feature?_
+{{/if}}
+
+## Implementation Timeline
+
+{{#if timeline}}
+{{timeline}}
+{{else}}
+### Estimated Timeline
+_What is the expected development timeline for this feature?_
+
+**Phases:**
+- Phase 1: _Description and timeline_
+- Phase 2: _Description and timeline_
+- Phase 3: _Description and timeline_
+{{/if}}
+
+## Resource Requirements
+
+{{#if resource_requirements}}
+{{resource_requirements}}
+{{else}}
+### Team Requirements
+_What team members and skills are needed?_
+
+### Budget Considerations
+_What are the estimated costs for development?_
+{{/if}}
+
+## Risks and Considerations
+
+{{#if risk_factors}}
+### Known Risks
+{{#each risk_factors}}
+- {{this}}
+{{/each}}
+{{else}}
+### Risk Assessment
+_What are the main risks associated with this feature?_
+
+### Mitigation Strategies
+_How can identified risks be addressed?_
+{{/if}}
+
+## Custom Fields Test
+
+{{#if custom_field}}
+**Custom Field (String):** {{custom_field}}
+{{/if}}
+
+{{#if another_custom}}
+**Another Custom (String):** {{another_custom}}
+{{/if}}
+
+{{#if custom_array}}
+**Custom Array (List):**
+{{#each custom_array}}
+- {{this}}
+{{/each}}
+{{/if}}
+
+---
+
+**Next Steps:**
+1. _Stakeholder review and approval_
+2. _Detailed business analysis_
+3. _Technical feasibility assessment_
+4. _Development planning_
+
+**Last Updated:** {{last_updated}}

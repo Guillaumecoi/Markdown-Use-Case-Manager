@@ -1,0 +1,50 @@
+# Test Plan: {{title}}
+
+**ID:** {{id}} | **Status:** PLANNED | **Priority:** {{priority}}
+
+## Testing Scope
+{{#if description}}
+{{description}}
+{{else}}
+_What are we testing and why?_
+{{/if}}
+
+## Test Scenarios
+{{#if test_scenarios}}
+{{#each test_scenarios}}
+- {{this}}
+{{/each}}
+{{else}}
+_Key test cases to execute:_
+- _Happy path: Normal user flow_
+- _Error case: Invalid input handling_
+- _Edge case: Boundary conditions_
+{{/if}}
+
+## Success Criteria
+{{#if acceptance_criteria}}
+{{#each acceptance_criteria}}
+- {{this}}
+{{/each}}
+{{else}}
+_When can we consider testing complete?_
+- _All critical tests pass_
+- _No high-priority bugs remain_
+- _Performance meets requirements_
+{{/if}}
+
+## Test Data
+{{#if test_data_requirements}}
+{{test_data_requirements}}
+{{else}}
+_What test data do we need?_
+- _Valid user accounts_
+- _Sample transaction data_
+- _Edge case data sets_
+{{/if}}
+
+## Definition of Done
+- [ ] _All test cases executed_
+- [ ] _Critical bugs resolved_
+- [ ] _Test results documented_
+- [ ] _Sign-off from stakeholders_

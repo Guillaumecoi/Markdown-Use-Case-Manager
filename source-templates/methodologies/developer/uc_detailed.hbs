@@ -1,0 +1,323 @@
+# Technical Specification: {{title}}
+
+**Use Case ID:** {{id}}  
+**Implementation Status:** {{status}}  
+**Development Priority:** {{priority}}  
+**Specification Date:** {{created_date}}
+
+---
+
+## Technical Overview
+
+{{#if core.summary}}
+{{summary}}
+{{else}}
+### System Summary
+_Provide a technical overview of what needs to be built and why._
+{{/if}}
+
+{{#if core.solution_overview}}
+### Solution Architecture
+{{solution_overview}}
+{{else}}
+### High-Level Architecture
+_Describe the overall technical approach and system architecture._
+
+**System Components:**
+- _Component 1: Description and responsibilities_
+- _Component 2: Description and responsibilities_
+- _Component 3: Description and responsibilities_
+
+**Integration Points:**
+- _External system 1: Integration method and data flow_
+- _External system 2: Integration method and data flow_
+{{/if}}
+
+## Technical Requirements
+
+{{#if core.objectives}}
+### Functional Requirements
+{{#each core.objectives}}
+- {{this}}
+{{/each}}
+{{else}}
+### Core Functional Requirements
+_What specific functionality must the system provide?_
+
+**User-Facing Features:**
+- _Feature 1: Detailed description_
+- _Feature 2: Detailed description_
+
+**System Features:**
+- _Internal process 1: Description_
+- _Internal process 2: Description_
+{{/if}}
+
+{{#if technical.performance_requirements}}
+### Performance Requirements
+{{performance_requirements}}
+{{else}}
+### Performance Specifications
+**Response Time Requirements:**
+- User interface: _< X seconds_
+- API responses: _< X milliseconds_
+- Batch processing: _< X minutes_
+
+**Throughput Requirements:**
+- Concurrent users: _X users_
+- Transactions per second: _X TPS_
+- Data processing volume: _X records/hour_
+
+**Scalability Requirements:**
+- Horizontal scaling: _Auto-scale to X instances_
+- Data growth: _Support X TB of data_
+{{/if}}
+
+{{#if technical.security_requirements}}
+### Security Requirements
+{{security_requirements}}
+{{else}}
+### Security Specifications
+**Authentication:**
+- _Authentication method and standards_
+
+**Authorization:**
+- _Role-based access control requirements_
+
+**Data Protection:**
+- _Encryption requirements (at rest and in transit)_
+- _Data masking and anonymization needs_
+
+**Compliance:**
+- _Security standards that must be met_
+{{/if}}
+
+## System Design
+
+{{#if technical.architecture_overview}}
+### Architecture Details
+{{architecture_overview}}
+{{else}}
+### Technical Architecture
+**Technology Stack:**
+- Frontend: _Technology and version_
+- Backend: _Framework and version_
+- Database: _Database type and version_
+- Infrastructure: _Cloud provider and services_
+
+**Design Patterns:**
+- _Pattern 1: Usage and rationale_
+- _Pattern 2: Usage and rationale_
+
+**Data Model:**
+- _Entity 1: Key attributes and relationships_
+- _Entity 2: Key attributes and relationships_
+{{/if}}
+
+{{#if technical.data_requirements}}
+### Data Requirements
+{{data_requirements}}
+{{else}}
+### Data Specifications
+**Data Sources:**
+- _Source 1: Data format and frequency_
+- _Source 2: Data format and frequency_
+
+**Data Storage:**
+- _Storage type and capacity requirements_
+- _Backup and retention policies_
+
+**Data Flow:**
+- _Input processing: Steps and transformations_
+- _Output generation: Format and delivery_
+{{/if}}
+
+## Implementation Details
+
+{{#if technical.development_approach}}
+### Development Approach
+{{development_approach}}
+{{else}}
+### Development Strategy
+**Methodology:**
+- _Agile/Waterfall approach and sprint planning_
+
+**Code Standards:**
+- _Coding conventions and best practices_
+- _Code review process_
+
+**Version Control:**
+- _Branching strategy and workflow_
+{{/if}}
+
+{{#if technical.integration_points}}
+### Integration Requirements
+{{integration_points}}
+{{else}}
+### System Integrations
+**APIs to Develop:**
+- _API 1: Endpoints and data contracts_
+- _API 2: Endpoints and data contracts_
+
+**External APIs to Consume:**
+- _Service 1: Integration method and rate limits_
+- _Service 2: Integration method and rate limits_
+
+**Data Synchronization:**
+- _Real-time sync requirements_
+- _Batch processing schedules_
+{{/if}}
+
+## Testing Strategy
+
+{{#if testing.test_strategy}}
+### Test Approach
+{{test_strategy}}
+{{else}}
+### Testing Requirements
+**Unit Testing:**
+- _Coverage requirements: X% minimum_
+- _Testing frameworks and tools_
+
+**Integration Testing:**
+- _API testing approach_
+- _Database integration testing_
+
+**Performance Testing:**
+- _Load testing scenarios_
+- _Stress testing requirements_
+
+**Security Testing:**
+- _Vulnerability scanning_
+- _Penetration testing requirements_
+{{/if}}
+
+{{#if testing.test_scenarios}}
+### Test Scenarios
+{{#each testing.test_scenarios}}
+- {{this}}
+{{/each}}
+{{else}}
+### Key Test Cases
+**Happy Path Scenarios:**
+- _Scenario 1: Expected flow and validation_
+- _Scenario 2: Expected flow and validation_
+
+**Error Handling:**
+- _Error case 1: Expected behavior_
+- _Error case 2: Expected behavior_
+
+**Edge Cases:**
+- _Edge case 1: Handling approach_
+- _Edge case 2: Handling approach_
+{{/if}}
+
+## Deployment and Operations
+
+{{#if technical.deployment_strategy}}
+### Deployment Strategy
+{{deployment_strategy}}
+{{else}}
+### Deployment Plan
+**Environment Strategy:**
+- Development: _Configuration and purpose_
+- Staging: _Configuration and purpose_
+- Production: _Configuration and purpose_
+
+**Deployment Process:**
+- _CI/CD pipeline configuration_
+- _Automated testing gates_
+- _Rollback procedures_
+
+**Infrastructure Requirements:**
+- _Server specifications_
+- _Network configuration_
+- _Monitoring and logging setup_
+{{/if}}
+
+{{#if technical.monitoring_strategy}}
+### Monitoring and Maintenance
+{{monitoring_strategy}}
+{{else}}
+### Operations Plan
+**Monitoring:**
+- _Application performance monitoring_
+- _Infrastructure monitoring_
+- _Business metrics tracking_
+
+**Alerting:**
+- _Critical alert conditions_
+- _Notification procedures_
+
+**Maintenance:**
+- _Regular maintenance schedules_
+- _Update and patching procedures_
+{{/if}}
+
+## Technical Risks
+
+{{#if technical.technical_risks}}
+### Risk Assessment
+{{#each technical.technical_risks}}
+- **Risk:** {{this}}
+  - **Technical Impact:** _Description_
+  - **Mitigation:** _Technical approach_
+{{/each}}
+{{else}}
+### Technical Risk Analysis
+**High-Priority Risks:**
+- _Risk: Technology compatibility issues_
+  - **Mitigation:** _Proof of concept and testing_
+
+**Medium-Priority Risks:**
+- _Risk: Performance bottlenecks_
+  - **Mitigation:** _Performance testing and optimization_
+
+**Monitoring Required:**
+- _Technical debt accumulation_
+- _Third-party service dependencies_
+{{/if}}
+
+## Documentation Requirements
+
+{{#if technical.documentation_requirements}}
+### Technical Documentation
+{{documentation_requirements}}
+{{else}}
+### Documentation Deliverables
+**Code Documentation:**
+- _Inline code comments and documentation_
+- _API documentation (OpenAPI/Swagger)_
+
+**System Documentation:**
+- _Architecture decision records (ADRs)_
+- _Database schema documentation_
+- _Deployment guides_
+
+**User Documentation:**
+- _API usage guides_
+- _Integration examples_
+{{/if}}
+
+---
+
+**Technical Sign-off Required:**
+- [ ] _Technical lead/architect_
+- [ ] _Security team_
+- [ ] _DevOps/Infrastructure team_
+- [ ] _QA lead_
+
+**Implementation Checklist:**
+- [ ] _Environment setup complete_
+- [ ] _Development standards defined_
+- [ ] _CI/CD pipeline configured_
+- [ ] _Security review completed_
+- [ ] _Performance benchmarks established_
+
+**Next Development Steps:**
+1. _Technical design review_
+2. _Development environment setup_
+3. _Sprint planning and task breakdown_
+4. _Implementation kickoff_
+
+**Last Updated:** {{last_updated}}

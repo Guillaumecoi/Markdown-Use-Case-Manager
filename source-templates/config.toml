@@ -1,0 +1,28 @@
+[project]
+name = "My Project"
+description = "A project managed with use case manager"
+
+[directories]
+use_case_dir = "docs/use-cases"
+test_dir = "tests/use-cases"
+persona_dir = "docs/personas"
+toml_dir = "use-cases-data"
+
+[templates]
+methodologies = ["developer", "feature", "business", "tester"]
+default_methodology = "feature"
+test_language = "python"
+
+# Base fields that all use cases can have (beyond mandatory id/title/category)
+[base_fields]
+description = { label = "Description", type = "string", required = true }
+status = { label = "Status", type = "string", required = false, default = "draft" }
+priority = { label = "Priority", type = "string", required = false, default = "medium" }
+author = { label = "Author", type = "string", required = false }
+reviewer = { label = "Reviewer", type = "string", required = false }
+
+# Automatically managed metadata fields
+[metadata]
+created = true      # Auto-set when use case is created
+last_updated = true # Auto-updated when use case is modified
+

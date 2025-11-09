@@ -1,0 +1,15 @@
+[template]
+name = "business"
+description = "Business-focused documentation for stakeholders"
+preferred_style = "detailed"
+
+[generation]
+auto_generate_tests = false
+overwrite_test_documentation = false
+
+# Custom data fields specific to business methodology
+[custom_fields]
+business_value = { label = "Business Value", type = "string", required = false }
+roi_estimate = { label = "ROI Estimate", type = "string", required = false }
+stakeholders = { label = "Key Stakeholders", type = "array", required = false }
+cost_estimate = { label = "Cost Estimate", type = "string", required = false }
