@@ -5,8 +5,6 @@ use inquire::Select;
 #[derive(Debug, Clone)]
 pub enum MainMenuOption {
     CreateUseCase,
-    AddScenario,
-    UpdateScenarioStatus,
     ConfigureSettings,
     ListUseCases,
     ShowStatus,
@@ -18,8 +16,6 @@ impl std::fmt::Display for MainMenuOption {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             MainMenuOption::CreateUseCase => write!(f, "📝 Create a new use case"),
-            MainMenuOption::AddScenario => write!(f, "➕ Add scenario to existing use case"),
-            MainMenuOption::UpdateScenarioStatus => write!(f, "🔄 Update scenario status"),
             MainMenuOption::ConfigureSettings => write!(f, "⚙️  Configure settings"),
             MainMenuOption::ListUseCases => write!(f, "📋 List all use cases"),
             MainMenuOption::ShowStatus => write!(f, "📊 Show project status"),
@@ -33,8 +29,6 @@ impl std::fmt::Display for MainMenuOption {
 pub fn show_main_menu() -> Result<MainMenuOption> {
     let options = vec![
         MainMenuOption::CreateUseCase,
-        MainMenuOption::AddScenario,
-        MainMenuOption::UpdateScenarioStatus,
         MainMenuOption::ConfigureSettings,
         MainMenuOption::ListUseCases,
         MainMenuOption::ShowStatus,
@@ -48,4 +42,3 @@ pub fn show_main_menu() -> Result<MainMenuOption> {
 
     Ok(selection)
 }
-

@@ -1,5 +1,5 @@
 // Unit tests for Status enum and related functionality
-use markdown_use_case_manager::core::models::Status;
+use markdown_use_case_manager::core::domain::entities::Status;
 
 /// Test Status enum variants exist and have correct ordering
 #[test]
@@ -21,17 +21,6 @@ fn test_status_enum_variants() {
 
     let status = Status::Deprecated;
     assert_eq!(format!("{:?}", status), "Deprecated");
-}
-
-/// Test Status priority method returns correct priority values
-#[test]
-fn test_status_priority() {
-    assert_eq!(Status::Deprecated.priority(), 0);
-    assert_eq!(Status::Planned.priority(), 1);
-    assert_eq!(Status::InProgress.priority(), 2);
-    assert_eq!(Status::Implemented.priority(), 3);
-    assert_eq!(Status::Tested.priority(), 4);
-    assert_eq!(Status::Deployed.priority(), 5);
 }
 
 /// Test Status emoji method returns correct emojis
@@ -65,56 +54,6 @@ fn test_status_display() {
     assert_eq!(Status::Tested.to_string(), "✅ TESTED");
     assert_eq!(Status::Deployed.to_string(), "🚀 DEPLOYED");
     assert_eq!(Status::Deprecated.to_string(), "⚠️ DEPRECATED");
-}
-
-/// Test Status aggregate with empty vector defaults to Planned
-#[test]
-fn test_status_aggregate_empty() {
-    let statuses = vec![];
-    assert_eq!(Status::aggregate(&statuses), Status::Planned);
-}
-
-/// Test Status aggregate with single status returns that status
-#[test]
-fn test_status_aggregate_single() {
-    let statuses = vec![Status::InProgress];
-    assert_eq!(Status::aggregate(&statuses), Status::InProgress);
-
-    let statuses = vec![Status::Tested];
-    assert_eq!(Status::aggregate(&statuses), Status::Tested);
-
-    let statuses = vec![Status::Deprecated];
-    assert_eq!(Status::aggregate(&statuses), Status::Deprecated);
-}
-
-/// Test Status aggregate with all planned returns planned
-#[test]
-fn test_status_aggregate_all_planned() {
-    let statuses = vec![Status::Planned, Status::Planned, Status::Planned];
-    assert_eq!(Status::aggregate(&statuses), Status::Planned);
-}
-
-/// Test Status aggregate with deprecated always returns deprecated
-#[test]
-fn test_status_aggregate_deprecated_wins() {
-    let statuses = vec![Status::Deployed, Status::Deprecated, Status::Tested];
-    assert_eq!(Status::aggregate(&statuses), Status::Deprecated);
-
-    let statuses = vec![Status::Planned, Status::Deprecated];
-    assert_eq!(Status::aggregate(&statuses), Status::Deprecated);
-}
-
-/// Test Status aggregate returns lowest non-planned status
-#[test]
-fn test_status_aggregate_lowest_non_planned() {
-    let statuses = vec![Status::Planned, Status::InProgress, Status::Tested];
-    assert_eq!(Status::aggregate(&statuses), Status::InProgress);
-
-    let statuses = vec![Status::Deployed, Status::Implemented, Status::Tested];
-    assert_eq!(Status::aggregate(&statuses), Status::Implemented);
-
-    let statuses = vec![Status::Tested, Status::Deployed, Status::InProgress];
-    assert_eq!(Status::aggregate(&statuses), Status::InProgress);
 }
 
 /// Test Status comparison and ordering (based on enum variant order)

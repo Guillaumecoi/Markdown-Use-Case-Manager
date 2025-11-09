@@ -1,17 +1,17 @@
-# Test Plan: {{core.title}}
+# Test Plan: {{title}}
 
-**ID:** {{core.id}} | **Status:** {{core.status}} | **Priority:** {{core.priority}}
+**ID:** {{id}} | **Status:** PLANNED | **Priority:** {{priority}}
 
 ## Testing Scope
-{{#if core.description}}
-{{core.description}}
+{{#if description}}
+{{description}}
 {{else}}
 _What are we testing and why?_
 {{/if}}
 
 ## Test Scenarios
-{{#if testing.test_scenarios}}
-{{#each testing.test_scenarios}}
+{{#if test_scenarios}}
+{{#each test_scenarios}}
 - {{this}}
 {{/each}}
 {{else}}
@@ -22,8 +22,8 @@ _Key test cases to execute:_
 {{/if}}
 
 ## Success Criteria
-{{#if testing.acceptance_criteria}}
-{{#each testing.acceptance_criteria}}
+{{#if acceptance_criteria}}
+{{#each acceptance_criteria}}
 - {{this}}
 {{/each}}
 {{else}}
@@ -34,8 +34,8 @@ _When can we consider testing complete?_
 {{/if}}
 
 ## Test Data
-{{#if testing.test_data_requirements}}
-{{testing.test_data_requirements}}
+{{#if test_data_requirements}}
+{{test_data_requirements}}
 {{else}}
 _What test data do we need?_
 - _Valid user accounts_

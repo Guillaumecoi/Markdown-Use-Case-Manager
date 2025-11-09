@@ -9,7 +9,9 @@ pub fn handle_create_command(
     methodology: Option<String>,
 ) -> Result<()> {
     let result = match methodology {
-        Some(methodology) => runner.create_use_case_with_methodology(title, category, description, methodology)?,
+        Some(methodology) => {
+            runner.create_use_case_with_methodology(title, category, description, methodology)?
+        }
         None => runner.create_use_case(title, category, description)?,
     };
     println!("{}", result);

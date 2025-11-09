@@ -1,17 +1,17 @@
-# Test Specification: {{core.title}}
+# Test Specification: {{title}}
 
-**Use Case ID:** {{core.id}} | **Test Status:** {{core.status}} | **Priority:** {{core.priority}} | **Created:** {{core.created}}
+**Use Case ID:** {{id}} | **Test Status:** {{status}} | **Priority:** {{priority}} | **Created:** {{created}}
 
 ## Test Overview
 {{#if core.description}}
-{{core.description}}
+{{description}}
 {{else}}
 _Define the scope and objectives of testing for this use case._
 {{/if}}
 
 {{#if testing.test_strategy}}
 ### Test Strategy
-{{testing.test_strategy}}
+{{test_strategy}}
 {{else}}
 ### Test Strategy
 **Test Types:**
@@ -100,7 +100,7 @@ _What specific aspects need validation through testing?_
 
 ## Test Data Requirements
 {{#if testing.test_data_requirements}}
-{{testing.test_data_requirements}}
+{{test_data_requirements}}
 {{else}}
 ### Test Data Strategy
 **Data Categories:**
@@ -115,7 +115,7 @@ _What specific aspects need validation through testing?_
 
 ## Testing Tools
 {{#if testing.testing_tools}}
-{{testing.testing_tools}}
+{{testing_tools}}
 {{else}}
 ### Test Environment
 **Manual Testing:**
@@ -130,7 +130,7 @@ _What specific aspects need validation through testing?_
 
 ## Quality Metrics
 {{#if testing.quality_metrics}}
-{{testing.quality_metrics}}
+{{quality_metrics}}
 {{else}}
 ### Testing Metrics
 **Coverage Metrics:**

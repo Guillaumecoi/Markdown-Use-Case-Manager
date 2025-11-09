@@ -1,30 +1,30 @@
-# Business Case: {{core.title}}
+# Business Case: {{title}}
 
-**ID:** {{core.id}} | **Status:** {{core.status}} | **Priority:** {{core.priority}}
+**ID:** {{id}} | **Status:** PLANNED | **Priority:** {{priority}}
 
 ## Business Overview
-{{#if business.value_proposition}}
-{{business.value_proposition}}
+{{#if value_proposition}}
+{{value_proposition}}
 {{else}}
 _What business value does this deliver?_
 {{/if}}
 
 ## Stakeholders
-{{#if stakeholders.decision_makers}}
-**Decision Makers:** {{#each stakeholders.decision_makers}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
+{{#if decision_makers}}
+**Decision Makers:** {{#each decision_makers}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
 {{else}}
 **Decision Makers:** _Who needs to approve this?_
 {{/if}}
 
-{{#if stakeholders.primary_users}}
-**Affected Users:** {{#each stakeholders.primary_users}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
+{{#if primary_users}}
+**Affected Users:** {{#each primary_users}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
 {{else}}
 **Affected Users:** _Who will be impacted?_
 {{/if}}
 
 ## Success Metrics
-{{#if business.success_criteria}}
-{{#each business.success_criteria}}
+{{#if success_criteria}}
+{{#each success_criteria}}
 - {{this}}
 {{/each}}
 {{else}}
@@ -34,8 +34,8 @@ _How will we measure business success?_
 {{/if}}
 
 ## Investment & ROI
-{{#if business.roi_analysis}}
-{{business.roi_analysis}}
+{{#if roi_analysis}}
+{{roi_analysis}}
 {{else}}
 **Estimated Investment:** _$XXX_
 **Expected Return:** _$XXX annually_
@@ -43,8 +43,8 @@ _How will we measure business success?_
 {{/if}}
 
 ## Key Risks
-{{#if business.risk_factors}}
-{{#each business.risk_factors}}
+{{#if risk_factors}}
+{{#each risk_factors}}
 - {{this}}
 {{/each}}
 {{else}}

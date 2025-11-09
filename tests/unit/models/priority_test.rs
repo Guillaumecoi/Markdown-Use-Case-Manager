@@ -1,5 +1,5 @@
 // Unit tests for Priority enum and related functionality
-use markdown_use_case_manager::core::models::Priority;
+use markdown_use_case_manager::core::domain::entities::Priority;
 use std::str::FromStr;
 
 /// Test Priority enum variants exist and have correct debug representation

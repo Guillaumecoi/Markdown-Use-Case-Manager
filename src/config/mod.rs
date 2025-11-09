@@ -3,21 +3,20 @@
 use std::collections::HashMap;
 
 // Sub-modules
-pub mod types;
-pub mod template_manager;
 pub mod file_manager;
+pub mod template_manager;
+pub mod types;
 
 // Re-export main types and functionality
-pub use types::*;
-pub use template_manager::TemplateManager;
-pub use file_manager::ConfigFileManager;
 pub use crate::core::processors::MethodologyManager;
+pub use file_manager::ConfigFileManager;
+pub use template_manager::TemplateManager;
+pub use types::*;
 
-
+use crate::core::infrastructure::languages::LanguageRegistry;
 use anyhow::{Context, Result};
 use std::fs;
 use std::path::{Path, PathBuf};
-use crate::core::languages::LanguageRegistry;
 
 impl Config {
     // Constants
@@ -46,7 +45,7 @@ impl Config {
     pub fn save_config_only(config: &Config) -> Result<()> {
         let base_path = Path::new(".");
         let config_dir = base_path.join(Self::CONFIG_DIR);
-        
+
         // Create .config/.mucm directory if it doesn't exist
         if !config_dir.exists() {
             fs::create_dir_all(&config_dir).context("Failed to create .config/.mucm directory")?;
@@ -77,17 +76,18 @@ impl Config {
         Self::copy_templates_to_config_with_language_in_dir(".", language)
     }
 
-    /// Copy templates to config directory 
+    /// Copy templates to config directory
     fn copy_templates_to_config_with_language_in_dir(
         base_dir: &str,
-        _language: Option<String>,  // Not currently used - we copy all languages now
+        _language: Option<String>, // Not currently used - we copy all languages now
     ) -> Result<()> {
         TemplateManager::copy_templates_to_config(base_dir)
     }
 
     /// Get list of available programming languages from source templates and local config
     pub fn get_available_languages() -> Result<Vec<String>> {
-        LanguageRegistry::get_all_available_languages()
+        let registry = LanguageRegistry::new();
+        Ok(registry.available_languages())
     }
 
     /// Get methodology-specific recommendations as a human-readable string
@@ -106,39 +106,54 @@ impl Default for Config {
         // Minimal config used only for tests and template variable processing
         // Production configs are created from source-templates/config.toml
         let mut base_fields = HashMap::new();
-        
+
         // Add standard base fields
-        base_fields.insert("description".to_string(), BaseFieldConfig {
-            label: "Description".to_string(),
-            field_type: "string".to_string(),
-            required: true,
-            default: None,
-        });
-        base_fields.insert("status".to_string(), BaseFieldConfig {
-            label: "Status".to_string(),
-            field_type: "string".to_string(),
-            required: false,
-            default: Some("draft".to_string()),
-        });
-        base_fields.insert("priority".to_string(), BaseFieldConfig {
-            label: "Priority".to_string(),
-            field_type: "string".to_string(),
-            required: false,
-            default: Some("medium".to_string()),
-        });
-        base_fields.insert("author".to_string(), BaseFieldConfig {
-            label: "Author".to_string(),
-            field_type: "string".to_string(),
-            required: false,
-            default: None,
-        });
-        base_fields.insert("reviewer".to_string(), BaseFieldConfig {
-            label: "Reviewer".to_string(),
-            field_type: "string".to_string(),
-            required: false,
-            default: None,
-        });
-        
+        base_fields.insert(
+            "description".to_string(),
+            BaseFieldConfig {
+                label: "Description".to_string(),
+                field_type: "string".to_string(),
+                required: true,
+                default: None,
+            },
+        );
+        base_fields.insert(
+            "status".to_string(),
+            BaseFieldConfig {
+                label: "Status".to_string(),
+                field_type: "string".to_string(),
+                required: false,
+                default: Some("draft".to_string()),
+            },
+        );
+        base_fields.insert(
+            "priority".to_string(),
+            BaseFieldConfig {
+                label: "Priority".to_string(),
+                field_type: "string".to_string(),
+                required: false,
+                default: Some("medium".to_string()),
+            },
+        );
+        base_fields.insert(
+            "author".to_string(),
+            BaseFieldConfig {
+                label: "Author".to_string(),
+                field_type: "string".to_string(),
+                required: false,
+                default: None,
+            },
+        );
+        base_fields.insert(
+            "reviewer".to_string(),
+            BaseFieldConfig {
+                label: "Reviewer".to_string(),
+                field_type: "string".to_string(),
+                required: false,
+                default: None,
+            },
+        );
+
         Config {
             project: ProjectConfig {
                 name: "My Project".to_string(),
@@ -147,12 +162,16 @@ impl Default for Config {
             directories: DirectoryConfig {
                 use_case_dir: "docs/use-cases".to_string(),
                 test_dir: "tests/use-cases".to_string(),
-                persona_dir: "docs/personas".to_string(),
                 template_dir: None,
                 toml_dir: Some("use-cases-data".to_string()),
             },
             templates: TemplateConfig {
-                methodologies: vec!["developer".to_string(), "feature".to_string()],
+                methodologies: vec![
+                    "developer".to_string(),
+                    "feature".to_string(),
+                    "business".to_string(),
+                    "tester".to_string(),
+                ],
                 default_methodology: "feature".to_string(),
                 test_language: "python".to_string(),
             },

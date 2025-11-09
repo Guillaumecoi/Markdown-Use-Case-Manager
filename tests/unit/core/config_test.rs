@@ -17,7 +17,6 @@ fn test_config_default() {
     );
     assert_eq!(config.directories.use_case_dir, "docs/use-cases");
     assert_eq!(config.directories.test_dir, "tests/use-cases");
-    assert_eq!(config.directories.persona_dir, "docs/personas");
     assert!(config.directories.template_dir.is_none());
     assert_eq!(config.generation.test_language, "python");
     assert!(!config.generation.auto_generate_tests);
@@ -54,7 +53,6 @@ fn test_directory_config() {
     let dir_config = DirectoryConfig {
         use_case_dir: "custom/use-cases".to_string(),
         test_dir: "custom/tests".to_string(),
-        persona_dir: "custom/personas".to_string(),
         template_dir: Some("custom/templates".to_string()),
         toml_dir: None,
     };
@@ -105,13 +103,13 @@ fn test_metadata_config() {
 
     assert!(metadata_config.created);
     assert!(metadata_config.last_updated);
-    
+
     // Test with timestamps disabled
     let metadata_disabled = MetadataConfig {
         created: false,
         last_updated: false,
     };
-    
+
     assert!(!metadata_disabled.created);
     assert!(!metadata_disabled.last_updated);
 }
@@ -135,7 +133,10 @@ fn test_config_serialization() {
         deserialized.generation.test_language
     );
     assert_eq!(config.metadata.created, deserialized.metadata.created);
-    assert_eq!(config.metadata.last_updated, deserialized.metadata.last_updated);
+    assert_eq!(
+        config.metadata.last_updated,
+        deserialized.metadata.last_updated
+    );
 }
 
 /// Test Config clone functionality
@@ -184,7 +185,6 @@ fn test_config_custom_values() {
         directories: DirectoryConfig {
             use_case_dir: "src/docs".to_string(),
             test_dir: "src/tests".to_string(),
-            persona_dir: "src/personas".to_string(),
             template_dir: Some("src/templates".to_string()),
             toml_dir: None,
         },

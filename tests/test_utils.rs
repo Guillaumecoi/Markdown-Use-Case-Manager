@@ -5,8 +5,8 @@
 
 use anyhow::{Context, Result};
 use markdown_use_case_manager::config::Config;
-use markdown_use_case_manager::core::languages::LanguageRegistry;
-use markdown_use_case_manager::core::models::{Priority, Scenario, Status, UseCase};
+use markdown_use_case_manager::core::domain::entities::{Priority, UseCase};
+use markdown_use_case_manager::core::infrastructure::languages::LanguageRegistry;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -52,10 +52,12 @@ pub fn init_project_with_language_in_dir(
             // Use the primary name (not alias)
             let primary_name = lang_def.name().to_string();
             config.generation.test_language = primary_name.clone();
+            config.templates.test_language = primary_name.clone();
             Some(primary_name)
         } else {
             // Keep original if not found in registry (might be user-defined)
             config.generation.test_language = lang.clone();
+            config.templates.test_language = lang.clone();
             Some(lang.clone())
         }
     } else {
@@ -114,12 +116,6 @@ pub fn templates_dir() -> PathBuf {
     Path::new(".config/.mucm").join("handlebars")
 }
 
-/// Set status on a scenario
-pub fn set_scenario_status(scenario: &mut Scenario, status: Status) {
-    scenario.status = status;
-    scenario.metadata.touch();
-}
-
 /// Find use case by ID
 pub fn find_use_case_by_id<'a>(use_cases: &'a [UseCase], id: &str) -> Option<&'a UseCase> {
     use_cases.iter().find(|uc| uc.id == id)
@@ -138,7 +134,9 @@ pub fn get_available_test_languages() -> Vec<String> {
 }
 
 /// Load methodology-specific configuration (for testing)
-pub fn load_methodology_config(methodology: &str) -> Result<markdown_use_case_manager::config::MethodologyConfig> {
+pub fn load_methodology_config(
+    methodology: &str,
+) -> Result<markdown_use_case_manager::config::MethodologyConfig> {
     let config_path = Path::new(".config/.mucm")
         .join("methodologies")
         .join(format!("{}.toml", methodology));
@@ -155,7 +153,7 @@ pub fn load_methodology_config(methodology: &str) -> Result<markdown_use_case_ma
 
     let content = fs::read_to_string(&config_path)
         .with_context(|| format!("Failed to read methodology config at {:?}", config_path))?;
-    
+
     let config: markdown_use_case_manager::config::MethodologyConfig = toml::from_str(&content)
         .with_context(|| format!("Failed to parse methodology config for '{}'", methodology))?;
 

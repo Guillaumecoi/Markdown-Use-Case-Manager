@@ -1,9 +1,9 @@
 use anyhow::Result;
 use inquire::{Confirm, Select, Text};
 
+use super::ui::UI;
 use crate::cli::runner::CliRunner;
 use crate::config::Config;
-use super::ui::UI;
 
 /// Handle settings configuration
 pub struct Settings;
@@ -136,7 +136,10 @@ impl Settings {
             config.generation.auto_generate_tests
         );
         println!("Auto-set 'created': {}", config.metadata.created);
-        println!("Auto-update 'last_updated': {}", config.metadata.last_updated);
+        println!(
+            "Auto-update 'last_updated': {}",
+            config.metadata.last_updated
+        );
 
         UI::pause_for_input()?;
         Ok(())

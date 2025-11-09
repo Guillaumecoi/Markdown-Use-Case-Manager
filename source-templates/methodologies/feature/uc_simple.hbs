@@ -1,31 +1,27 @@
-# {{core.title}}
+# {{title}}
 
-**ID:** {{core.id}} | **Status:** {{core.status}} | **Priority:** {{core.priority}}
+**ID:** {{id}} | **Status:** PLANNED | **Priority:** {{priority}}
 
 ## Overview
-{{#if core.description}}
-{{core.description}}
+{{#if description}}
+{{description}}
 {{else}}
 _Brief description of what this feature does and why it's needed._
 {{/if}}
 
 ## Value
-{{#if business.value_proposition}}
-{{business.value_proposition}}
+{{#if business_value}}
+{{business_value}}
 {{else}}
 _What problem does this solve? What value does it provide?_
 {{/if}}
 
 ## Users
-{{#if stakeholders.primary_users}}
-**Target Users:** {{#each stakeholders.primary_users}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
-{{else}}
 **Target Users:** _Who will use this feature?_
-{{/if}}
 
 ## Success
-{{#if business.success_criteria}}
-{{#each business.success_criteria}}
+{{#if acceptance_criteria}}
+{{#each acceptance_criteria}}
 - {{this}}
 {{/each}}
 {{else}}
@@ -34,6 +30,22 @@ _How will we know this feature is successful?_
 - _Success metric 2_
 {{/if}}
 
+{{#if custom_field}}
+## Custom Fields Demo
+**Custom Field:** {{custom_field}}
+
+{{/if}}
+{{#if another_custom}}
+**Another Custom:** {{another_custom}}
+
+{{/if}}
+{{#if custom_array}}
+**Custom Array (List):**
+{{#each custom_array}}
+- {{this}}
+{{/each}}
+
+{{/if}}
 ## Next Steps
 - [ ] _Define detailed requirements_
 - [ ] _Create technical design_

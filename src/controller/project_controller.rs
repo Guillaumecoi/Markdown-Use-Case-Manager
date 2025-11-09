@@ -1,8 +1,8 @@
 use anyhow::Result;
 
-use crate::config::Config;
-use crate::core::languages::LanguageRegistry;
 use super::dto::{DisplayResult, MethodologyInfo, SelectionOptions};
+use crate::config::Config;
+use crate::core::infrastructure::languages::LanguageRegistry;
 
 /// Controller for project initialization and management
 pub struct ProjectController;
@@ -13,7 +13,9 @@ impl ProjectController {
         Config::load().is_ok()
     }
 
-    /// Get available programming languages
+    /// Get available programming languages for selection prompts
+    /// TODO: Use this in interactive init workflow for language selection
+    #[allow(dead_code)]
     pub fn get_available_languages() -> Result<SelectionOptions> {
         let languages = Config::get_available_languages()?;
         Ok(SelectionOptions::new(languages))
@@ -22,15 +24,22 @@ impl ProjectController {
     /// Get available methodologies with descriptions
     pub fn get_available_methodologies() -> Result<Vec<MethodologyInfo>> {
         let methodologies = Config::list_available_methodologies()?;
-        
+
         let methodology_infos: Vec<MethodologyInfo> = methodologies
             .into_iter()
             .map(|name| {
-                let display_name = name.chars()
+                let display_name = name
+                    .chars()
                     .enumerate()
-                    .map(|(i, c)| if i == 0 { c.to_uppercase().next().unwrap() } else { c })
+                    .map(|(i, c)| {
+                        if i == 0 {
+                            c.to_uppercase().next().unwrap()
+                        } else {
+                            c
+                        }
+                    })
                     .collect::<String>();
-                
+
                 let description = match name.as_str() {
                     "business" => "Business-focused use cases with actors and goals",
                     "developer" => "Technical use cases for development teams",
@@ -38,7 +47,7 @@ impl ProjectController {
                     "tester" => "QA and testing-focused use cases",
                     _ => "Custom methodology",
                 };
-                
+
                 MethodologyInfo {
                     name,
                     display_name,
@@ -46,16 +55,20 @@ impl ProjectController {
                 }
             })
             .collect();
-        
+
         Ok(methodology_infos)
     }
 
     /// Initialize a new project (Step 1: Create config)
-    pub fn init_project(language: Option<String>, default_methodology: String) -> Result<DisplayResult> {
+    pub fn init_project(
+        language: Option<String>,
+        default_methodology: String,
+    ) -> Result<DisplayResult> {
         // Check if already initialized
         if Self::is_initialized() {
             return Ok(DisplayResult::error(
-                "A use case manager project already exists in this directory or a parent directory".to_string()
+                "A use case manager project already exists in this directory or a parent directory"
+                    .to_string(),
             ));
         }
 
@@ -73,11 +86,12 @@ impl ProjectController {
 
         // Create minimal config
         let config = Config::for_template(resolved_language, Some(default_methodology.clone()));
-        
+
         // Save config file
         Config::save_config_only(&config)?;
-        
-        let recommendations = Config::methodology_recommendations(&config.templates.default_methodology);
+
+        let recommendations =
+            Config::methodology_recommendations(&config.templates.default_methodology);
 
         let message = format!(
             "✅ Configuration file created at .config/.mucm/mucm.toml\n\n\
@@ -96,7 +110,11 @@ impl ProjectController {
              - Directories will be created when you create your first use case",
             config.templates.test_language,
             &config.templates.default_methodology,
-            config.directories.toml_dir.as_deref().unwrap_or("docs/use-cases"),
+            config
+                .directories
+                .toml_dir
+                .as_deref()
+                .unwrap_or("docs/use-cases"),
             config.directories.use_case_dir,
             config.directories.test_dir,
             recommendations
@@ -116,12 +134,15 @@ impl ProjectController {
         if Config::check_templates_exist() {
             return Ok(DisplayResult::error(
                 "Project already finalized. Templates directory exists.\n\
-                 If you want to re-copy templates, delete .config/.mucm/handlebars/ first.".to_string()
+                 If you want to re-copy templates, delete .config/.mucm/handlebars/ first."
+                    .to_string(),
             ));
         }
 
         // Copy templates
-        Config::copy_templates_to_config_with_language(Some(config.templates.test_language.clone()))?;
+        Config::copy_templates_to_config_with_language(Some(
+            config.templates.test_language.clone(),
+        ))?;
 
         // Get available methodologies
         let available = Config::list_available_methodologies().unwrap_or_default();
@@ -152,6 +173,8 @@ impl ProjectController {
     }
 
     /// Get the default methodology from config
+    /// TODO: Use this in interactive mode to pre-select default methodology
+    #[allow(dead_code)]
     pub fn get_default_methodology() -> Result<String> {
         let config = Config::load()?;
         Ok(config.templates.default_methodology.clone())
@@ -166,14 +189,19 @@ impl ProjectController {
                 for lang in languages {
                     output.push_str(&format!("  - {}\n", lang));
                 }
-                output.push_str("\nTo initialize with a specific language: mucm init -l <language>\n");
+                output.push_str(
+                    "\nTo initialize with a specific language: mucm init -l <language>\n",
+                );
                 output.push_str("To add a new language manually, create a directory: .config/.mucm/handlebars/lang-<language>/\n");
             }
             Err(e) => {
                 output.push_str(&format!("Error getting available languages: {}\n", e));
                 let language_registry = LanguageRegistry::new();
                 let builtin_languages = language_registry.available_languages();
-                output.push_str(&format!("Built-in languages: {}\n", builtin_languages.join(", ")));
+                output.push_str(&format!(
+                    "Built-in languages: {}\n",
+                    builtin_languages.join(", ")
+                ));
             }
         }
 

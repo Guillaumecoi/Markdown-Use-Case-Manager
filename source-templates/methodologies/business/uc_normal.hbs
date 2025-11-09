@@ -1,10 +1,10 @@
-# Business Analysis: {{core.title}}
+# Business Analysis: {{title}}
 
-**Use Case ID:** {{core.id}} | **Status:** {{core.status}} | **Priority:** {{core.priority}} | **Analysis Date:** {{core.created}}
+**Use Case ID:** {{id}} | **Status:** {{status}} | **Priority:** {{priority}} | **Analysis Date:** {{created}}
 
 ## Executive Summary
 {{#if core.description}}
-{{core.description}}
+{{description}}
 {{else}}
 _Provide a clear summary of the business case and its strategic importance._
 {{/if}}
@@ -33,7 +33,7 @@ _Who are the main stakeholders affected by this use case?_
 ## Business Value
 {{#if business.value_proposition}}
 ### Value Proposition
-{{business.value_proposition}}
+{{value_proposition}}
 {{else}}
 ### Value Proposition
 _What specific business value does this use case deliver?_
@@ -59,7 +59,7 @@ _How will business success be measured?_
 
 ## Financial Analysis
 {{#if business.roi_analysis}}
-{{business.roi_analysis}}
+{{roi_analysis}}
 {{else}}
 ### Investment Required
 - **Development costs:** _$XXX_
@@ -77,7 +77,7 @@ _How will business success be measured?_
 ## Implementation Strategy
 {{#if business.timeline}}
 ### Timeline
-{{business.timeline}}
+{{timeline}}
 {{else}}
 ### Phased Approach
 - **Phase 1:** _Foundation_ (_X weeks_)
@@ -87,7 +87,7 @@ _How will business success be measured?_
 
 {{#if business.resource_requirements}}
 ### Resource Requirements
-{{business.resource_requirements}}
+{{resource_requirements}}
 {{else}}
 ### Resource Requirements
 **Internal Resources:**
@@ -116,7 +116,7 @@ _How will business success be measured?_
 ## Compliance & Governance
 {{#if business.compliance_requirements}}
 ### Compliance Requirements
-{{business.compliance_requirements}}
+{{compliance_requirements}}
 {{else}}
 ### Regulatory Considerations
 _What regulatory requirements must be considered?_

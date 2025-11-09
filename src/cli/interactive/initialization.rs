@@ -1,9 +1,9 @@
 use anyhow::Result;
 use inquire::{Confirm, MultiSelect};
 
+use super::ui::UI;
 use crate::cli::runner::CliRunner;
 use crate::config::Config;
-use super::ui::UI;
 
 /// Handle project initialization workflow
 pub struct Initialization;
@@ -21,7 +21,9 @@ impl Initialization {
                 .prompt()?;
 
             if !should_init {
-                UI::show_warning("Exiting without initializing. Run 'mucm init' to initialize later.")?;
+                UI::show_warning(
+                    "Exiting without initializing. Run 'mucm init' to initialize later.",
+                )?;
                 return Err(anyhow::anyhow!("Project not initialized"));
             }
 
@@ -96,9 +98,12 @@ impl Initialization {
         // Get methodology descriptions for better selection
         let methodology_display = Self::get_methodology_descriptions(&methodologies);
 
-        let selected = MultiSelect::new("Select methodologies to use:", methodology_display.clone())
-            .with_help_message("Use Space to select/deselect, Enter to confirm. Select at least one.")
-            .prompt()?;
+        let selected =
+            MultiSelect::new("Select methodologies to use:", methodology_display.clone())
+                .with_help_message(
+                    "Use Space to select/deselect, Enter to confirm. Select at least one.",
+                )
+                .prompt()?;
 
         if selected.is_empty() {
             UI::show_error("You must select at least one methodology.")?;
@@ -110,10 +115,7 @@ impl Initialization {
             .iter()
             .map(|display| {
                 // Extract the methodology name (before the first space or dash)
-                display.split_whitespace()
-                    .next()
-                    .unwrap()
-                    .to_lowercase()
+                display.split_whitespace().next().unwrap().to_lowercase()
             })
             .collect();
 
@@ -138,7 +140,8 @@ impl Initialization {
         let default_options: Vec<String> = selected_methodologies
             .iter()
             .filter_map(|m| {
-                methodology_display.iter()
+                methodology_display
+                    .iter()
                     .find(|d| d.to_lowercase().starts_with(m))
                     .cloned()
             })
@@ -148,7 +151,11 @@ impl Initialization {
             .with_help_message("This will be used when no methodology is specified")
             .prompt()?;
 
-        Ok(default_display.split_whitespace().next().unwrap().to_lowercase())
+        Ok(default_display
+            .split_whitespace()
+            .next()
+            .unwrap()
+            .to_lowercase())
     }
 
     /// Show configuration summary
@@ -158,7 +165,10 @@ impl Initialization {
         default_methodology: &str,
     ) -> Result<()> {
         println!("\n✨ Configuration Summary:");
-        println!("   Language: {}", language.as_ref().unwrap_or(&"none".to_string()));
+        println!(
+            "   Language: {}",
+            language.as_ref().unwrap_or(&"none".to_string())
+        );
         println!("   Methodologies: {}", selected_methodologies.join(", "));
         println!("   Default: {}\n", default_methodology);
         Ok(())
@@ -186,7 +196,9 @@ impl Initialization {
     fn finalize_initialization(runner: &mut CliRunner) -> Result<()> {
         let auto_finalize = Confirm::new("Finalize initialization now?")
             .with_default(true)
-            .with_help_message("This will copy templates. Choose 'No' to review the config file first")
+            .with_help_message(
+                "This will copy templates. Choose 'No' to review the config file first",
+            )
             .prompt()?;
 
         if auto_finalize {
@@ -206,7 +218,7 @@ impl Initialization {
         } else {
             UI::show_warning(
                 "📝 Configuration created but not finalized.\n\
-                Review .config/.mucm/mucm.toml and run 'mucm init --finalize' when ready."
+                Review .config/.mucm/mucm.toml and run 'mucm init --finalize' when ready.",
             )?;
             Err(anyhow::anyhow!("Project initialization not finalized"))
         }
@@ -218,15 +230,27 @@ impl Initialization {
             .iter()
             .map(|m| {
                 // Capitalize first letter and format
-                let formatted = m.chars()
+                let formatted = m
+                    .chars()
                     .enumerate()
-                    .map(|(i, c)| if i == 0 { c.to_uppercase().next().unwrap() } else { c })
+                    .map(|(i, c)| {
+                        if i == 0 {
+                            c.to_uppercase().next().unwrap()
+                        } else {
+                            c
+                        }
+                    })
                     .collect::<String>();
 
                 // Add helpful descriptions
                 match m.as_str() {
-                    "business" => format!("{} - Business-focused use cases with actors and goals", formatted),
-                    "developer" => format!("{} - Technical use cases for development teams", formatted),
+                    "business" => format!(
+                        "{} - Business-focused use cases with actors and goals",
+                        formatted
+                    ),
+                    "developer" => {
+                        format!("{} - Technical use cases for development teams", formatted)
+                    }
                     "feature" => format!("{} - Feature-oriented use case documentation", formatted),
                     "tester" => format!("{} - QA and testing-focused use cases", formatted),
                     _ => formatted,

@@ -1,16 +1,16 @@
-# Test Specification: {{core.title}}
+# Test Specification: {{title}}
 
-**Use Case ID:** {{core.id}}  
-**Test Status:** {{core.status}}  
-**Test Priority:** {{core.priority}}  
-**Test Plan Date:** {{core.created_date}}
+**Use Case ID:** {{id}}  
+**Test Status:** {{status}}  
+**Test Priority:** {{priority}}  
+**Test Plan Date:** {{created_date}}
 
 ---
 
 ## Test Overview
 
 {{#if core.summary}}
-{{core.summary}}
+{{summary}}
 {{else}}
 ### Testing Scope
 _Define what aspects of the use case will be tested and the overall testing approach._
@@ -18,7 +18,7 @@ _Define what aspects of the use case will be tested and the overall testing appr
 
 {{#if testing.test_strategy}}
 ### Test Strategy
-{{testing.test_strategy}}
+{{test_strategy}}
 {{else}}
 ### Testing Approach
 **Test Types to Execute:**
@@ -140,7 +140,7 @@ _What specific aspects need validation through testing?_
 
 {{#if testing.test_data_requirements}}
 ### Test Data Strategy
-{{testing.test_data_requirements}}
+{{test_data_requirements}}
 {{else}}
 ### Test Data Management
 **Data Categories Needed:**
@@ -163,7 +163,7 @@ _What specific aspects need validation through testing?_
 
 {{#if testing.testing_tools}}
 ### Test Tooling
-{{testing.testing_tools}}
+{{testing_tools}}
 {{else}}
 ### Testing Infrastructure
 **Automated Testing Tools:**
@@ -215,7 +215,7 @@ _What specific aspects need validation through testing?_
 
 {{#if testing.quality_metrics}}
 ### Test Metrics and KPIs
-{{testing.quality_metrics}}
+{{quality_metrics}}
 {{else}}
 ### Testing Metrics to Track
 **Test Coverage Metrics:**
@@ -238,7 +238,7 @@ _What specific aspects need validation through testing?_
 
 {{#if testing.execution_plan}}
 ### Test Execution Strategy
-{{testing.execution_plan}}
+{{execution_plan}}
 {{else}}
 ### Testing Schedule and Phases
 
@@ -267,7 +267,7 @@ _What specific aspects need validation through testing?_
 
 {{#if testing.defect_management}}
 ### Defect Handling Process
-{{testing.defect_management}}
+{{defect_management}}
 {{else}}
 ### Bug Tracking and Resolution
 **Defect Classification:**
@@ -311,4 +311,4 @@ _What specific aspects need validation through testing?_
 3. _Test script development and validation_
 4. _Test execution planning and scheduling_
 
-**Last Updated:** {{templates.last_updated}}
+**Last Updated:** {{last_updated}}

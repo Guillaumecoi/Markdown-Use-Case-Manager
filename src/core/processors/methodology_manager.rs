@@ -14,20 +14,16 @@ impl MethodologyManager {
                 .join("methodologies")
                 .join(methodology)
                 .join("config.toml");
-            
+
             if let Ok(content) = fs::read_to_string(&config_path) {
                 if let Ok(value) = toml::from_str::<toml::Value>(&content) {
                     if let Some(desc) = value.get("description").and_then(|v| v.as_str()) {
-                        return format!(
-                            "{} Methodology:\n{}",
-                            methodology,
-                            desc
-                        );
+                        return format!("{} Methodology:\n{}", methodology, desc);
                     }
                 }
             }
         }
-        
+
         // Fallback if config not found
         format!(
             "{} Methodology\n\
@@ -38,8 +34,7 @@ impl MethodologyManager {
 
     /// Get list of available methodologies (those with config files)
     pub fn list_available() -> Result<Vec<String>> {
-        let methodologies_dir = Self::find_config_dir()?
-            .join("methodologies");
+        let methodologies_dir = Self::find_config_dir()?.join("methodologies");
 
         if !methodologies_dir.exists() {
             return Ok(Vec::new());
@@ -64,13 +59,13 @@ impl MethodologyManager {
     /// Find the .config/.mucm directory by walking up the directory tree
     fn find_config_dir() -> Result<std::path::PathBuf> {
         let mut current_dir = std::env::current_dir()?;
-        
+
         loop {
             let config_dir = current_dir.join(".config/.mucm");
             if config_dir.exists() && config_dir.is_dir() {
                 return Ok(config_dir);
             }
-            
+
             // Try parent directory
             if let Some(parent) = current_dir.parent() {
                 current_dir = parent.to_path_buf();

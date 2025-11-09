@@ -3,6 +3,9 @@
 /// Result of an operation to display to the user
 #[derive(Debug)]
 pub struct DisplayResult {
+    /// Whether the operation succeeded
+    /// TODO: Use this field to conditionally format output (green for success, red for error)
+    #[allow(dead_code)]
     pub success: bool,
     pub message: String,
 }
@@ -23,18 +26,6 @@ impl DisplayResult {
     }
 }
 
-/// Configuration summary for display
-#[derive(Debug, Clone)]
-pub struct ConfigSummary {
-    pub project_name: String,
-    pub project_description: String,
-    pub use_case_dir: String,
-    pub test_dir: String,
-    pub test_language: String,
-    pub default_methodology: String,
-    pub auto_generate_tests: bool,
-}
-
 /// Available options for user selection
 #[derive(Debug, Clone)]
 pub struct SelectionOptions {
@@ -46,6 +37,9 @@ impl SelectionOptions {
         Self { items }
     }
 
+    /// Check if there are no items available
+    /// TODO: Use this to show helpful messages when no use cases/categories exist yet
+    #[allow(dead_code)]
     pub fn is_empty(&self) -> bool {
         self.items.is_empty()
     }
@@ -60,6 +54,9 @@ pub struct MethodologyInfo {
 }
 
 impl MethodologyInfo {
+    /// Format methodology info as a single line for list display
+    /// TODO: Use this in `mucm methodologies` command for cleaner output
+    #[allow(dead_code)]
     pub fn to_display_string(&self) -> String {
         format!("{} - {}", self.display_name, self.description)
     }

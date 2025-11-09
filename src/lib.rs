@@ -8,6 +8,8 @@
 pub mod config;
 pub mod controller;
 pub mod core;
+pub mod presentation; // Formatters and display logic
 
-pub use core::models::Priority;
-pub use core::use_case_coordinator::UseCaseCoordinator;
+// Re-export commonly used types for convenience
+pub use core::application::UseCaseApplicationService;
+pub use core::domain::entities::{Metadata, Priority, Status, UseCase};

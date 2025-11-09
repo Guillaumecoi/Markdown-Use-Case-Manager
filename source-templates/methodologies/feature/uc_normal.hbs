@@ -1,25 +1,25 @@
-# Feature: {{core.title}}
+# Feature: {{title}}
 
-**ID:** {{core.id}} | **Status:** {{core.status}} | **Priority:** {{core.priority}} | **Created:** {{core.created}}
+**ID:** {{id}} | **Status:** PLANNED | **Priority:** {{priority}} | **Created:** {{created_date}}
 
 ## Summary
-{{#if core.description}}
-{{core.description}}
+{{#if description}}
+{{description}}
 {{else}}
 _Provide a clear description of the feature and its purpose._
 {{/if}}
 
 ## Business Value
-{{#if business.value_proposition}}
-{{business.value_proposition}}
+{{#if value_proposition}}
+{{value_proposition}}
 {{else}}
 ### Value Proposition
 _What business value does this feature deliver? How does it benefit users or the organization?_
 {{/if}}
 
-{{#if business.success_criteria}}
+{{#if success_criteria}}
 ### Success Criteria
-{{#each business.success_criteria}}
+{{#each success_criteria}}
 - {{this}}
 {{/each}}
 {{else}}
@@ -31,9 +31,9 @@ _How will we measure the success of this feature?_
 {{/if}}
 
 ## Target Audience
-{{#if stakeholders.primary_users}}
+{{#if primary_users}}
 ### Primary Users
-{{#each stakeholders.primary_users}}
+{{#each primary_users}}
 - {{this}}
 {{/each}}
 {{else}}
@@ -41,17 +41,17 @@ _How will we measure the success of this feature?_
 _Who are the main users that will benefit from this feature?_
 {{/if}}
 
-{{#if stakeholders.secondary_users}}
+{{#if secondary_users}}
 ### Secondary Users
-{{#each stakeholders.secondary_users}}
+{{#each secondary_users}}
 - {{this}}
 {{/each}}
 {{/if}}
 
 ## Requirements Overview
-{{#if core.objectives}}
+{{#if objectives}}
 ### Key Objectives
-{{#each core.objectives}}
+{{#each objectives}}
 - {{this}}
 {{/each}}
 {{else}}
@@ -63,8 +63,8 @@ _What are the main goals this feature should achieve?_
 {{/if}}
 
 ## Implementation Approach
-{{#if core.solution_overview}}
-{{core.solution_overview}}
+{{#if solution_overview}}
+{{solution_overview}}
 {{else}}
 ### High-Level Solution
 _What is the general approach to building this feature?_
@@ -76,9 +76,9 @@ _What is the general approach to building this feature?_
 {{/if}}
 
 ## Timeline & Resources
-{{#if business.timeline}}
+{{#if timeline}}
 ### Estimated Timeline
-{{business.timeline}}
+{{timeline}}
 {{else}}
 ### Estimated Timeline
 _What is the expected development timeline?_
@@ -87,9 +87,9 @@ _What is the expected development timeline?_
 - **Phase 3:** _Testing and rollout_ - _X weeks_
 {{/if}}
 
-{{#if business.resource_requirements}}
+{{#if resource_requirements}}
 ### Resource Requirements
-{{business.resource_requirements}}
+{{resource_requirements}}
 {{else}}
 ### Resource Requirements
 _What team members and resources are needed?_
@@ -99,8 +99,8 @@ _What team members and resources are needed?_
 {{/if}}
 
 ## Risk Considerations
-{{#if business.risk_factors}}
-{{#each business.risk_factors}}
+{{#if risk_factors}}
+{{#each risk_factors}}
 - **Risk:** {{this}}
 {{/each}}
 {{else}}

@@ -21,7 +21,7 @@ impl UI {
             Print("║                                                              ║\n"),
             Print("║        📝 Markdown Use Case Manager - Interactive Mode       ║\n"),
             Print("║                                                              ║\n"),
-            Print("║          Manage your use cases and scenarios with ease       ║\n"),
+            Print("║            Manage your use cases with ease                   ║\n"),
             Print("║                                                              ║\n"),
             Print("╚══════════════════════════════════════════════════════════════╝\n"),
             ResetColor,

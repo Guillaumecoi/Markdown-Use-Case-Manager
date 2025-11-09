@@ -30,8 +30,12 @@ impl CliRunner {
 
     /// Initialize a new use case manager project (Step 1: Create config only)
     #[allow(clippy::unused_self)]
-    pub fn init_project(&mut self, language: Option<String>, methodology: Option<String>) -> Result<String> {
-        let default_methodology = methodology.unwrap_or_else(|| "business".to_string());
+    pub fn init_project(
+        &mut self,
+        language: Option<String>,
+        methodology: Option<String>,
+    ) -> Result<String> {
+        let default_methodology = methodology.unwrap_or_else(|| "feature".to_string());
         let result = ProjectController::init_project(language, default_methodology)?;
         Ok(result.message)
     }
@@ -64,26 +68,12 @@ impl CliRunner {
         methodology: String,
     ) -> Result<String> {
         let controller = self.ensure_use_case_controller()?;
-        let result = controller.create_use_case_with_methodology(title, category, description, methodology)?;
-        Ok(result.message)
-    }
-
-    /// Add a scenario to a use case
-    pub fn add_scenario(
-        &mut self,
-        use_case_id: String,
-        title: String,
-        description: Option<String>,
-    ) -> Result<String> {
-        let controller = self.ensure_use_case_controller()?;
-        let result = controller.add_scenario(use_case_id, title, description)?;
-        Ok(result.message)
-    }
-
-    /// Update scenario status
-    pub fn update_scenario_status(&mut self, scenario_id: String, status: String) -> Result<String> {
-        let controller = self.ensure_use_case_controller()?;
-        let result = controller.update_scenario_status(scenario_id, status)?;
+        let result = controller.create_use_case_with_methodology(
+            title,
+            category,
+            description,
+            methodology,
+        )?;
         Ok(result.message)
     }
 
@@ -100,16 +90,12 @@ impl CliRunner {
     }
 
     /// Get all use case IDs for selection
+    /// Get all use case IDs for selection prompts
+    /// TODO: Use this in interactive mode for use case selection dropdowns
+    #[allow(dead_code)]
     pub fn get_use_case_ids(&mut self) -> Result<Vec<String>> {
         let controller = self.ensure_use_case_controller()?;
         let options = controller.get_use_case_ids()?;
-        Ok(options.items)
-    }
-
-    /// Get all scenario IDs for a specific use case
-    pub fn get_scenario_ids(&mut self, use_case_id: &str) -> Result<Vec<String>> {
-        let controller = self.ensure_use_case_controller()?;
-        let options = controller.get_scenario_ids(use_case_id)?;
         Ok(options.items)
     }
 
@@ -129,16 +115,16 @@ impl CliRunner {
     #[allow(clippy::unused_self)]
     pub fn list_methodologies(&mut self) -> Result<String> {
         let methodologies = ProjectController::get_available_methodologies()?;
-        
+
         if methodologies.is_empty() {
             return Ok("No methodologies available.".to_string());
         }
-        
+
         let mut result = String::from("Available methodologies:\n");
         for info in methodologies {
             result.push_str(&format!("  - {}: {}\n", info.name, info.description));
         }
-        
+
         Ok(result)
     }
 
@@ -146,20 +132,21 @@ impl CliRunner {
     #[allow(clippy::unused_self)]
     pub fn get_methodology_info(&mut self, methodology: String) -> Result<String> {
         let methodologies = ProjectController::get_available_methodologies()?;
-        
+
         match methodologies.iter().find(|m| m.name == methodology) {
-            Some(info) => {
-                Ok(format!(
-                    "Methodology: {}\nDisplay Name: {}\nDescription: {}",
-                    info.name, info.display_name, info.description
-                ))
-            }
+            Some(info) => Ok(format!(
+                "Methodology: {}\nDisplay Name: {}\nDescription: {}",
+                info.name, info.display_name, info.description
+            )),
             None => Ok(format!("Methodology '{}' not found.", methodology)),
         }
     }
 
     /// Get default methodology from config
     #[allow(clippy::unused_self)]
+    /// Get the default methodology from config
+    /// TODO: Use this in interactive mode to pre-fill methodology in interactive create workflow
+    #[allow(dead_code)]
     pub fn get_default_methodology(&mut self) -> Result<String> {
         ProjectController::get_default_methodology()
     }

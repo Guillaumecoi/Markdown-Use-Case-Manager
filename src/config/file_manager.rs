@@ -2,7 +2,7 @@
 use crate::config::types::Config;
 use anyhow::{Context, Result};
 use std::fs;
-use std::path::{Path};
+use std::path::Path;
 
 pub struct ConfigFileManager;
 
@@ -16,10 +16,7 @@ impl ConfigFileManager {
         }
 
         let content = fs::read_to_string(&config_path).context("Failed to read config file")?;
-        let mut config: Config = toml::from_str(&content).context("Failed to parse config file")?;
-
-        // Populate the generation field from templates (for backwards compatibility)
-        config.generation.test_language = config.templates.test_language.clone();
+        let config: Config = toml::from_str(&content).context("Failed to parse config file")?;
 
         Ok(config)
     }
@@ -38,7 +35,9 @@ impl ConfigFileManager {
     /// Check if templates have already been copied to .config/.mucm/handlebars/
     pub fn check_templates_exist() -> bool {
         let base_path = Path::new(".");
-        let templates_dir = base_path.join(Config::CONFIG_DIR).join(Config::TEMPLATES_DIR);
+        let templates_dir = base_path
+            .join(Config::CONFIG_DIR)
+            .join(Config::TEMPLATES_DIR);
         templates_dir.exists() && templates_dir.is_dir()
     }
 }

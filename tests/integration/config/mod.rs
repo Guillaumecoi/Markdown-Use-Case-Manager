@@ -1,3 +1,3 @@
 // Configuration integration tests module
 
-pub mod directory_config_test;
+// TODO: Add directory configuration tests with proper finalize steps

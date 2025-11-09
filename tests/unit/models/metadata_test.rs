@@ -1,6 +1,6 @@
 // Unit tests for Metadata struct and related functionality
 use chrono::Utc;
-use markdown_use_case_manager::core::models::Metadata;
+use markdown_use_case_manager::core::domain::entities::Metadata;
 
 /// Test Metadata::new() creates metadata with correct initial values
 #[test]

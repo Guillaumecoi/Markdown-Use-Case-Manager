@@ -10,8 +10,8 @@ pub struct Config {
     #[serde(default)]
     pub base_fields: HashMap<String, BaseFieldConfig>,
     pub metadata: MetadataConfig,
-    /// Internal field for backwards compatibility - derived from methodology config
-    #[serde(skip)]
+    /// Generation configuration (test language, auto-generation settings, etc.)
+    #[serde(default)]
     pub generation: GenerationConfig,
 }
 
@@ -25,7 +25,6 @@ pub struct ProjectConfig {
 pub struct DirectoryConfig {
     pub use_case_dir: String,
     pub test_dir: String,
-    pub persona_dir: String,
     pub template_dir: Option<String>,
     /// Directory for TOML source files (defaults to same as use_case_dir if not specified)
     pub toml_dir: Option<String>,

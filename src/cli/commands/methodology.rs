@@ -16,7 +16,7 @@ pub fn handle_methodology_info_command(runner: &mut CliRunner, name: String) -> 
 }
 
 /// Handle the regenerate command
-/// 
+///
 /// Supports three modes:
 /// 1. No args or --all: Regenerate all use cases with current methodology
 /// 2. With use_case_id: Regenerate single use case with current methodology

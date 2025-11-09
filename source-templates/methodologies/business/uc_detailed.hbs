@@ -1,16 +1,16 @@
-# Business Analysis: {{core.title}}
+# Business Analysis: {{title}}
 
-**Use Case ID:** {{core.id}}  
-**Analysis Status:** {{core.status}}  
-**Business Priority:** {{core.priority}}  
-**Analysis Date:** {{core.created_date}}
+**Use Case ID:** {{id}}  
+**Analysis Status:** {{status}}  
+**Business Priority:** {{priority}}  
+**Analysis Date:** {{created_date}}
 
 ---
 
 ## Executive Summary
 
 {{#if core.summary}}
-{{core.summary}}
+{{summary}}
 {{else}}
 ### Business Overview
 _Provide a comprehensive summary of the business case and its strategic importance._
@@ -52,7 +52,7 @@ _Who else might be impacted by this initiative?_
 
 {{#if business.value_proposition}}
 ### Value Proposition
-{{business.value_proposition}}
+{{value_proposition}}
 {{else}}
 ### Value Proposition
 _What specific business value does this use case deliver?_
@@ -66,7 +66,7 @@ _What competitive benefits does this provide?_
 
 {{#if business.roi_analysis}}
 ### Return on Investment Analysis
-{{business.roi_analysis}}
+{{roi_analysis}}
 {{else}}
 ### Financial Analysis
 **Investment Required:**
@@ -119,7 +119,7 @@ _How will business success be measured?_
 
 {{#if business.process_changes}}
 ### Process Changes Required
-{{business.process_changes}}
+{{process_changes}}
 {{else}}
 ### Current State Analysis
 _How do current business processes work?_
@@ -135,7 +135,7 @@ _What organizational changes are needed?_
 
 {{#if business.timeline}}
 ### Business Timeline
-{{business.timeline}}
+{{timeline}}
 {{else}}
 ### Phased Implementation Approach
 **Phase 1: Foundation** _(Timeline)_
@@ -150,7 +150,7 @@ _What organizational changes are needed?_
 
 {{#if business.resource_requirements}}
 ### Resource Requirements
-{{business.resource_requirements}}
+{{resource_requirements}}
 {{else}}
 ### Business Resources Required
 **Internal Resources:**
@@ -189,7 +189,7 @@ _What organizational changes are needed?_
 
 {{#if business.compliance_requirements}}
 ### Compliance Requirements
-{{business.compliance_requirements}}
+{{compliance_requirements}}
 {{else}}
 ### Regulatory Considerations
 _What regulatory requirements must be considered?_
@@ -205,7 +205,7 @@ _What audit trails and documentation are needed?_
 
 {{#if stakeholders.communication_plan}}
 ### Stakeholder Communication
-{{stakeholders.communication_plan}}
+{{communication_plan}}
 {{else}}
 ### Communication Strategy
 **Key Messages:**
@@ -233,4 +233,4 @@ _What audit trails and documentation are needed?_
 3. _Resource commitment verification_
 4. _Implementation planning initiation_
 
-**Last Updated:** {{templates.last_updated}}
+**Last Updated:** {{last_updated}}

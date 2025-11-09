@@ -1,16 +1,16 @@
-# Feature Proposal: {{core.title}}
+# Feature Proposal: {{title}}
 
-**ID:** {{core.id}}  
-**Status:** {{core.status}}  
-**Priority:** {{core.priority}}  
-**Created:** {{core.created_date}}
+**ID:** {{id}}  
+**Status:** PLANNED  
+**Priority:** {{priority}}  
+**Created:** {{created_date}}
 
 ---
 
 ## Overview
 
-{{#if core.summary}}
-{{core.summary}}
+{{#if summary}}
+{{summary}}
 {{else}}
 ### Brief Summary
 _Provide a concise description of the feature and its value proposition._
@@ -18,16 +18,16 @@ _Provide a concise description of the feature and its value proposition._
 
 ## Business Value
 
-{{#if business.value_proposition}}
-{{business.value_proposition}}
+{{#if value_proposition}}
+{{value_proposition}}
 {{else}}
 ### Value Proposition
 _How does this feature benefit users or the business? What problem does it solve?_
 {{/if}}
 
-{{#if business.roi_analysis}}
+{{#if roi_analysis}}
 ### Return on Investment
-{{business.roi_analysis}}
+{{roi_analysis}}
 {{else}}
 ### ROI Considerations
 _What is the expected return on investment? Consider development costs vs. benefits._
@@ -35,9 +35,9 @@ _What is the expected return on investment? Consider development costs vs. benef
 
 ## Target Users
 
-{{#if stakeholders.primary_users}}
+{{#if primary_users}}
 ### Primary Users
-{{#each stakeholders.primary_users}}
+{{#each primary_users}}
 - {{this}}
 {{/each}}
 {{else}}
@@ -45,9 +45,9 @@ _What is the expected return on investment? Consider development costs vs. benef
 _Who are the main users that will benefit from this feature?_
 {{/if}}
 
-{{#if stakeholders.secondary_users}}
+{{#if secondary_users}}
 ### Secondary Users
-{{#each stakeholders.secondary_users}}
+{{#each secondary_users}}
 - {{this}}
 {{/each}}
 {{else}}
@@ -57,9 +57,9 @@ _Who are the additional users that might be impacted?_
 
 ## Key Requirements
 
-{{#if core.objectives}}
+{{#if objectives}}
 ### Objectives
-{{#each core.objectives}}
+{{#each objectives}}
 - {{this}}
 {{/each}}
 {{else}}
@@ -67,9 +67,9 @@ _Who are the additional users that might be impacted?_
 _What are the main goals this feature should achieve?_
 {{/if}}
 
-{{#if business.success_criteria}}
+{{#if success_criteria}}
 ### Success Criteria
-{{#each business.success_criteria}}
+{{#each success_criteria}}
 - {{this}}
 {{/each}}
 {{else}}
@@ -79,8 +79,8 @@ _How will you measure if this feature is successful?_
 
 ## High-Level Approach
 
-{{#if core.solution_overview}}
-{{core.solution_overview}}
+{{#if solution_overview}}
+{{solution_overview}}
 {{else}}
 ### Solution Overview
 _What is the high-level approach to implementing this feature?_
@@ -88,8 +88,8 @@ _What is the high-level approach to implementing this feature?_
 
 ## Implementation Timeline
 
-{{#if business.timeline}}
-{{business.timeline}}
+{{#if timeline}}
+{{timeline}}
 {{else}}
 ### Estimated Timeline
 _What is the expected development timeline for this feature?_
@@ -102,8 +102,8 @@ _What is the expected development timeline for this feature?_
 
 ## Resource Requirements
 
-{{#if business.resource_requirements}}
-{{business.resource_requirements}}
+{{#if resource_requirements}}
+{{resource_requirements}}
 {{else}}
 ### Team Requirements
 _What team members and skills are needed?_
@@ -114,9 +114,9 @@ _What are the estimated costs for development?_
 
 ## Risks and Considerations
 
-{{#if business.risk_factors}}
+{{#if risk_factors}}
 ### Known Risks
-{{#each business.risk_factors}}
+{{#each risk_factors}}
 - {{this}}
 {{/each}}
 {{else}}
@@ -127,6 +127,23 @@ _What are the main risks associated with this feature?_
 _How can identified risks be addressed?_
 {{/if}}
 
+## Custom Fields Test
+
+{{#if custom_field}}
+**Custom Field (String):** {{custom_field}}
+{{/if}}
+
+{{#if another_custom}}
+**Another Custom (String):** {{another_custom}}
+{{/if}}
+
+{{#if custom_array}}
+**Custom Array (List):**
+{{#each custom_array}}
+- {{this}}
+{{/each}}
+{{/if}}
+
 ---
 
 **Next Steps:**
@@ -135,4 +152,4 @@ _How can identified risks be addressed?_
 3. _Technical feasibility assessment_
 4. _Development planning_
 
-**Last Updated:** {{templates.last_updated}}
+**Last Updated:** {{last_updated}}

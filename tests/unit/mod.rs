@@ -2,10 +2,10 @@
 //
 // Tests are organized into logical subdirectories for better maintainability:
 // - cli/: Command-line interface unit tests
-// - models/: Data model tests (UseCase, Scenario, Status, Priority, Metadata)
+// - models/: Data model tests (UseCase, Status, Priority, Metadata)
 // - core/: Core functionality (config, coordinator, templates, processors, language)
 // - services/: Service layer tests
-// - features/: Extended feature tests (personas, etc.)
+// - features/: Extended feature tests
 
 // CLI unit tests
 pub mod cli;

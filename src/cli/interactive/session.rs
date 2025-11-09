@@ -1,12 +1,10 @@
 use anyhow::Result;
 
-use crate::cli::interactive::menu::{show_main_menu, MainMenuOption};
-use crate::cli::interactive::workflows::{
-    guided_add_scenario, guided_create_use_case, guided_update_scenario_status,
-};
-use crate::cli::interactive::ui::UI;
 use crate::cli::interactive::initialization::Initialization;
+use crate::cli::interactive::menu::{show_main_menu, MainMenuOption};
 use crate::cli::interactive::settings::Settings;
+use crate::cli::interactive::ui::UI;
+use crate::cli::interactive::workflows::guided_create_use_case;
 use crate::cli::runner::CliRunner;
 
 /// Interactive session manager
@@ -36,16 +34,6 @@ impl InteractiveSession {
                 MainMenuOption::CreateUseCase => {
                     if let Err(e) = guided_create_use_case(&mut self.runner) {
                         UI::show_error(&format!("Error creating use case: {}", e))?;
-                    }
-                }
-                MainMenuOption::AddScenario => {
-                    if let Err(e) = guided_add_scenario(&mut self.runner) {
-                        UI::show_error(&format!("Error adding scenario: {}", e))?;
-                    }
-                }
-                MainMenuOption::UpdateScenarioStatus => {
-                    if let Err(e) = guided_update_scenario_status(&mut self.runner) {
-                        UI::show_error(&format!("Error updating scenario status: {}", e))?;
                     }
                 }
                 MainMenuOption::ConfigureSettings => {
@@ -80,4 +68,3 @@ impl InteractiveSession {
         Ok(())
     }
 }
-

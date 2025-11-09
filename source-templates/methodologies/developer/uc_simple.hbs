@@ -1,24 +1,24 @@
-# Tech Spec: {{core.title}}
+# Tech Spec: {{title}}
 
-**ID:** {{core.id}} | **Status:** {{core.status}} | **Priority:** {{core.priority}}
+**ID:** {{id}} | **Status:** PLANNED | **Priority:** {{priority}}
 
 ## Overview
-{{#if core.description}}
-{{core.description}}
+{{#if description}}
+{{description}}
 {{else}}
 _What needs to be built and why?_
 {{/if}}
 
 ## Technical Approach
-{{#if technical.architecture_overview}}
-{{technical.architecture_overview}}
+{{#if architecture_overview}}
+{{architecture_overview}}
 {{else}}
 _High-level technical solution approach._
 {{/if}}
 
 ## Key Requirements
-{{#if core.objectives}}
-{{#each core.objectives}}
+{{#if objectives}}
+{{#each objectives}}
 - {{this}}
 {{/each}}
 {{else}}
@@ -28,8 +28,8 @@ _Core technical requirements:_
 {{/if}}
 
 ## Implementation Notes
-{{#if technical.development_approach}}
-{{technical.development_approach}}
+{{#if development_approach}}
+{{development_approach}}
 {{else}}
 **Technology Stack:** _Framework, database, etc._
 **Key Components:** _Main parts to build_
@@ -37,9 +37,9 @@ _Core technical requirements:_
 {{/if}}
 
 ## Testing
-{{#if testing.test_scenarios}}
+{{#if test_scenarios}}
 **Test Cases:**
-{{#each testing.test_scenarios}}
+{{#each test_scenarios}}
 - {{this}}
 {{/each}}
 {{else}}

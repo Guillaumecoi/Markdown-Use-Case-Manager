@@ -1,16 +1,16 @@
-# Technical Specification: {{core.title}}
+# Technical Specification: {{title}}
 
-**Use Case ID:** {{core.id}}  
-**Implementation Status:** {{core.status}}  
-**Development Priority:** {{core.priority}}  
-**Specification Date:** {{core.created_date}}
+**Use Case ID:** {{id}}  
+**Implementation Status:** {{status}}  
+**Development Priority:** {{priority}}  
+**Specification Date:** {{created_date}}
 
 ---
 
 ## Technical Overview
 
 {{#if core.summary}}
-{{core.summary}}
+{{summary}}
 {{else}}
 ### System Summary
 _Provide a technical overview of what needs to be built and why._
@@ -18,7 +18,7 @@ _Provide a technical overview of what needs to be built and why._
 
 {{#if core.solution_overview}}
 ### Solution Architecture
-{{core.solution_overview}}
+{{solution_overview}}
 {{else}}
 ### High-Level Architecture
 _Describe the overall technical approach and system architecture._
@@ -55,7 +55,7 @@ _What specific functionality must the system provide?_
 
 {{#if technical.performance_requirements}}
 ### Performance Requirements
-{{technical.performance_requirements}}
+{{performance_requirements}}
 {{else}}
 ### Performance Specifications
 **Response Time Requirements:**
@@ -75,7 +75,7 @@ _What specific functionality must the system provide?_
 
 {{#if technical.security_requirements}}
 ### Security Requirements
-{{technical.security_requirements}}
+{{security_requirements}}
 {{else}}
 ### Security Specifications
 **Authentication:**
@@ -96,7 +96,7 @@ _What specific functionality must the system provide?_
 
 {{#if technical.architecture_overview}}
 ### Architecture Details
-{{technical.architecture_overview}}
+{{architecture_overview}}
 {{else}}
 ### Technical Architecture
 **Technology Stack:**
@@ -116,7 +116,7 @@ _What specific functionality must the system provide?_
 
 {{#if technical.data_requirements}}
 ### Data Requirements
-{{technical.data_requirements}}
+{{data_requirements}}
 {{else}}
 ### Data Specifications
 **Data Sources:**
@@ -136,7 +136,7 @@ _What specific functionality must the system provide?_
 
 {{#if technical.development_approach}}
 ### Development Approach
-{{technical.development_approach}}
+{{development_approach}}
 {{else}}
 ### Development Strategy
 **Methodology:**
@@ -152,7 +152,7 @@ _What specific functionality must the system provide?_
 
 {{#if technical.integration_points}}
 ### Integration Requirements
-{{technical.integration_points}}
+{{integration_points}}
 {{else}}
 ### System Integrations
 **APIs to Develop:**
@@ -172,7 +172,7 @@ _What specific functionality must the system provide?_
 
 {{#if testing.test_strategy}}
 ### Test Approach
-{{testing.test_strategy}}
+{{test_strategy}}
 {{else}}
 ### Testing Requirements
 **Unit Testing:**
@@ -216,7 +216,7 @@ _What specific functionality must the system provide?_
 
 {{#if technical.deployment_strategy}}
 ### Deployment Strategy
-{{technical.deployment_strategy}}
+{{deployment_strategy}}
 {{else}}
 ### Deployment Plan
 **Environment Strategy:**
@@ -237,7 +237,7 @@ _What specific functionality must the system provide?_
 
 {{#if technical.monitoring_strategy}}
 ### Monitoring and Maintenance
-{{technical.monitoring_strategy}}
+{{monitoring_strategy}}
 {{else}}
 ### Operations Plan
 **Monitoring:**
@@ -282,7 +282,7 @@ _What specific functionality must the system provide?_
 
 {{#if technical.documentation_requirements}}
 ### Technical Documentation
-{{technical.documentation_requirements}}
+{{documentation_requirements}}
 {{else}}
 ### Documentation Deliverables
 **Code Documentation:**
@@ -320,4 +320,4 @@ _What specific functionality must the system provide?_
 3. _Sprint planning and task breakdown_
 4. _Implementation kickoff_
 
-**Last Updated:** {{templates.last_updated}}
+**Last Updated:** {{last_updated}}
