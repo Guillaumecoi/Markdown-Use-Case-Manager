@@ -2,15 +2,19 @@
 name = "markdown-use-case-manager"
 version = "0.1.0"
 edition = "2021"
-authors = ["Guillaume Coigniez <coigniez@gmail.com>"]
+authors = ["Guillaume Coigniez <120651399+Guillaumecoi@users.noreply.github.com>"]
 license = "MIT"
-description = "A lightweight CLI tool for managing use cases and scenarios in markdown format, designed to keep your documentation close to your code"
+description = "A lightweight CLI tool for managing use cases in markdown format, designed to keep your documentation close to your code."
 homepage = "https://github.com/GuillaumeCOI/markdown-use-case-manager"
 repository = "https://github.com/GuillaumeCOI/markdown-use-case-manager"
 documentation = "https://github.com/GuillaumeCOI/markdown-use-case-manager/docs"
 readme = "README.md"
 keywords = ["markdown", "use-case", "documentation", "cli", "git"]
 categories = ["command-line-utilities", "development-tools", "template-engine"]
+
+[[bin]]
+name = "mucm"
+path = "src/main.rs"
 
 [dependencies]
 # CLI and argument parsing
@@ -58,10 +62,6 @@ path = "tests/integration_tests.rs"
 [[test]]
 name = "unit_tests"
 path = "tests/unit_tests.rs"
-
-[[bin]]
-name = "mucm"
-path = "src/main.rs"
 
 # Internal testing interface - NOT FOR PUBLIC USE
 [lib]
