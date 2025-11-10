@@ -7,7 +7,6 @@ use anyhow::Result;
 use clap::Parser;
 
 use args::{Cli, Commands};
-#[allow(clippy::wildcard_imports)]
 use commands::*;
 use interactive::session::InteractiveSession;
 use runner::CliRunner;

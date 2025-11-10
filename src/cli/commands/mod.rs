@@ -1,13 +1,17 @@
-pub mod create;
-pub mod init;
-pub mod list;
+/// CLI command handlers.
+/// 
+/// These modules contain thin wrapper functions for CLI commands. They handle
+/// command-line specific concerns like output formatting, but delegate all
+/// business logic to the CliRunner. This separation keeps the CLI layer
+/// focused on user interaction while the runner manages domain operations.
+pub mod language;
 pub mod methodology;
-pub mod status;
+pub mod project;
+pub mod usecase;
 
-pub use create::handle_create_command;
-pub use init::handle_init_command;
-pub use list::{handle_languages_command, handle_list_command};
+pub use language::handle_languages_command;
 pub use methodology::{
     handle_list_methodologies_command, handle_methodology_info_command, handle_regenerate_command,
 };
-pub use status::handle_status_command;
+pub use project::{handle_init_command, handle_status_command};
+pub use usecase::{handle_create_command, handle_list_command};
