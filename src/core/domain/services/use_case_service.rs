@@ -1,5 +1,5 @@
 // Domain service for use case business logic
-use crate::core::domain::{Priority, UseCase};
+use crate::core::domain::{UseCase};
 use crate::core::to_snake_case;
 use std::path::Path;
 
@@ -77,8 +77,8 @@ impl UseCaseService {
         title: String,
         category: String,
         description: String,
-    ) -> UseCase {
-        UseCase::new(id, title, category, description, Priority::Medium)
+    ) -> Result<UseCase, String> {
+        UseCase::new(id, title, category, description, "Medium".to_string())
     }
 }
 
@@ -91,7 +91,6 @@ impl Default for UseCaseService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::domain::{Metadata, Status};
 
     fn create_test_use_case(
         id: String,
@@ -99,15 +98,7 @@ mod tests {
         category: String,
         description: String,
     ) -> UseCase {
-        UseCase {
-            id,
-            title,
-            category,
-            description,
-            priority: Priority::Medium,
-            metadata: Metadata::new(),
-            extra: std::collections::HashMap::new(),
-        }
+        UseCase::new(id, title, category, description, "Medium".to_string()).unwrap()
     }
 
     fn find_use_case_by_id<'a>(use_cases: &'a [UseCase], id: &str) -> Option<&'a UseCase> {
@@ -152,26 +143,6 @@ mod tests {
     }
 
     #[test]
-    fn test_status_parsing() {
-        assert_eq!(Status::from_str("planned").unwrap(), Status::Planned);
-        assert_eq!(Status::from_str("in_progress").unwrap(), Status::InProgress);
-        assert_eq!(
-            Status::from_str("implemented").unwrap(),
-            Status::Implemented
-        );
-        assert_eq!(Status::from_str("tested").unwrap(), Status::Tested);
-        assert_eq!(Status::from_str("deployed").unwrap(), Status::Deployed);
-        assert_eq!(Status::from_str("deprecated").unwrap(), Status::Deprecated);
-
-        // Test case insensitive
-        assert_eq!(Status::from_str("PLANNED").unwrap(), Status::Planned);
-        assert_eq!(Status::from_str("In_Progress").unwrap(), Status::InProgress);
-
-        // Test invalid status
-        assert!(Status::from_str("invalid").is_err());
-    }
-
-    #[test]
     fn test_finding_use_cases() {
         let use_cases = vec![
             create_test_use_case(
@@ -194,5 +165,22 @@ mod tests {
 
         let not_found = find_use_case_by_id(&use_cases, "UC-MISSING-001");
         assert!(not_found.is_none());
+    }
+
+    #[test]
+    fn test_create_use_case() {
+        let service = UseCaseService::new();
+        let use_case = service.create_use_case(
+            "UC-TEST-001".to_string(),
+            "Test Use Case".to_string(),
+            "Test".to_string(),
+            "A test description".to_string(),
+        ).unwrap();
+
+        assert_eq!(use_case.id, "UC-TEST-001");
+        assert_eq!(use_case.title, "Test Use Case");
+        assert_eq!(use_case.category, "Test");
+        assert_eq!(use_case.description, "A test description");
+        assert_eq!(use_case.priority.to_string(), "MEDIUM");
     }
 }

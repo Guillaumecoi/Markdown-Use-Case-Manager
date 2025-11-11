@@ -35,9 +35,7 @@ impl Status {
         }
     }
 
-    /// Parse status string to Status enum
-    /// Parse status string from user input or TOML files
-    #[allow(dead_code)]
+    /// Parse status from string
     pub fn from_str(status_str: &str) -> Result<Self, String> {
         match status_str.to_lowercase().as_str() {
             "planned" => Ok(Status::Planned),
@@ -146,5 +144,30 @@ mod tests {
         let deserialized: Status = serde_json::from_str(&serialized).expect("Failed to deserialize");
 
         assert_eq!(status, deserialized);
+    }
+
+    /// Test Status from_str parsing functionality
+    #[test]
+    fn test_status_from_str() {
+        // Test valid status strings
+        assert_eq!(Status::from_str("planned").unwrap(), Status::Planned);
+        assert_eq!(Status::from_str("in_progress").unwrap(), Status::InProgress);
+        assert_eq!(Status::from_str("implemented").unwrap(), Status::Implemented);
+        assert_eq!(Status::from_str("tested").unwrap(), Status::Tested);
+        assert_eq!(Status::from_str("deployed").unwrap(), Status::Deployed);
+        assert_eq!(Status::from_str("deprecated").unwrap(), Status::Deprecated);
+
+        // Test case insensitive parsing
+        assert_eq!(Status::from_str("PLANNED").unwrap(), Status::Planned);
+        assert_eq!(Status::from_str("In_Progress").unwrap(), Status::InProgress);
+
+        // Test invalid status strings
+        assert!(Status::from_str("invalid").is_err());
+        assert!(Status::from_str("urgent").is_err());
+        assert!(Status::from_str("").is_err());
+        assert!(Status::from_str("123").is_err());
+
+        let error = Status::from_str("invalid").unwrap_err();
+        assert!(error.contains("Invalid status: invalid"));
     }
 }

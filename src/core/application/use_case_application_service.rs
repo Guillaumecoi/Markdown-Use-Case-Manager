@@ -195,7 +195,7 @@ impl UseCaseApplicationService {
             title,
             category,
             description,
-        );
+        ).map_err(|e| anyhow::anyhow!(e))?;
 
         // Step 1: Save TOML first (source of truth)
         self.repository.save_toml_only(&use_case)?;

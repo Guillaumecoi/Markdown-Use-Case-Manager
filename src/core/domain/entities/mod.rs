@@ -8,4 +8,4 @@ mod use_case;
 // Explicit public exports (visible to parent modules)
 pub use metadata::Metadata;
 pub use status::Status;
-pub use use_case::{Priority, UseCase};
+pub use use_case::UseCase;

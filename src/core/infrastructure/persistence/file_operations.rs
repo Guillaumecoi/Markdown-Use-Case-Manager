@@ -59,7 +59,6 @@ impl FileOperations {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::Priority;
     use tempfile::TempDir;
 
     #[test]
@@ -81,8 +80,8 @@ mod tests {
             "Test Use Case".to_string(),
             "Test".to_string(),
             "A test use case".to_string(),
-            Priority::Medium,
-        );
+            "Medium".to_string(),
+        ).unwrap();
 
         // Test that file doesn't exist initially
         assert!(!file_ops.test_file_exists(&use_case, "py"));
@@ -105,8 +104,8 @@ mod tests {
             "Other Use Case".to_string(),
             "Test".to_string(),
             "Another test use case".to_string(),
-            Priority::Medium,
-        );
+            "Medium".to_string(),
+        ).unwrap();
         assert!(!file_ops.test_file_exists(&other_use_case, "py"));
     }
 
@@ -129,8 +128,8 @@ mod tests {
             "Test Use Case 2".to_string(),
             "Feature".to_string(),
             "A test use case".to_string(),
-            Priority::Medium,
-        );
+            "Medium".to_string(),
+        ).unwrap();
 
         // Save a test file
         let test_content = "# Generated test file\nprint('Hello, World!')\n";
