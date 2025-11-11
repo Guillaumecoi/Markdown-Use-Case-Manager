@@ -1,3 +1,20 @@
+/// CLI module for the Markdown Use Case Manager.
+/// 
+/// This module provides the command-line interface, handling argument parsing,
+/// command dispatching, and user interaction modes. It integrates Clap for
+/// argument parsing and coordinates between interactive and regular command modes.
+/// 
+/// ## Modules
+/// - `args`: Defines CLI argument structures using Clap.
+/// - `commands`: Thin command handlers that delegate to business logic.
+/// - `interactive`: Interactive session management for guided usage.
+/// - `runner`: Core business logic and file operations.
+/// 
+/// ## Flow
+/// 1. Parse CLI arguments with Clap.
+/// 2. Check for interactive mode (flag, subcommand, or no args).
+/// 3. For regular commands, create a runner and dispatch to handlers.
+/// 4. Handlers perform CLI-specific tasks and call runner methods.
 pub mod args;
 pub mod commands;
 pub mod interactive;
@@ -7,11 +24,26 @@ use anyhow::Result;
 use clap::Parser;
 
 use args::{Cli, Commands};
-use commands::*;
 use interactive::session::InteractiveSession;
 use runner::CliRunner;
+use commands::{
+    handle_create_command, handle_init_command, handle_list_command,
+    handle_list_methodologies_command, handle_status_command,
+    handle_languages_command, handle_methodology_info_command, handle_regenerate_command,
+};
 
-/// Main CLI entry point
+/// Main CLI entry point.
+/// 
+/// Parses command-line arguments and dispatches to the appropriate handler.
+/// Supports both interactive mode (for guided usage) and direct command execution.
+/// 
+/// Interactive mode is activated when:
+/// - The `--interactive` flag is used
+/// - The `interactive` subcommand is specified
+/// - No command is provided (defaults to interactive)
+/// 
+/// For regular commands, creates a CliRunner instance and delegates to
+/// command-specific handlers in the `commands` module.
 pub fn run() -> Result<()> {
     let cli = Cli::parse();
 
