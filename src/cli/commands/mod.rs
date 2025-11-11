@@ -4,11 +4,14 @@
 /// command-line specific concerns like output formatting, but delegate all
 /// business logic to the CliRunner. This separation keeps the CLI layer
 /// focused on user interaction while the runner manages domain operations.
-pub mod language;
-pub mod methodology;
-pub mod project;
-pub mod usecase;
 
+// Private modules
+mod language;
+mod methodology;
+mod project;
+mod usecase;
+
+// Explicit public exports
 pub use language::handle_languages_command;
 pub use methodology::{
     handle_list_methodologies_command, handle_methodology_info_command, handle_regenerate_command,

@@ -2,16 +2,18 @@
 
 use std::collections::HashMap;
 
-// Sub-modules
-pub mod file_manager;
-pub mod template_manager;
-pub mod types;
+// Private sub-modules
+mod file_manager;
+mod template_manager;
+mod types;
 
-// Re-export main types and functionality
-pub use crate::core::processors::MethodologyManager;
+// Explicit public exports
 pub use file_manager::ConfigFileManager;
 pub use template_manager::TemplateManager;
 pub use types::*;
+
+// Re-export from other modules
+pub use crate::core::processors::MethodologyManager;
 
 use crate::core::infrastructure::languages::LanguageRegistry;
 use anyhow::{Context, Result};

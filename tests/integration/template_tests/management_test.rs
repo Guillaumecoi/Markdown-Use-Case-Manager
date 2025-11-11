@@ -2,7 +2,7 @@
 // tests/integration/template_management_test.rs
 use super::super::test_helpers::with_temp_dir;
 use crate::test_utils::{init_project_in_dir, templates_dir};
-use markdown_use_case_manager::config::Config;
+use markdown_use_case_manager::Config;
 use serial_test::serial;
 use std::fs;
 use std::path::Path;

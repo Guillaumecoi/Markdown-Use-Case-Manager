@@ -1,5 +1,6 @@
 // Presentation layer - Formatters and display logic
 
-pub mod formatters;
+mod formatters;
 
+// Explicit public exports
 pub use formatters::{StatusFormatter, UseCaseFormatter};

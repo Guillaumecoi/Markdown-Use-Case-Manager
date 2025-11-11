@@ -1,7 +1,5 @@
 // Infrastructure layer - Implementation details
 
-pub mod languages;
-pub mod persistence;
-pub mod template_engine;
-
-// Re-export commonly used types
+pub(crate) mod languages;
+pub(crate) mod persistence;
+pub(crate) mod template_engine;

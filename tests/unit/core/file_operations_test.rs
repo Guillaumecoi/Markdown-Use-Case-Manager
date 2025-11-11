@@ -1,7 +1,7 @@
 // tests/unit/core/file_operations_test.rs
 use markdown_use_case_manager::config::Config;
-use markdown_use_case_manager::core::domain::entities::UseCase;
-use markdown_use_case_manager::core::infrastructure::persistence::file_operations::FileOperations;
+use markdown_use_case_manager::{Priority, UseCase};
+// Note: FileOperations is infrastructure detail, these tests should probably be moved to the implementation
 use std::fs;
 use tempfile::TempDir;
 

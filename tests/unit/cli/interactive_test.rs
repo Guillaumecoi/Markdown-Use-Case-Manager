@@ -1,5 +1,5 @@
 // Unit tests for CLI interactive menu logic
-use markdown_use_case_manager::core::application::UseCaseApplicationService;
+use markdown_use_case_manager::UseCaseApplicationService;
 use serial_test::serial;
 use std::env;
 use tempfile::TempDir;

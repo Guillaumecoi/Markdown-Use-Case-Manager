@@ -1,6 +1,6 @@
 // Unit tests for the new auto-init and settings configuration features
 use anyhow::Result;
-use markdown_use_case_manager::config::Config;
+use markdown_use_case_manager::Config;
 use serial_test::serial;
 use std::fs;
 use std::path::Path;
@@ -257,7 +257,7 @@ fn test_auto_init_settings_integration() -> Result<()> {
     fs::create_dir_all(&config.directories.test_dir)?;
 
     // 5. Test that the system works with updated configuration
-    use markdown_use_case_manager::core::application::UseCaseApplicationService;
+    use markdown_use_case_manager::UseCaseApplicationService;
 
     let mut coordinator = UseCaseApplicationService::load()?;
 

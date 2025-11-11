@@ -1,8 +1,8 @@
 // Language definitions infrastructure
 
-pub mod definitions;
+mod definitions;
 
-pub use definitions::{JAVASCRIPT, PYTHON, RUST};
+pub(crate) use definitions::{JAVASCRIPT, PYTHON, RUST};
 
 use std::collections::HashMap;
 

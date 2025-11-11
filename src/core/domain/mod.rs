@@ -1,5 +1,5 @@
 // Domain layer - Pure business logic, framework agnostic
 
-pub mod entities;
-pub mod repositories;
-pub mod services;
+pub(crate) mod entities;
+pub(crate) mod repositories;
+pub(crate) mod services;

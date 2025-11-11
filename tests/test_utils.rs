@@ -4,9 +4,7 @@
 //! multiple test files to provide consistent test setup and operations.
 
 use anyhow::{Context, Result};
-use markdown_use_case_manager::config::Config;
-use markdown_use_case_manager::core::domain::entities::{Priority, UseCase};
-use markdown_use_case_manager::core::infrastructure::languages::LanguageRegistry;
+use markdown_use_case_manager::{Config, LanguageRegistry, Priority, UseCase};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -136,7 +134,7 @@ pub fn get_available_test_languages() -> Vec<String> {
 /// Load methodology-specific configuration (for testing)
 pub fn load_methodology_config(
     methodology: &str,
-) -> Result<markdown_use_case_manager::config::MethodologyConfig> {
+) -> Result<markdown_use_case_manager::MethodologyConfig> {
     let config_path = Path::new(".config/.mucm")
         .join("methodologies")
         .join(format!("{}.toml", methodology));
@@ -154,7 +152,7 @@ pub fn load_methodology_config(
     let content = fs::read_to_string(&config_path)
         .with_context(|| format!("Failed to read methodology config at {:?}", config_path))?;
 
-    let config: markdown_use_case_manager::config::MethodologyConfig = toml::from_str(&content)
+    let config: markdown_use_case_manager::MethodologyConfig = toml::from_str(&content)
         .with_context(|| format!("Failed to parse methodology config for '{}'", methodology))?;
 
     Ok(config)

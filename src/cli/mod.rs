@@ -15,22 +15,24 @@
 /// 2. Check for interactive mode (flag, subcommand, or no args).
 /// 3. For regular commands, create a runner and dispatch to handlers.
 /// 4. Handlers perform CLI-specific tasks and call runner methods.
-pub mod args;
-pub mod commands;
-pub mod interactive;
-pub mod runner;
+
+// Private modules
+mod args;
+mod commands;
+mod interactive;
+mod runner;
 
 use anyhow::Result;
 use clap::Parser;
 
 use args::{Cli, Commands};
+use commands::{
+    handle_create_command, handle_init_command, handle_languages_command, handle_list_command,
+    handle_list_methodologies_command, handle_methodology_info_command, handle_regenerate_command,
+    handle_status_command,
+};
 use interactive::session::InteractiveSession;
 use runner::CliRunner;
-use commands::{
-    handle_create_command, handle_init_command, handle_list_command,
-    handle_list_methodologies_command, handle_status_command,
-    handle_languages_command, handle_methodology_info_command, handle_regenerate_command,
-};
 
 /// Main CLI entry point.
 /// 

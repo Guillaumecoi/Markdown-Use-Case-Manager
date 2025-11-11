@@ -1,6 +1,7 @@
-pub mod initialization;
-pub mod menu;
-pub mod session;
-pub mod settings;
-pub mod ui;
-pub mod workflows;
+// Private modules - used only within CLI interactive
+mod initialization;
+mod menu;
+pub(crate) mod session;  // Used by: cli/mod.rs (InteractiveSession)
+mod settings;
+mod ui;
+mod workflows;
