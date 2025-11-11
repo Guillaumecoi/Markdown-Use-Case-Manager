@@ -1,4 +1,4 @@
-use crate::core::infrastructure::languages::LanguageDefinition;
+use super::LanguageDefinition;
 
 /// Rust language definition
 pub const RUST: LanguageDefinition = LanguageDefinition::new(

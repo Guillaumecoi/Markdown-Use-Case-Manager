@@ -13,9 +13,9 @@ pub use template_manager::TemplateManager;
 pub use types::*;
 
 // Re-export from other modules
-pub use crate::core::processors::MethodologyManager;
+pub use crate::core::MethodologyManager;
 
-use crate::core::infrastructure::languages::LanguageRegistry;
+use crate::core::LanguageRegistry;
 use anyhow::{Context, Result};
 use std::fs;
 use std::path::{Path, PathBuf};

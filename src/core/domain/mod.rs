@@ -1,5 +1,10 @@
 // Domain layer - Pure business logic, framework agnostic
 
-pub(crate) mod entities;
-pub(crate) mod repositories;
-pub(crate) mod services;
+mod entities;
+mod repositories;
+mod services;
+
+// Re-exports
+pub use entities::{Metadata, Priority, Status, UseCase};
+pub use repositories::UseCaseRepository;
+pub use services::UseCaseService;

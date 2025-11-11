@@ -1,12 +1,10 @@
 // Application service for use case operations
 // This orchestrates domain services and infrastructure
 use crate::config::Config;
-use crate::core::domain::entities::UseCase;
-use crate::core::domain::repositories::UseCaseRepository;
-use crate::core::domain::services::UseCaseService;
-use crate::core::infrastructure::persistence::file_operations::FileOperations;
-use crate::core::infrastructure::persistence::TomlUseCaseRepository;
-use crate::core::infrastructure::template_engine::{to_snake_case, TemplateEngine};
+use crate::core::{
+    file_operations::FileOperations, to_snake_case, TemplateEngine, TomlUseCaseRepository,
+    UseCase, UseCaseRepository, UseCaseService,
+};
 use crate::core::utils::suggest_alternatives;
 use anyhow::Result;
 use serde_json::{json, Value};

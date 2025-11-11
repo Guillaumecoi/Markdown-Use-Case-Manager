@@ -31,7 +31,7 @@ use commands::{
     handle_list_methodologies_command, handle_methodology_info_command, handle_regenerate_command,
     handle_status_command,
 };
-use interactive::session::InteractiveSession;
+use interactive::InteractiveSession;
 use runner::CliRunner;
 
 /// Main CLI entry point.

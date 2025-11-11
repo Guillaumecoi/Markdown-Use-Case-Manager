@@ -2,7 +2,7 @@ use anyhow::Result;
 
 use super::dto::{DisplayResult, SelectionOptions};
 use crate::config::Config;
-use crate::core::application::UseCaseApplicationService;
+use crate::core::UseCaseApplicationService;
 use crate::presentation::{StatusFormatter, UseCaseFormatter};
 
 /// Controller for use case operations

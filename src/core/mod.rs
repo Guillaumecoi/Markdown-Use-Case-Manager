@@ -1,11 +1,19 @@
 // Core layer - Business logic and domain
 
-// Private modules - implementation details
-// pub(crate) needed because they're accessed from outside core module:
-pub(crate) mod application;    // Used by: controller/use_case_controller.rs
-pub(crate) mod domain;          // Used by: presentation/formatters
-pub(crate) mod infrastructure;  // Used by: controller/project_controller.rs, config/mod.rs
-pub(crate) mod processors;      // Used by: config/mod.rs
+// Private with explicit exports:
+mod application;     // Exports: UseCaseApplicationService
+mod domain;          // Exports: entities, repositories, services
+mod infrastructure;  // Exports: languages, persistence, template_engine
+mod processors;      // Exports: MethodologyManager
+mod utils;           // Internal only
 
-// Fully private - only used within core module:
-mod utils;  // Used only by: core/application (internal to core)
+// Explicit public exports from private modules
+// Public exports - Explicit API surface
+pub use processors::MethodologyManager;
+pub use application::UseCaseApplicationService;
+
+// Re-export domain types (from domain's public interface)
+pub use domain::{Metadata, Priority, Status, UseCase, UseCaseRepository, UseCaseService};
+
+// Re-export infrastructure types (from infrastructure's public interface)
+pub use infrastructure::{file_operations, to_snake_case, LanguageRegistry, TemplateEngine, TomlUseCaseRepository};

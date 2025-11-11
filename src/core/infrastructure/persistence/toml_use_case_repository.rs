@@ -1,8 +1,6 @@
 // TOML-based implementation of UseCaseRepository
 use crate::config::Config;
-use crate::core::domain::entities::UseCase;
-use crate::core::domain::repositories::UseCaseRepository;
-use crate::core::infrastructure::template_engine::to_snake_case;
+use crate::core::{to_snake_case, UseCase, UseCaseRepository};
 use anyhow::Result;
 use std::fs;
 use std::path::Path;

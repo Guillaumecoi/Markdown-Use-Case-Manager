@@ -1,6 +1,6 @@
 // Domain service for use case business logic
-use crate::core::domain::entities::{Priority, UseCase};
-use crate::core::infrastructure::template_engine::to_snake_case;
+use crate::core::domain::{Priority, UseCase};
+use crate::core::to_snake_case;
 use std::path::Path;
 
 /// Core business logic for use case management
@@ -91,7 +91,7 @@ impl Default for UseCaseService {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::domain::entities::{Metadata, Status};
+    use crate::core::domain::{Metadata, Status};
 
     fn create_test_use_case(
         id: String,

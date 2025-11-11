@@ -1,7 +1,6 @@
 // File operation utilities for persistence layer
 use crate::config::Config;
-use crate::core::domain::entities::UseCase;
-use crate::core::infrastructure::template_engine::to_snake_case;
+use crate::core::{to_snake_case, UseCase};
 use anyhow::Result;
 use std::fs;
 use std::path::Path;
@@ -60,7 +59,7 @@ impl FileOperations {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::domain::entities::Priority;
+    use crate::core::Priority;
     use tempfile::TempDir;
 
     #[test]

@@ -87,7 +87,7 @@ impl TemplateEngine {
         // Register language test templates using LanguageRegistry
         let mut test_templates = HashMap::new();
 
-        use crate::core::infrastructure::languages::LanguageRegistry;
+        use super::super::languages::LanguageRegistry;
         let language_registry = LanguageRegistry::new();
         for language_name in language_registry.available_languages() {
             if let Some(language) = language_registry.get(&language_name) {

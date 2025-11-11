@@ -1,5 +1,5 @@
 // Formatter for displaying project status
-use crate::core::domain::entities::{Status, UseCase};
+use crate::core::{Status, UseCase};
 use colored::Colorize;
 use std::collections::HashMap;
 

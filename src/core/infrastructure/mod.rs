@@ -1,5 +1,10 @@
 // Infrastructure layer - Implementation details
 
-pub(crate) mod languages;
-pub(crate) mod persistence;
-pub(crate) mod template_engine;
+mod languages;
+mod persistence;
+mod template_engine;
+
+// Re-exports
+pub use languages::LanguageRegistry;
+pub use persistence::{file_operations, TomlUseCaseRepository};
+pub use template_engine::{to_snake_case, TemplateEngine};

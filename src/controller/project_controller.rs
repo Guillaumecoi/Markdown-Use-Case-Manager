@@ -2,7 +2,7 @@ use anyhow::Result;
 
 use super::dto::{DisplayResult, MethodologyInfo, SelectionOptions};
 use crate::config::Config;
-use crate::core::infrastructure::languages::LanguageRegistry;
+use crate::core::LanguageRegistry;
 
 /// Controller for project initialization and management
 pub struct ProjectController;

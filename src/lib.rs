@@ -18,11 +18,9 @@ mod presentation;
 // Explicit public exports for test interface
 pub use config::{Config, ConfigFileManager, MethodologyConfig, TemplateManager};
 pub use controller::{ProjectController, UseCaseController};
-pub use core::application::UseCaseApplicationService;
-pub use core::domain::entities::{Metadata, Priority, Status, UseCase};
-pub use core::domain::repositories::UseCaseRepository;
-pub use core::domain::services::UseCaseService;
-pub use core::infrastructure::languages::LanguageRegistry;
-pub use core::infrastructure::persistence::TomlUseCaseRepository;
-pub use core::processors::MethodologyManager;
+pub use core::UseCaseApplicationService;
+pub use core::{Metadata, Priority, Status, UseCase};
+pub use core::{UseCaseRepository, UseCaseService};
+pub use core::{LanguageRegistry, TomlUseCaseRepository};
+pub use core::MethodologyManager;
 pub use presentation::{StatusFormatter, UseCaseFormatter};
