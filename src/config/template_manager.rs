@@ -234,3 +234,74 @@ impl TemplateManager {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::LanguageRegistry;
+    use serial_test::serial;
+    use std::env;
+    use tempfile::TempDir;
+
+    fn init_test_project_in_dir(base_dir: &str, language: Option<String>) -> Result<Config> {
+        let config_dir = Path::new(base_dir).join(".config/.mucm");
+        fs::create_dir_all(&config_dir)?;
+
+        let mut config = Config::default();
+
+        if let Some(ref lang) = language {
+            let language_registry = LanguageRegistry::new();
+            if let Some(lang_def) = language_registry.get(lang) {
+                let primary_name = lang_def.name().to_string();
+                config.generation.test_language = primary_name.clone();
+                config.templates.test_language = primary_name;
+            }
+        }
+
+        config.save_in_dir(base_dir)?;
+
+        let original_dir = env::current_dir()?;
+        env::set_current_dir(base_dir)?;
+        let result = Config::copy_templates_to_config_with_language(language);
+        env::set_current_dir(original_dir)?;
+        result?;
+
+        Ok(config)
+    }
+
+    #[test]
+    #[serial]
+    fn test_templates_dir_path() {
+        let templates_dir = Path::new(".config/.mucm/handlebars");
+        assert_eq!(templates_dir, Path::new(".config/.mucm/handlebars"));
+    }
+
+    #[test]
+    #[serial]
+    fn test_config_methodology_settings() {
+        let config = Config::default();
+        assert!(!config.templates.methodologies.is_empty());
+        assert!(!config.templates.default_methodology.is_empty());
+    }
+
+    #[test]
+    #[serial]
+    fn test_init_creates_template_directory() {
+        let temp_dir = TempDir::new().unwrap();
+        let result = init_test_project_in_dir(temp_dir.path().to_str().unwrap(), None);
+        assert!(result.is_ok());
+
+        let templates_dir = temp_dir.path().join(".config/.mucm/handlebars");
+        assert!(templates_dir.exists());
+    }
+
+    #[test]
+    #[serial]
+    fn test_get_available_languages() {
+        // Test that we can get built-in languages
+        let languages = Config::get_available_languages().unwrap();
+        assert!(languages.contains(&"rust".to_string()));
+        assert!(languages.contains(&"python".to_string()));
+        assert!(languages.contains(&"javascript".to_string()));
+    }
+}

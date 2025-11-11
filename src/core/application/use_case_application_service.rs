@@ -409,3 +409,152 @@ impl UseCaseApplicationService {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serial_test::serial;
+    use std::env;
+    use std::fs;
+    use std::path::Path;
+    use tempfile::TempDir;
+
+    /// Helper to initialize a project for tests
+    fn init_test_project(language: Option<String>) -> Result<Config> {
+        use crate::core::LanguageRegistry;
+
+        let config_dir = Path::new(".config/.mucm");
+        if !config_dir.exists() {
+            fs::create_dir_all(&config_dir)?;
+        }
+
+        let mut config = Config::default();
+
+        if let Some(ref lang) = language {
+            let language_registry = LanguageRegistry::new();
+            if let Some(lang_def) = language_registry.get(lang) {
+                let primary_name = lang_def.name().to_string();
+                config.generation.test_language = primary_name.clone();
+                config.templates.test_language = primary_name.clone();
+            } else {
+                config.generation.test_language = lang.clone();
+                config.templates.test_language = lang.clone();
+            }
+        }
+
+        config.save_in_dir(".")?;
+        Config::copy_templates_to_config_with_language(language)?;
+
+        Ok(config)
+    }
+
+    #[test]
+    #[serial]
+    fn test_interactive_workflow_simulation() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        env::set_current_dir(&temp_dir)?;
+
+        init_test_project(None)?;
+
+        let mut coordinator = UseCaseApplicationService::load()?;
+
+        let use_case_id = coordinator.create_use_case_with_methodology(
+            "Interactive Test".to_string(),
+            "testing".to_string(),
+            Some("Created via interactive mode".to_string()),
+            "feature",
+        )?;
+        assert_eq!(use_case_id, "UC-TES-001");
+
+        let use_case_ids = coordinator.get_all_use_case_ids()?;
+        assert_eq!(use_case_ids.len(), 1);
+        assert!(use_case_ids.contains(&"UC-TES-001".to_string()));
+
+        let final_use_case_ids = coordinator.get_all_use_case_ids()?;
+        assert_eq!(final_use_case_ids.len(), 1);
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_interactive_category_suggestions() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        env::set_current_dir(&temp_dir)?;
+
+        init_test_project(None)?;
+        let mut coordinator = UseCaseApplicationService::load()?;
+
+        let categories = coordinator.get_all_categories()?;
+        assert!(categories.is_empty());
+
+        coordinator.create_use_case_with_methodology(
+            "Auth Use Case".to_string(),
+            "authentication".to_string(),
+            None,
+            "feature",
+        )?;
+
+        coordinator.create_use_case_with_methodology(
+            "API Use Case".to_string(),
+            "api".to_string(),
+            None,
+            "feature",
+        )?;
+
+        coordinator.create_use_case_with_methodology(
+            "Another Auth Use Case".to_string(),
+            "authentication".to_string(),
+            None,
+            "feature",
+        )?;
+
+        let categories = coordinator.get_all_categories()?;
+        assert_eq!(categories.len(), 2);
+        assert_eq!(categories[0], "api");
+        assert_eq!(categories[1], "authentication");
+
+        let use_case_ids = coordinator.get_all_use_case_ids()?;
+        assert_eq!(use_case_ids.len(), 3);
+        assert!(use_case_ids.contains(&"UC-AUT-001".to_string()));
+        assert!(use_case_ids.contains(&"UC-API-001".to_string()));
+        assert!(use_case_ids.contains(&"UC-AUT-002".to_string()));
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_complete_interactive_workflow_simulation() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        env::set_current_dir(&temp_dir)?;
+
+        init_test_project(Some("rust".to_string()))?;
+
+        let mut coordinator = UseCaseApplicationService::load()?;
+
+        let _uc1 = coordinator.create_use_case_with_methodology(
+            "User Authentication".to_string(),
+            "auth".to_string(),
+            Some("Handle user login and logout".to_string()),
+            "feature",
+        )?;
+
+        let _uc2 = coordinator.create_use_case_with_methodology(
+            "Data Export".to_string(),
+            "api".to_string(),
+            Some("Export data in various formats".to_string()),
+            "feature",
+        )?;
+
+        let all_use_cases = coordinator.get_all_use_case_ids()?;
+        assert_eq!(all_use_cases.len(), 2);
+
+        let categories = coordinator.get_all_categories()?;
+        assert_eq!(categories.len(), 2);
+        assert!(categories.contains(&"api".to_string()));
+        assert!(categories.contains(&"auth".to_string()));
+
+        Ok(())
+    }
+}

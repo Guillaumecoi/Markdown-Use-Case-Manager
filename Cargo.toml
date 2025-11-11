@@ -54,16 +54,3 @@ tempfile = "3.0"
 assert_cmd = "2.0"
 predicates = "3.0"
 serial_test = "3.0"
-
-[[test]]
-name = "integration_tests"
-path = "tests/integration_tests.rs"
-
-[[test]]
-name = "unit_tests"
-path = "tests/unit_tests.rs"
-
-# Internal testing interface - NOT FOR PUBLIC USE
-[lib]
-name = "markdown_use_case_manager"
-path = "src/lib.rs"

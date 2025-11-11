@@ -190,3 +190,286 @@ impl Default for Config {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serial_test::serial;
+    use tempfile::TempDir;
+
+    /// Helper to initialize a project in a temporary directory with optional language
+    fn init_project_with_language(language: Option<String>) -> Result<Config> {
+        let language_registry = LanguageRegistry::new();
+
+        // Validate language if provided
+        if let Some(ref lang) = language {
+            if language_registry.get(lang).is_none() {
+                let available = language_registry.available_languages();
+                anyhow::bail!(
+                    "Unsupported language '{}'. Supported languages: {}",
+                    lang,
+                    available.join(", ")
+                );
+            }
+        }
+
+        let config_dir = Path::new(".config/.mucm");
+        if !config_dir.exists() {
+            fs::create_dir_all(&config_dir).context("Failed to create .config/.mucm directory")?;
+        }
+
+        let mut config = Config::default();
+
+        // Set the test language if provided, resolving aliases to primary names
+        if let Some(ref lang) = language {
+            if let Some(lang_def) = language_registry.get(lang) {
+                let primary_name = lang_def.name().to_string();
+                config.generation.test_language = primary_name.clone();
+                config.templates.test_language = primary_name.clone();
+            } else {
+                config.generation.test_language = lang.clone();
+                config.templates.test_language = lang.clone();
+            }
+        }
+
+        config.save_in_dir(".")?;
+        Config::copy_templates_to_config_with_language(language)?;
+
+        Ok(config)
+    }
+
+    #[test]
+    #[serial]
+    fn test_auto_init_detection() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        std::env::set_current_dir(&temp_dir)?;
+
+        let result = Config::load();
+        assert!(
+            result.is_err(),
+            "Should fail when project is not initialized"
+        );
+
+        let error_msg = result.unwrap_err().to_string();
+        assert!(error_msg.contains("No markdown use case manager project found"));
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_auto_init_process() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        std::env::set_current_dir(&temp_dir)?;
+
+        assert!(Config::load().is_err());
+
+        let config = init_project_with_language(Some("rust".to_string()))?;
+
+        assert!(Config::config_path().exists(), "Config file should exist");
+        assert_eq!(config.generation.test_language, "rust");
+
+        let use_case_dir = Path::new(&config.directories.use_case_dir);
+        let test_dir = Path::new(&config.directories.test_dir);
+        assert!(
+            !use_case_dir.exists(),
+            "Use case directory should NOT exist yet"
+        );
+        assert!(!test_dir.exists(), "Test directory should NOT exist yet");
+
+        let templates_dir = Path::new(".config/.mucm/handlebars");
+        assert!(templates_dir.exists(), "Templates directory should exist");
+        assert!(templates_dir.join("developer/uc_simple.hbs").exists());
+        assert!(templates_dir.join("developer/uc_detailed.hbs").exists());
+        assert!(templates_dir.join("languages/rust/test.hbs").exists());
+
+        let reloaded_config = Config::load()?;
+        assert_eq!(reloaded_config.generation.test_language, "rust");
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_auto_init_language_options() -> Result<()> {
+        // Test with Python
+        {
+            let temp_dir = TempDir::new()?;
+            std::env::set_current_dir(&temp_dir)?;
+
+            let config = init_project_with_language(Some("python".to_string()))?;
+            assert_eq!(config.generation.test_language, "python");
+
+            let python_template = Path::new(".config/.mucm/handlebars/languages/python/test.hbs");
+            assert!(python_template.exists(), "Python template should exist");
+        }
+
+        // Test with None (default language)
+        {
+            let temp_dir = TempDir::new()?;
+            std::env::set_current_dir(&temp_dir)?;
+
+            let config = init_project_with_language(None)?;
+            assert_eq!(config.generation.test_language, "python"); // Default from Config::default()
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_config_management() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        std::env::set_current_dir(&temp_dir)?;
+
+        let mut config = init_project_with_language(Some("rust".to_string()))?;
+
+        config.project.name = "Modified Project".to_string();
+        config.project.description = "Modified description".to_string();
+        config.directories.use_case_dir = "custom/use-cases".to_string();
+        config.directories.test_dir = "custom/tests".to_string();
+        config.generation.test_language = "python".to_string();
+        config.generation.auto_generate_tests = true;
+        config.metadata.created = false;
+        config.metadata.last_updated = false;
+
+        config.save_in_dir(".")?;
+
+        let reloaded_config = Config::load()?;
+        assert_eq!(reloaded_config.project.name, "Modified Project");
+        assert_eq!(
+            reloaded_config.project.description,
+            "Modified description"
+        );
+        assert_eq!(
+            reloaded_config.directories.use_case_dir,
+            "custom/use-cases"
+        );
+        assert_eq!(reloaded_config.directories.test_dir, "custom/tests");
+        assert_eq!(reloaded_config.generation.test_language, "python");
+        assert!(reloaded_config.generation.auto_generate_tests);
+        assert!(!reloaded_config.metadata.created);
+        assert!(!reloaded_config.metadata.last_updated);
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_available_languages_for_settings() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        std::env::set_current_dir(&temp_dir)?;
+
+        let languages = Config::get_available_languages();
+        match languages {
+            Ok(langs) => {
+                assert!(!langs.is_empty(), "Should have built-in languages");
+                assert!(
+                    langs.contains(&"rust".to_string()) || langs.contains(&"python".to_string())
+                );
+            }
+            Err(_) => {
+                // It's okay if this fails in some test environments
+            }
+        }
+
+        init_project_with_language(Some("rust".to_string()))?;
+
+        let languages = Config::get_available_languages()?;
+        assert!(!languages.is_empty(), "Should have languages after init");
+        assert!(languages.contains(&"rust".to_string()));
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_config_validation() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        std::env::set_current_dir(&temp_dir)?;
+
+        let config = init_project_with_language(Some("rust".to_string()))?;
+
+        let toml_content = toml::to_string_pretty(&config)?;
+        let parsed_config: Config = toml::from_str(&toml_content)?;
+
+        assert_eq!(parsed_config.project.name, config.project.name);
+        assert_eq!(
+            parsed_config.generation.test_language,
+            config.generation.test_language
+        );
+        assert_eq!(parsed_config.metadata.created, config.metadata.created);
+        assert_eq!(
+            parsed_config.metadata.last_updated,
+            config.metadata.last_updated
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_config_error_handling() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        std::env::set_current_dir(&temp_dir)?;
+
+        let result = Config::load();
+        assert!(result.is_err());
+
+        let config = Config::default();
+        let _ = config.save_in_dir(".");
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_auto_init_settings_integration() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        std::env::set_current_dir(&temp_dir)?;
+
+        let mut config = init_project_with_language(Some("rust".to_string()))?;
+
+        config.project.name = "Integration Test Project".to_string();
+        config.directories.use_case_dir = "docs/custom-use-cases".to_string();
+        config.generation.auto_generate_tests = true;
+        config.metadata.created = true;
+        config.metadata.last_updated = true;
+
+        config.save_in_dir(".")?;
+
+        let saved_config = Config::load()?;
+        assert_eq!(saved_config.project.name, "Integration Test Project");
+
+        fs::create_dir_all(&config.directories.use_case_dir)?;
+        fs::create_dir_all(&config.directories.test_dir)?;
+
+        use crate::core::UseCaseApplicationService;
+        let mut coordinator = UseCaseApplicationService::load()?;
+
+        let _uc_id = coordinator.create_use_case_with_methodology(
+            "Integration Test Use Case".to_string(),
+            "integration".to_string(),
+            Some("Testing integration between auto-init and settings".to_string()),
+            "feature",
+        )?;
+
+        let custom_use_case_file = Path::new("docs/custom-use-cases/integration/UC-INT-001.md");
+        assert!(
+            custom_use_case_file.exists(),
+            "Use case should be created in custom directory"
+        );
+
+        let final_config = Config::load()?;
+        assert_eq!(final_config.project.name, "Integration Test Project");
+        assert_eq!(
+            final_config.directories.use_case_dir,
+            "docs/custom-use-cases"
+        );
+        assert!(final_config.generation.auto_generate_tests);
+        assert!(final_config.metadata.created);
+        assert!(final_config.metadata.last_updated);
+
+        Ok(())
+    }
+}
