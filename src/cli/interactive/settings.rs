@@ -3,7 +3,8 @@ use inquire::{Confirm, Select, Text};
 
 use super::ui::UI;
 use crate::cli::runner::CliRunner;
-use crate::config::Config;
+use crate::config::{Config, TemplateManager};
+use crate::core::LanguageRegistry;
 
 /// Handle settings configuration
 pub struct Settings;
@@ -86,7 +87,8 @@ impl Settings {
         println!("\n🔧 Generation Settings");
         println!("────────────────────────");
 
-        let languages = Config::get_available_languages()?;
+        let templates_dir = TemplateManager::find_source_templates_dir()?;
+        let languages = LanguageRegistry::discover_available(&templates_dir)?;
         let mut language_options = vec!["none".to_string()];
         language_options.extend(languages);
 

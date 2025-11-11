@@ -244,6 +244,26 @@ impl LanguageRegistry {
             .cloned()
             .collect()
     }
+
+    /// Discover available languages from a templates directory.
+    ///
+    /// This is a convenience method that creates a registry from the specified
+    /// templates directory and returns the available language names.
+    ///
+    /// # Arguments
+    /// * `templates_dir` - Path to the templates directory (e.g., "source-templates")
+    ///
+    /// # Returns
+    /// A `Result` containing a vector of available language names, or an error
+    ///
+    /// # Errors
+    /// This function will return an error if:
+    /// - The templates directory cannot be found or read
+    /// - Language loading fails
+    pub fn discover_available<P: AsRef<Path>>(templates_dir: P) -> anyhow::Result<Vec<String>> {
+        let registry = Self::new_dynamic(templates_dir)?;
+        Ok(registry.available_languages())
+    }
 }
 
 #[cfg(test)]
@@ -464,16 +484,21 @@ template_file = "test.hbs""#).unwrap();
     }
 
     #[test]
-    fn test_language_trait_implementation() {
+    fn test_language_registry_discover_available() {
         let temp_dir = TempDir::new().unwrap();
-        let lang_dir = create_test_language(&temp_dir.path(), "test", &["t", "testalias"], "test", "test template {{name}}");
+        let languages_dir = temp_dir.path().join("languages");
+        fs::create_dir(&languages_dir).unwrap();
 
-        let lang = LanguageDefinition::from_toml(lang_dir.join("info.toml")).unwrap();
+        create_test_language(&languages_dir, "lang1", &["alias1"], "ext1", "template1");
+        create_test_language(&languages_dir, "lang2", &["alias2"], "ext2", "template2");
 
-        // Test all trait methods
-        assert_eq!(lang.name(), "test");
-        assert_eq!(lang.aliases(), vec!["t", "testalias"]);
-        assert_eq!(lang.file_extension(), "test");
-        assert_eq!(lang.test_template(), "test template {{name}}");
+        let result = LanguageRegistry::discover_available(&temp_dir.path());
+        assert!(result.is_ok());
+
+        let languages = result.unwrap();
+        assert!(languages.contains(&"lang1".to_string()));
+        assert!(languages.contains(&"lang2".to_string()));
+        assert!(!languages.contains(&"alias1".to_string()));
+        assert!(!languages.contains(&"alias2".to_string()));
     }
 }

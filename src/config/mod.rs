@@ -40,8 +40,6 @@ pub use types::{Config, GenerationConfig};
 
 // Re-export from other modules
 pub use crate::core::MethodologyManager;
-
-use crate::core::LanguageRegistry;
 use anyhow::{Context, Result};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -168,20 +166,6 @@ impl Config {
         TemplateManager::copy_templates_to_config(base_dir)
     }
 
-    /// Get list of available programming languages from source templates and local config
-    ///
-    /// Returns languages that have templates available in the source-templates directory.
-    ///
-    /// # Returns
-    /// A vector of language names, or an error if discovery fails
-    pub fn get_available_languages() -> Result<Vec<String>> {
-        use crate::config::template_manager::TemplateManager;
-
-        let templates_dir = TemplateManager::find_source_templates_dir()?;
-        let registry = LanguageRegistry::new_dynamic(&templates_dir)?;
-        Ok(registry.available_languages())
-    }
-
     /// Get methodology-specific recommendations as a human-readable string
     ///
     /// # Arguments
@@ -250,6 +234,8 @@ mod tests {
     use super::*;
     use serial_test::serial;
     use tempfile::TempDir;
+    use crate::config::TemplateManager;
+    use crate::core::LanguageRegistry;
 
     /// Helper to initialize a project in a temporary directory with optional language
     fn init_project_with_language(language: Option<String>) -> Result<Config> {
@@ -413,7 +399,7 @@ mod tests {
         let temp_dir = TempDir::new()?;
         std::env::set_current_dir(&temp_dir)?;
 
-        let languages = Config::get_available_languages();
+        let languages = LanguageRegistry::discover_available(&TemplateManager::find_source_templates_dir()?);
         match languages {
             Ok(langs) => {
                 assert!(!langs.is_empty(), "Should have built-in languages");
@@ -428,7 +414,7 @@ mod tests {
 
         init_project_with_language(Some("rust".to_string()))?;
 
-        let languages = Config::get_available_languages()?;
+        let languages = LanguageRegistry::discover_available(&TemplateManager::find_source_templates_dir()?)?;
         assert!(!languages.is_empty(), "Should have languages after init");
         assert!(languages.contains(&"rust".to_string()));
 

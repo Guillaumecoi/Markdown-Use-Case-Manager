@@ -56,7 +56,9 @@ impl ProjectController {
     ///
     /// TODO: Use this in interactive init workflow for language selection
     pub fn get_available_languages() -> Result<SelectionOptions> {
-        let languages = Config::get_available_languages()?;
+        use crate::config::TemplateManager;
+        let templates_dir = TemplateManager::find_source_templates_dir()?;
+        let languages = LanguageRegistry::discover_available(&templates_dir)?;
         Ok(SelectionOptions::new(languages))
     }
 
@@ -268,26 +270,34 @@ impl ProjectController {
     pub fn show_languages() -> Result<String> {
         let mut output = String::from("Available programming languages:\n");
 
-        match Config::get_available_languages() {
-            Ok(languages) => {
-                for lang in languages {
-                    output.push_str(&format!("  - {}\n", lang));
+        use crate::config::TemplateManager;
+        match TemplateManager::find_source_templates_dir() {
+            Ok(templates_dir) => match LanguageRegistry::discover_available(&templates_dir) {
+                Ok(languages) => {
+                    for lang in languages {
+                        output.push_str(&format!("  - {}\n", lang));
+                    }
+                    output.push_str(
+                        "\nTo initialize with a specific language: mucm init -l <language>\n",
+                    );
+                    output.push_str("To add a new language manually, create a directory: .config/.mucm/handlebars/lang-<language>/\n");
                 }
-                output.push_str(
-                    "\nTo initialize with a specific language: mucm init -l <language>\n",
-                );
-                output.push_str("To add a new language manually, create a directory: .config/.mucm/handlebars/lang-<language>/\n");
-            }
+                Err(e) => {
+                    output.push_str(&format!("Error getting available languages: {}\n", e));
+                    // Fallback to show built-in languages if discovery fails
+                    if let Ok(templates_dir) = TemplateManager::find_source_templates_dir() {
+                        if let Ok(language_registry) = LanguageRegistry::new_dynamic(&templates_dir) {
+                            let builtin_languages = language_registry.available_languages();
+                            output.push_str(&format!(
+                                "Built-in languages: {}\n",
+                                builtin_languages.join(", ")
+                            ));
+                        }
+                    }
+                }
+            },
             Err(e) => {
-                output.push_str(&format!("Error getting available languages: {}\n", e));
-                use crate::config::TemplateManager;
-                let templates_dir = TemplateManager::find_source_templates_dir()?;
-                let language_registry = LanguageRegistry::new_dynamic(&templates_dir)?;
-                let builtin_languages = language_registry.available_languages();
-                output.push_str(&format!(
-                    "Built-in languages: {}\n",
-                    builtin_languages.join(", ")
-                ));
+                output.push_str(&format!("Error finding source templates: {}\n", e));
             }
         }
 
