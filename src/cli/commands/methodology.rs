@@ -73,8 +73,9 @@ pub fn handle_regenerate_command(
         }
         // Use case ID only: regenerate with current methodology
         (Some(id), None, _) => {
-            runner.regenerate_use_case(&id)?;
-            println!("✅ Regenerated documentation for {}", id);
+            let id_clone = id.clone();
+            runner.regenerate_use_case(id)?;
+            println!("✅ Regenerated documentation for {}", id_clone);
             Ok(())
         }
         // --all with methodology but no ID: error (doesn't make sense)

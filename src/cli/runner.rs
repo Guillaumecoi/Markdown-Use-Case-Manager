@@ -29,6 +29,23 @@ impl CliRunner {
         }
     }
 
+    /// Sanitize an optional string input by trimming whitespace and filtering empty strings.
+    /// 
+    /// Returns None if the input is None or contains only whitespace.
+    /// Returns Some(trimmed_string) if the input contains non-whitespace characters.
+    fn sanitize_optional_string(input: Option<String>) -> Option<String> {
+        input
+            .filter(|s| !s.trim().is_empty())
+            .map(|s| s.trim().to_string())
+    }
+
+    /// Sanitize a required string input by trimming whitespace.
+    /// 
+    /// Preserves internal whitespace but removes leading/trailing whitespace.
+    fn sanitize_required_string(input: String) -> String {
+        input.trim().to_string()
+    }
+
     /// Ensure the use case controller is loaded.
     fn ensure_use_case_controller(&mut self) -> Result<&mut UseCaseController> {
         if self.use_case_controller.is_none() {
@@ -57,8 +74,12 @@ impl CliRunner {
         language: Option<String>,
         methodology: Option<String>,
     ) -> Result<String> {
-        let default_methodology = methodology.unwrap_or_else(|| "feature".to_string());
-        let result = ProjectController::init_project(language, default_methodology)?;
+        // Sanitize inputs: trim whitespace and filter out empty strings
+        let sanitized_language = Self::sanitize_optional_string(language);
+        let sanitized_methodology = Self::sanitize_optional_string(methodology)
+            .unwrap_or_else(|| "feature".to_string());
+        
+        let result = ProjectController::init_project(sanitized_language, sanitized_methodology)?;
         Ok(result.message)
     }
 
@@ -94,7 +115,11 @@ impl CliRunner {
         description: Option<String>,
     ) -> Result<String> {
         let controller = self.ensure_use_case_controller()?;
-        let result = controller.create_use_case(title, category, description)?;
+        let result = controller.create_use_case(
+            Self::sanitize_required_string(title),
+            Self::sanitize_required_string(category),
+            Self::sanitize_optional_string(description),
+        )?;
         Ok(result.message)
     }
 
@@ -120,10 +145,10 @@ impl CliRunner {
     ) -> Result<String> {
         let controller = self.ensure_use_case_controller()?;
         let result = controller.create_use_case_with_methodology(
-            title,
-            category,
-            description,
-            methodology,
+            Self::sanitize_required_string(title),
+            Self::sanitize_required_string(category),
+            Self::sanitize_optional_string(description),
+            Self::sanitize_required_string(methodology),
         )?;
         Ok(result.message)
     }
@@ -150,20 +175,6 @@ impl CliRunner {
     pub fn show_status(&mut self) -> Result<()> {
         let controller = self.ensure_use_case_controller()?;
         controller.show_status()
-    }
-
-    /// Get all use case IDs for selection prompts.
-    /// 
-    /// Returns a list of all use case identifiers in the project.
-    /// Useful for interactive mode dropdowns or validation.
-    /// 
-    /// # Returns
-    /// Returns a vector of use case ID strings.
-    #[allow(dead_code)]
-    pub fn get_use_case_ids(&mut self) -> Result<Vec<String>> {
-        let controller = self.ensure_use_case_controller()?;
-        let options = controller.get_use_case_ids()?;
-        Ok(options.items)
     }
 
     /// Get all categories currently in use.
@@ -223,24 +234,14 @@ impl CliRunner {
     pub fn get_methodology_info(&mut self, methodology: String) -> Result<String> {
         let methodologies = ProjectController::get_available_methodologies()?;
 
-        match methodologies.iter().find(|m| m.name == methodology) {
+        let sanitized_methodology = Self::sanitize_required_string(methodology);
+        match methodologies.iter().find(|m| m.name == sanitized_methodology) {
             Some(info) => Ok(format!(
                 "Methodology: {}\nDisplay Name: {}\nDescription: {}",
                 info.name, info.display_name, info.description
             )),
-            None => Ok(format!("Methodology '{}' not found.", methodology)),
+            None => Ok(format!("Methodology '{}' not found.", sanitized_methodology)),
         }
-    }
-
-    /// Get the default methodology from project configuration.
-    /// 
-    /// Retrieves the methodology configured as default for the project.
-    /// 
-    /// # Returns
-    /// Returns the default methodology name as a string.
-    #[allow(dead_code)]
-    pub fn get_default_methodology(&mut self) -> Result<String> {
-        ProjectController::get_default_methodology()
     }
 
     /// Regenerate a use case with a different methodology.
@@ -260,7 +261,10 @@ impl CliRunner {
         methodology: String,
     ) -> Result<String> {
         let controller = self.ensure_use_case_controller()?;
-        let result = controller.regenerate_use_case_with_methodology(use_case_id, methodology)?;
+        let result = controller.regenerate_use_case_with_methodology(
+            Self::sanitize_required_string(use_case_id),
+            Self::sanitize_required_string(methodology),
+        )?;
         Ok(result.message)
     }
 
@@ -274,9 +278,9 @@ impl CliRunner {
     /// 
     /// # Returns
     /// Returns `Ok(())` on success, or an error if regeneration fails.
-    pub fn regenerate_use_case(&mut self, use_case_id: &str) -> Result<()> {
+    pub fn regenerate_use_case(&mut self, use_case_id: String) -> Result<()> {
         let controller = self.ensure_use_case_controller()?;
-        controller.regenerate_use_case(use_case_id)
+        controller.regenerate_use_case(&Self::sanitize_required_string(use_case_id))
     }
 
     /// Regenerate documentation for all use cases.
@@ -289,5 +293,75 @@ impl CliRunner {
     pub fn regenerate_all_use_cases(&mut self) -> Result<()> {
         let controller = self.ensure_use_case_controller()?;
         controller.regenerate_all_use_cases()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Test sanitization of optional strings
+    #[test]
+    fn test_sanitize_optional_string() {
+        // Test None input
+        assert_eq!(CliRunner::sanitize_optional_string(None), None);
+
+        // Test empty string
+        assert_eq!(CliRunner::sanitize_optional_string(Some("".to_string())), None);
+
+        // Test whitespace-only string
+        assert_eq!(CliRunner::sanitize_optional_string(Some("   ".to_string())), None);
+
+        // Test string with leading/trailing whitespace
+        assert_eq!(
+            CliRunner::sanitize_optional_string(Some("  hello  ".to_string())),
+            Some("hello".to_string())
+        );
+
+        // Test string with internal whitespace (should be preserved)
+        assert_eq!(
+            CliRunner::sanitize_optional_string(Some("  hello world  ".to_string())),
+            Some("hello world".to_string())
+        );
+
+        // Test string with no whitespace
+        assert_eq!(
+            CliRunner::sanitize_optional_string(Some("hello".to_string())),
+            Some("hello".to_string())
+        );
+    }
+
+    /// Test sanitization of required strings
+    #[test]
+    fn test_sanitize_required_string() {
+        // Test string with leading/trailing whitespace
+        assert_eq!(
+            CliRunner::sanitize_required_string("  hello  ".to_string()),
+            "hello".to_string()
+        );
+
+        // Test string with internal whitespace (should be preserved)
+        assert_eq!(
+            CliRunner::sanitize_required_string("  hello world  ".to_string()),
+            "hello world".to_string()
+        );
+
+        // Test string with no whitespace
+        assert_eq!(
+            CliRunner::sanitize_required_string("hello".to_string()),
+            "hello".to_string()
+        );
+
+        // Test empty string
+        assert_eq!(
+            CliRunner::sanitize_required_string("".to_string()),
+            "".to_string()
+        );
+
+        // Test whitespace-only string
+        assert_eq!(
+            CliRunner::sanitize_required_string("   ".to_string()),
+            "".to_string()
+        );
     }
 }
