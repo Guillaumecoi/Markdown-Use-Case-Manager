@@ -1,7 +1,30 @@
 //! # Configuration Types
 //!
 //! This module defines all the data structures used for MUCM configuration.
-//! These types are serialized to/from TOML format for persistence.
+//! These types are serialized to/from TOML format for persistence and provide
+//! the complete configuration schema for project management.
+//!
+//! ## Configuration Structure
+//!
+//! The configuration is organized into several key sections:
+//! - `project`: Basic project information and metadata
+//! - `directories`: File system paths for use cases, tests, and templates
+//! - `templates`: Methodology and language template settings
+//! - `base_fields`: Standard fields available to all use cases
+//! - `metadata`: Auto-generated metadata settings
+//! - `generation`: Code generation preferences and settings
+//!
+//! ## Configuration File
+//!
+//! Configurations are stored in `.config/.mucm/mucm.toml` and loaded using
+//! the `ConfigFileManager`. The TOML format allows for human-readable configuration
+//! while supporting complex nested structures.
+//!
+//! ## Methodology-Specific Configuration
+//!
+//! Individual methodologies can have their own configuration files stored in
+//! `.config/.mucm/methodologies/{name}.toml`, which extend the base configuration
+//! with methodology-specific fields and generation settings.
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -48,17 +71,26 @@ use std::collections::HashMap;
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
+    /// Basic project information and metadata
     pub project: ProjectConfig,
+    /// Directory paths for use cases, tests, and templates
     pub directories: DirectoryConfig,
+    /// Methodology and language template settings
     pub templates: TemplateConfig,
+    /// Standard fields available to all use cases
     #[serde(default)]
     pub base_fields: HashMap<String, BaseFieldConfig>,
+    /// Auto-generated metadata settings
     pub metadata: MetadataConfig,
-    /// Generation configuration (test language, auto-generation settings, etc.)
+    /// Code generation preferences and settings
     #[serde(default)]
     pub generation: GenerationConfig,
 }
 
+/// Project-level configuration settings.
+///
+/// Contains basic information about the project that appears in generated
+/// documentation and is used for project identification.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProjectConfig {
     /// Human-readable project name displayed in documentation
@@ -67,6 +99,11 @@ pub struct ProjectConfig {
     pub description: String,
 }
 
+/// Directory configuration for file organization.
+///
+/// Defines the directory structure used for storing use case documentation,
+/// test files, and template assets. Provides flexible path configuration
+/// with sensible defaults.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DirectoryConfig {
     /// Directory where generated markdown use case files are stored
@@ -83,19 +120,22 @@ pub struct DirectoryConfig {
 }
 
 impl DirectoryConfig {
-    /// Get the effective TOML directory (falls back to use_case_dir if not specified)
+    /// Get the effective TOML directory path.
     ///
-    /// This method provides the directory where TOML source files should be stored.
-    /// If `toml_dir` is explicitly set, it returns that. Otherwise, it defaults
-    /// to the same directory as `use_case_dir` for backward compatibility.
+    /// Returns the configured TOML directory if specified, otherwise falls back
+    /// to the use case directory for backward compatibility.
     ///
     /// # Returns
-    /// The directory path as a string slice
+    /// The directory path as a string slice where TOML files should be stored
     pub fn get_toml_dir(&self) -> &str {
         self.toml_dir.as_deref().unwrap_or(&self.use_case_dir)
     }
 }
 
+/// Template configuration settings.
+///
+/// Defines which methodologies and languages are available for use case
+/// generation, along with default selections for new projects.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TemplateConfig {
     /// List of methodologies to import and make available for use case creation
@@ -109,9 +149,11 @@ pub struct TemplateConfig {
     pub test_language: String,
 }
 
-/// Per-methodology template configuration
-/// This is loaded from .config/.mucm/methodologies/{name}.toml
-/// Note: Metadata is configured in the main config, not per-methodology
+/// Per-methodology template configuration.
+///
+/// This configuration is loaded from `.config/.mucm/methodologies/{name}.toml`
+/// and provides methodology-specific settings that extend the base configuration.
+/// Note: Metadata configuration is handled in the main config, not per-methodology.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MethodologyConfig {
     /// Template information and preferences for this methodology
@@ -123,6 +165,9 @@ pub struct MethodologyConfig {
     pub custom_fields: HashMap<String, CustomFieldConfig>,
 }
 
+/// Template information for a specific methodology.
+///
+/// Contains metadata about a methodology's templates and preferred usage patterns.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MethodologyTemplateInfo {
     /// Unique identifier for this methodology (used in file paths and commands)
@@ -134,8 +179,10 @@ pub struct MethodologyTemplateInfo {
     pub preferred_style: String,
 }
 
-/// Configuration for base fields that all use cases have (beyond mandatory id/title/category)
+/// Configuration for base fields that all use cases have.
+///
 /// These fields are available in all methodologies and are defined in the main config.
+/// Base fields extend beyond the mandatory id/title/category fields.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BaseFieldConfig {
     /// Human-readable label displayed in prompts and documentation
@@ -151,8 +198,10 @@ pub struct BaseFieldConfig {
     pub default: Option<String>,
 }
 
-/// Configuration for custom fields specific to a methodology
+/// Configuration for custom fields specific to a methodology.
+///
 /// These fields extend the base fields and are only available in specific methodologies.
+/// Custom fields allow methodologies to have specialized data collection requirements.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CustomFieldConfig {
     /// Human-readable label displayed in prompts and documentation
@@ -168,7 +217,10 @@ pub struct CustomFieldConfig {
     pub default_value: Option<String>,
 }
 
-/// Configuration for code generation and test creation settings
+/// Configuration for code generation and test creation settings.
+///
+/// Controls how code and tests are automatically generated when creating use cases,
+/// including language selection and overwrite behavior.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GenerationConfig {
     /// Programming language to use for generated test files
@@ -181,6 +233,12 @@ pub struct GenerationConfig {
 }
 
 impl Default for GenerationConfig {
+    /// Create a default generation configuration.
+    ///
+    /// Returns a configuration with sensible defaults:
+    /// - Python as the default test language
+    /// - Auto-generation disabled
+    /// - Overwrite protection enabled
     fn default() -> Self {
         Self {
             test_language: "python".to_string(),
@@ -190,7 +248,10 @@ impl Default for GenerationConfig {
     }
 }
 
-/// Configuration for automatically generated metadata fields
+/// Configuration for automatically generated metadata fields.
+///
+/// Controls which metadata fields are automatically populated when use cases
+/// are created or modified, providing audit trails and timestamps.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MetadataConfig {
     /// Whether to automatically set creation timestamp when use case is created
