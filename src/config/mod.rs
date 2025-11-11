@@ -1,6 +1,32 @@
-// src/config/mod.rs - Configuration module entry point
-
-use std::collections::HashMap;
+//! # Configuration Module
+//!
+//! This module handles all configuration-related functionality for the Markdown Use Case Manager (MUCM).
+//! It manages project settings, template configurations, directory structures, and methodology preferences.
+//!
+//! ## Architecture
+//!
+//! The configuration system follows a layered approach:
+//! - **Types** (`types.rs`): Data structures for configuration
+//! - **File Management** (`file_manager.rs`): Loading/saving config files
+//! - **Template Management** (`template_manager.rs`): Template copying and processing
+//! - **Main Interface** (`mod.rs`): Public API and high-level operations
+//!
+//! ## Configuration File
+//!
+//! Configurations are stored in `.config/.mucm/mucm.toml` and contain:
+//! - Project metadata (name, description)
+//! - Directory paths for use cases, tests, and templates
+//! - Methodology settings and defaults
+//! - Language preferences for code generation
+//! - Custom field definitions
+//!
+//! ## Two-Phase Initialization
+//!
+//! Project setup uses a two-phase process:
+//! 1. **Configuration Phase**: Create config file with user preferences
+//! 2. **Template Phase**: Copy templates based on selected languages/methodologies
+//!
+//! This allows users to review and modify configuration before templates are copied.
 
 // Private sub-modules
 mod file_manager;
@@ -10,7 +36,9 @@ mod types;
 // Explicit public exports
 pub use file_manager::ConfigFileManager;
 pub use template_manager::TemplateManager;
-pub use types::*;
+pub use types::{
+    Config, GenerationConfig,
+};
 
 // Re-export from other modules
 pub use crate::core::MethodologyManager;
@@ -24,9 +52,19 @@ impl Config {
     // Constants
     pub const CONFIG_DIR: &'static str = ".config/.mucm";
     pub const CONFIG_FILE: &'static str = "mucm.toml";
-    pub const TEMPLATES_DIR: &'static str = "handlebars";
+    pub const TEMPLATES_DIR: &'static str = "template-assets";
 
-    /// Create a config for template processing (minimal config used only for template variables)
+    /// Create a minimal config for template processing.
+    ///
+    /// This creates a basic configuration used only for template variable substitution.
+    /// It's not a complete project configuration and should not be saved directly.
+    ///
+    /// # Arguments
+    /// * `test_language` - The programming language for test templates
+    /// * `methodology` - Optional default methodology override
+    ///
+    /// # Returns
+    /// A minimal Config instance suitable for template processing
     pub fn for_template(test_language: String, methodology: Option<String>) -> Self {
         let mut config = Self::default();
         config.templates.test_language = test_language.clone();
@@ -37,13 +75,25 @@ impl Config {
         config
     }
 
-    /// Get path to config file
+    /// Get the path to the configuration file.
+    ///
+    /// Returns the full path to `.config/.mucm/mucm.toml` relative to the current directory.
     pub fn config_path() -> PathBuf {
         Path::new(Self::CONFIG_DIR).join(Self::CONFIG_FILE)
     }
 
-    /// Save config file only (without copying templates or creating directories)
-    /// Used in the first step of two-step initialization
+    /// Save configuration file only (without copying templates or creating directories).
+    ///
+    /// This is the first step of two-step initialization. It creates the config file
+    /// but doesn't copy templates yet, allowing users to review and modify the config.
+    ///
+    /// Use `finalize_init()` after this to complete the setup.
+    ///
+    /// # Arguments
+    /// * `config` - The configuration to save
+    ///
+    /// # Returns
+    /// `Ok(())` on success, or an error if saving fails
     pub fn save_config_only(config: &Config) -> Result<()> {
         let base_path = Path::new(".");
         let config_dir = base_path.join(Self::CONFIG_DIR);
@@ -58,27 +108,59 @@ impl Config {
         Ok(())
     }
 
-    /// Load configuration from file
+    /// Load configuration from the standard config file.
+    ///
+    /// Reads `.config/.mucm/mucm.toml` and deserializes it into a Config struct.
+    ///
+    /// # Returns
+    /// The loaded configuration, or an error if the file doesn't exist or is invalid
     pub fn load() -> Result<Self> {
         ConfigFileManager::load()
     }
 
-    /// Save configuration to file in specified directory
+    /// Save configuration to file in specified directory.
+    ///
+    /// # Arguments
+    /// * `self` - The configuration to save
+    /// * `base_dir` - Base directory where the config should be saved
+    ///
+    /// # Returns
+    /// `Ok(())` on success, or an error if saving fails
     pub fn save_in_dir(&self, base_dir: &str) -> Result<()> {
         ConfigFileManager::save_in_dir(self, base_dir)
     }
 
     /// Check if templates have already been copied to .config/.mucm/handlebars/
+    ///
+    /// This is used to determine if the project has completed the template setup phase.
+    ///
+    /// # Returns
+    /// `true` if templates exist, `false` otherwise
     pub fn check_templates_exist() -> bool {
         ConfigFileManager::check_templates_exist()
     }
 
     /// Copy templates to .config/.mucm/handlebars/ with language (wrapper for _in_dir version)
+    ///
+    /// This is the second phase of initialization - copying templates after config review.
+    ///
+    /// # Arguments
+    /// * `language` - Optional language override for template selection
+    ///
+    /// # Returns
+    /// `Ok(())` on success, or an error if copying fails
     pub fn copy_templates_to_config_with_language(language: Option<String>) -> Result<()> {
         Self::copy_templates_to_config_with_language_in_dir(".", language)
     }
 
-    /// Copy templates to config directory
+    /// Copy templates to config directory (internal implementation)
+    ///
+    /// # Arguments
+    /// * `base_dir` - Base directory for the operation
+    /// * `language` - Optional language override (currently unused - copies all languages)
+    ///
+    /// # Returns
+    /// `Ok(())` on success, or an error if copying fails
     fn copy_templates_to_config_with_language_in_dir(
         base_dir: &str,
         _language: Option<String>, // Not currently used - we copy all languages now
@@ -87,106 +169,75 @@ impl Config {
     }
 
     /// Get list of available programming languages from source templates and local config
+    ///
+    /// Returns languages that have templates available in the source-templates directory.
+    ///
+    /// # Returns
+    /// A vector of language names, or an error if discovery fails
     pub fn get_available_languages() -> Result<Vec<String>> {
         let registry = LanguageRegistry::new();
         Ok(registry.available_languages())
     }
 
     /// Get methodology-specific recommendations as a human-readable string
+    ///
+    /// # Arguments
+    /// * `methodology` - The methodology name to get recommendations for
+    ///
+    /// # Returns
+    /// A formatted string with usage recommendations for the methodology
     pub fn methodology_recommendations(methodology: &str) -> String {
         MethodologyManager::get_recommendations(methodology)
     }
 
     /// Get list of available methodologies (those with config files)
+    ///
+    /// Returns methodologies that have been configured in source-templates/methodologies/.
+    ///
+    /// # Returns
+    /// A vector of methodology names, or an error if discovery fails
     pub fn list_available_methodologies() -> Result<Vec<String>> {
         MethodologyManager::list_available()
+    }
+
+    /// Load default configuration from source-templates/config.toml
+    fn load_default_from_template() -> Result<Self> {
+        use crate::config::template_manager::TemplateManager;
+        use std::fs;
+
+        let source_templates_dir = TemplateManager::find_source_templates_dir()?;
+        let config_path = source_templates_dir.join("config.toml");
+
+        let content = fs::read_to_string(&config_path)
+            .context("Failed to read source-templates/config.toml")?;
+        let mut config: Config = toml::from_str(&content)
+            .context("Failed to parse source-templates/config.toml")?;
+
+        // Set default generation config that matches the template defaults
+        config.generation = GenerationConfig {
+            test_language: config.templates.test_language.clone(),
+            auto_generate_tests: false,
+            overwrite_test_documentation: false,
+        };
+
+        Ok(config)
     }
 }
 
 impl Default for Config {
     fn default() -> Self {
-        // Minimal config used only for tests and template variable processing
-        // Production configs are created from source-templates/config.toml
-        let mut base_fields = HashMap::new();
-
-        // Add standard base fields
-        base_fields.insert(
-            "description".to_string(),
-            BaseFieldConfig {
-                label: "Description".to_string(),
-                field_type: "string".to_string(),
-                required: true,
-                default: None,
-            },
-        );
-        base_fields.insert(
-            "status".to_string(),
-            BaseFieldConfig {
-                label: "Status".to_string(),
-                field_type: "string".to_string(),
-                required: false,
-                default: Some("draft".to_string()),
-            },
-        );
-        base_fields.insert(
-            "priority".to_string(),
-            BaseFieldConfig {
-                label: "Priority".to_string(),
-                field_type: "string".to_string(),
-                required: false,
-                default: Some("medium".to_string()),
-            },
-        );
-        base_fields.insert(
-            "author".to_string(),
-            BaseFieldConfig {
-                label: "Author".to_string(),
-                field_type: "string".to_string(),
-                required: false,
-                default: None,
-            },
-        );
-        base_fields.insert(
-            "reviewer".to_string(),
-            BaseFieldConfig {
-                label: "Reviewer".to_string(),
-                field_type: "string".to_string(),
-                required: false,
-                default: None,
-            },
-        );
-
-        Config {
-            project: ProjectConfig {
-                name: "My Project".to_string(),
-                description: "A project managed with use case manager".to_string(),
-            },
-            directories: DirectoryConfig {
-                use_case_dir: "docs/use-cases".to_string(),
-                test_dir: "tests/use-cases".to_string(),
-                template_dir: None,
-                toml_dir: Some("use-cases-data".to_string()),
-            },
-            templates: TemplateConfig {
-                methodologies: vec![
-                    "developer".to_string(),
-                    "feature".to_string(),
-                    "business".to_string(),
-                    "tester".to_string(),
-                ],
-                default_methodology: "feature".to_string(),
-                test_language: "python".to_string(),
-            },
-            base_fields,
-            metadata: MetadataConfig {
-                created: true,
-                last_updated: true,
-            },
-            generation: GenerationConfig {
-                test_language: "python".to_string(),
-                auto_generate_tests: false,
-                overwrite_test_documentation: false,
-            },
+        // Load default configuration from source-templates/config.toml
+        // This ensures consistency between the template and the default config
+        match Self::load_default_from_template() {
+            Ok(config) => config,
+            Err(e) => {
+                panic!(
+                    "Failed to load default configuration from source-templates/config.toml: {}\n\
+                     The source-templates directory and config.toml file are required for the application to function.\n\
+                     Please ensure you are running from the project root directory.",
+                    e
+                );
+            }
         }
     }
 }
@@ -277,7 +328,7 @@ mod tests {
         );
         assert!(!test_dir.exists(), "Test directory should NOT exist yet");
 
-        let templates_dir = Path::new(".config/.mucm/handlebars");
+        let templates_dir = Path::new(".config/.mucm").join(Config::TEMPLATES_DIR);
         assert!(templates_dir.exists(), "Templates directory should exist");
         assert!(templates_dir.join("developer/uc_simple.hbs").exists());
         assert!(templates_dir.join("developer/uc_detailed.hbs").exists());
@@ -300,7 +351,7 @@ mod tests {
             let config = init_project_with_language(Some("python".to_string()))?;
             assert_eq!(config.generation.test_language, "python");
 
-            let python_template = Path::new(".config/.mucm/handlebars/languages/python/test.hbs");
+            let python_template = Path::new(".config/.mucm").join(Config::TEMPLATES_DIR).join("languages/python/test.hbs");
             assert!(python_template.exists(), "Python template should exist");
         }
 

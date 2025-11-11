@@ -20,13 +20,13 @@ impl TemplateEngine {
 
         // First try to load templates from user's config directory
         // Then fall back to source-templates if not found
-        let user_templates_path = Path::new(".config/.mucm/handlebars");
-        let source_templates_path = Path::new("source-templates/methodologies");
+        let user_templates_path = Path::new(".config/.mucm").join(crate::config::Config::TEMPLATES_DIR);
+        let source_templates_path = Path::new("source-templates/methodologies").to_path_buf();
 
         let methodologies_path = if user_templates_path.exists() {
-            user_templates_path
+            &user_templates_path
         } else {
-            source_templates_path
+            &source_templates_path
         };
 
         let mut methodologies = Vec::new();
@@ -75,7 +75,7 @@ impl TemplateEngine {
 
         // Register general overview template (not methodology-specific)
         let overview_path = if user_templates_path.exists() {
-            user_templates_path.join("overview.hbs") // .config/.mucm/handlebars/overview.hbs
+            user_templates_path.join("overview.hbs") // .config/.mucm/{TEMPLATES_DIR}/overview.hbs
         } else {
             Path::new("source-templates/overview.hbs").to_path_buf()
         };
