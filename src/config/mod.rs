@@ -175,7 +175,10 @@ impl Config {
     /// # Returns
     /// A vector of language names, or an error if discovery fails
     pub fn get_available_languages() -> Result<Vec<String>> {
-        let registry = LanguageRegistry::new();
+        use crate::config::template_manager::TemplateManager;
+
+        let templates_dir = TemplateManager::find_source_templates_dir()?;
+        let registry = LanguageRegistry::new_dynamic(&templates_dir)?;
         Ok(registry.available_languages())
     }
 
@@ -250,7 +253,10 @@ mod tests {
 
     /// Helper to initialize a project in a temporary directory with optional language
     fn init_project_with_language(language: Option<String>) -> Result<Config> {
-        let language_registry = LanguageRegistry::new();
+        use crate::config::template_manager::TemplateManager;
+
+        let templates_dir = TemplateManager::find_source_templates_dir()?;
+        let language_registry = LanguageRegistry::new_dynamic(&templates_dir)?;
 
         // Validate language if provided
         if let Some(ref lang) = language {

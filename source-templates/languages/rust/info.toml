@@ -1,0 +1,4 @@
+name = "rust"
+aliases = ["rs"]
+file_extension = "rs"
+template_file = "test.hbs"

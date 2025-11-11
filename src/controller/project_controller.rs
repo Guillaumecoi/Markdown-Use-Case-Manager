@@ -133,7 +133,9 @@ impl ProjectController {
 
         // Resolve language aliases to primary names
         let resolved_language = if let Some(lang) = language {
-            let language_registry = LanguageRegistry::new();
+            use crate::config::TemplateManager;
+            let templates_dir = TemplateManager::find_source_templates_dir()?;
+            let language_registry = LanguageRegistry::new_dynamic(&templates_dir)?;
             if let Some(lang_def) = language_registry.get(&lang) {
                 lang_def.name().to_string()
             } else {
@@ -278,7 +280,9 @@ impl ProjectController {
             }
             Err(e) => {
                 output.push_str(&format!("Error getting available languages: {}\n", e));
-                let language_registry = LanguageRegistry::new();
+                use crate::config::TemplateManager;
+                let templates_dir = TemplateManager::find_source_templates_dir()?;
+                let language_registry = LanguageRegistry::new_dynamic(&templates_dir)?;
                 let builtin_languages = language_registry.available_languages();
                 output.push_str(&format!(
                     "Built-in languages: {}\n",

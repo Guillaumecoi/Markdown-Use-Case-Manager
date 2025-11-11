@@ -89,7 +89,10 @@ impl TemplateEngine {
         let mut test_templates = HashMap::new();
 
         use super::super::languages::LanguageRegistry;
-        let language_registry = LanguageRegistry::new();
+        use crate::config::TemplateManager;
+
+        let templates_dir = TemplateManager::find_source_templates_dir()?;
+        let language_registry = LanguageRegistry::new_dynamic(&templates_dir)?;
         for language_name in language_registry.available_languages() {
             if let Some(language) = language_registry.get(&language_name) {
                 let template_name = format!("{}_test", language.name());
