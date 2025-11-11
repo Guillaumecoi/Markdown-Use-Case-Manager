@@ -1,11 +1,11 @@
 // Application service for use case operations
 // This orchestrates domain services and infrastructure
 use crate::config::Config;
-use crate::core::{
-    file_operations::FileOperations, to_snake_case, TemplateEngine, TomlUseCaseRepository,
-    UseCase, UseCaseRepository, UseCaseService,
-};
 use crate::core::utils::suggest_alternatives;
+use crate::core::{
+    file_operations::FileOperations, to_snake_case, TemplateEngine, TomlUseCaseRepository, UseCase,
+    UseCaseRepository, UseCaseService,
+};
 use anyhow::Result;
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -190,12 +190,10 @@ impl UseCaseApplicationService {
         );
         let description = description.unwrap_or_default();
 
-        let use_case = self.use_case_service.create_use_case(
-            use_case_id.clone(),
-            title,
-            category,
-            description,
-        ).map_err(|e| anyhow::anyhow!(e))?;
+        let use_case = self
+            .use_case_service
+            .create_use_case(use_case_id.clone(), title, category, description)
+            .map_err(|e| anyhow::anyhow!(e))?;
 
         // Step 1: Save TOML first (source of truth)
         self.repository.save_toml_only(&use_case)?;

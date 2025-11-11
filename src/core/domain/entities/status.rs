@@ -141,7 +141,8 @@ mod tests {
         let status = Status::InProgress;
 
         let serialized = serde_json::to_string(&status).expect("Failed to serialize");
-        let deserialized: Status = serde_json::from_str(&serialized).expect("Failed to deserialize");
+        let deserialized: Status =
+            serde_json::from_str(&serialized).expect("Failed to deserialize");
 
         assert_eq!(status, deserialized);
     }
@@ -152,7 +153,10 @@ mod tests {
         // Test valid status strings
         assert_eq!(Status::from_str("planned").unwrap(), Status::Planned);
         assert_eq!(Status::from_str("in_progress").unwrap(), Status::InProgress);
-        assert_eq!(Status::from_str("implemented").unwrap(), Status::Implemented);
+        assert_eq!(
+            Status::from_str("implemented").unwrap(),
+            Status::Implemented
+        );
         assert_eq!(Status::from_str("tested").unwrap(), Status::Tested);
         assert_eq!(Status::from_str("deployed").unwrap(), Status::Deployed);
         assert_eq!(Status::from_str("deprecated").unwrap(), Status::Deprecated);

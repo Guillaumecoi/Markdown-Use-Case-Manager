@@ -2,19 +2,19 @@ use crate::cli::runner::CliRunner;
 use anyhow::Result;
 
 /// Handles the 'create' CLI command.
-/// 
+///
 /// Creates a new use case with the specified title, category, and optional details.
 /// If a methodology is provided, uses that methodology's templates and structure
 /// for generating documentation. Otherwise, uses the project's default methodology.
 /// The creation result is printed to stdout.
-/// 
+///
 /// # Arguments
 /// * `runner` - A mutable reference to the CLI runner responsible for use case creation.
 /// * `title` - The title of the use case to create.
 /// * `category` - The category under which the use case should be organized.
 /// * `description` - Optional detailed description of the use case.
 /// * `methodology` - Optional methodology to use for documentation generation.
-/// 
+///
 /// # Returns
 /// Returns `Ok(())` on successful creation, or an error if creation fails.
 pub fn handle_create_command(
@@ -35,14 +35,14 @@ pub fn handle_create_command(
 }
 
 /// Handles the 'list' CLI command.
-/// 
+///
 /// Retrieves and displays a list of all existing use cases in the project,
 /// including their titles, categories, and current status.
 /// The formatted list is printed to stdout for user reference.
-/// 
+///
 /// # Arguments
 /// * `runner` - A mutable reference to the CLI runner responsible for listing use cases.
-/// 
+///
 /// # Returns
 /// Returns `Ok(())` on successful display, or an error if retrieval fails.
 pub fn handle_list_command(runner: &mut CliRunner) -> Result<()> {

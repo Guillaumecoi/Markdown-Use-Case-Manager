@@ -81,7 +81,8 @@ mod tests {
             "Test".to_string(),
             "A test use case".to_string(),
             "Medium".to_string(),
-        ).unwrap();
+        )
+        .unwrap();
 
         // Test that file doesn't exist initially
         assert!(!file_ops.test_file_exists(&use_case, "py"));
@@ -105,7 +106,8 @@ mod tests {
             "Test".to_string(),
             "Another test use case".to_string(),
             "Medium".to_string(),
-        ).unwrap();
+        )
+        .unwrap();
         assert!(!file_ops.test_file_exists(&other_use_case, "py"));
     }
 
@@ -129,7 +131,8 @@ mod tests {
             "Feature".to_string(),
             "A test use case".to_string(),
             "Medium".to_string(),
-        ).unwrap();
+        )
+        .unwrap();
 
         // Save a test file
         let test_content = "# Generated test file\nprint('Hello, World!')\n";

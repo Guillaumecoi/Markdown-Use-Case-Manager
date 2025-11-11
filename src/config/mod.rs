@@ -36,9 +36,7 @@ mod types;
 // Explicit public exports
 pub use file_manager::ConfigFileManager;
 pub use template_manager::TemplateManager;
-pub use types::{
-    Config, GenerationConfig,
-};
+pub use types::{Config, GenerationConfig};
 
 // Re-export from other modules
 pub use crate::core::MethodologyManager;
@@ -210,8 +208,8 @@ impl Config {
 
         let content = fs::read_to_string(&config_path)
             .context("Failed to read source-templates/config.toml")?;
-        let mut config: Config = toml::from_str(&content)
-            .context("Failed to parse source-templates/config.toml")?;
+        let mut config: Config =
+            toml::from_str(&content).context("Failed to parse source-templates/config.toml")?;
 
         // Set default generation config that matches the template defaults
         config.generation = GenerationConfig {
@@ -351,7 +349,9 @@ mod tests {
             let config = init_project_with_language(Some("python".to_string()))?;
             assert_eq!(config.generation.test_language, "python");
 
-            let python_template = Path::new(".config/.mucm").join(Config::TEMPLATES_DIR).join("languages/python/test.hbs");
+            let python_template = Path::new(".config/.mucm")
+                .join(Config::TEMPLATES_DIR)
+                .join("languages/python/test.hbs");
             assert!(python_template.exists(), "Python template should exist");
         }
 
@@ -388,14 +388,8 @@ mod tests {
 
         let reloaded_config = Config::load()?;
         assert_eq!(reloaded_config.project.name, "Modified Project");
-        assert_eq!(
-            reloaded_config.project.description,
-            "Modified description"
-        );
-        assert_eq!(
-            reloaded_config.directories.use_case_dir,
-            "custom/use-cases"
-        );
+        assert_eq!(reloaded_config.project.description, "Modified description");
+        assert_eq!(reloaded_config.directories.use_case_dir, "custom/use-cases");
         assert_eq!(reloaded_config.directories.test_dir, "custom/tests");
         assert_eq!(reloaded_config.generation.test_language, "python");
         assert!(reloaded_config.generation.auto_generate_tests);

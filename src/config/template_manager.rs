@@ -291,7 +291,10 @@ mod tests {
         let result = init_test_project_in_dir(temp_dir.path().to_str().unwrap(), None);
         assert!(result.is_ok());
 
-        let templates_dir = temp_dir.path().join(".config/.mucm").join(Config::TEMPLATES_DIR);
+        let templates_dir = temp_dir
+            .path()
+            .join(".config/.mucm")
+            .join(Config::TEMPLATES_DIR);
         assert!(templates_dir.exists());
     }
 

@@ -1,10 +1,9 @@
 /// CLI command handlers.
-/// 
+///
 /// These modules contain thin wrapper functions for CLI commands. They handle
 /// command-line specific concerns like output formatting, but delegate all
 /// business logic to the CliRunner. This separation keeps the CLI layer
 /// focused on user interaction while the runner manages domain operations.
-
 // Private modules
 mod language;
 mod methodology;

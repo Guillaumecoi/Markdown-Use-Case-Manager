@@ -1,5 +1,5 @@
 // Domain service for use case business logic
-use crate::core::domain::{UseCase};
+use crate::core::domain::UseCase;
 use crate::core::to_snake_case;
 use std::path::Path;
 
@@ -170,12 +170,14 @@ mod tests {
     #[test]
     fn test_create_use_case() {
         let service = UseCaseService::new();
-        let use_case = service.create_use_case(
-            "UC-TEST-001".to_string(),
-            "Test Use Case".to_string(),
-            "Test".to_string(),
-            "A test description".to_string(),
-        ).unwrap();
+        let use_case = service
+            .create_use_case(
+                "UC-TEST-001".to_string(),
+                "Test Use Case".to_string(),
+                "Test".to_string(),
+                "A test description".to_string(),
+            )
+            .unwrap();
 
         assert_eq!(use_case.id, "UC-TEST-001");
         assert_eq!(use_case.title, "Test Use Case");

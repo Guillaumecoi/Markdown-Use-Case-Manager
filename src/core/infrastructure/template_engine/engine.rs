@@ -20,7 +20,8 @@ impl TemplateEngine {
 
         // First try to load templates from user's config directory
         // Then fall back to source-templates if not found
-        let user_templates_path = Path::new(".config/.mucm").join(crate::config::Config::TEMPLATES_DIR);
+        let user_templates_path =
+            Path::new(".config/.mucm").join(crate::config::Config::TEMPLATES_DIR);
         let source_templates_path = Path::new("source-templates/methodologies").to_path_buf();
 
         let methodologies_path = if user_templates_path.exists() {
