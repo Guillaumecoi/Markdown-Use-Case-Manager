@@ -1,4 +1,6 @@
 use crate::cli::runner::CliRunner;
+use crate::controller::DisplayResult;
+use crate::presentation::DisplayResultFormatter;
 use anyhow::Result;
 
 /// Handles the 'init' CLI command.
@@ -25,12 +27,16 @@ pub fn handle_init_command(
 ) -> Result<()> {
     if finalize {
         println!("Finalizing initialization...");
-        let result = runner.finalize_init()?;
-        println!("{}", result);
+        match runner.finalize_init() {
+            Ok(result) => DisplayResultFormatter::display(&result),
+            Err(e) => DisplayResultFormatter::display(&DisplayResult::error(e.to_string())),
+        }
     } else {
         println!("Initializing use case manager project...");
-        let result = runner.init_project(language, methodology)?;
-        println!("{}", result);
+        match runner.init_project(language, methodology) {
+            Ok(result) => DisplayResultFormatter::display(&result),
+            Err(e) => DisplayResultFormatter::display(&DisplayResult::error(e.to_string())),
+        }
     }
     Ok(())
 }

@@ -181,8 +181,8 @@ impl Initialization {
         default_methodology: String,
     ) -> Result<()> {
         match runner.init_project(language, Some(default_methodology)) {
-            Ok(message) => {
-                UI::show_success(&message)?;
+            Ok(result) => {
+                UI::show_success(&result.message)?;
                 Ok(())
             }
             Err(e) => {
@@ -203,8 +203,8 @@ impl Initialization {
 
         if auto_finalize {
             match runner.finalize_init() {
-                Ok(message) => {
-                    UI::show_success(&message)?;
+                Ok(result) => {
+                    UI::show_success(&result.message)?;
                     println!("\n💡 Note: All selected methodologies are now available!");
                     println!("   You can use any of them when creating use cases.\n");
                     UI::pause_for_input()?;

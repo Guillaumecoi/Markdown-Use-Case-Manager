@@ -12,8 +12,7 @@
 /// and provides a clean, error-handling facade for CLI command handlers.
 use anyhow::Result;
 
-use crate::controller::ProjectController;
-use crate::controller::UseCaseController;
+use crate::controller::{ProjectController, UseCaseController, DisplayResult};
 
 /// CLI runner that delegates to controllers
 /// This is a thin adapter between CLI interface and business logic
@@ -68,19 +67,19 @@ impl CliRunner {
     /// * `methodology` - Optional default methodology (defaults to "feature")
     ///
     /// # Returns
-    /// Returns a success message string.
+    /// Returns a DisplayResult with success message.
     pub fn init_project(
         &mut self,
         language: Option<String>,
         methodology: Option<String>,
-    ) -> Result<String> {
+    ) -> Result<DisplayResult> {
         // Sanitize inputs: trim whitespace and filter out empty strings
         let sanitized_language = Self::sanitize_optional_string(language);
         let sanitized_methodology =
             Self::sanitize_optional_string(methodology).unwrap_or_else(|| "feature".to_string());
 
         let result = ProjectController::init_project(sanitized_language, sanitized_methodology)?;
-        Ok(result.message)
+        Ok(result)
     }
 
     /// Finalize project initialization (template copying phase).
@@ -90,10 +89,10 @@ impl CliRunner {
     /// the generated config files.
     ///
     /// # Returns
-    /// Returns a success message string.
-    pub fn finalize_init(&mut self) -> Result<String> {
+    /// Returns a DisplayResult with completion message.
+    pub fn finalize_init(&mut self) -> Result<DisplayResult> {
         let result = ProjectController::finalize_init()?;
-        Ok(result.message)
+        Ok(result)
     }
 
     /// Create a new use case using the project's default methodology.
@@ -107,20 +106,19 @@ impl CliRunner {
     /// * `description` - Optional detailed description
     ///
     /// # Returns
-    /// Returns a success message string.
+    /// Returns a DisplayResult with success message.
     pub fn create_use_case(
         &mut self,
         title: String,
         category: String,
         description: Option<String>,
-    ) -> Result<String> {
+    ) -> Result<DisplayResult> {
         let controller = self.ensure_use_case_controller()?;
-        let result = controller.create_use_case(
+        controller.create_use_case(
             Self::sanitize_required_string(title),
             Self::sanitize_required_string(category),
             Self::sanitize_optional_string(description),
-        )?;
-        Ok(result.message)
+        )
     }
 
     /// Create a new use case with a specific methodology.
@@ -135,22 +133,21 @@ impl CliRunner {
     /// * `methodology` - The methodology to use for documentation generation
     ///
     /// # Returns
-    /// Returns a success message string.
+    /// Returns a DisplayResult with success message.
     pub fn create_use_case_with_methodology(
         &mut self,
         title: String,
         category: String,
         description: Option<String>,
         methodology: String,
-    ) -> Result<String> {
+    ) -> Result<DisplayResult> {
         let controller = self.ensure_use_case_controller()?;
-        let result = controller.create_use_case_with_methodology(
+        controller.create_use_case_with_methodology(
             Self::sanitize_required_string(title),
             Self::sanitize_required_string(category),
             Self::sanitize_optional_string(description),
             Self::sanitize_required_string(methodology),
-        )?;
-        Ok(result.message)
+        )
     }
 
     /// List all use cases in the project.
@@ -260,18 +257,17 @@ impl CliRunner {
     /// * `methodology` - The new methodology to apply
     ///
     /// # Returns
-    /// Returns a success message string.
+    /// Returns a DisplayResult with success message.
     pub fn regenerate_use_case_with_methodology(
         &mut self,
         use_case_id: String,
         methodology: String,
-    ) -> Result<String> {
+    ) -> Result<DisplayResult> {
         let controller = self.ensure_use_case_controller()?;
-        let result = controller.regenerate_use_case_with_methodology(
+        controller.regenerate_use_case_with_methodology(
             Self::sanitize_required_string(use_case_id),
             Self::sanitize_required_string(methodology),
-        )?;
-        Ok(result.message)
+        )
     }
 
     /// Regenerate documentation for a single use case.

@@ -3,6 +3,8 @@ use inquire::{Confirm, Select, Text};
 
 use crate::cli::runner::CliRunner;
 use crate::config::Config;
+use crate::controller::DisplayResult;
+use crate::presentation::DisplayResultFormatter;
 
 /// Guided workflow for creating a use case
 pub fn guided_create_use_case(runner: &mut CliRunner) -> Result<()> {
@@ -80,9 +82,15 @@ pub fn guided_create_use_case(runner: &mut CliRunner) -> Result<()> {
     };
 
     // Create the use case with methodology
-    let result =
-        runner.create_use_case_with_methodology(title, category, description, methodology)?;
-    println!("\n✅ {}", result);
+    match runner.create_use_case_with_methodology(title, category, description, methodology) {
+        Ok(result) => {
+            println!("\n✅ ");
+            DisplayResultFormatter::display(&result);
+        }
+        Err(e) => {
+            DisplayResultFormatter::display(&DisplayResult::error(e.to_string()));
+        }
+    }
 
     Ok(())
 }

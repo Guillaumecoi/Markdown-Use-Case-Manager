@@ -1,4 +1,6 @@
 use crate::cli::runner::CliRunner;
+use crate::controller::DisplayResult;
+use crate::presentation::DisplayResultFormatter;
 use anyhow::Result;
 
 /// Handles the 'create' CLI command.
@@ -25,13 +27,23 @@ pub fn handle_create_command(
     methodology: Option<String>,
 ) -> Result<()> {
     let result = match methodology {
-        Some(methodology) => {
-            runner.create_use_case_with_methodology(title, category, description, methodology)?
-        }
-        None => runner.create_use_case(title, category, description)?,
+        Some(methodology) => match runner.create_use_case_with_methodology(title, category, description, methodology) {
+            Ok(display_result) => display_result,
+            Err(e) => DisplayResult::error(e.to_string()),
+        },
+        None => match runner.create_use_case(title, category, description) {
+            Ok(display_result) => display_result,
+            Err(e) => DisplayResult::error(e.to_string()),
+        },
     };
-    println!("{}", result);
-    Ok(())
+    
+    DisplayResultFormatter::display(&result);
+    
+    if result.success {
+        Ok(())
+    } else {
+        std::process::exit(1);
+    }
 }
 
 /// Handles the 'list' CLI command.

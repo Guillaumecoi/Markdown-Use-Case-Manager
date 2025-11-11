@@ -1,4 +1,6 @@
 use crate::cli::runner::CliRunner;
+use crate::controller::DisplayResult;
+use crate::presentation::DisplayResultFormatter;
 use anyhow::Result;
 
 /// Handles the 'methodologies' CLI command.
@@ -61,26 +63,53 @@ pub fn handle_regenerate_command(
     match (use_case_id, methodology, all) {
         // No args or --all flag: regenerate all use cases
         (None, None, _) | (None, Some(_), true) => {
-            runner.regenerate_all_use_cases()?;
-            println!("✅ Regenerated all use case documentation");
-            Ok(())
+            match runner.regenerate_all_use_cases() {
+                Ok(_) => {
+                    println!("✅ Regenerated all use case documentation");
+                    Ok(())
+                }
+                Err(e) => {
+                    DisplayResultFormatter::display(&DisplayResult::error(e.to_string()));
+                    std::process::exit(1);
+                }
+            }
         }
         // Use case ID + methodology: regenerate with different methodology
         (Some(id), Some(method), _) => {
-            let result = runner.regenerate_use_case_with_methodology(id, method)?;
-            println!("{}", result);
-            Ok(())
+            match runner.regenerate_use_case_with_methodology(id, method) {
+                Ok(result) => {
+                    DisplayResultFormatter::display(&result);
+                    if result.success {
+                        Ok(())
+                    } else {
+                        std::process::exit(1);
+                    }
+                }
+                Err(e) => {
+                    DisplayResultFormatter::display(&DisplayResult::error(e.to_string()));
+                    std::process::exit(1);
+                }
+            }
         }
         // Use case ID only: regenerate with current methodology
         (Some(id), None, _) => {
-            let id_clone = id.clone();
-            runner.regenerate_use_case(id)?;
-            println!("✅ Regenerated documentation for {}", id_clone);
-            Ok(())
+            match runner.regenerate_use_case(id.clone()) {
+                Ok(_) => {
+                    println!("✅ Regenerated documentation for {}", id);
+                    Ok(())
+                }
+                Err(e) => {
+                    DisplayResultFormatter::display(&DisplayResult::error(e.to_string()));
+                    std::process::exit(1);
+                }
+            }
         }
         // --all with methodology but no ID: error (doesn't make sense)
         (None, Some(_), false) => {
-            anyhow::bail!("Cannot specify --methodology without a use case ID. To regenerate all, use: mucm regenerate")
+            DisplayResultFormatter::display(&DisplayResult::error(
+                "Cannot specify --methodology without a use case ID. To regenerate all, use: mucm regenerate".to_string()
+            ));
+            std::process::exit(1);
         }
     }
 }

@@ -3,4 +3,4 @@
 mod formatters;
 
 // Explicit public exports
-pub use formatters::{StatusFormatter, UseCaseFormatter};
+pub use formatters::{DisplayResultFormatter, StatusFormatter, UseCaseFormatter};

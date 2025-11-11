@@ -32,6 +32,22 @@ use commands::{
 };
 use interactive::InteractiveSession;
 use runner::CliRunner;
+use crate::controller::DisplayResult;
+use crate::presentation::DisplayResultFormatter;
+
+/// Execute a command with proper error handling and colored output
+fn execute_command<F>(command_fn: F)
+where
+    F: FnOnce() -> Result<()>,
+{
+    match command_fn() {
+        Ok(()) => {}
+        Err(e) => {
+            DisplayResultFormatter::display(&DisplayResult::error(e.to_string()));
+            std::process::exit(1);
+        }
+    }
+}
 
 /// Main CLI entry point.
 ///
@@ -70,23 +86,47 @@ pub fn run() -> Result<()> {
             language,
             methodology,
             finalize,
-        } => handle_init_command(&mut runner, language, methodology, finalize),
+        } => {
+            execute_command(|| handle_init_command(&mut runner, language, methodology, finalize));
+            Ok(())
+        }
         Commands::Create {
             title,
             category,
             description,
             methodology,
-        } => handle_create_command(&mut runner, title, category, description, methodology),
-        Commands::List => handle_list_command(&mut runner),
-        Commands::Languages => handle_languages_command(),
-        Commands::Methodologies => handle_list_methodologies_command(&mut runner),
-        Commands::MethodologyInfo { name } => handle_methodology_info_command(&mut runner, name),
+        } => {
+            execute_command(|| handle_create_command(&mut runner, title, category, description, methodology));
+            Ok(())
+        }
+        Commands::List => {
+            execute_command(|| handle_list_command(&mut runner));
+            Ok(())
+        }
+        Commands::Languages => {
+            execute_command(|| handle_languages_command());
+            Ok(())
+        }
+        Commands::Methodologies => {
+            execute_command(|| handle_list_methodologies_command(&mut runner));
+            Ok(())
+        }
+        Commands::MethodologyInfo { name } => {
+            execute_command(|| handle_methodology_info_command(&mut runner, name));
+            Ok(())
+        }
         Commands::Regenerate {
             use_case_id,
             methodology,
             all,
-        } => handle_regenerate_command(&mut runner, use_case_id, methodology, all),
-        Commands::Status => handle_status_command(&mut runner),
+        } => {
+            execute_command(|| handle_regenerate_command(&mut runner, use_case_id, methodology, all));
+            Ok(())
+        }
+        Commands::Status => {
+            execute_command(|| handle_status_command(&mut runner));
+            Ok(())
+        }
         Commands::Interactive => {
             // This case is handled above, but included for completeness
             let mut session = InteractiveSession::new();

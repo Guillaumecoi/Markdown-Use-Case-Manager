@@ -53,10 +53,10 @@ impl UseCaseController {
         Ok(Self { app_service })
     }
 
-    /// Create a new use case with the default methodology.
+    /// Create a new use case using the project's default methodology.
     ///
-    /// Creates a use case using the project's default methodology as specified
-    /// in the configuration. This is the most common way to create use cases.
+    /// Creates a use case using the project's default methodology, allowing
+    /// users to quickly create use cases without specifying a methodology.
     ///
     /// # Arguments
     /// * `title` - The title of the use case
@@ -74,10 +74,14 @@ impl UseCaseController {
         category: String,
         description: Option<String>,
     ) -> Result<DisplayResult> {
-        let config = Config::load()?;
-        let default_methodology = config.templates.default_methodology.clone();
-
-        self.create_use_case_with_methodology(title, category, description, default_methodology)
+        match (|| -> Result<DisplayResult> {
+            let config = Config::load()?;
+            let default_methodology = config.templates.default_methodology.clone();
+            self.create_use_case_with_methodology(title, category, description, default_methodology)
+        })() {
+            Ok(result) => Ok(result),
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
     }
 
     /// Create a new use case with a specific methodology.
@@ -103,20 +107,23 @@ impl UseCaseController {
         description: Option<String>,
         methodology: String,
     ) -> Result<DisplayResult> {
-        let use_case_id = self.app_service.create_use_case_with_methodology(
+        match self.app_service.create_use_case_with_methodology(
             title,
             category,
             description,
             &methodology,
-        )?;
+        ) {
+            Ok(use_case_id) => {
+                // Display using formatter
+                UseCaseFormatter::display_created(&use_case_id, &methodology);
 
-        // Display using formatter
-        UseCaseFormatter::display_created(&use_case_id, &methodology);
-
-        Ok(DisplayResult::success(format!(
-            "Created use case: {} with {} methodology",
-            use_case_id, methodology
-        )))
+                Ok(DisplayResult::success(format!(
+                    "Created use case: {} with {} methodology",
+                    use_case_id, methodology
+                )))
+            }
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
     }
 
     /// List all use cases in the project.
@@ -185,16 +192,20 @@ impl UseCaseController {
         use_case_id: String,
         methodology: String,
     ) -> Result<DisplayResult> {
-        self.app_service
-            .regenerate_use_case_with_methodology(&use_case_id, &methodology)?;
+        match self.app_service
+            .regenerate_use_case_with_methodology(&use_case_id, &methodology)
+        {
+            Ok(_) => {
+                // Display using formatter
+                UseCaseFormatter::display_regenerated(&use_case_id, &methodology);
 
-        // Display using formatter
-        UseCaseFormatter::display_regenerated(&use_case_id, &methodology);
-
-        Ok(DisplayResult::success(format!(
-            "Regenerated use case {} with {} methodology",
-            use_case_id, methodology
-        )))
+                Ok(DisplayResult::success(format!(
+                    "Regenerated use case {} with {} methodology",
+                    use_case_id, methodology
+                )))
+            }
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
     }
 
     /// Regenerate markdown for a single use case.

@@ -10,17 +10,22 @@
 //! - `SelectionOptions`: Available options for interactive selection
 //! - `MethodologyInfo`: Methodology metadata for display and selection
 
-/// Result of an operation to display to the user.
+/// Result of an operation that can be displayed to the user.
 ///
 /// Provides a standardized way to communicate operation outcomes to the
 /// presentation layer, including success status and user-friendly messages.
 #[derive(Debug)]
 pub struct DisplayResult {
     /// Whether the operation succeeded
-    /// TODO: Use this field to conditionally format output (green for success, red for error)
     pub success: bool,
     /// User-friendly message describing the operation result
     pub message: String,
+}
+
+impl std::fmt::Display for DisplayResult {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.message)
+    }
 }
 
 impl DisplayResult {
