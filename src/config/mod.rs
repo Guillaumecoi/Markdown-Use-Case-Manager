@@ -63,10 +63,12 @@ impl Config {
     ///
     /// # Returns
     /// A minimal Config instance suitable for template processing
-    pub fn for_template(test_language: String, methodology: Option<String>) -> Self {
+    pub fn for_template(test_language: Option<String>, methodology: Option<String>) -> Self {
         let mut config = Self::default();
-        config.templates.test_language = test_language.clone();
-        config.generation.test_language = test_language; // Keep generation in sync
+        if let Some(lang) = test_language {
+            config.generation.test_language = lang.clone();
+            config.templates.test_language = lang;
+        }
         if let Some(method) = methodology {
             config.templates.default_methodology = method;
         }
@@ -514,6 +516,169 @@ mod tests {
         assert!(final_config.generation.auto_generate_tests);
         assert!(final_config.metadata.created);
         assert!(final_config.metadata.last_updated);
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_for_template() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        std::env::set_current_dir(&temp_dir)?;
+
+        // Test with both language and methodology set
+        let config = Config::for_template(Some("python".to_string()), Some("feature".to_string()));
+        assert_eq!(config.generation.test_language, "python");
+        assert_eq!(config.templates.test_language, "python");
+        assert_eq!(config.templates.default_methodology, "feature");
+
+        // Test with language set but methodology None (should keep default methodology)
+        let config_lang_only = Config::for_template(Some("rust".to_string()), None);
+        assert_eq!(config_lang_only.generation.test_language, "rust");
+        assert_eq!(config_lang_only.templates.test_language, "rust");
+        // Should use default methodology from Config::default()
+        assert!(!config_lang_only.templates.default_methodology.is_empty());
+
+        // Test with language None but methodology set (should keep default language)
+        let default_config = Config::default();
+        let config_methodology_only = Config::for_template(None, Some("business".to_string()));
+        assert_eq!(
+            config_methodology_only.generation.test_language,
+            default_config.generation.test_language
+        );
+        assert_eq!(
+            config_methodology_only.templates.test_language,
+            default_config.templates.test_language
+        );
+        assert_eq!(
+            config_methodology_only.templates.default_methodology,
+            "business"
+        );
+
+        // Test with both None (should keep all defaults)
+        let config_both_none = Config::for_template(None, None);
+        assert_eq!(
+            config_both_none.generation.test_language,
+            default_config.generation.test_language
+        );
+        assert_eq!(
+            config_both_none.templates.test_language,
+            default_config.templates.test_language
+        );
+        assert_eq!(
+            config_both_none.templates.default_methodology,
+            default_config.templates.default_methodology
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_save_config_only() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        std::env::set_current_dir(&temp_dir)?;
+
+        let mut config = Config::default();
+        config.project.name = "Test Project".to_string();
+        config.generation.test_language = "javascript".to_string();
+
+        // Save config only (without templates)
+        Config::save_config_only(&config)?;
+
+        // Verify config file exists
+        assert!(Config::config_path().exists());
+
+        // Verify templates directory does NOT exist (since we only saved config)
+        let templates_dir = Path::new(".config/.mucm").join(Config::TEMPLATES_DIR);
+        assert!(!templates_dir.exists());
+
+        // Verify we can load the config back
+        let loaded_config = Config::load()?;
+        assert_eq!(loaded_config.project.name, "Test Project");
+        assert_eq!(loaded_config.generation.test_language, "javascript");
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_check_templates_exist() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        std::env::set_current_dir(&temp_dir)?;
+
+        // Initially, templates should not exist
+        assert!(!Config::check_templates_exist());
+
+        // Initialize project (which copies templates)
+        let _config = init_project_with_language(Some("rust".to_string()))?;
+
+        // Now templates should exist
+        assert!(Config::check_templates_exist());
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_methodology_recommendations() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        std::env::set_current_dir(&temp_dir)?;
+
+        // Initialize project to set up config directory
+        init_project_with_language(Some("rust".to_string()))?;
+
+        // Test methodology recommendations for known methodologies
+        let feature_recommendations = Config::methodology_recommendations("feature");
+        assert!(!feature_recommendations.is_empty());
+        assert!(
+            feature_recommendations.contains("feature")
+                || feature_recommendations.contains("Feature")
+        );
+
+        let developer_recommendations = Config::methodology_recommendations("developer");
+        assert!(!developer_recommendations.is_empty());
+        assert!(
+            developer_recommendations.contains("developer")
+                || developer_recommendations.contains("Developer")
+        );
+
+        // Test with unknown methodology
+        let unknown_recommendations = Config::methodology_recommendations("unknown_methodology");
+        assert!(!unknown_recommendations.is_empty()); // Should return some default response
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_list_available_methodologies() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        std::env::set_current_dir(&temp_dir)?;
+
+        // Initialize project to set up config directory
+        init_project_with_language(Some("rust".to_string()))?;
+
+        let methodologies = Config::list_available_methodologies()?;
+
+        // Should have some methodologies
+        assert!(!methodologies.is_empty());
+
+        // Should include common methodologies
+        assert!(
+            methodologies.contains(&"feature".to_string())
+                || methodologies.contains(&"developer".to_string())
+                || methodologies.contains(&"business".to_string())
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_config_path() -> Result<()> {
+        let expected_path = Path::new(".config/.mucm/mucm.toml");
+        assert_eq!(Config::config_path(), expected_path);
 
         Ok(())
     }

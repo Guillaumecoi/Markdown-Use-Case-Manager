@@ -85,7 +85,8 @@ impl ProjectController {
         };
 
         // Create minimal config
-        let config = Config::for_template(resolved_language, Some(default_methodology.clone()));
+        let config =
+            Config::for_template(Some(resolved_language), Some(default_methodology.clone()));
 
         // Save config file
         Config::save_config_only(&config)?;
