@@ -1,27 +1,72 @@
+//! # Project Controller
+//!
+//! This module provides the controller for project-level operations including
+//! initialization, configuration management, and project status checking.
+//! It coordinates between the CLI layer and the configuration management system.
+//!
+//! ## Responsibilities
+//!
+//! - Project initialization (two-step process: config creation, then template copying)
+//! - Configuration validation and status checking
+//! - Methodology and language information retrieval
+//! - Project setup coordination and user guidance
+//!
+//! ## Initialization Process
+//!
+//! Project initialization follows a two-step process:
+//! 1. **Configuration Creation**: Creates `.config/.mucm/mucm.toml` with user preferences
+//! 2. **Template Finalization**: Copies methodology and language templates to project
+//!
+//! This separation allows users to review and customize configuration before
+//! committing to template copying.
+
 use anyhow::Result;
 
 use super::dto::{DisplayResult, MethodologyInfo, SelectionOptions};
 use crate::config::Config;
 use crate::core::LanguageRegistry;
 
-/// Controller for project initialization and management
+/// Controller for project initialization and management operations.
+///
+/// Handles all project-level operations including initialization, configuration
+/// management, and providing information about available methodologies and languages.
+/// Acts as the coordination layer between CLI commands and the configuration system.
 pub struct ProjectController;
 
 impl ProjectController {
-    /// Check if a project is already initialized
+    /// Check if a project is already initialized.
+    ///
+    /// Determines whether a use case manager project has been set up in the
+    /// current directory or any parent directory by checking for a valid
+    /// configuration file.
+    ///
+    /// # Returns
+    /// True if a project is initialized, false otherwise
     pub fn is_initialized() -> bool {
         Config::load().is_ok()
     }
 
-    /// Get available programming languages for selection prompts
+    /// Get available programming languages for selection prompts.
+    ///
+    /// Retrieves all supported programming languages that can be used for
+    /// test generation and template selection.
+    ///
+    /// # Returns
+    /// SelectionOptions containing available language names
+    ///
     /// TODO: Use this in interactive init workflow for language selection
-    #[allow(dead_code)]
     pub fn get_available_languages() -> Result<SelectionOptions> {
         let languages = Config::get_available_languages()?;
         Ok(SelectionOptions::new(languages))
     }
 
-    /// Get available methodologies with descriptions
+    /// Get available methodologies with descriptions.
+    ///
+    /// Retrieves all available methodologies with their display names and
+    /// descriptions for user selection and information display.
+    ///
+    /// # Returns
+    /// Vector of MethodologyInfo containing name, display name, and description
     pub fn get_available_methodologies() -> Result<Vec<MethodologyInfo>> {
         let methodologies = Config::list_available_methodologies()?;
 
@@ -59,7 +104,21 @@ impl ProjectController {
         Ok(methodology_infos)
     }
 
-    /// Initialize a new project (Step 1: Create config)
+    /// Initialize a new project (Step 1: Create config).
+    ///
+    /// Creates the initial project configuration file with user-specified
+    /// language and methodology preferences. This is the first step in
+    /// project initialization.
+    ///
+    /// # Arguments
+    /// * `language` - Optional programming language for test generation
+    /// * `default_methodology` - Default methodology for use case creation
+    ///
+    /// # Returns
+    /// DisplayResult with success message and next steps guidance
+    ///
+    /// # Errors
+    /// Returns error if project is already initialized or configuration creation fails
     pub fn init_project(
         language: Option<String>,
         default_methodology: String,
@@ -124,7 +183,17 @@ impl ProjectController {
         Ok(DisplayResult::success(message))
     }
 
-    /// Finalize project initialization (Step 2: Copy templates)
+    /// Finalize project initialization (Step 2: Copy templates).
+    ///
+    /// Completes project setup by copying methodology and language templates
+    /// to the project configuration directory. This is the second and final
+    /// step in project initialization.
+    ///
+    /// # Returns
+    /// DisplayResult with completion message and usage guidance
+    ///
+    /// # Errors
+    /// Returns error if configuration doesn't exist or template copying fails
     pub fn finalize_init() -> Result<DisplayResult> {
         // Check if config exists
         let config = Config::load().map_err(|_| {
@@ -173,15 +242,27 @@ impl ProjectController {
         Ok(DisplayResult::success(message))
     }
 
-    /// Get the default methodology from config
+    /// Get the default methodology from configuration.
+    ///
+    /// Retrieves the default methodology setting from the current project
+    /// configuration for use in interactive workflows.
+    ///
+    /// # Returns
+    /// The default methodology name as a string
+    ///
     /// TODO: Use this in interactive mode to pre-select default methodology
-    #[allow(dead_code)]
     pub fn get_default_methodology() -> Result<String> {
         let config = Config::load()?;
         Ok(config.templates.default_methodology.clone())
     }
 
-    /// Get available languages as a formatted string (for display)
+    /// Get available languages as a formatted string for display.
+    ///
+    /// Provides a user-friendly formatted list of available programming
+    /// languages with usage instructions and fallback information.
+    ///
+    /// # Returns
+    /// Formatted string containing language list and usage instructions
     pub fn show_languages() -> Result<String> {
         let mut output = String::from("Available programming languages:\n");
 

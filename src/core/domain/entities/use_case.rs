@@ -1,4 +1,3 @@
-// src/core/models/use_case.rs
 use super::{Metadata, Status};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;

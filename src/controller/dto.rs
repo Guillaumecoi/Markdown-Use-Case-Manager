@@ -1,16 +1,36 @@
-/// Data Transfer Objects for passing data between Controller and View layers
+//! # Data Transfer Objects
+//!
+//! This module defines Data Transfer Objects (DTOs) used for communication
+//! between the controller layer and other components. DTOs provide clean,
+//! structured data exchange without exposing internal implementation details.
+//!
+//! ## DTOs Overview
+//!
+//! - `DisplayResult`: Standardized results for user-facing operations
+//! - `SelectionOptions`: Available options for interactive selection
+//! - `MethodologyInfo`: Methodology metadata for display and selection
 
-/// Result of an operation to display to the user
+/// Result of an operation to display to the user.
+///
+/// Provides a standardized way to communicate operation outcomes to the
+/// presentation layer, including success status and user-friendly messages.
 #[derive(Debug)]
 pub struct DisplayResult {
     /// Whether the operation succeeded
     /// TODO: Use this field to conditionally format output (green for success, red for error)
-    #[allow(dead_code)]
     pub success: bool,
+    /// User-friendly message describing the operation result
     pub message: String,
 }
 
 impl DisplayResult {
+    /// Create a successful operation result.
+    ///
+    /// # Arguments
+    /// * `message` - Success message to display to the user
+    ///
+    /// # Returns
+    /// A DisplayResult indicating successful operation
     pub fn success(message: String) -> Self {
         Self {
             success: true,
@@ -18,6 +38,13 @@ impl DisplayResult {
         }
     }
 
+    /// Create an error operation result.
+    ///
+    /// # Arguments
+    /// * `message` - Error message to display to the user
+    ///
+    /// # Returns
+    /// A DisplayResult indicating failed operation
     pub fn error(message: String) -> Self {
         Self {
             success: false,
@@ -26,37 +53,50 @@ impl DisplayResult {
     }
 }
 
-/// Available options for user selection
+/// Available options for user selection in interactive prompts.
+///
+/// Contains a list of selectable items that can be presented to users
+/// in command-line interfaces or interactive workflows.
 #[derive(Debug, Clone)]
 pub struct SelectionOptions {
+    /// List of available options for selection
     pub items: Vec<String>,
 }
 
 impl SelectionOptions {
+    /// Create a new selection options instance.
+    ///
+    /// # Arguments
+    /// * `items` - Vector of option strings available for selection
+    ///
+    /// # Returns
+    /// A SelectionOptions instance with the provided items
     pub fn new(items: Vec<String>) -> Self {
         Self { items }
     }
-
-    /// Check if there are no items available
-    /// TODO: Use this to show helpful messages when no use cases/categories exist yet
-    #[allow(dead_code)]
-    pub fn is_empty(&self) -> bool {
-        self.items.is_empty()
-    }
 }
 
-/// Methodology information for display
+/// Methodology information for display and selection.
+///
+/// Contains metadata about a methodology including its name, display name,
+/// and description, used for presenting methodology options to users.
 #[derive(Debug, Clone)]
 pub struct MethodologyInfo {
+    /// Internal methodology identifier
     pub name: String,
+    /// Human-readable display name (typically capitalized)
     pub display_name: String,
+    /// Description of when and how to use this methodology
     pub description: String,
 }
 
 impl MethodologyInfo {
-    /// Format methodology info as a single line for list display
+    /// Format methodology info as a single line for list display.
+    ///
+    /// # Returns
+    /// A formatted string combining display name and description
+    ///
     /// TODO: Use this in `mucm methodologies` command for cleaner output
-    #[allow(dead_code)]
     pub fn to_display_string(&self) -> String {
         format!("{} - {}", self.display_name, self.description)
     }

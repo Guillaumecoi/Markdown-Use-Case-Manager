@@ -1,4 +1,3 @@
-// src/core/models/metadata.rs
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
