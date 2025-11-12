@@ -90,8 +90,7 @@ impl UseCaseService {
         description: String,
         extra_fields: std::collections::HashMap<String, serde_json::Value>,
     ) -> Result<UseCase, String> {
-        let mut use_case =
-            UseCase::new(id, title, category, description, "Medium".to_string())?;
+        let mut use_case = UseCase::new(id, title, category, description, "Medium".to_string())?;
         use_case.extra = extra_fields;
         Ok(use_case)
     }

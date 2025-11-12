@@ -351,8 +351,6 @@ impl TemplateManager {
 
         Ok(())
     }
-
-
 }
 
 #[cfg(test)]
@@ -682,6 +680,4 @@ mod tests {
 
         Ok(())
     }
-
-
 }

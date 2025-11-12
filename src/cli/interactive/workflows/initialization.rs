@@ -186,9 +186,7 @@ fn create_config(
 fn finalize_initialization(runner: &mut InteractiveRunner) -> Result<()> {
     let auto_finalize = Confirm::new("Finalize initialization now?")
         .with_default(true)
-        .with_help_message(
-            "This will copy templates. Choose 'No' to review the config file first",
-        )
+        .with_help_message("This will copy templates. Choose 'No' to review the config file first")
         .prompt()?;
 
     if auto_finalize {

@@ -24,11 +24,11 @@
 //! The `template_file` references a Handlebars template in the same directory that
 //! contains the test generation template for that language.
 
-mod r#trait;
 mod definition;
 mod registry;
+mod r#trait;
 
 // Re-export public types
-pub use r#trait::Language;
 pub use definition::LanguageDefinition;
+pub use r#trait::Language;
 pub use registry::LanguageRegistry;

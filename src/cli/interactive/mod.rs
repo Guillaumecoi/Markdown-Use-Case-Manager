@@ -27,11 +27,11 @@
 //! - **Main Menu**: Central navigation hub for all interactive features
 
 // Private modules - used only within CLI interactive
+mod menus;
 mod runner;
 mod selectors;
 mod ui;
 mod workflows;
-mod menus;
 
 // Public exports
 pub use menus::menu::run_interactive_session;

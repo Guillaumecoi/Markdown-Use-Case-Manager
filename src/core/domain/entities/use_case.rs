@@ -442,16 +442,15 @@ mod use_case_tests {
         .unwrap();
 
         // Add custom fields (as would be populated from methodology)
-        use_case
-            .extra
-            .insert("user_story".to_string(), json!("As a user, I want to test this feature"));
+        use_case.extra.insert(
+            "user_story".to_string(),
+            json!("As a user, I want to test this feature"),
+        );
         use_case.extra.insert(
             "acceptance_criteria".to_string(),
             json!("The feature works correctly"),
         );
-        use_case
-            .extra
-            .insert("story_points".to_string(), json!(5));
+        use_case.extra.insert("story_points".to_string(), json!(5));
         use_case
             .extra
             .insert("is_critical".to_string(), json!(true));

@@ -57,7 +57,7 @@ impl ProjectController {
     /// TODO: Use this in interactive init workflow for language selection
     pub fn get_available_languages() -> Result<SelectionOptions> {
         use crate::config::Config;
-        
+
         // Always load language metadata (info.toml) from source templates
         let templates_dir = Config::get_metadata_load_dir()?;
         let languages = LanguageRegistry::discover_available(&templates_dir)?;
@@ -73,7 +73,7 @@ impl ProjectController {
     /// Vector of MethodologyInfo containing name, display name, and description
     pub fn get_available_methodologies() -> Result<Vec<MethodologyInfo>> {
         use crate::config::Config;
-        
+
         // Always load methodology metadata (info.toml) from source templates
         let templates_dir = Config::get_metadata_load_dir()?;
         let registry = MethodologyRegistry::new_dynamic(&templates_dir)?;
@@ -137,7 +137,7 @@ impl ProjectController {
         // Resolve language aliases to primary names
         let resolved_language = if let Some(lang) = language {
             use crate::config::Config;
-            
+
             // Always load language metadata (info.toml) from source templates
             let templates_dir = Config::get_metadata_load_dir()?;
             let language_registry = LanguageRegistry::new_dynamic(&templates_dir)?;
@@ -272,15 +272,18 @@ impl ProjectController {
         let mut output = String::from("Available programming languages:\n");
 
         use crate::config::Config;
-        
+
         // Always load language metadata (info.toml) from source templates
         let templates_dir = match Config::get_metadata_load_dir() {
             Ok(dir) => dir,
             Err(e) => {
-                return Ok(format!("Error: Could not find templates directory: {}\n", e));
+                return Ok(format!(
+                    "Error: Could not find templates directory: {}\n",
+                    e
+                ));
             }
         };
-        
+
         match LanguageRegistry::discover_available(&templates_dir) {
             Ok(languages) => {
                 for lang in languages {

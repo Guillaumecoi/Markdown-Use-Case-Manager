@@ -34,7 +34,7 @@ impl UseCaseApplicationService {
             Box::new(TomlUseCaseRepository::new(config.clone()));
         let file_operations = FileOperations::new(config.clone());
         let template_engine = TemplateEngine::with_config(Some(&config));
-        
+
         // Initialize creator and generators
         let use_case_creator = UseCaseCreator::new(config.clone());
         let markdown_generator = MarkdownGenerator::new(config.clone());
@@ -108,8 +108,12 @@ impl UseCaseApplicationService {
         }
 
         // Create use case with methodology fields
-        let use_case =
-            self.create_use_case_with_methodology_internal(title, category, description, methodology)?;
+        let use_case = self.create_use_case_with_methodology_internal(
+            title,
+            category,
+            description,
+            methodology,
+        )?;
         let use_case_id = use_case.id.clone();
 
         // Save and generate markdown
@@ -280,7 +284,8 @@ impl UseCaseApplicationService {
         use_case: &UseCase,
         methodology: &str,
     ) -> Result<String> {
-        self.markdown_generator.generate_with_methodology(use_case, methodology)
+        self.markdown_generator
+            .generate_with_methodology(use_case, methodology)
     }
 
     /// Generate test file for a use case
@@ -423,7 +428,9 @@ mod tests {
         // Skip test if source templates can't be found
         // This can happen when running all tests together
         if crate::config::TemplateManager::find_source_templates_dir().is_err() {
-            eprintln!("SKIPPING test_custom_fields_end_to_end_flow: source templates not available");
+            eprintln!(
+                "SKIPPING test_custom_fields_end_to_end_flow: source templates not available"
+            );
             return Ok(());
         }
 
@@ -437,9 +444,12 @@ mod tests {
         // Verify templates were copied - if not, fail with clear message
         let templates_dir = Path::new(".config/.mucm/template-assets");
         if !templates_dir.exists() {
-            anyhow::bail!("Templates were not copied. Template dir {:?} doesn't exist", templates_dir);
+            anyhow::bail!(
+                "Templates were not copied. Template dir {:?} doesn't exist",
+                templates_dir
+            );
         }
-        
+
         let feature_dir = templates_dir.join("feature");
         if !feature_dir.exists() {
             anyhow::bail!("Feature methodology not found at {:?}", feature_dir);
@@ -504,7 +514,11 @@ mod tests {
         let md_path = Path::new(&coordinator.config.directories.use_case_dir)
             .join("testing")
             .join("UC-TES-001.md");
-        assert!(md_path.exists(), "Markdown file should exist at {:?}", md_path);
+        assert!(
+            md_path.exists(),
+            "Markdown file should exist at {:?}",
+            md_path
+        );
 
         let md_content = fs::read_to_string(&md_path)?;
         assert!(

@@ -82,10 +82,10 @@ impl MethodologyDefinition {
         }
 
         let info_path = methodology_dir.join("info.toml");
-        let info_content = fs::read_to_string(&info_path)
-            .context("Failed to read methodology info file")?;
-        let info_data: InfoData = toml::from_str(&info_content)
-            .context("Failed to parse methodology info TOML")?;
+        let info_content =
+            fs::read_to_string(&info_path).context("Failed to read methodology info file")?;
+        let info_data: InfoData =
+            toml::from_str(&info_content).context("Failed to parse methodology info TOML")?;
 
         // Load config.toml for technical configuration
         #[derive(serde::Deserialize)]
@@ -104,10 +104,10 @@ impl MethodologyDefinition {
         }
 
         let config_path = methodology_dir.join("config.toml");
-        let config_content = fs::read_to_string(&config_path)
-            .context("Failed to read methodology config file")?;
-        let config_data: ConfigData = toml::from_str(&config_content)
-            .context("Failed to parse methodology config TOML")?;
+        let config_content =
+            fs::read_to_string(&config_path).context("Failed to read methodology config file")?;
+        let config_data: ConfigData =
+            toml::from_str(&config_content).context("Failed to parse methodology config TOML")?;
 
         Ok(Self {
             name: config_data.template.name,
@@ -158,8 +158,8 @@ impl Methodology for MethodologyDefinition {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::r#trait::Methodology;
+    use super::*;
     use std::fs;
     use tempfile::TempDir;
 
@@ -264,7 +264,9 @@ overwrite_test_documentation = false"#,
         fs::write(methodology_dir.join("info.toml"), "invalid toml content").unwrap();
 
         // Create valid config.toml
-        fs::write(methodology_dir.join("config.toml"), r#"
+        fs::write(
+            methodology_dir.join("config.toml"),
+            r#"
 [template]
 name = "testmethod"
 preferred_style = "detailed"
@@ -272,7 +274,9 @@ preferred_style = "detailed"
 [generation]
 auto_generate_tests = false
 overwrite_test_documentation = false
-"#).unwrap();
+"#,
+        )
+        .unwrap();
 
         let result = MethodologyDefinition::from_toml(&methodology_dir);
         assert!(result.is_err());
@@ -285,7 +289,9 @@ overwrite_test_documentation = false
         fs::create_dir(&methodology_dir).unwrap();
 
         // Create info.toml
-        fs::write(methodology_dir.join("info.toml"), r#"
+        fs::write(
+            methodology_dir.join("info.toml"),
+            r#"
 [overview]
 title = "Feature Methodology"
 description = "Feature-focused development methodology"
@@ -298,10 +304,14 @@ key_features = ["User stories", "Acceptance criteria", "Story points"]
 name = "simple"
 filename = "uc_simple.hbs"
 description = "Simple feature specification"
-"#).unwrap();
+"#,
+        )
+        .unwrap();
 
         // Create config.toml with custom fields
-        fs::write(methodology_dir.join("config.toml"), r#"
+        fs::write(
+            methodology_dir.join("config.toml"),
+            r#"
 [template]
 name = "feature"
 preferred_style = "detailed"
@@ -326,7 +336,9 @@ label = "Story Points"
 type = "number"
 required = false
 default = "3"
-"#).unwrap();
+"#,
+        )
+        .unwrap();
 
         let result = MethodologyDefinition::from_toml(&methodology_dir);
         if let Err(e) = &result {
@@ -335,24 +347,24 @@ default = "3"
 
         let methodology = result.unwrap();
         assert_eq!(methodology.name(), "feature");
-        
+
         // Test custom fields
         let custom_fields = methodology.custom_fields();
         assert_eq!(custom_fields.len(), 3);
-        
+
         // Check user_story field
         let user_story = custom_fields.get("user_story").unwrap();
         assert_eq!(user_story.label, "User Story");
         assert_eq!(user_story.field_type, "string");
         assert_eq!(user_story.required, true);
         assert_eq!(user_story.default, None);
-        
+
         // Check acceptance_criteria field
         let acceptance_criteria = custom_fields.get("acceptance_criteria").unwrap();
         assert_eq!(acceptance_criteria.label, "Acceptance Criteria");
         assert_eq!(acceptance_criteria.field_type, "text");
         assert_eq!(acceptance_criteria.required, true);
-        
+
         // Check story_points field (with default)
         let story_points = custom_fields.get("story_points").unwrap();
         assert_eq!(story_points.label, "Story Points");
@@ -368,7 +380,9 @@ default = "3"
         fs::create_dir(&methodology_dir).unwrap();
 
         // Create info.toml
-        fs::write(methodology_dir.join("info.toml"), r#"
+        fs::write(
+            methodology_dir.join("info.toml"),
+            r#"
 [overview]
 title = "Simple Methodology"
 description = "Simple methodology without custom fields"
@@ -381,10 +395,14 @@ key_features = ["Basic documentation"]
 name = "simple"
 filename = "uc_simple.hbs"
 description = "Simple use case"
-"#).unwrap();
+"#,
+        )
+        .unwrap();
 
         // Create config.toml without custom_fields section
-        fs::write(methodology_dir.join("config.toml"), r#"
+        fs::write(
+            methodology_dir.join("config.toml"),
+            r#"
 [template]
 name = "simple"
 preferred_style = "simple"
@@ -392,14 +410,16 @@ preferred_style = "simple"
 [generation]
 auto_generate_tests = false
 overwrite_test_documentation = false
-"#).unwrap();
+"#,
+        )
+        .unwrap();
 
         let result = MethodologyDefinition::from_toml(&methodology_dir);
         assert!(result.is_ok());
 
         let methodology = result.unwrap();
         assert_eq!(methodology.name(), "simple");
-        
+
         // Custom fields should be empty (thanks to #[serde(default)])
         let custom_fields = methodology.custom_fields();
         assert_eq!(custom_fields.len(), 0);

@@ -135,8 +135,8 @@ impl MethodologyRegistry {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::r#trait::Methodology;
+    use super::*;
     use std::fs;
     use tempfile::TempDir;
 
@@ -202,8 +202,20 @@ overwrite_test_documentation = false"#,
         fs::create_dir(&methodologies_dir).unwrap();
 
         // Create test methodologies
-        create_test_methodology(&methodologies_dir, "method1", "Method 1", "Description 1", "simple");
-        create_test_methodology(&methodologies_dir, "method2", "Method 2", "Description 2", "detailed");
+        create_test_methodology(
+            &methodologies_dir,
+            "method1",
+            "Method 1",
+            "Description 1",
+            "simple",
+        );
+        create_test_methodology(
+            &methodologies_dir,
+            "method2",
+            "Method 2",
+            "Description 2",
+            "detailed",
+        );
 
         let result = MethodologyRegistry::new_dynamic(&temp_dir.path());
         assert!(result.is_ok());
@@ -267,8 +279,20 @@ overwrite_test_documentation = false"#,
         let methodologies_dir = temp_dir.path().join("methodologies");
         fs::create_dir(&methodologies_dir).unwrap();
 
-        create_test_methodology(&methodologies_dir, "method1", "Method 1", "Desc 1", "simple");
-        create_test_methodology(&methodologies_dir, "method2", "Method 2", "Desc 2", "detailed");
+        create_test_methodology(
+            &methodologies_dir,
+            "method1",
+            "Method 1",
+            "Desc 1",
+            "simple",
+        );
+        create_test_methodology(
+            &methodologies_dir,
+            "method2",
+            "Method 2",
+            "Desc 2",
+            "detailed",
+        );
 
         let registry = MethodologyRegistry::new_dynamic(&temp_dir.path()).unwrap();
         let available = registry.available_methodologies();
@@ -285,7 +309,13 @@ overwrite_test_documentation = false"#,
         fs::create_dir(&methodologies_dir).unwrap();
 
         // Create a valid methodology
-        create_test_methodology(&methodologies_dir, "valid", "Valid Methodology", "Valid description", "simple");
+        create_test_methodology(
+            &methodologies_dir,
+            "valid",
+            "Valid Methodology",
+            "Valid description",
+            "simple",
+        );
 
         // Create a malformed methodology directory (invalid TOML)
         let bad_methodology_dir = methodologies_dir.join("bad");
@@ -310,8 +340,20 @@ overwrite_test_documentation = false"#,
         let methodologies_dir = temp_dir.path().join("methodologies");
         fs::create_dir(&methodologies_dir).unwrap();
 
-        create_test_methodology(&methodologies_dir, "method1", "Method 1", "Desc 1", "simple");
-        create_test_methodology(&methodologies_dir, "method2", "Method 2", "Desc 2", "detailed");
+        create_test_methodology(
+            &methodologies_dir,
+            "method1",
+            "Method 1",
+            "Desc 1",
+            "simple",
+        );
+        create_test_methodology(
+            &methodologies_dir,
+            "method2",
+            "Method 2",
+            "Desc 2",
+            "detailed",
+        );
 
         let result = MethodologyRegistry::discover_available(&temp_dir.path());
         assert!(result.is_ok());

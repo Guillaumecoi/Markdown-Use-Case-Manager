@@ -103,33 +103,28 @@ impl UseCaseCreator {
             .directories
             .template_dir
             .clone()
-            .unwrap_or_else(|| {
-                format!(
-                    ".config/.mucm/{}",
-                    crate::config::Config::TEMPLATES_DIR
-                )
-            });
+            .unwrap_or_else(|| format!(".config/.mucm/{}", crate::config::Config::TEMPLATES_DIR));
 
         // MethodologyRegistry expects the parent directory containing "methodologies/"
         // But during template copying, methodologies are placed directly in template-assets/
         // Check if methodology directory exists directly in templates_dir
         let methodology_dir = Path::new(&templates_dir).join(methodology);
-        let extra_fields = if methodology_dir.exists() && methodology_dir.join("config.toml").exists()
-        {
-            // Load methodology definition directly
-            match MethodologyDefinition::from_toml(&methodology_dir) {
-                Ok(methodology_def) => self.extract_fields_from_definition(&methodology_def),
-                Err(_) => HashMap::new(),
-            }
-        } else {
-            // Try standard structure: template-assets/methodologies/feature/
-            let methodology_registry = MethodologyRegistry::new_dynamic(&templates_dir)?;
-            if let Some(methodology_def) = methodology_registry.get(methodology) {
-                self.extract_fields_from_definition(methodology_def)
+        let extra_fields =
+            if methodology_dir.exists() && methodology_dir.join("config.toml").exists() {
+                // Load methodology definition directly
+                match MethodologyDefinition::from_toml(&methodology_dir) {
+                    Ok(methodology_def) => self.extract_fields_from_definition(&methodology_def),
+                    Err(_) => HashMap::new(),
+                }
             } else {
-                HashMap::new()
-            }
-        };
+                // Try standard structure: template-assets/methodologies/feature/
+                let methodology_registry = MethodologyRegistry::new_dynamic(&templates_dir)?;
+                if let Some(methodology_def) = methodology_registry.get(methodology) {
+                    self.extract_fields_from_definition(methodology_def)
+                } else {
+                    HashMap::new()
+                }
+            };
 
         Ok(extra_fields)
     }

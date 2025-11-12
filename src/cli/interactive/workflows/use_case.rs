@@ -21,7 +21,9 @@ impl UseCaseWorkflow {
             .prompt()?;
 
         let category = Text::new("Category:")
-            .with_help_message("Categorize this use case (e.g., 'authentication', 'data processing')")
+            .with_help_message(
+                "Categorize this use case (e.g., 'authentication', 'data processing')",
+            )
             .prompt()?;
 
         let description = Text::new("Description (optional):")
@@ -55,12 +57,8 @@ impl UseCaseWorkflow {
         };
 
         // Create the use case
-        let result = runner.create_use_case_interactive(
-            title,
-            category,
-            description,
-            methodology,
-        )?;
+        let result =
+            runner.create_use_case_interactive(title, category, description, methodology)?;
 
         UI::show_success(&result)?;
         UI::pause_for_input()?;

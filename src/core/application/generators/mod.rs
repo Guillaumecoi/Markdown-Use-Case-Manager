@@ -10,9 +10,9 @@
 //! documentation, separating concerns from the main application service.
 
 pub mod markdown_generator;
-pub mod test_generator;
 pub mod overview_generator;
+pub mod test_generator;
 
 pub use markdown_generator::MarkdownGenerator;
-pub use test_generator::TestGenerator;
 pub use overview_generator::OverviewGenerator;
+pub use test_generator::TestGenerator;

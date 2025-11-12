@@ -12,7 +12,7 @@ use crate::cli::interactive::workflows::config::ConfigWorkflow;
 use crate::cli::interactive::workflows::methodology::MethodologyWorkflow;
 use crate::cli::interactive::workflows::use_case::UseCaseWorkflow;
 
-use super::common::{MenuOption, display_menu};
+use super::common::{display_menu, MenuOption};
 
 /// Handle settings configuration
 pub struct Settings;

@@ -5,13 +5,13 @@
 
 use anyhow::Result;
 
+use crate::cli::interactive::menus::settings::Settings;
 use crate::cli::interactive::ui::UI;
 use crate::cli::interactive::workflows::initialization::Initialization;
-use crate::cli::interactive::menus::settings::Settings;
 use crate::cli::interactive::workflows::use_case::UseCaseWorkflow;
 use crate::cli::standard::CliRunner;
 
-use super::common::{MenuOption, display_menu};
+use super::common::{display_menu, MenuOption};
 
 /// Run the interactive session main loop
 pub fn run_interactive_session() -> Result<()> {

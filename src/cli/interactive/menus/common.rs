@@ -64,12 +64,9 @@ impl<T> MenuOption<T> {
 /// # Type Parameters
 ///
 /// * `T` - The context type that all menu options expect
-pub fn display_menu<T>(
-    prompt: &str,
-    options: &[MenuOption<T>],
-    context: &mut T,
-) -> Result<bool> {
-    let display_texts: Vec<&str> = options.iter()
+pub fn display_menu<T>(prompt: &str, options: &[MenuOption<T>], context: &mut T) -> Result<bool> {
+    let display_texts: Vec<&str> = options
+        .iter()
         .map(|opt| opt.display_text.as_str())
         .collect();
 

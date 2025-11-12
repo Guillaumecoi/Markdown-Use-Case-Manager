@@ -150,8 +150,8 @@ impl LanguageRegistry {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::r#trait::Language;
+    use super::*;
     use std::fs;
     use tempfile::TempDir;
 

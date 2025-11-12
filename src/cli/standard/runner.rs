@@ -221,7 +221,7 @@ impl CliRunner {
         use crate::core::{Methodology, MethodologyRegistry};
 
         let sanitized_methodology = Self::sanitize_required_string(methodology);
-        
+
         // Always load methodology metadata (info.toml) from source templates
         let templates_dir = Config::get_metadata_load_dir()?;
         let registry = MethodologyRegistry::new_dynamic(&templates_dir)?;
@@ -246,8 +246,10 @@ impl CliRunner {
 
                 result.push_str("\nAvailable Levels:\n");
                 for level in methodology.levels() {
-                    result.push_str(&format!("  • {} ({}): {}\n", 
-                        level.name, level.filename, level.description));
+                    result.push_str(&format!(
+                        "  • {} ({}): {}\n",
+                        level.name, level.filename, level.description
+                    ));
                 }
 
                 result.push_str(&format!(

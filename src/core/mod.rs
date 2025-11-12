@@ -15,8 +15,8 @@ pub use domain::{Status, UseCase, UseCaseRepository, UseCaseService};
 
 // Re-export infrastructure types (from infrastructure's public interface)
 pub use infrastructure::{
-    file_operations, LanguageRegistry, Methodology, MethodologyDefinition,
-    MethodologyRegistry, TemplateEngine, TomlUseCaseRepository,
+    file_operations, LanguageRegistry, Methodology, MethodologyDefinition, MethodologyRegistry,
+    TemplateEngine, TomlUseCaseRepository,
 };
 
 // Re-export utility functions

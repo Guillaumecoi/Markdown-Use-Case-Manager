@@ -51,7 +51,11 @@ impl MethodologyWorkflow {
         // Update config
         let mut updated_config = config;
         for methodology in selected {
-            if !updated_config.templates.methodologies.contains(&methodology) {
+            if !updated_config
+                .templates
+                .methodologies
+                .contains(&methodology)
+            {
                 updated_config.templates.methodologies.push(methodology);
             }
         }
@@ -98,7 +102,10 @@ impl MethodologyWorkflow {
 
         // Update config
         let mut updated_config = config;
-        updated_config.templates.methodologies.retain(|m| !selected.contains(m));
+        updated_config
+            .templates
+            .methodologies
+            .retain(|m| !selected.contains(m));
 
         updated_config.save_in_dir(".")?;
         UI::show_success("✅ Methodologies removed successfully!")?;
