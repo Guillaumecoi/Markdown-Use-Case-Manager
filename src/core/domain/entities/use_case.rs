@@ -428,4 +428,67 @@ mod use_case_tests {
 
         assert_eq!(use_case.status(), Status::Planned);
     }
+
+    /// Test UseCase TOML serialization and deserialization with custom fields
+    #[test]
+    fn test_use_case_toml_serialization_with_custom_fields() {
+        let mut use_case = UseCase::new(
+            "UC-TEST-001".to_string(),
+            "Test Use Case".to_string(),
+            "Test".to_string(),
+            "A test use case".to_string(),
+            "high".to_string(),
+        )
+        .unwrap();
+
+        // Add custom fields (as would be populated from methodology)
+        use_case
+            .extra
+            .insert("user_story".to_string(), json!("As a user, I want to test this feature"));
+        use_case.extra.insert(
+            "acceptance_criteria".to_string(),
+            json!("The feature works correctly"),
+        );
+        use_case
+            .extra
+            .insert("story_points".to_string(), json!(5));
+        use_case
+            .extra
+            .insert("is_critical".to_string(), json!(true));
+
+        // Serialize to TOML
+        let toml_content = toml::to_string_pretty(&use_case).expect("Failed to serialize to TOML");
+
+        // Verify TOML contains custom fields
+        assert!(toml_content.contains("user_story"));
+        assert!(toml_content.contains("acceptance_criteria"));
+        assert!(toml_content.contains("story_points"));
+        assert!(toml_content.contains("is_critical"));
+
+        // Deserialize from TOML through intermediate value conversion
+        // (This is how the repository loads use cases)
+        let toml_value: toml::Value = toml::from_str(&toml_content).expect("Failed to parse TOML");
+        let json_str = serde_json::to_string(&toml_value).expect("Failed to convert to JSON");
+        let deserialized: UseCase = serde_json::from_str(&json_str).expect("Failed to deserialize");
+
+        // Verify all fields
+        assert_eq!(deserialized.id, "UC-TEST-001");
+        assert_eq!(deserialized.title, "Test Use Case");
+        assert_eq!(deserialized.category, "Test");
+        assert_eq!(deserialized.description, "A test use case");
+        assert_eq!(deserialized.priority, Priority::High);
+
+        // Verify custom fields survived the round trip
+        assert_eq!(deserialized.extra.len(), 4);
+        assert_eq!(
+            deserialized.extra["user_story"],
+            json!("As a user, I want to test this feature")
+        );
+        assert_eq!(
+            deserialized.extra["acceptance_criteria"],
+            json!("The feature works correctly")
+        );
+        assert_eq!(deserialized.extra["story_points"], json!(5));
+        assert_eq!(deserialized.extra["is_critical"], json!(true));
+    }
 }

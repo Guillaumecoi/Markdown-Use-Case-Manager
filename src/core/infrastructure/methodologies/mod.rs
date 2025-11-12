@@ -621,4 +621,131 @@ overwrite_test_documentation = false
         assert!(methodologies.contains(&"method2".to_string()));
         assert_eq!(methodologies.len(), 2);
     }
+
+    #[test]
+    fn test_methodology_with_custom_fields() {
+        let temp_dir = TempDir::new().unwrap();
+        let methodology_dir = temp_dir.path().join("feature");
+        fs::create_dir(&methodology_dir).unwrap();
+
+        // Create info.toml
+        fs::write(methodology_dir.join("info.toml"), r#"
+[overview]
+title = "Feature Methodology"
+description = "Feature-focused development methodology"
+
+[usage]
+when_to_use = ["Feature development", "User story tracking"]
+key_features = ["User stories", "Acceptance criteria", "Story points"]
+
+[[levels]]
+name = "simple"
+filename = "uc_simple.hbs"
+description = "Simple feature specification"
+"#).unwrap();
+
+        // Create config.toml with custom fields
+        fs::write(methodology_dir.join("config.toml"), r#"
+[template]
+name = "feature"
+preferred_style = "detailed"
+
+[generation]
+auto_generate_tests = true
+overwrite_test_documentation = false
+
+# Custom fields for feature methodology
+[custom_fields.user_story]
+label = "User Story"
+type = "string"
+required = true
+
+[custom_fields.acceptance_criteria]
+label = "Acceptance Criteria"
+type = "text"
+required = true
+
+[custom_fields.story_points]
+label = "Story Points"
+type = "number"
+required = false
+default = "3"
+"#).unwrap();
+
+        let result = MethodologyDefinition::from_toml(&methodology_dir);
+        if let Err(e) = &result {
+            panic!("Failed to load methodology: {:?}", e);
+        }
+
+        let methodology = result.unwrap();
+        assert_eq!(methodology.name(), "feature");
+        
+        // Test custom fields
+        let custom_fields = methodology.custom_fields();
+        assert_eq!(custom_fields.len(), 3);
+        
+        // Check user_story field
+        let user_story = custom_fields.get("user_story").unwrap();
+        assert_eq!(user_story.label, "User Story");
+        assert_eq!(user_story.field_type, "string");
+        assert_eq!(user_story.required, true);
+        assert_eq!(user_story.default, None);
+        
+        // Check acceptance_criteria field
+        let acceptance_criteria = custom_fields.get("acceptance_criteria").unwrap();
+        assert_eq!(acceptance_criteria.label, "Acceptance Criteria");
+        assert_eq!(acceptance_criteria.field_type, "text");
+        assert_eq!(acceptance_criteria.required, true);
+        
+        // Check story_points field (with default)
+        let story_points = custom_fields.get("story_points").unwrap();
+        assert_eq!(story_points.label, "Story Points");
+        assert_eq!(story_points.field_type, "number");
+        assert_eq!(story_points.required, false);
+        assert_eq!(story_points.default, Some("3".to_string()));
+    }
+
+    #[test]
+    fn test_methodology_without_custom_fields() {
+        let temp_dir = TempDir::new().unwrap();
+        let methodology_dir = temp_dir.path().join("simple");
+        fs::create_dir(&methodology_dir).unwrap();
+
+        // Create info.toml
+        fs::write(methodology_dir.join("info.toml"), r#"
+[overview]
+title = "Simple Methodology"
+description = "Simple methodology without custom fields"
+
+[usage]
+when_to_use = ["Simple use cases"]
+key_features = ["Basic documentation"]
+
+[[levels]]
+name = "simple"
+filename = "uc_simple.hbs"
+description = "Simple use case"
+"#).unwrap();
+
+        // Create config.toml without custom_fields section
+        fs::write(methodology_dir.join("config.toml"), r#"
+[template]
+name = "simple"
+preferred_style = "simple"
+
+[generation]
+auto_generate_tests = false
+overwrite_test_documentation = false
+"#).unwrap();
+
+        let result = MethodologyDefinition::from_toml(&methodology_dir);
+        assert!(result.is_ok());
+
+        let methodology = result.unwrap();
+        assert_eq!(methodology.name(), "simple");
+        
+        // Custom fields should be empty (thanks to #[serde(default)])
+        let custom_fields = methodology.custom_fields();
+        assert_eq!(custom_fields.len(), 0);
+    }
 }

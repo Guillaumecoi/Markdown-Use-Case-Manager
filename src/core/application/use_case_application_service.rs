@@ -91,7 +91,8 @@ impl UseCaseApplicationService {
             ));
         }
 
-        let use_case = self.create_use_case_internal(title, category, description)?;
+        let use_case =
+            self.create_use_case_with_methodology_internal(title, category, description, methodology)?;
         let use_case_id = use_case.id.clone();
 
         // Save the use case with methodology-specific rendering
@@ -196,6 +197,91 @@ impl UseCaseApplicationService {
             .map_err(|e| anyhow::anyhow!(e))?;
 
         // Step 1: Save TOML first (source of truth)
+        self.repository.save_toml_only(&use_case)?;
+
+        // Step 2: Load from TOML to ensure we're working with persisted data
+        let use_case_from_toml = self
+            .repository
+            .load_by_id(&use_case.id)?
+            .ok_or_else(|| anyhow::anyhow!("Failed to load newly created use case from TOML"))?;
+
+        // Step 3: Generate markdown from TOML data
+        let markdown_content = self.generate_use_case_markdown(&use_case_from_toml)?;
+        self.repository
+            .save_markdown_only(&use_case.id, &markdown_content)?;
+
+        Ok(use_case)
+    }
+
+    /// Internal helper to create use cases with methodology custom fields
+    fn create_use_case_with_methodology_internal(
+        &self,
+        title: String,
+        category: String,
+        description: Option<String>,
+        methodology: &str,
+    ) -> Result<UseCase> {
+        let use_case_id = self.use_case_service.generate_unique_use_case_id(
+            &category,
+            &self.use_cases,
+            &self.config.directories.use_case_dir,
+        );
+        let description = description.unwrap_or_default();
+
+        // Load methodology definition to get custom fields
+        use crate::core::{Methodology, MethodologyRegistry};
+        let templates_dir = self
+            .config
+            .directories
+            .template_dir
+            .clone()
+            .unwrap_or_else(|| {
+                format!(
+                    ".config/.mucm/{}",
+                    crate::config::Config::TEMPLATES_DIR
+                )
+            });
+        let methodology_registry = MethodologyRegistry::new_dynamic(&templates_dir)?;
+
+        // Debug: print available methodologies
+        eprintln!("Templates dir: {}", templates_dir);
+        eprintln!("Available methodologies: {:?}", methodology_registry.available_methodologies());
+
+        // Get custom fields from methodology definition
+        let extra_fields = if let Some(methodology_def) = methodology_registry.get(methodology) {
+            eprintln!("Found methodology: {}", methodology);
+            eprintln!("Custom fields: {:?}", methodology_def.custom_fields().keys().collect::<Vec<_>>());
+            let mut fields = HashMap::new();
+            for (field_name, field_config) in methodology_def.custom_fields() {
+                // Use default value if provided, otherwise use empty string for required fields
+                let value = if let Some(default) = &field_config.default {
+                    serde_json::Value::String(default.clone())
+                } else if field_config.required {
+                    // For required fields without defaults, use empty string
+                    serde_json::Value::String(String::new())
+                } else {
+                    // For optional fields without defaults, use null
+                    serde_json::Value::Null
+                };
+                fields.insert(field_name.clone(), value);
+            }
+            fields
+        } else {
+            HashMap::new()
+        };
+
+        let use_case = self
+            .use_case_service
+            .create_use_case_with_extra(
+                use_case_id.clone(),
+                title,
+                category,
+                description,
+                extra_fields,
+            )
+            .map_err(|e| anyhow::anyhow!(e))?;
+
+        // Step 1: Save TOML first (source of truth) - this will include custom fields
         self.repository.save_toml_only(&use_case)?;
 
         // Step 2: Load from TOML to ensure we're working with persisted data
@@ -575,6 +661,83 @@ mod tests {
         assert_eq!(categories.len(), 2);
         assert!(categories.contains(&"api".to_string()));
         assert!(categories.contains(&"auth".to_string()));
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_custom_fields_end_to_end_flow() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        env::set_current_dir(&temp_dir)?;
+
+        // Initialize project with templates (includes feature methodology with custom fields)
+        init_test_project(None)?;
+
+        // Use the existing "feature" methodology which already has custom fields defined
+        // (user_story, acceptance_criteria, epic_link, sprint, story_points, etc.)
+        let mut coordinator = UseCaseApplicationService::load()?;
+
+        let use_case_id = coordinator.create_use_case_with_methodology(
+            "Test Custom Fields".to_string(),
+            "testing".to_string(),
+            Some("Testing custom fields integration".to_string()),
+            "feature",
+        )?;
+
+        // Verify the use case was created
+        assert_eq!(use_case_id, "UC-TES-001");
+
+        // Load the use case from TOML to verify custom fields were saved
+        let loaded_use_case = coordinator
+            .repository
+            .load_by_id(&use_case_id)?
+            .expect("Use case should exist");
+
+        // Debug: print the extra fields
+        println!("Extra fields in loaded use case: {:?}", loaded_use_case.extra);
+
+        // Verify custom fields from feature methodology are present
+        // Check for required fields (from source-templates/methodologies/feature/config.toml)
+        assert!(
+            loaded_use_case.extra.contains_key("user_story"),
+            "user_story should be present (required field). Found keys: {:?}",
+            loaded_use_case.extra.keys().collect::<Vec<_>>()
+        );
+        assert!(
+            loaded_use_case.extra.contains_key("acceptance_criteria"),
+            "acceptance_criteria should be present (required field)"
+        );
+
+        // Check for optional fields
+        assert!(
+            loaded_use_case.extra.contains_key("epic_link"),
+            "epic_link should be present (optional field)"
+        );
+
+        // Verify TOML file contains custom fields
+        let toml_path = Path::new("docs/use-cases/testing").join("UC-TES-001.toml");
+        assert!(toml_path.exists(), "TOML file should exist");
+
+        let toml_content = fs::read_to_string(&toml_path)?;
+        assert!(
+            toml_content.contains("user_story"),
+            "TOML should contain user_story field"
+        );
+        assert!(
+            toml_content.contains("acceptance_criteria"),
+            "TOML should contain acceptance_criteria field"
+        );
+
+        // Verify markdown was generated
+        let md_path = Path::new("docs/use-cases/testing").join("UC-TES-001.md");
+        assert!(md_path.exists(), "Markdown file should exist");
+
+        let md_content = fs::read_to_string(&md_path)?;
+        assert!(
+            md_content.contains("Test Custom Fields"),
+            "Markdown should contain title"
+        );
 
         Ok(())
     }
