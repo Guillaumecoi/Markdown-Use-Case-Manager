@@ -1,6 +1,7 @@
 // Application service for use case operations
 // This orchestrates domain services and infrastructure
 use crate::config::Config;
+use crate::core::application::creators::UseCaseCreator;
 use crate::core::application::generators::{MarkdownGenerator, OverviewGenerator, TestGenerator};
 use crate::core::utils::suggest_alternatives;
 use crate::core::{
@@ -8,8 +9,6 @@ use crate::core::{
     UseCaseRepository, UseCaseService,
 };
 use anyhow::Result;
-use std::collections::HashMap;
-use std::path::Path;
 
 /// Application service that coordinates use case operations
 /// This replaces the old UseCaseCoordinator with clean architecture
@@ -20,12 +19,15 @@ pub struct UseCaseApplicationService {
     file_operations: FileOperations,
     template_engine: TemplateEngine,
     use_cases: Vec<UseCase>,
+    use_case_creator: UseCaseCreator,
     markdown_generator: MarkdownGenerator,
     test_generator: TestGenerator,
     overview_generator: OverviewGenerator,
 }
 
 impl UseCaseApplicationService {
+    // ========== Initialization ==========
+
     pub fn new(config: Config) -> Result<Self> {
         let use_case_service = UseCaseService::new();
         let repository: Box<dyn UseCaseRepository> =
@@ -33,7 +35,8 @@ impl UseCaseApplicationService {
         let file_operations = FileOperations::new(config.clone());
         let template_engine = TemplateEngine::with_config(Some(&config));
         
-        // Create generators
+        // Initialize creator and generators
+        let use_case_creator = UseCaseCreator::new(config.clone());
         let markdown_generator = MarkdownGenerator::new(config.clone());
         let test_generator = TestGenerator::new(config.clone());
         let overview_generator = OverviewGenerator::new(config.clone());
@@ -47,6 +50,7 @@ impl UseCaseApplicationService {
             file_operations,
             template_engine,
             use_cases,
+            use_case_creator,
             markdown_generator,
             test_generator,
             overview_generator,
@@ -58,7 +62,7 @@ impl UseCaseApplicationService {
         Self::new(config)
     }
 
-    // ========== Public API Methods ==========
+    // ========== Query Operations ==========
 
     /// Get all use cases (for display)
     pub fn get_all_use_cases(&self) -> &[UseCase] {
@@ -83,7 +87,7 @@ impl UseCaseApplicationService {
         Ok(categories)
     }
 
-    // ========== Methodology Management ==========
+    // ========== Use Case Creation ==========
 
     /// Create a use case with specific methodology
     pub fn create_use_case_with_methodology(
@@ -103,17 +107,20 @@ impl UseCaseApplicationService {
             ));
         }
 
+        // Create use case with methodology fields
         let use_case =
             self.create_use_case_with_methodology_internal(title, category, description, methodology)?;
         let use_case_id = use_case.id.clone();
 
-        // Save the use case with methodology-specific rendering
+        // Save and generate markdown
         self.save_use_case_with_methodology(&use_case, methodology)?;
         self.use_cases.push(use_case);
         self.generate_overview()?;
 
         Ok(use_case_id)
     }
+
+    // ========== Regeneration Operations ==========
 
     /// Regenerate use case with different methodology
     pub fn regenerate_use_case_with_methodology(
@@ -187,7 +194,7 @@ impl UseCaseApplicationService {
         Ok(())
     }
 
-    // ========== Private Helper Methods ==========
+    // ========== Private Helpers (Delegation) ==========
 
     /// Internal helper to create use cases
     fn create_use_case_internal(
@@ -196,29 +203,16 @@ impl UseCaseApplicationService {
         category: String,
         description: Option<String>,
     ) -> Result<UseCase> {
-        let use_case_id = self.use_case_service.generate_unique_use_case_id(
-            &category,
+        let use_case = self.use_case_creator.create_use_case(
+            title,
+            category,
+            description,
             &self.use_cases,
-            &self.config.directories.use_case_dir,
-        );
-        let description = description.unwrap_or_default();
+            self.repository.as_ref(),
+        )?;
 
-        let use_case = self
-            .use_case_service
-            .create_use_case(use_case_id.clone(), title, category, description)
-            .map_err(|e| anyhow::anyhow!(e))?;
-
-        // Step 1: Save TOML first (source of truth)
-        self.repository.save_toml_only(&use_case)?;
-
-        // Step 2: Load from TOML to ensure we're working with persisted data
-        let use_case_from_toml = self
-            .repository
-            .load_by_id(&use_case.id)?
-            .ok_or_else(|| anyhow::anyhow!("Failed to load newly created use case from TOML"))?;
-
-        // Step 3: Generate markdown from TOML data
-        let markdown_content = self.generate_use_case_markdown(&use_case_from_toml)?;
+        // Generate markdown from TOML data
+        let markdown_content = self.generate_use_case_markdown(&use_case)?;
         self.repository
             .save_markdown_only(&use_case.id, &markdown_content)?;
 
@@ -233,100 +227,17 @@ impl UseCaseApplicationService {
         description: Option<String>,
         methodology: &str,
     ) -> Result<UseCase> {
-        let use_case_id = self.use_case_service.generate_unique_use_case_id(
-            &category,
+        let use_case = self.use_case_creator.create_use_case_with_methodology(
+            title,
+            category,
+            description,
+            methodology,
             &self.use_cases,
-            &self.config.directories.use_case_dir,
-        );
-        let description = description.unwrap_or_default();
+            self.repository.as_ref(),
+        )?;
 
-        // Load methodology definition to get custom fields
-        use crate::core::{Methodology, MethodologyRegistry};
-        let templates_dir = self
-            .config
-            .directories
-            .template_dir
-            .clone()
-            .unwrap_or_else(|| {
-                format!(
-                    ".config/.mucm/{}",
-                    crate::config::Config::TEMPLATES_DIR
-                )
-            });
-        
-        // MethodologyRegistry expects the parent directory containing "methodologies/"
-        // But during template copying, methodologies are placed directly in template-assets/
-        // Check if methodology directory exists directly in templates_dir
-        let methodology_dir = Path::new(&templates_dir).join(methodology);
-        let extra_fields = if methodology_dir.exists() && methodology_dir.join("config.toml").exists() {
-            // Load methodology definition directly
-            use crate::core::MethodologyDefinition;
-            match MethodologyDefinition::from_toml(&methodology_dir) {
-                Ok(methodology_def) => {
-                    let mut fields = HashMap::new();
-                    for (field_name, field_config) in methodology_def.custom_fields() {
-                        // Use default value if provided, otherwise use empty string for required fields
-                        let value = if let Some(default) = &field_config.default {
-                            serde_json::Value::String(default.clone())
-                        } else if field_config.required {
-                            // For required fields without defaults, use empty string
-                            serde_json::Value::String(String::new())
-                        } else {
-                            // For optional fields without defaults, use null
-                            serde_json::Value::Null
-                        };
-                        fields.insert(field_name.clone(), value);
-                    }
-                    fields
-                }
-                Err(_) => HashMap::new(),
-            }
-        } else {
-            // Try standard structure: template-assets/methodologies/feature/
-            let methodology_registry = MethodologyRegistry::new_dynamic(&templates_dir)?;
-            if let Some(methodology_def) = methodology_registry.get(methodology) {
-                let mut fields = HashMap::new();
-                for (field_name, field_config) in methodology_def.custom_fields() {
-                    // Use default value if provided, otherwise use empty string for required fields
-                    let value = if let Some(default) = &field_config.default {
-                        serde_json::Value::String(default.clone())
-                    } else if field_config.required {
-                        // For required fields without defaults, use empty string
-                        serde_json::Value::String(String::new())
-                    } else {
-                        // For optional fields without defaults, use null
-                        serde_json::Value::Null
-                    };
-                    fields.insert(field_name.clone(), value);
-                }
-                fields
-            } else {
-                HashMap::new()
-            }
-        };
-
-        let use_case = self
-            .use_case_service
-            .create_use_case_with_extra(
-                use_case_id.clone(),
-                title,
-                category,
-                description,
-                extra_fields,
-            )
-            .map_err(|e| anyhow::anyhow!(e))?;
-
-        // Step 1: Save TOML first (source of truth) - this will include custom fields
-        self.repository.save_toml_only(&use_case)?;
-
-        // Step 2: Load from TOML to ensure we're working with persisted data
-        let use_case_from_toml = self
-            .repository
-            .load_by_id(&use_case.id)?
-            .ok_or_else(|| anyhow::anyhow!("Failed to load newly created use case from TOML"))?;
-
-        // Step 3: Generate markdown from TOML data
-        let markdown_content = self.generate_use_case_markdown(&use_case_from_toml)?;
+        // Generate markdown from TOML data
+        let markdown_content = self.generate_use_case_markdown(&use_case)?;
         self.repository
             .save_markdown_only(&use_case.id, &markdown_content)?;
 
