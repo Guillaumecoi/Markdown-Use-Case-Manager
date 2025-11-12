@@ -4,7 +4,7 @@ use inquire::{Confirm, MultiSelect};
 use super::ui::UI;
 use crate::cli::runner::CliRunner;
 use crate::config::{Config, TemplateManager};
-use crate::core::LanguageRegistry;
+use crate::core::{LanguageRegistry, MethodologyRegistry, Methodology};
 
 /// Handle project initialization workflow
 pub struct Initialization;
@@ -90,7 +90,8 @@ impl Initialization {
             "Select which methodologies you plan to use for documenting use cases.\n💡 You can always add or remove methodologies later!",
         )?;
 
-        let methodologies = Config::list_available_methodologies()?;
+        let templates_dir = TemplateManager::find_source_templates_dir()?;
+        let methodologies = MethodologyRegistry::discover_available(&templates_dir)?;
 
         if methodologies.is_empty() {
             UI::show_error("No methodologies available. This is unexpected.")?;
@@ -136,7 +137,8 @@ impl Initialization {
             return Ok(selected_methodologies[0].clone());
         }
 
-        let all_methodologies = Config::list_available_methodologies()?;
+        let templates_dir = TemplateManager::find_source_templates_dir()?;
+        let all_methodologies = MethodologyRegistry::discover_available(&templates_dir)?;
         let methodology_display = Self::get_methodology_descriptions(&all_methodologies);
 
         let default_options: Vec<String> = selected_methodologies
@@ -228,6 +230,19 @@ impl Initialization {
 
     /// Get methodology descriptions for display
     fn get_methodology_descriptions(methodologies: &[String]) -> Vec<String> {
+        use crate::config::TemplateManager;
+        use crate::core::MethodologyRegistry;
+
+        let templates_dir = match TemplateManager::find_source_templates_dir() {
+            Ok(dir) => dir,
+            Err(_) => return methodologies.iter().map(|m| m.clone()).collect(), // Fallback to just names
+        };
+
+        let registry = match MethodologyRegistry::new_dynamic(&templates_dir) {
+            Ok(reg) => reg,
+            Err(_) => return methodologies.iter().map(|m| m.clone()).collect(), // Fallback to just names
+        };
+
         methodologies
             .iter()
             .map(|m| {
@@ -244,18 +259,11 @@ impl Initialization {
                     })
                     .collect::<String>();
 
-                // Add helpful descriptions
-                match m.as_str() {
-                    "business" => format!(
-                        "{} - Business-focused use cases with actors and goals",
-                        formatted
-                    ),
-                    "developer" => {
-                        format!("{} - Technical use cases for development teams", formatted)
-                    }
-                    "feature" => format!("{} - Feature-oriented use case documentation", formatted),
-                    "tester" => format!("{} - QA and testing-focused use cases", formatted),
-                    _ => formatted,
+                // Get description from methodology definition
+                if let Some(methodology_def) = registry.get(m) {
+                    format!("{} - {}", formatted, methodology_def.description())
+                } else {
+                    formatted // Fallback if methodology not found
                 }
             })
             .collect()

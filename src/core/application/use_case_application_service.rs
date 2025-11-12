@@ -429,21 +429,39 @@ mod tests {
         let mut config = Config::default();
 
         if let Some(ref lang) = language {
-            use crate::config::TemplateManager;
-            let templates_dir = TemplateManager::find_source_templates_dir()?;
-            let language_registry = LanguageRegistry::new_dynamic(&templates_dir)?;
-            if let Some(lang_def) = language_registry.get(lang) {
-                let primary_name = lang_def.name().to_string();
-                config.generation.test_language = primary_name.clone();
-                config.templates.test_language = primary_name.clone();
-            } else {
-                config.generation.test_language = lang.clone();
-                config.templates.test_language = lang.clone();
+            // Try to find source templates directory, but don't fail if not found
+            match crate::config::TemplateManager::find_source_templates_dir() {
+                Ok(templates_dir) => {
+                    let language_registry = LanguageRegistry::new_dynamic(&templates_dir)?;
+                    if let Some(lang_def) = language_registry.get(lang) {
+                        let primary_name = lang_def.name().to_string();
+                        config.generation.test_language = primary_name.clone();
+                        config.templates.test_language = primary_name.clone();
+                    } else {
+                        config.generation.test_language = lang.clone();
+                        config.templates.test_language = lang.clone();
+                    }
+                }
+                Err(_) => {
+                    // Source templates not available, just set language directly
+                    config.generation.test_language = lang.clone();
+                    config.templates.test_language = lang.clone();
+                }
             }
         }
 
         config.save_in_dir(".")?;
-        Config::copy_templates_to_config_with_language(language)?;
+
+        // Only try to copy templates if source templates directory exists
+        if language.is_some() {
+            if crate::config::TemplateManager::find_source_templates_dir().is_ok() {
+                Config::copy_templates_to_config_with_language(language)?;
+            }
+        } else {
+            if crate::config::TemplateManager::find_source_templates_dir().is_ok() {
+                Config::copy_templates_to_config_with_language(None)?;
+            }
+        }
 
         Ok(config)
     }
@@ -457,12 +475,13 @@ mod tests {
         init_test_project(None)?;
 
         let mut coordinator = UseCaseApplicationService::load()?;
+        let default_methodology = coordinator.config.templates.default_methodology.clone();
 
         let use_case_id = coordinator.create_use_case_with_methodology(
             "Interactive Test".to_string(),
             "testing".to_string(),
             Some("Created via interactive mode".to_string()),
-            "feature",
+            &default_methodology,
         )?;
         assert_eq!(use_case_id, "UC-TES-001");
 
@@ -484,6 +503,7 @@ mod tests {
 
         init_test_project(None)?;
         let mut coordinator = UseCaseApplicationService::load()?;
+        let default_methodology = coordinator.config.templates.default_methodology.clone();
 
         let categories = coordinator.get_all_categories()?;
         assert!(categories.is_empty());
@@ -492,21 +512,21 @@ mod tests {
             "Auth Use Case".to_string(),
             "authentication".to_string(),
             None,
-            "feature",
+            &default_methodology,
         )?;
 
         coordinator.create_use_case_with_methodology(
             "API Use Case".to_string(),
             "api".to_string(),
             None,
-            "feature",
+            &default_methodology,
         )?;
 
         coordinator.create_use_case_with_methodology(
             "Another Auth Use Case".to_string(),
             "authentication".to_string(),
             None,
-            "feature",
+            &default_methodology,
         )?;
 
         let categories = coordinator.get_all_categories()?;
@@ -532,19 +552,20 @@ mod tests {
         init_test_project(Some("rust".to_string()))?;
 
         let mut coordinator = UseCaseApplicationService::load()?;
+        let default_methodology = coordinator.config.templates.default_methodology.clone();
 
         let _uc1 = coordinator.create_use_case_with_methodology(
             "User Authentication".to_string(),
             "auth".to_string(),
             Some("Handle user login and logout".to_string()),
-            "feature",
+            &default_methodology,
         )?;
 
         let _uc2 = coordinator.create_use_case_with_methodology(
             "Data Export".to_string(),
             "api".to_string(),
             Some("Export data in various formats".to_string()),
-            "feature",
+            &default_methodology,
         )?;
 
         let all_use_cases = coordinator.get_all_use_case_ids()?;

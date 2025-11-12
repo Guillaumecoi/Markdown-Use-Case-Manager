@@ -1,0 +1,84 @@
+# Business Methodology Documentation
+
+[overview]
+title = "Business Methodology"
+description = """
+The Business methodology focuses on documenting use cases from a business stakeholder perspective. It emphasizes business value, stakeholder engagement, and organizational impact rather than technical implementation details.
+"""
+
+[usage]
+when_to_use = [
+    "When documenting use cases for business stakeholders, product managers, or executives",
+    "When business value and ROI are primary concerns",
+    "When stakeholder analysis and business impact assessment are needed",
+    "For requirements gathering and business case development"
+]
+
+key_features = [
+    "Stakeholder-focused: Documents actors, goals, and business relationships",
+    "Business Value: Captures ROI estimates, business value, and cost considerations",
+    "Organizational Context: Includes stakeholder analysis and business impact",
+    "Non-technical: Avoids implementation details in favor of business requirements"
+]
+
+[documentation_levels]
+
+[documentation_levels.simple]
+description = "Basic use case structure with actors and goals, essential business information, minimal technical details"
+
+[documentation_levels.normal]
+description = "Standard business documentation, stakeholder analysis, business value assessment, cost and ROI considerations"
+
+[documentation_levels.detailed]
+description = "Comprehensive business case documentation, detailed stakeholder mapping, financial analysis and ROI projections, risk assessment and mitigation strategies, business process integration"
+
+[custom_fields]
+
+[custom_fields.business_value]
+description = "A qualitative or quantitative assessment of the business value this use case provides."
+example = "High - This use case enables direct revenue generation through new customer acquisition"
+
+[custom_fields.roi_estimate]
+description = "Estimated return on investment, either qualitative or quantitative."
+example = "Expected 300% ROI within 12 months through increased customer retention"
+
+[custom_fields.stakeholders]
+description = "List of key stakeholders affected by or involved in this use case."
+example = """
+- Product Manager
+- Sales Team
+- Customer Success Manager
+- Executive Leadership
+"""
+
+[custom_fields.cost_estimate]
+description = "Estimated development or implementation costs."
+example = "$150,000 development cost with 8-month payback period"
+
+[examples]
+
+[examples.basic]
+title = "Customer Onboarding Process Improvement"
+primary_actor = "Customer Success Manager"
+goal = "Streamline the customer onboarding process to reduce time-to-value"
+business_value = "High - Reduces churn by 25% and increases customer lifetime value"
+stakeholders = [
+    "Customer Success Team",
+    "Product Team",
+    "Sales Leadership",
+    "Customers"
+]
+roi_estimate = "250% ROI expected within 18 months"
+
+best_practices = [
+    "Focus on business outcomes rather than technical solutions",
+    "Include quantifiable business metrics where possible",
+    "Identify all stakeholder groups and their interests",
+    "Consider both direct and indirect business impacts",
+    "Use business language that executives understand"
+]
+
+[related_methodologies]
+feature = "For product-focused documentation"
+developer = "For technical implementation details"
+tester = "For quality assurance and testing requirements"

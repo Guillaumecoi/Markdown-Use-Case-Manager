@@ -140,9 +140,13 @@ impl DirectoryConfig {
 pub struct TemplateConfig {
     /// List of methodologies to import and make available for use case creation
     /// These correspond to subdirectories in source-templates/methodologies/
+    /// If not specified, will be discovered dynamically
+    #[serde(default)]
     pub methodologies: Vec<String>,
     /// Default methodology to use when none is specified during use case creation
     /// Must be one of the values in the methodologies array
+    /// If not specified, will be set to the first available methodology
+    #[serde(default)]
     pub default_methodology: String,
     /// Default programming language for test template generation
     /// Must be one of the supported languages (rust, python, javascript)

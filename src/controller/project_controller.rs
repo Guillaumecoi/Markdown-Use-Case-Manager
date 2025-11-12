@@ -24,7 +24,7 @@ use anyhow::Result;
 
 use super::dto::{DisplayResult, MethodologyInfo, SelectionOptions};
 use crate::config::Config;
-use crate::core::LanguageRegistry;
+use crate::core::{LanguageRegistry, MethodologyRegistry, Methodology};
 
 /// Controller for project initialization and management operations.
 ///
@@ -70,11 +70,16 @@ impl ProjectController {
     /// # Returns
     /// Vector of MethodologyInfo containing name, display name, and description
     pub fn get_available_methodologies() -> Result<Vec<MethodologyInfo>> {
-        let methodologies = Config::list_available_methodologies()?;
+        use crate::config::TemplateManager;
+        let templates_dir = TemplateManager::find_source_templates_dir()?;
+        let registry = MethodologyRegistry::new_dynamic(&templates_dir)?;
 
-        let methodology_infos: Vec<MethodologyInfo> = methodologies
+        let methodology_infos: Vec<MethodologyInfo> = registry
+            .available_methodologies()
             .into_iter()
             .map(|name| {
+                let methodology_def = registry.get(&name).unwrap(); // Should always exist since we got it from available_methodologies
+
                 let display_name = name
                     .chars()
                     .enumerate()
@@ -87,18 +92,10 @@ impl ProjectController {
                     })
                     .collect::<String>();
 
-                let description = match name.as_str() {
-                    "business" => "Business-focused use cases with actors and goals",
-                    "developer" => "Technical use cases for development teams",
-                    "feature" => "Feature-oriented use case documentation",
-                    "tester" => "QA and testing-focused use cases",
-                    _ => "Custom methodology",
-                };
-
                 MethodologyInfo {
-                    name,
+                    name: name.clone(),
                     display_name,
-                    description: description.to_string(),
+                    description: methodology_def.description().to_string(),
                 }
             })
             .collect();
@@ -219,7 +216,9 @@ impl ProjectController {
         ))?;
 
         // Get available methodologies
-        let available = Config::list_available_methodologies().unwrap_or_default();
+        use crate::config::TemplateManager;
+        let templates_dir = TemplateManager::find_source_templates_dir()?;
+        let available = MethodologyRegistry::discover_available(&templates_dir).unwrap_or_default();
         let methodologies_list = if available.is_empty() {
             "Unable to detect".to_string()
         } else {

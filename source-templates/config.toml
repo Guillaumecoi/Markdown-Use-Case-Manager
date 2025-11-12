@@ -9,8 +9,7 @@ persona_dir = "docs/personas"
 toml_dir = "use-cases-data"
 
 [templates]
-methodologies = ["developer", "feature", "business", "tester"]
-default_methodology = "feature"
+# methodologies and default_methodology will be set dynamically based on available templates
 test_language = "python"
 
 # Base fields that all use cases can have (beyond mandatory id/title/category)

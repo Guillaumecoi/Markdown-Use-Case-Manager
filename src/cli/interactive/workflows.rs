@@ -2,7 +2,8 @@ use anyhow::Result;
 use inquire::{Confirm, Select, Text};
 
 use crate::cli::runner::CliRunner;
-use crate::config::Config;
+use crate::config::{Config, TemplateManager};
+use crate::core::MethodologyRegistry;
 use crate::controller::DisplayResult;
 use crate::presentation::DisplayResultFormatter;
 
@@ -67,7 +68,8 @@ pub fn guided_create_use_case(runner: &mut CliRunner) -> Result<()> {
     let methodology = if use_default {
         default_methodology
     } else {
-        let available = Config::list_available_methodologies()?;
+        let templates_dir = TemplateManager::find_source_templates_dir()?;
+        let available = MethodologyRegistry::discover_available(&templates_dir)?;
         if available.is_empty() {
             println!(
                 "⚠️  No methodologies available, using default: {}",
