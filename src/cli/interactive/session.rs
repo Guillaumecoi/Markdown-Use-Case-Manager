@@ -5,7 +5,7 @@ use crate::cli::interactive::menu::{show_main_menu, MainMenuOption};
 use crate::cli::interactive::settings::Settings;
 use crate::cli::interactive::ui::UI;
 use crate::cli::interactive::workflows::guided_create_use_case;
-use crate::cli::runner::CliRunner;
+use crate::cli::standard::CliRunner;
 
 /// Interactive session manager
 pub struct InteractiveSession {
@@ -23,7 +23,7 @@ impl InteractiveSession {
     /// Run the interactive session
     pub fn run(&mut self) -> Result<()> {
         // Check if project is initialized, if not offer to initialize
-        if Initialization::check_and_initialize(&mut self.runner).is_err() {
+        if Initialization::check_and_initialize().is_err() {
             return Ok(());
         }
 

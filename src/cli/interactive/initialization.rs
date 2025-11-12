@@ -1,19 +1,17 @@
 use anyhow::Result;
-use inquire::{Confirm, MultiSelect};
+use inquire::{Confirm, MultiSelect, Select};
 
+use super::runner::{InteractiveRunner, MethodologyInfo};
 use super::ui::UI;
-use crate::cli::runner::CliRunner;
-use crate::config::{Config, TemplateManager};
-use crate::core::{LanguageRegistry, MethodologyRegistry, Methodology};
 
 /// Handle project initialization workflow
 pub struct Initialization;
 
 impl Initialization {
     /// Check if project is initialized, offer to initialize if not
-    pub fn check_and_initialize(runner: &mut CliRunner) -> Result<()> {
+    pub fn check_and_initialize() -> Result<()> {
         // Try to load config
-        if Config::load().is_err() {
+        if crate::config::Config::load().is_err() {
             UI::clear_screen()?;
             UI::show_init_wizard_header()?;
 
@@ -29,49 +27,51 @@ impl Initialization {
             }
 
             // Run the initialization wizard
-            Self::run_initialization_wizard(runner)?;
+            Self::run_initialization_wizard()?;
         }
 
         Ok(())
     }
 
     /// Run the full initialization wizard
-    fn run_initialization_wizard(runner: &mut CliRunner) -> Result<()> {
+    fn run_initialization_wizard() -> Result<()> {
+        let mut runner = InteractiveRunner::new();
+
         // Step 1: Select programming language
-        let language = Self::select_programming_language()?;
+        let language = Self::select_programming_language(&mut runner)?;
 
         // Step 2: Select methodologies
-        let selected_methodologies = Self::select_methodologies()?;
+        let selected_methodologies = Self::select_methodologies(&mut runner)?;
+        let methodology_infos = runner.get_available_methodologies()?; // Get this once for both steps
 
         // Step 3: Select default methodology
-        let default_methodology = Self::select_default_methodology(&selected_methodologies)?;
+        let default_methodology = Self::select_default_methodology(&selected_methodologies, &methodology_infos)?;
 
         // Show summary
         Self::show_configuration_summary(&language, &selected_methodologies, &default_methodology)?;
 
         // Create config
-        Self::create_config(runner, language, default_methodology)?;
+        Self::create_config(&mut runner, language, default_methodology)?;
 
         // Finalize
-        Self::finalize_initialization(runner)?;
+        Self::finalize_initialization(&mut runner)?;
 
         Ok(())
     }
 
     /// Step 1: Select programming language
-    fn select_programming_language() -> Result<Option<String>> {
+    fn select_programming_language(runner: &mut InteractiveRunner) -> Result<Option<String>> {
         UI::show_step(
             1,
             "Project Programming Language",
             "Select the primary programming language for your project.\nThis is used for test scaffolding generation.",
         )?;
 
-        let templates_dir = TemplateManager::find_source_templates_dir()?;
-        let languages = LanguageRegistry::discover_available(&templates_dir)?;
+        let languages = runner.get_available_languages()?;
         let mut language_options = vec!["none".to_string()];
         language_options.extend(languages);
 
-        let language = inquire::Select::new("Programming language:", language_options)
+        let language = Select::new("Programming language:", language_options)
             .with_help_message("Choose 'none' if you don't need test scaffolding")
             .prompt()?;
 
@@ -83,23 +83,22 @@ impl Initialization {
     }
 
     /// Step 2: Select methodologies
-    fn select_methodologies() -> Result<Vec<String>> {
+    fn select_methodologies(runner: &mut InteractiveRunner) -> Result<Vec<String>> {
         UI::show_step(
             2,
             "Use Case Methodologies",
             "Select which methodologies you plan to use for documenting use cases.\n💡 You can always add or remove methodologies later!",
         )?;
 
-        let templates_dir = TemplateManager::find_source_templates_dir()?;
-        let methodologies = MethodologyRegistry::discover_available(&templates_dir)?;
+        let methodology_infos = runner.get_available_methodologies()?;
 
-        if methodologies.is_empty() {
+        if methodology_infos.is_empty() {
             UI::show_error("No methodologies available. This is unexpected.")?;
             return Err(anyhow::anyhow!("No methodologies found"));
         }
 
         // Get methodology descriptions for better selection
-        let methodology_display = Self::get_methodology_descriptions(&methodologies);
+        let methodology_display = Self::get_methodology_descriptions(&methodology_infos);
 
         let selected =
             MultiSelect::new("Select methodologies to use:", methodology_display.clone())
@@ -126,7 +125,7 @@ impl Initialization {
     }
 
     /// Step 3: Select default methodology
-    fn select_default_methodology(selected_methodologies: &[String]) -> Result<String> {
+    fn select_default_methodology(selected_methodologies: &[String], methodology_infos: &[MethodologyInfo]) -> Result<String> {
         UI::show_step(
             3,
             "Default Methodology",
@@ -137,9 +136,7 @@ impl Initialization {
             return Ok(selected_methodologies[0].clone());
         }
 
-        let templates_dir = TemplateManager::find_source_templates_dir()?;
-        let all_methodologies = MethodologyRegistry::discover_available(&templates_dir)?;
-        let methodology_display = Self::get_methodology_descriptions(&all_methodologies);
+        let methodology_display = Self::get_methodology_descriptions(methodology_infos);
 
         let default_options: Vec<String> = selected_methodologies
             .iter()
@@ -151,7 +148,7 @@ impl Initialization {
             })
             .collect();
 
-        let default_display = inquire::Select::new("Default methodology:", default_options)
+        let default_display = Select::new("Default methodology:", default_options)
             .with_help_message("This will be used when no methodology is specified")
             .prompt()?;
 
@@ -180,13 +177,13 @@ impl Initialization {
 
     /// Create the configuration file
     fn create_config(
-        runner: &mut CliRunner,
+        runner: &mut InteractiveRunner,
         language: Option<String>,
         default_methodology: String,
     ) -> Result<()> {
-        match runner.init_project(language, Some(default_methodology)) {
-            Ok(result) => {
-                UI::show_success(&result.message)?;
+        match runner.initialize_project(language, default_methodology) {
+            Ok(message) => {
+                UI::show_success(&message)?;
                 Ok(())
             }
             Err(e) => {
@@ -197,7 +194,7 @@ impl Initialization {
     }
 
     /// Finalize initialization (copy templates)
-    fn finalize_initialization(runner: &mut CliRunner) -> Result<()> {
+    fn finalize_initialization(runner: &mut InteractiveRunner) -> Result<()> {
         let auto_finalize = Confirm::new("Finalize initialization now?")
             .with_default(true)
             .with_help_message(
@@ -206,9 +203,9 @@ impl Initialization {
             .prompt()?;
 
         if auto_finalize {
-            match runner.finalize_init() {
-                Ok(result) => {
-                    UI::show_success(&result.message)?;
+            match runner.finalize_initialization() {
+                Ok(message) => {
+                    UI::show_success(&message)?;
                     println!("\n💡 Note: All selected methodologies are now available!");
                     println!("   You can use any of them when creating use cases.\n");
                     UI::pause_for_input()?;
@@ -229,43 +226,10 @@ impl Initialization {
     }
 
     /// Get methodology descriptions for display
-    fn get_methodology_descriptions(methodologies: &[String]) -> Vec<String> {
-        use crate::config::TemplateManager;
-        use crate::core::MethodologyRegistry;
-
-        let templates_dir = match TemplateManager::find_source_templates_dir() {
-            Ok(dir) => dir,
-            Err(_) => return methodologies.iter().map(|m| m.clone()).collect(), // Fallback to just names
-        };
-
-        let registry = match MethodologyRegistry::new_dynamic(&templates_dir) {
-            Ok(reg) => reg,
-            Err(_) => return methodologies.iter().map(|m| m.clone()).collect(), // Fallback to just names
-        };
-
-        methodologies
+    fn get_methodology_descriptions(methodology_infos: &[MethodologyInfo]) -> Vec<String> {
+        methodology_infos
             .iter()
-            .map(|m| {
-                // Capitalize first letter and format
-                let formatted = m
-                    .chars()
-                    .enumerate()
-                    .map(|(i, c)| {
-                        if i == 0 {
-                            c.to_uppercase().next().unwrap()
-                        } else {
-                            c
-                        }
-                    })
-                    .collect::<String>();
-
-                // Get description from methodology definition
-                if let Some(methodology_def) = registry.get(m) {
-                    format!("{} - {}", formatted, methodology_def.description())
-                } else {
-                    formatted // Fallback if methodology not found
-                }
-            })
+            .map(|info| format!("{} - {}", info.display_name, info.description))
             .collect()
     }
 }

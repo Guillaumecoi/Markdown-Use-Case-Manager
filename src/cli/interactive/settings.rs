@@ -2,7 +2,7 @@ use anyhow::Result;
 use inquire::{Confirm, Select, Text};
 
 use super::ui::UI;
-use crate::cli::runner::CliRunner;
+use crate::cli::standard::CliRunner;
 use crate::config::{Config, TemplateManager};
 use crate::core::LanguageRegistry;
 
