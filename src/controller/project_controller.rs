@@ -151,9 +151,6 @@ impl ProjectController {
         // Save config file
         Config::save_config_only(&config)?;
 
-        let recommendations =
-            Config::methodology_recommendations(&config.templates.default_methodology);
-
         let message = format!(
             "✅ Configuration file created at .config/.mucm/mucm.toml\n\n\
              📝 Please review and customize the configuration:\n\
@@ -163,7 +160,7 @@ impl ProjectController {
              - Use case directory: {}\n\
              - Test directory: {}\n\n\
              ⚡ When ready, run: mucm init --finalize\n\n\
-             {}\n\n\
+             \n\
              💡 The finalize step will:\n\
              - Copy the used methodology templates\n\
              - Copy the used language templates\n\
@@ -178,7 +175,6 @@ impl ProjectController {
                 .unwrap_or("docs/use-cases"),
             config.directories.use_case_dir,
             config.directories.test_dir,
-            recommendations
         );
 
         Ok(DisplayResult::success(message))

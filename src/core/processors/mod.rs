@@ -9,8 +9,4 @@
 //!
 //! No complex processors, no transformations - just TOML + Handlebars!
 
-mod methodology_manager;
 mod template_driven;
-
-// Explicit public export
-pub use methodology_manager::MethodologyManager;

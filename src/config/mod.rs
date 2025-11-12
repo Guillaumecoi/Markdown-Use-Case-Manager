@@ -36,10 +36,9 @@ mod types;
 // Explicit public exports
 pub use file_manager::ConfigFileManager;
 pub use template_manager::TemplateManager;
-pub use types::{Config, GenerationConfig};
+pub use types::Config;
 
 // Re-export from other modules
-pub use crate::core::MethodologyManager;
 use anyhow::{Context, Result};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -164,17 +163,6 @@ impl Config {
         _language: Option<String>, // Not currently used - we copy all languages now
     ) -> Result<()> {
         TemplateManager::copy_templates_to_config(base_dir)
-    }
-
-    /// Get methodology-specific recommendations as a human-readable string
-    ///
-    /// # Arguments
-    /// * `methodology` - The methodology name to get recommendations for
-    ///
-    /// # Returns
-    /// A formatted string with usage recommendations for the methodology
-    pub fn methodology_recommendations(methodology: &str) -> String {
-        MethodologyManager::get_recommendations(methodology)
     }
 
     /// Load default configuration from source-templates/config.toml
@@ -725,37 +713,6 @@ mod tests {
             // In test environments without source templates, templates won't exist
             assert!(!Config::check_templates_exist());
         }
-
-        Ok(())
-    }
-
-    #[test]
-    #[serial]
-    fn test_methodology_recommendations() -> Result<()> {
-        let temp_dir = TempDir::new()?;
-        std::env::set_current_dir(&temp_dir)?;
-
-        // Initialize project to set up config directory
-        init_project_with_language(Some("rust".to_string()))?;
-
-        // Test methodology recommendations for known methodologies
-        let feature_recommendations = Config::methodology_recommendations("feature");
-        assert!(!feature_recommendations.is_empty());
-        assert!(
-            feature_recommendations.contains("feature")
-                || feature_recommendations.contains("Feature")
-        );
-
-        let developer_recommendations = Config::methodology_recommendations("developer");
-        assert!(!developer_recommendations.is_empty());
-        assert!(
-            developer_recommendations.contains("developer")
-                || developer_recommendations.contains("Developer")
-        );
-
-        // Test with unknown methodology
-        let unknown_recommendations = Config::methodology_recommendations("unknown_methodology");
-        assert!(!unknown_recommendations.is_empty()); // Should return some default response
 
         Ok(())
     }

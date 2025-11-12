@@ -10,7 +10,6 @@ mod utils; // Internal only
 // Explicit public exports from private modules
 // Public exports - Explicit API surface
 pub use application::UseCaseApplicationService;
-pub use processors::MethodologyManager;
 
 // Re-export domain types (from domain's public interface)
 pub use domain::{Status, UseCase, UseCaseRepository, UseCaseService};
