@@ -1,0 +1,4 @@
+name = "javascript"
+aliases = ["js"]
+file_extension = "js"
+template_file = "test.hbs"

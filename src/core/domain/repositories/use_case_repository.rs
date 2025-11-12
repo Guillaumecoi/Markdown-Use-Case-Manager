@@ -1,5 +1,5 @@
 // Repository trait for use case persistence
-use crate::core::domain::entities::UseCase;
+use crate::core::domain::UseCase;
 use anyhow::Result;
 
 /// Repository abstraction for use case persistence

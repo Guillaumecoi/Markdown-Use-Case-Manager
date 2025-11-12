@@ -1,14 +1,12 @@
 [template]
 name = "feature"
 description = "Feature-oriented documentation for product management"
-preferred_style = "simple"  # simple, normal, or detailed
+preferred_style = "simple"
 
 [generation]
-auto_generate_tests = false  # Features are about requirements, not tests
+auto_generate_tests = false
 overwrite_test_documentation = false
 
-# Custom data fields specific to feature methodology
-# Focused on agile/product management workflow
 [custom_fields]
 
 # --- Simple level: Essential feature identifiers ---

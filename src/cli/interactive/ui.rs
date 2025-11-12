@@ -1,3 +1,8 @@
+//! # Interactive UI Utilities
+//!
+//! Presentation layer for interactive CLI mode.
+//! Handles terminal output formatting, colors, and user interaction patterns.
+
 use anyhow::Result;
 use crossterm::{
     execute,
@@ -10,7 +15,7 @@ use std::io::stdout;
 pub struct UI;
 
 impl UI {
-    /// Show welcome message
+    /// Show welcome message with banner
     pub fn show_welcome() -> Result<()> {
         Self::clear_screen()?;
 
@@ -37,7 +42,7 @@ impl UI {
         Ok(())
     }
 
-    /// Show error message
+    /// Show error message with pause
     pub fn show_error(message: &str) -> Result<()> {
         execute!(
             stdout(),
@@ -49,7 +54,7 @@ impl UI {
         Ok(())
     }
 
-    /// Clear the screen
+    /// Clear the terminal screen
     pub fn clear_screen() -> Result<()> {
         execute!(stdout(), Clear(ClearType::All))?;
         Ok(())
@@ -70,7 +75,7 @@ impl UI {
         Ok(())
     }
 
-    /// Show a section header
+    /// Show a section header with icon
     pub fn show_section_header(title: &str, icon: &str) -> Result<()> {
         execute!(
             stdout(),
@@ -83,7 +88,7 @@ impl UI {
         Ok(())
     }
 
-    /// Show a step in a wizard
+    /// Show a numbered step in a wizard
     pub fn show_step(step_number: usize, title: &str, description: &str) -> Result<()> {
         println!("\n📚 Step {}: {}", step_number, title);
         println!("────────────────────────────────────────");

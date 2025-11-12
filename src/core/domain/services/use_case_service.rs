@@ -1,6 +1,6 @@
 // Domain service for use case business logic
-use crate::core::domain::entities::{Priority, UseCase};
-use crate::core::infrastructure::template_engine::to_snake_case;
+use crate::core::domain::UseCase;
+use crate::core::to_snake_case;
 use std::path::Path;
 
 /// Core business logic for use case management
@@ -77,13 +77,126 @@ impl UseCaseService {
         title: String,
         category: String,
         description: String,
-    ) -> UseCase {
-        UseCase::new(id, title, category, description, Priority::Medium)
+    ) -> Result<UseCase, String> {
+        UseCase::new(id, title, category, description, "Medium".to_string())
+    }
+
+    /// Create a new use case with custom fields from methodology
+    pub fn create_use_case_with_extra(
+        &self,
+        id: String,
+        title: String,
+        category: String,
+        description: String,
+        extra_fields: std::collections::HashMap<String, serde_json::Value>,
+    ) -> Result<UseCase, String> {
+        let mut use_case = UseCase::new(id, title, category, description, "Medium".to_string())?;
+        use_case.extra = extra_fields;
+        Ok(use_case)
     }
 }
 
 impl Default for UseCaseService {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn create_test_use_case(
+        id: String,
+        title: String,
+        category: String,
+        description: String,
+    ) -> UseCase {
+        UseCase::new(id, title, category, description, "Medium".to_string()).unwrap()
+    }
+
+    fn find_use_case_by_id<'a>(use_cases: &'a [UseCase], id: &str) -> Option<&'a UseCase> {
+        use_cases.iter().find(|uc| uc.id == id)
+    }
+
+    #[test]
+    fn test_use_case_service_unique_id_generation() {
+        let service = UseCaseService::new();
+
+        // Test unique ID generation with filesystem checks
+        let existing_use_cases = vec![
+            create_test_use_case(
+                "UC-SEC-001".to_string(),
+                "Login".to_string(),
+                "Security".to_string(),
+                "".to_string(),
+            ),
+            create_test_use_case(
+                "UC-API-001".to_string(),
+                "REST API".to_string(),
+                "API".to_string(),
+                "".to_string(),
+            ),
+        ];
+
+        // Use a temporary directory for testing
+        let temp_dir = std::env::temp_dir().join("mucm_test_use_case_service");
+        let temp_dir_str = temp_dir.to_string_lossy();
+
+        let new_id =
+            service.generate_unique_use_case_id("Security", &existing_use_cases, &temp_dir_str);
+        assert!(new_id.starts_with("UC-SEC-"));
+        assert!(new_id.len() > 7); // Should have format UC-SEC-XXX
+
+        let api_id = service.generate_unique_use_case_id("API", &existing_use_cases, &temp_dir_str);
+        assert!(api_id.starts_with("UC-API-"));
+
+        let new_category_id =
+            service.generate_unique_use_case_id("Database", &existing_use_cases, &temp_dir_str);
+        assert!(new_category_id.starts_with("UC-DAT-"));
+    }
+
+    #[test]
+    fn test_finding_use_cases() {
+        let use_cases = vec![
+            create_test_use_case(
+                "UC-SEC-001".to_string(),
+                "Login".to_string(),
+                "Security".to_string(),
+                "".to_string(),
+            ),
+            create_test_use_case(
+                "UC-API-001".to_string(),
+                "REST API".to_string(),
+                "API".to_string(),
+                "".to_string(),
+            ),
+        ];
+
+        let found = find_use_case_by_id(&use_cases, "UC-SEC-001");
+        assert!(found.is_some());
+        assert_eq!(found.unwrap().title, "Login");
+
+        let not_found = find_use_case_by_id(&use_cases, "UC-MISSING-001");
+        assert!(not_found.is_none());
+    }
+
+    #[test]
+    fn test_create_use_case() {
+        let service = UseCaseService::new();
+        let use_case = service
+            .create_use_case(
+                "UC-TEST-001".to_string(),
+                "Test Use Case".to_string(),
+                "Test".to_string(),
+                "A test description".to_string(),
+            )
+            .unwrap();
+
+        assert_eq!(use_case.id, "UC-TEST-001");
+        assert_eq!(use_case.title, "Test Use Case");
+        assert_eq!(use_case.category, "Test");
+        assert_eq!(use_case.description, "A test description");
+        assert_eq!(use_case.priority.to_string(), "MEDIUM");
     }
 }

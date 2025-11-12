@@ -1,18 +1,64 @@
-pub mod args;
-pub mod commands;
-pub mod interactive;
-pub mod runner;
+/// CLI module for the Markdown Use Case Manager.
+///
+/// This module provides the command-line interface, handling argument parsing,
+/// command dispatching, and user interaction modes. It integrates Clap for
+/// argument parsing and coordinates between interactive and regular command modes.
+///
+/// ## Modules
+/// - `args`: Defines CLI argument structures using Clap.
+/// - `commands`: Thin command handlers that delegate to business logic.
+/// - `interactive`: Interactive session management for guided usage.
+/// - `runner`: Core business logic and file operations.
+///
+/// ## Flow
+/// 1. Parse CLI arguments with Clap.
+/// 2. Check for interactive mode (flag, subcommand, or no args).
+/// 3. For regular commands, create a runner and dispatch to handlers.
+/// 4. Handlers perform CLI-specific tasks and call runner methods.
+// Private modules
+mod args;
+mod interactive;
+mod standard;
 
 use anyhow::Result;
 use clap::Parser;
 
+use crate::controller::DisplayResult;
+use crate::presentation::DisplayResultFormatter;
 use args::{Cli, Commands};
-#[allow(clippy::wildcard_imports)]
-use commands::*;
-use interactive::session::InteractiveSession;
-use runner::CliRunner;
+use interactive::run_interactive_session;
+use standard::{
+    handle_create_command, handle_init_command, handle_languages_command, handle_list_command,
+    handle_list_methodologies_command, handle_methodology_info_command, handle_regenerate_command,
+    handle_status_command, CliRunner,
+};
 
-/// Main CLI entry point
+/// Execute a command with proper error handling and colored output
+fn execute_command<F>(command_fn: F)
+where
+    F: FnOnce() -> Result<()>,
+{
+    match command_fn() {
+        Ok(()) => {}
+        Err(e) => {
+            DisplayResultFormatter::display(&DisplayResult::error(e.to_string()));
+            std::process::exit(1);
+        }
+    }
+}
+
+/// Main CLI entry point.
+///
+/// Parses command-line arguments and dispatches to the appropriate handler.
+/// Supports both interactive mode (for guided usage) and direct command execution.
+///
+/// Interactive mode is activated when:
+/// - The `--interactive` flag is used
+/// - The `interactive` subcommand is specified
+/// - No command is provided (defaults to interactive)
+///
+/// For regular commands, creates a CliRunner instance and delegates to
+/// command-specific handlers in the `commands` module.
 pub fn run() -> Result<()> {
     let cli = Cli::parse();
 
@@ -21,8 +67,7 @@ pub fn run() -> Result<()> {
         || matches!(cli.command, Some(Commands::Interactive))
         || cli.command.is_none()
     {
-        let mut session = InteractiveSession::new();
-        return session.run();
+        return run_interactive_session();
     }
 
     // Handle regular commands
@@ -38,27 +83,54 @@ pub fn run() -> Result<()> {
             language,
             methodology,
             finalize,
-        } => handle_init_command(&mut runner, language, methodology, finalize),
+        } => {
+            execute_command(|| handle_init_command(&mut runner, language, methodology, finalize));
+            Ok(())
+        }
         Commands::Create {
             title,
             category,
             description,
             methodology,
-        } => handle_create_command(&mut runner, title, category, description, methodology),
-        Commands::List => handle_list_command(&mut runner),
-        Commands::Languages => handle_languages_command(),
-        Commands::Methodologies => handle_list_methodologies_command(&mut runner),
-        Commands::MethodologyInfo { name } => handle_methodology_info_command(&mut runner, name),
+        } => {
+            execute_command(|| {
+                handle_create_command(&mut runner, title, category, description, methodology)
+            });
+            Ok(())
+        }
+        Commands::List => {
+            execute_command(|| handle_list_command(&mut runner));
+            Ok(())
+        }
+        Commands::Languages => {
+            execute_command(|| handle_languages_command());
+            Ok(())
+        }
+        Commands::Methodologies => {
+            execute_command(|| handle_list_methodologies_command(&mut runner));
+            Ok(())
+        }
+        Commands::MethodologyInfo { name } => {
+            execute_command(|| handle_methodology_info_command(&mut runner, name));
+            Ok(())
+        }
         Commands::Regenerate {
             use_case_id,
             methodology,
             all,
-        } => handle_regenerate_command(&mut runner, use_case_id, methodology, all),
-        Commands::Status => handle_status_command(&mut runner),
+        } => {
+            execute_command(|| {
+                handle_regenerate_command(&mut runner, use_case_id, methodology, all)
+            });
+            Ok(())
+        }
+        Commands::Status => {
+            execute_command(|| handle_status_command(&mut runner));
+            Ok(())
+        }
         Commands::Interactive => {
             // This case is handled above, but included for completeness
-            let mut session = InteractiveSession::new();
-            session.run()
+            run_interactive_session()
         }
     }
 }

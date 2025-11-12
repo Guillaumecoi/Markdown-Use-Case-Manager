@@ -1,10 +1,11 @@
 // Domain entities - Core business objects
 
-pub mod metadata;
-pub mod status;
-pub mod use_case;
+// Private modules
+mod metadata;
+mod status;
+mod use_case;
 
-// Re-export commonly used types
+// Explicit public exports (visible to parent modules)
 pub use metadata::Metadata;
 pub use status::Status;
-pub use use_case::{Priority, UseCase};
+pub use use_case::UseCase;

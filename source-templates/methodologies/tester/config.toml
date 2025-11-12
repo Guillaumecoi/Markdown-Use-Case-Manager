@@ -1,22 +1,20 @@
 [template]
 name = "tester"
 description = "QA and testing-focused documentation"
-preferred_style = "simple"  # simple, normal, or detailed
+preferred_style = "simple"
 
 [generation]
-auto_generate_tests = true  # Testing methodology NEEDS tests
+auto_generate_tests = true
 overwrite_test_documentation = true
 
-# Custom data fields specific to tester methodology
-# Focused on test execution, automation, and quality assurance
 [custom_fields]
 
 # --- Simple level: Essential test identifiers ---
-test_type = { label = "Test Type", type = "string", required = true }  # unit, integration, e2e, manual, automated
-test_priority = { label = "Test Priority", type = "string", required = true }  # P0, P1, P2, P3
+test_type = { label = "Test Type", type = "string", required = true }
+test_priority = { label = "Test Priority", type = "string", required = true }
 
 # --- Normal level: Test execution and automation ---
-automation_status = { label = "Automation Status", type = "string", required = false }  # manual, automated, planned
+automation_status = { label = "Automation Status", type = "string", required = false }
 test_data_requirements = { label = "Test Data Requirements", type = "string", required = false }
 expected_result = { label = "Expected Result", type = "string", required = true }
 

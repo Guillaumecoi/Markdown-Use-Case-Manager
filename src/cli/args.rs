@@ -2,7 +2,6 @@ use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(name = "mucm")]
-#[command(about = "Markdown Use Case Manager - Manage use cases in markdown format")]
 #[command(version)]
 pub struct Cli {
     /// Enable interactive mode
@@ -13,7 +12,7 @@ pub struct Cli {
     pub command: Option<Commands>,
 }
 
-#[derive(Subcommand)]
+#[derive(Debug, Subcommand)]
 pub enum Commands {
     /// Initialize a new use case manager project
     Init {

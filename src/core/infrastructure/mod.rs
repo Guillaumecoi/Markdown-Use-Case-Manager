@@ -1,7 +1,12 @@
 // Infrastructure layer - Implementation details
 
-pub mod languages;
-pub mod persistence;
-pub mod template_engine;
+mod languages;
+mod methodologies;
+mod persistence;
+mod template_engine;
 
-// Re-export commonly used types
+// Re-exports
+pub use languages::LanguageRegistry;
+pub use methodologies::{Methodology, MethodologyDefinition, MethodologyRegistry};
+pub use persistence::{file_operations, TomlUseCaseRepository};
+pub use template_engine::TemplateEngine;

@@ -1,5 +1,5 @@
 // Formatter for displaying use case information
-use crate::core::domain::entities::UseCase;
+use crate::core::UseCase;
 use colored::Colorize;
 
 /// Handles formatting and display of use cases

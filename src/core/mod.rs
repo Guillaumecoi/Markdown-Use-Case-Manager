@@ -1,12 +1,23 @@
 // Core layer - Business logic and domain
 
-// Clean architecture modules
-pub mod application;
-pub mod domain;
-pub mod infrastructure;
+// Private with explicit exports:
+mod application;
+mod domain;
+mod infrastructure;
+mod utils; // Internal only
 
-// Legacy modules (still being migrated)
-pub mod processors;
-pub mod utils;
+// Explicit public exports from private modules
+// Public exports - Explicit API surface
+pub use application::UseCaseApplicationService;
 
-// Re-export commonly used types for convenience
+// Re-export domain types (from domain's public interface)
+pub use domain::{Status, UseCase, UseCaseRepository, UseCaseService};
+
+// Re-export infrastructure types (from infrastructure's public interface)
+pub use infrastructure::{
+    file_operations, LanguageRegistry, Methodology, MethodologyDefinition, MethodologyRegistry,
+    TemplateEngine, TomlUseCaseRepository,
+};
+
+// Re-export utility functions
+pub use utils::to_snake_case;

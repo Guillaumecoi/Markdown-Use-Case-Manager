@@ -1,16 +1,14 @@
 // Application service for use case operations
 // This orchestrates domain services and infrastructure
 use crate::config::Config;
-use crate::core::domain::entities::UseCase;
-use crate::core::domain::repositories::UseCaseRepository;
-use crate::core::domain::services::UseCaseService;
-use crate::core::infrastructure::persistence::file_operations::FileOperations;
-use crate::core::infrastructure::persistence::TomlUseCaseRepository;
-use crate::core::infrastructure::template_engine::{to_snake_case, TemplateEngine};
+use crate::core::application::creators::UseCaseCreator;
+use crate::core::application::generators::{MarkdownGenerator, OverviewGenerator, TestGenerator};
 use crate::core::utils::suggest_alternatives;
+use crate::core::{
+    file_operations::FileOperations, TemplateEngine, TomlUseCaseRepository, UseCase,
+    UseCaseRepository, UseCaseService,
+};
 use anyhow::Result;
-use serde_json::{json, Value};
-use std::collections::HashMap;
 
 /// Application service that coordinates use case operations
 /// This replaces the old UseCaseCoordinator with clean architecture
@@ -21,15 +19,27 @@ pub struct UseCaseApplicationService {
     file_operations: FileOperations,
     template_engine: TemplateEngine,
     use_cases: Vec<UseCase>,
+    use_case_creator: UseCaseCreator,
+    markdown_generator: MarkdownGenerator,
+    test_generator: TestGenerator,
+    overview_generator: OverviewGenerator,
 }
 
 impl UseCaseApplicationService {
+    // ========== Initialization ==========
+
     pub fn new(config: Config) -> Result<Self> {
         let use_case_service = UseCaseService::new();
         let repository: Box<dyn UseCaseRepository> =
             Box::new(TomlUseCaseRepository::new(config.clone()));
         let file_operations = FileOperations::new(config.clone());
         let template_engine = TemplateEngine::with_config(Some(&config));
+
+        // Initialize creator and generators
+        let use_case_creator = UseCaseCreator::new(config.clone());
+        let markdown_generator = MarkdownGenerator::new(config.clone());
+        let test_generator = TestGenerator::new(config.clone());
+        let overview_generator = OverviewGenerator::new(config.clone());
 
         let use_cases = repository.load_all()?;
 
@@ -40,6 +50,10 @@ impl UseCaseApplicationService {
             file_operations,
             template_engine,
             use_cases,
+            use_case_creator,
+            markdown_generator,
+            test_generator,
+            overview_generator,
         })
     }
 
@@ -48,7 +62,7 @@ impl UseCaseApplicationService {
         Self::new(config)
     }
 
-    // ========== Public API Methods ==========
+    // ========== Query Operations ==========
 
     /// Get all use cases (for display)
     pub fn get_all_use_cases(&self) -> &[UseCase] {
@@ -73,7 +87,7 @@ impl UseCaseApplicationService {
         Ok(categories)
     }
 
-    // ========== Methodology Management ==========
+    // ========== Use Case Creation ==========
 
     /// Create a use case with specific methodology
     pub fn create_use_case_with_methodology(
@@ -93,16 +107,24 @@ impl UseCaseApplicationService {
             ));
         }
 
-        let use_case = self.create_use_case_internal(title, category, description)?;
+        // Create use case with methodology fields
+        let use_case = self.create_use_case_with_methodology_internal(
+            title,
+            category,
+            description,
+            methodology,
+        )?;
         let use_case_id = use_case.id.clone();
 
-        // Save the use case with methodology-specific rendering
+        // Save and generate markdown
         self.save_use_case_with_methodology(&use_case, methodology)?;
         self.use_cases.push(use_case);
         self.generate_overview()?;
 
         Ok(use_case_id)
     }
+
+    // ========== Regeneration Operations ==========
 
     /// Regenerate use case with different methodology
     pub fn regenerate_use_case_with_methodology(
@@ -176,7 +198,7 @@ impl UseCaseApplicationService {
         Ok(())
     }
 
-    // ========== Private Helper Methods ==========
+    // ========== Private Helpers (Delegation) ==========
 
     /// Internal helper to create use cases
     fn create_use_case_internal(
@@ -185,31 +207,41 @@ impl UseCaseApplicationService {
         category: String,
         description: Option<String>,
     ) -> Result<UseCase> {
-        let use_case_id = self.use_case_service.generate_unique_use_case_id(
-            &category,
-            &self.use_cases,
-            &self.config.directories.use_case_dir,
-        );
-        let description = description.unwrap_or_default();
-
-        let use_case = self.use_case_service.create_use_case(
-            use_case_id.clone(),
+        let use_case = self.use_case_creator.create_use_case(
             title,
             category,
             description,
-        );
+            &self.use_cases,
+            self.repository.as_ref(),
+        )?;
 
-        // Step 1: Save TOML first (source of truth)
-        self.repository.save_toml_only(&use_case)?;
+        // Generate markdown from TOML data
+        let markdown_content = self.generate_use_case_markdown(&use_case)?;
+        self.repository
+            .save_markdown_only(&use_case.id, &markdown_content)?;
 
-        // Step 2: Load from TOML to ensure we're working with persisted data
-        let use_case_from_toml = self
-            .repository
-            .load_by_id(&use_case.id)?
-            .ok_or_else(|| anyhow::anyhow!("Failed to load newly created use case from TOML"))?;
+        Ok(use_case)
+    }
 
-        // Step 3: Generate markdown from TOML data
-        let markdown_content = self.generate_use_case_markdown(&use_case_from_toml)?;
+    /// Internal helper to create use cases with methodology custom fields
+    fn create_use_case_with_methodology_internal(
+        &self,
+        title: String,
+        category: String,
+        description: Option<String>,
+        methodology: &str,
+    ) -> Result<UseCase> {
+        let use_case = self.use_case_creator.create_use_case_with_methodology(
+            title,
+            category,
+            description,
+            methodology,
+            &self.use_cases,
+            self.repository.as_ref(),
+        )?;
+
+        // Generate markdown from TOML data
+        let markdown_content = self.generate_use_case_markdown(&use_case)?;
         self.repository
             .save_markdown_only(&use_case.id, &markdown_content)?;
 
@@ -243,170 +275,256 @@ impl UseCaseApplicationService {
 
     /// Helper to generate use case markdown
     fn generate_use_case_markdown(&self, use_case: &UseCase) -> Result<String> {
-        // Use the default methodology from config
-        let default_methodology = &self.config.templates.default_methodology;
-        self.generate_use_case_markdown_with_methodology(use_case, default_methodology)
+        self.markdown_generator.generate(use_case)
     }
 
     /// Helper to generate use case markdown with specific methodology
-    /// Converts UseCase to JSON and passes it directly to the template engine
-    /// This allows templates to access ANY field from the TOML file without hardcoding
     fn generate_use_case_markdown_with_methodology(
         &self,
         use_case: &UseCase,
         methodology: &str,
     ) -> Result<String> {
-        // Convert UseCase directly to JSON - templates can access any field from TOML
-        let use_case_json = serde_json::to_value(use_case)?;
-
-        // Convert to HashMap for template engine compatibility
-        let mut data: HashMap<String, Value> = serde_json::from_value(use_case_json)?;
-
-        // Merge extra fields into top-level HashMap so templates can access them directly
-        if let Some(Value::Object(extra_map)) = data.remove("extra") {
-            for (key, value) in extra_map {
-                data.insert(key, value);
-            }
-        }
-
-        self.template_engine
-            .render_use_case_with_methodology(&data, methodology)
+        self.markdown_generator
+            .generate_with_methodology(use_case, methodology)
     }
 
     /// Generate test file for a use case
     fn generate_test_file(&self, use_case: &UseCase) -> Result<()> {
-        // Check if test file already exists and overwrite is disabled
-        let file_extension = self.get_test_file_extension();
-        if self
-            .file_operations
-            .test_file_exists(use_case, &file_extension)
-            && !self.config.generation.overwrite_test_documentation
-        {
-            // Use the formatter to display the skipped message
-            use crate::presentation::UseCaseFormatter;
-            UseCaseFormatter::display_test_skipped();
-            return Ok(());
-        }
-
-        // Generate test content using template
-        let test_content = self.generate_test_content(use_case)?;
-
-        // Save the test file
-        self.file_operations
-            .save_test_file(use_case, &test_content, &file_extension)?;
-
-        // Get the test file path for display
-        let test_file_path = self.get_test_file_path(use_case)?;
-
-        // Use the formatter to display the generated message
-        use crate::presentation::UseCaseFormatter;
-        UseCaseFormatter::display_test_generated(
-            &use_case.id,
-            &test_file_path.display().to_string(),
-        );
-
-        Ok(())
-    }
-
-    /// Get the test file path for a use case
-    fn get_test_file_path(&self, use_case: &UseCase) -> Result<std::path::PathBuf> {
-        let test_dir = std::path::Path::new(&self.config.directories.test_dir);
-        let category_dir = test_dir.join(to_snake_case(&use_case.category));
-        let file_extension = self.get_test_file_extension();
-        let file_name = format!("{}.{}", to_snake_case(&use_case.id), file_extension);
-        Ok(category_dir.join(file_name))
-    }
-
-    /// Generate test content for a use case
-    fn generate_test_content(&self, use_case: &UseCase) -> Result<String> {
-        // Convert UseCase to JSON for template engine
-        let use_case_json = serde_json::to_value(use_case)?;
-        let mut data: HashMap<String, Value> = serde_json::from_value(use_case_json)?;
-
-        // Merge extra fields into top-level HashMap
-        if let Some(Value::Object(extra_map)) = data.remove("extra") {
-            for (key, value) in extra_map {
-                data.insert(key, value);
-            }
-        }
-
-        // Add generated timestamp
-        data.insert(
-            "generated_at".to_string(),
-            json!(chrono::Utc::now()
-                .format("%Y-%m-%d %H:%M:%S UTC")
-                .to_string()),
-        );
-
-        // Add snake_case version of title for class names
-        if let Some(Value::String(title)) = data.get("title") {
-            data.insert("title_snake_case".to_string(), json!(to_snake_case(title)));
-        }
-
-        // Render using test template for the configured language
-        self.template_engine
-            .render_test(&self.config.generation.test_language, &data)
-    }
-
-    /// Get the file extension for test files based on test language
-    fn get_test_file_extension(&self) -> String {
-        match self.config.generation.test_language.as_str() {
-            "python" => "py".to_string(),
-            "javascript" => "js".to_string(),
-            "rust" => "rs".to_string(),
-            _ => "txt".to_string(), // fallback
-        }
+        self.test_generator.generate(use_case)
     }
 
     /// Generate overview file
     fn generate_overview(&self) -> Result<()> {
-        let mut data = HashMap::new();
+        self.overview_generator.generate(&self.use_cases)
+    }
+}
 
-        // Basic counts
-        data.insert("total_use_cases".to_string(), json!(self.use_cases.len()));
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::core::application::testing::test_helpers::init_test_project;
+    use serial_test::serial;
+    use std::env;
+    use std::fs;
+    use std::path::Path;
+    use tempfile::TempDir;
 
-        // Project name and generated date
-        data.insert("project_name".to_string(), json!(self.config.project.name));
-        data.insert(
-            "generated_date".to_string(),
-            json!(chrono::Utc::now().format("%Y-%m-%d").to_string()),
-        );
+    #[test]
+    #[serial]
+    fn test_interactive_workflow_simulation() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        env::set_current_dir(&temp_dir)?;
 
-        // Group use cases by category
-        let mut categories_map: HashMap<String, Vec<serde_json::Map<String, Value>>> =
-            HashMap::new();
-        for uc in &self.use_cases {
-            categories_map
-                .entry(uc.category.clone())
-                .or_default()
-                .push({
-                    let mut uc_data = serde_json::Map::new();
-                    uc_data.insert("id".to_string(), json!(uc.id));
-                    uc_data.insert("title".to_string(), json!(uc.title));
-                    uc_data.insert(
-                        "aggregated_status".to_string(),
-                        json!(uc.status().display_name()),
-                    );
-                    uc_data.insert("priority".to_string(), json!(uc.priority.to_string()));
-                    uc_data
-                });
+        init_test_project(None)?;
+
+        let mut coordinator = UseCaseApplicationService::load()?;
+        let default_methodology = coordinator.config.templates.default_methodology.clone();
+
+        let use_case_id = coordinator.create_use_case_with_methodology(
+            "Interactive Test".to_string(),
+            "testing".to_string(),
+            Some("Created via interactive mode".to_string()),
+            &default_methodology,
+        )?;
+        assert_eq!(use_case_id, "UC-TES-001");
+
+        let use_case_ids = coordinator.get_all_use_case_ids()?;
+        assert_eq!(use_case_ids.len(), 1);
+        assert!(use_case_ids.contains(&"UC-TES-001".to_string()));
+
+        let final_use_case_ids = coordinator.get_all_use_case_ids()?;
+        assert_eq!(final_use_case_ids.len(), 1);
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_interactive_category_suggestions() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        env::set_current_dir(&temp_dir)?;
+
+        init_test_project(None)?;
+        let mut coordinator = UseCaseApplicationService::load()?;
+        let default_methodology = coordinator.config.templates.default_methodology.clone();
+
+        let categories = coordinator.get_all_categories()?;
+        assert!(categories.is_empty());
+
+        coordinator.create_use_case_with_methodology(
+            "Auth Use Case".to_string(),
+            "authentication".to_string(),
+            None,
+            &default_methodology,
+        )?;
+
+        coordinator.create_use_case_with_methodology(
+            "API Use Case".to_string(),
+            "api".to_string(),
+            None,
+            &default_methodology,
+        )?;
+
+        coordinator.create_use_case_with_methodology(
+            "Another Auth Use Case".to_string(),
+            "authentication".to_string(),
+            None,
+            &default_methodology,
+        )?;
+
+        let categories = coordinator.get_all_categories()?;
+        assert_eq!(categories.len(), 2);
+        assert_eq!(categories[0], "api");
+        assert_eq!(categories[1], "authentication");
+
+        let use_case_ids = coordinator.get_all_use_case_ids()?;
+        assert_eq!(use_case_ids.len(), 3);
+        assert!(use_case_ids.contains(&"UC-AUT-001".to_string()));
+        assert!(use_case_ids.contains(&"UC-API-001".to_string()));
+        assert!(use_case_ids.contains(&"UC-AUT-002".to_string()));
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_complete_interactive_workflow_simulation() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        env::set_current_dir(&temp_dir)?;
+
+        init_test_project(Some("rust".to_string()))?;
+
+        let mut coordinator = UseCaseApplicationService::load()?;
+        let default_methodology = coordinator.config.templates.default_methodology.clone();
+
+        let _uc1 = coordinator.create_use_case_with_methodology(
+            "User Authentication".to_string(),
+            "auth".to_string(),
+            Some("Handle user login and logout".to_string()),
+            &default_methodology,
+        )?;
+
+        let _uc2 = coordinator.create_use_case_with_methodology(
+            "Data Export".to_string(),
+            "api".to_string(),
+            Some("Export data in various formats".to_string()),
+            &default_methodology,
+        )?;
+
+        let all_use_cases = coordinator.get_all_use_case_ids()?;
+        assert_eq!(all_use_cases.len(), 2);
+
+        let categories = coordinator.get_all_categories()?;
+        assert_eq!(categories.len(), 2);
+        assert!(categories.contains(&"api".to_string()));
+        assert!(categories.contains(&"auth".to_string()));
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_custom_fields_end_to_end_flow() -> Result<()> {
+        // Skip test if source templates can't be found
+        // This can happen when running all tests together
+        if crate::config::TemplateManager::find_source_templates_dir().is_err() {
+            eprintln!(
+                "SKIPPING test_custom_fields_end_to_end_flow: source templates not available"
+            );
+            return Ok(());
         }
 
-        // Convert to array format expected by template
-        let categories: Vec<serde_json::Map<String, Value>> = categories_map
-            .into_iter()
-            .map(|(category_name, use_cases)| {
-                let mut cat = serde_json::Map::new();
-                cat.insert("category_name".to_string(), json!(category_name));
-                cat.insert("use_cases".to_string(), json!(use_cases));
-                cat
-            })
-            .collect();
+        let temp_dir = TempDir::new()?;
+        let temp_path = temp_dir.path().to_path_buf();
+        env::set_current_dir(&temp_path)?;
 
-        data.insert("categories".to_string(), json!(categories));
+        // Initialize project with templates (includes feature methodology with custom fields)
+        init_test_project(None)?;
 
-        let overview_content = self.template_engine.render_overview(&data)?;
-        self.file_operations.save_overview(&overview_content)?;
+        // Verify templates were copied - if not, fail with clear message
+        let templates_dir = Path::new(".config/.mucm/template-assets");
+        if !templates_dir.exists() {
+            anyhow::bail!(
+                "Templates were not copied. Template dir {:?} doesn't exist",
+                templates_dir
+            );
+        }
+
+        let feature_dir = templates_dir.join("feature");
+        if !feature_dir.exists() {
+            anyhow::bail!("Feature methodology not found at {:?}", feature_dir);
+        }
+
+        // Use the existing "feature" methodology which already has custom fields defined
+        // (user_story, acceptance_criteria, epic_link, sprint, story_points, etc.)
+        let mut coordinator = UseCaseApplicationService::load()?;
+
+        let use_case_id = coordinator.create_use_case_with_methodology(
+            "Test Custom Fields".to_string(),
+            "testing".to_string(),
+            Some("Testing custom fields integration".to_string()),
+            "feature",
+        )?;
+
+        // Verify the use case was created
+        assert_eq!(use_case_id, "UC-TES-001");
+
+        // Load the use case from TOML to verify custom fields were saved
+        let loaded_use_case = coordinator
+            .repository
+            .load_by_id(&use_case_id)?
+            .expect("Use case should exist");
+
+        // Verify custom fields from feature methodology are present
+        // Check for required fields (from source-templates/methodologies/feature/config.toml)
+        assert!(
+            loaded_use_case.extra.contains_key("user_story"),
+            "user_story should be present (required field). Found keys: {:?}",
+            loaded_use_case.extra.keys().collect::<Vec<_>>()
+        );
+        assert!(
+            loaded_use_case.extra.contains_key("acceptance_criteria"),
+            "acceptance_criteria should be present (required field)"
+        );
+
+        // Note: Optional fields with null/empty values are not saved to TOML
+        // This is intentional - TOML doesn't support null values like JSON does
+        // Optional fields will only appear in the loaded use case if they have actual values
+
+        // Verify TOML file exists and contains custom fields
+        let toml_dir = Path::new(coordinator.config.directories.get_toml_dir()).join("testing");
+        let toml_path = toml_dir.join("UC-TES-001.toml");
+        assert!(
+            toml_path.exists(),
+            "TOML file should exist at {:?}",
+            toml_path
+        );
+
+        let toml_content = fs::read_to_string(&toml_path)?;
+        assert!(
+            toml_content.contains("user_story"),
+            "TOML should contain user_story field"
+        );
+        assert!(
+            toml_content.contains("acceptance_criteria"),
+            "TOML should contain acceptance_criteria field"
+        );
+
+        // Verify markdown was generated
+        let md_path = Path::new(&coordinator.config.directories.use_case_dir)
+            .join("testing")
+            .join("UC-TES-001.md");
+        assert!(
+            md_path.exists(),
+            "Markdown file should exist at {:?}",
+            md_path
+        );
+
+        let md_content = fs::read_to_string(&md_path)?;
+        assert!(
+            md_content.contains("Test Custom Fields"),
+            "Markdown should contain title"
+        );
 
         Ok(())
     }
