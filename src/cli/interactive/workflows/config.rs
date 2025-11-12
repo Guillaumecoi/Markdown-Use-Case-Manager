@@ -1,60 +1,21 @@
-//! # Interactive Settings Configuration
+//! # Configuration Workflow
 //!
-//! Menu-driven settings configuration for interactive CLI mode.
-//! Allows users to modify project configuration through guided prompts.
+//! Interactive configuration management for project settings.
+//! Handles general project configuration excluding methodologies and use cases.
 
 use anyhow::Result;
 use inquire::{Confirm, Select, Text};
 
-use super::ui::UI;
-use crate::cli::standard::CliRunner;
+use crate::cli::interactive::ui::UI;
 use crate::config::{Config, TemplateManager};
 use crate::core::LanguageRegistry;
 
-/// Handle settings configuration
-pub struct Settings;
+/// Configuration workflow handler
+pub struct ConfigWorkflow;
 
-impl Settings {
-    /// Interactive settings configuration menu
-    pub fn configure(_runner: &mut CliRunner) -> Result<()> {
-        UI::clear_screen()?;
-        UI::show_section_header("Configuration Settings", "⚙️")?;
-
-        // Load current config
-        let mut config = Config::load()?;
-
-        loop {
-            let options = vec![
-                "Project Information",
-                "Directory Settings",
-                "Generation Settings",
-                "Metadata Configuration",
-                "View Current Config",
-                "Save & Exit",
-            ];
-
-            let choice = Select::new("What would you like to configure?", options).prompt()?;
-
-            match choice {
-                "Project Information" => Self::configure_project_info(&mut config)?,
-                "Directory Settings" => Self::configure_directories(&mut config)?,
-                "Generation Settings" => Self::configure_generation(&mut config)?,
-                "Metadata Configuration" => Self::configure_metadata(&mut config)?,
-                "View Current Config" => Self::view_config(&config)?,
-                "Save & Exit" => {
-                    Self::save_config(&config)?;
-                    UI::pause_for_input()?;
-                    break;
-                }
-                _ => {}
-            }
-        }
-
-        Ok(())
-    }
-
+impl ConfigWorkflow {
     /// Configure project information
-    fn configure_project_info(config: &mut Config) -> Result<()> {
+    pub fn configure_project_info(config: &mut Config) -> Result<()> {
         println!("\n📋 Project Information");
         println!("────────────────────────");
 
@@ -70,7 +31,7 @@ impl Settings {
     }
 
     /// Configure directory settings
-    fn configure_directories(config: &mut Config) -> Result<()> {
+    pub fn configure_directories(config: &mut Config) -> Result<()> {
         println!("\n📁 Directory Settings");
         println!("───────────────────────");
 
@@ -88,7 +49,7 @@ impl Settings {
     }
 
     /// Configure generation settings
-    fn configure_generation(config: &mut Config) -> Result<()> {
+    pub fn configure_generation(config: &mut Config) -> Result<()> {
         println!("\n🔧 Generation Settings");
         println!("────────────────────────");
 
@@ -109,7 +70,7 @@ impl Settings {
     }
 
     /// Configure metadata settings
-    fn configure_metadata(config: &mut Config) -> Result<()> {
+    pub fn configure_metadata(config: &mut Config) -> Result<()> {
         println!("\n📊 Metadata Configuration");
         println!("────────────────────────────");
 
@@ -127,8 +88,30 @@ impl Settings {
         Ok(())
     }
 
+    /// Change programming language setting
+    pub fn change_programming_language() -> Result<()> {
+        UI::show_section_header("Change Programming Language", "🔧")?;
+
+        let languages = crate::controller::ProjectController::get_available_languages()?;
+        let mut language_options = vec!["none".to_string()];
+        language_options.extend(languages.items);
+
+        let language = Select::new("Select new programming language:", language_options)
+            .with_help_message("Choose 'none' to disable test scaffolding")
+            .prompt()?;
+
+        // Update config
+        let mut config = Config::load()?;
+        config.generation.test_language = language;
+
+        config.save_in_dir(".")?;
+        UI::show_success("✅ Programming language updated successfully!")?;
+
+        Ok(())
+    }
+
     /// View current configuration
-    fn view_config(config: &Config) -> Result<()> {
+    pub fn view_config(config: &Config) -> Result<()> {
         println!("\n📄 Current Configuration");
         println!("═══════════════════════════");
         println!(
@@ -153,7 +136,7 @@ impl Settings {
     }
 
     /// Save configuration
-    fn save_config(config: &Config) -> Result<()> {
+    pub fn save_config(config: &Config) -> Result<()> {
         config.save_in_dir(".")?;
         UI::show_success("✅ Configuration saved successfully!")?;
         Ok(())

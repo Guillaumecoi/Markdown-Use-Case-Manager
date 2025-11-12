@@ -26,7 +26,7 @@ use clap::Parser;
 use crate::controller::DisplayResult;
 use crate::presentation::DisplayResultFormatter;
 use args::{Cli, Commands};
-use interactive::InteractiveSession;
+use interactive::run_interactive_session;
 use standard::{
     handle_create_command, handle_init_command, handle_languages_command, handle_list_command,
     handle_list_methodologies_command, handle_methodology_info_command, handle_regenerate_command,
@@ -67,8 +67,7 @@ pub fn run() -> Result<()> {
         || matches!(cli.command, Some(Commands::Interactive))
         || cli.command.is_none()
     {
-        let mut session = InteractiveSession::new();
-        return session.run();
+        return run_interactive_session();
     }
 
     // Handle regular commands
@@ -131,8 +130,7 @@ pub fn run() -> Result<()> {
         }
         Commands::Interactive => {
             // This case is handled above, but included for completeness
-            let mut session = InteractiveSession::new();
-            session.run()
+            run_interactive_session()
         }
     }
 }

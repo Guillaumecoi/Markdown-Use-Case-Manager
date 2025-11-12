@@ -174,18 +174,6 @@ impl CliRunner {
         controller.show_status()
     }
 
-    /// Get all categories currently in use.
-    ///
-    /// Returns a list of all categories that have use cases assigned to them.
-    ///
-    /// # Returns
-    /// Returns a vector of category name strings.
-    pub fn get_categories(&mut self) -> Result<Vec<String>> {
-        let controller = self.ensure_use_case_controller()?;
-        let options = controller.get_categories()?;
-        Ok(options.items)
-    }
-
     /// Display available programming languages.
     ///
     /// Shows the list of supported programming languages for code templates.

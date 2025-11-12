@@ -7,12 +7,16 @@
 //!
 //! This module contains the interactive CLI implementation with a layered architecture:
 //! - `runner.rs`: Business logic coordinator for interactive workflows
-//! - `session.rs`: Interactive session management and main menu loop
-//! - `initialization.rs`: Project initialization wizard
+//! - `selectors.rs`: Pure data selection functions for UI presentation
 //! - `ui.rs`: Presentation layer for interactive prompts and displays
-//! - `menu.rs`: Menu navigation and selection logic
-//! - `settings.rs`: Interactive settings configuration
-//! - `workflows.rs`: Specialized workflow handlers
+//! - `menus/`: Menu navigation and selection systems
+//!   - `menu.rs`: Main menu navigation and selection logic
+//!   - `settings.rs`: Settings configuration submenu
+//! - `workflows/`: Specialized workflow handlers
+//!   - `initialization.rs`: Project initialization wizard
+//!   - `config.rs`: General configuration workflow
+//!   - `methodology.rs`: Methodology management workflow
+//!   - `use_case.rs`: Use case operations workflow
 //!
 //! ## Interactive Workflows
 //!
@@ -23,13 +27,11 @@
 //! - **Main Menu**: Central navigation hub for all interactive features
 
 // Private modules - used only within CLI interactive
-mod initialization;
-mod menu;
 mod runner;
-mod session;
-mod settings;
+mod selectors;
 mod ui;
 mod workflows;
+mod menus;
 
 // Public exports
-pub use session::InteractiveSession;
+pub use menus::menu::run_interactive_session;
