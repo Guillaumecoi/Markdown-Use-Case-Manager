@@ -1,3 +1,8 @@
+//! # Interactive Project Initialization
+//!
+//! Guided project setup wizard for interactive CLI mode.
+//! Walks users through configuring their project with language, methodologies, and templates.
+
 use anyhow::Result;
 use inquire::{Confirm, MultiSelect, Select};
 

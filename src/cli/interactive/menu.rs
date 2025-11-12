@@ -1,3 +1,8 @@
+//! # Interactive Menu System
+//!
+//! Menu navigation and selection logic for interactive CLI mode.
+//! Provides user-friendly menu interfaces for workflow selection.
+
 use anyhow::Result;
 use inquire::Select;
 

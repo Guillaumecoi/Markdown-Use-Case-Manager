@@ -1,3 +1,8 @@
+//! # Interactive Session Manager
+//!
+//! Manages the main interactive session loop and menu navigation.
+//! Coordinates between different interactive workflows and maintains session state.
+
 use anyhow::Result;
 
 use crate::cli::interactive::initialization::Initialization;
@@ -20,7 +25,7 @@ impl InteractiveSession {
         }
     }
 
-    /// Run the interactive session
+    /// Run the interactive session main loop
     pub fn run(&mut self) -> Result<()> {
         // Check if project is initialized, if not offer to initialize
         if Initialization::check_and_initialize().is_err() {

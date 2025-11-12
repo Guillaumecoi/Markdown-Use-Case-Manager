@@ -1,3 +1,8 @@
+//! # Interactive Settings Configuration
+//!
+//! Menu-driven settings configuration for interactive CLI mode.
+//! Allows users to modify project configuration through guided prompts.
+
 use anyhow::Result;
 use inquire::{Confirm, Select, Text};
 
@@ -10,7 +15,7 @@ use crate::core::LanguageRegistry;
 pub struct Settings;
 
 impl Settings {
-    /// Interactive settings configuration
+    /// Interactive settings configuration menu
     pub fn configure(_runner: &mut CliRunner) -> Result<()> {
         UI::clear_screen()?;
         UI::show_section_header("Configuration Settings", "⚙️")?;

@@ -1,3 +1,8 @@
+//! # Interactive Workflows
+//!
+//! Specialized guided workflows for complex operations in interactive CLI mode.
+//! Provides step-by-step assistance for multi-step tasks like use case creation.
+
 use anyhow::Result;
 use inquire::{Confirm, Select, Text};
 
