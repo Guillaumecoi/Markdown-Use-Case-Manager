@@ -1,4 +1,4 @@
-use crate::cli::runner::CliRunner;
+use crate::cli::standard::CliRunner;
 use anyhow::Result;
 
 /// Handles the 'languages' CLI command.

@@ -17,21 +17,19 @@
 /// 4. Handlers perform CLI-specific tasks and call runner methods.
 // Private modules
 mod args;
-mod commands;
 mod interactive;
-mod runner;
+mod standard;
 
 use anyhow::Result;
 use clap::Parser;
 
 use args::{Cli, Commands};
-use commands::{
+use interactive::InteractiveSession;
+use standard::{
     handle_create_command, handle_init_command, handle_languages_command, handle_list_command,
     handle_list_methodologies_command, handle_methodology_info_command, handle_regenerate_command,
-    handle_status_command,
+    handle_status_command, CliRunner,
 };
-use interactive::InteractiveSession;
-use runner::CliRunner;
 use crate::controller::DisplayResult;
 use crate::presentation::DisplayResultFormatter;
 
