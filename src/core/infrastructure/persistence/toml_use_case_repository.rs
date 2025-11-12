@@ -28,9 +28,14 @@ impl UseCaseRepository for TomlUseCaseRepository {
         let toml_dir = Path::new(self.config.directories.get_toml_dir()).join(&category_snake);
         fs::create_dir_all(&toml_dir)?;
 
+        // Filter out Null values from extra fields before serialization
+        // TOML doesn't support null values like JSON does
+        let mut use_case_for_toml = use_case.clone();
+        use_case_for_toml.extra.retain(|_, v| !v.is_null());
+
         // Save TOML file (source of truth)
         let toml_path = toml_dir.join(format!("{}.toml", use_case.id));
-        let toml_content = toml::to_string_pretty(use_case)?;
+        let toml_content = toml::to_string_pretty(&use_case_for_toml)?;
         fs::write(&toml_path, toml_content)?;
 
         Ok(())

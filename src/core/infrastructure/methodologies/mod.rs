@@ -189,6 +189,8 @@ impl MethodologyDefinition {
         struct ConfigData {
             template: TemplateConfig,
             #[serde(default)]
+            generation: Option<serde::de::IgnoredAny>,
+            #[serde(default)]
             custom_fields: HashMap<String, CustomFieldConfig>,
         }
 
