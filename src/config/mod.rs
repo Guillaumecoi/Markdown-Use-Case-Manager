@@ -189,7 +189,6 @@ impl Config {
             TemplateConfig,
         };
         use crate::core::MethodologyRegistry;
-        use std::collections::HashMap;
         use std::fs;
 
         // Try to find source templates directory, but don't fail if not found
@@ -218,7 +217,6 @@ impl Config {
                         ],
                         default_methodology: "feature".to_string(),
                     },
-                    base_fields: HashMap::new(),
                     generation: GenerationConfig {
                         test_language: "python".to_string(),
                         auto_generate_tests: false,

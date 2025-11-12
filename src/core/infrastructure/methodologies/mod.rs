@@ -53,6 +53,9 @@ pub trait Methodology {
 
     /// Returns the preferred documentation style for this methodology.
     fn preferred_style(&self) -> &str;
+
+    /// Returns the custom fields specific to this methodology.
+    fn custom_fields(&self) -> &HashMap<String, CustomFieldConfig>;
 }
 
 /// Represents a documentation level within a methodology.
@@ -67,6 +70,41 @@ pub struct DocumentationLevel {
     pub filename: String,
     /// Description of what this level provides
     pub description: String,
+}
+
+/// Configuration for custom fields specific to a methodology.
+///
+/// Custom fields extend the standard use case fields and are only available
+/// in specific methodologies. They allow methodologies to capture specialized
+/// information relevant to their documentation style.
+///
+/// # Example
+///
+/// ```toml
+/// [custom_fields.business_value]
+/// label = "Business Value"
+/// type = "string"
+/// required = false
+/// default = "To be determined"
+///
+/// [custom_fields.roi_estimate]
+/// label = "ROI Estimate"
+/// type = "string"
+/// required = false
+/// ```
+#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
+pub struct CustomFieldConfig {
+    /// Human-readable label displayed in prompts and documentation
+    pub label: String,
+    /// Data type of the field: "string", "array", "number", "boolean"
+    #[serde(rename = "type")]
+    pub field_type: String,
+    /// Whether this field must be provided when creating a use case with this methodology
+    #[serde(default)]
+    pub required: bool,
+    /// Default value if none provided (None means no default)
+    #[serde(default)]
+    pub default: Option<String>,
 }
 
 /// A methodology definition loaded from external TOML configuration.
@@ -94,6 +132,8 @@ pub struct MethodologyDefinition {
     levels: Vec<DocumentationLevel>,
     /// Preferred documentation style
     preferred_style: String,
+    /// Custom fields specific to this methodology
+    custom_fields: HashMap<String, CustomFieldConfig>,
 }
 
 impl MethodologyDefinition {
@@ -148,6 +188,8 @@ impl MethodologyDefinition {
         #[derive(serde::Deserialize)]
         struct ConfigData {
             template: TemplateConfig,
+            #[serde(default)]
+            custom_fields: HashMap<String, CustomFieldConfig>,
         }
 
         #[derive(serde::Deserialize)]
@@ -170,6 +212,7 @@ impl MethodologyDefinition {
             key_features: info_data.usage.key_features,
             levels: info_data.levels,
             preferred_style: config_data.template.preferred_style,
+            custom_fields: config_data.custom_fields,
         })
     }
 }
@@ -201,6 +244,10 @@ impl Methodology for MethodologyDefinition {
 
     fn preferred_style(&self) -> &str {
         &self.preferred_style
+    }
+
+    fn custom_fields(&self) -> &HashMap<String, CustomFieldConfig> {
+        &self.custom_fields
     }
 }
 

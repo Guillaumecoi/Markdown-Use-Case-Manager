@@ -27,7 +27,6 @@
 //! with methodology-specific fields and generation settings.
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// Main configuration structure for MUCM projects.
 ///
@@ -77,9 +76,6 @@ pub struct Config {
     pub directories: DirectoryConfig,
     /// Methodology and language template settings
     pub templates: TemplateConfig,
-    /// Standard fields available to all use cases
-    #[serde(default)]
-    pub base_fields: HashMap<String, BaseFieldConfig>,
     /// Auto-generated metadata settings
     pub metadata: MetadataConfig,
     /// Code generation preferences and settings
@@ -151,74 +147,6 @@ pub struct TemplateConfig {
     /// Default programming language for test template generation
     /// Must be one of the supported languages (rust, python, javascript)
     pub test_language: String,
-}
-
-/// Per-methodology template configuration.
-///
-/// This configuration is loaded from `.config/.mucm/methodologies/{name}.toml`
-/// and provides methodology-specific settings that extend the base configuration.
-/// Note: Metadata configuration is handled in the main config, not per-methodology.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MethodologyConfig {
-    /// Template information and preferences for this methodology
-    pub template: MethodologyTemplateInfo,
-    /// Code generation settings specific to this methodology
-    pub generation: GenerationConfig,
-    /// Custom fields specific to this methodology (beyond base fields)
-    #[serde(default)]
-    pub custom_fields: HashMap<String, CustomFieldConfig>,
-}
-
-/// Template information for a specific methodology.
-///
-/// Contains metadata about a methodology's templates and preferred usage patterns.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MethodologyTemplateInfo {
-    /// Unique identifier for this methodology (used in file paths and commands)
-    pub name: String,
-    /// Human-readable description of when and how to use this methodology
-    pub description: String,
-    /// Preferred/recommended style for this methodology: "simple", "normal", or "detailed"
-    /// This determines which template variant (.hbs file) is used by default
-    pub preferred_style: String,
-}
-
-/// Configuration for base fields that all use cases have.
-///
-/// These fields are available in all methodologies and are defined in the main config.
-/// Base fields extend beyond the mandatory id/title/category fields.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct BaseFieldConfig {
-    /// Human-readable label displayed in prompts and documentation
-    pub label: String,
-    /// Data type of the field: "string", "array", "number", "boolean"
-    #[serde(rename = "type")]
-    pub field_type: String,
-    /// Whether this field must be provided when creating a use case
-    #[serde(default)]
-    pub required: bool,
-    /// Default value if none provided (None means no default)
-    #[serde(default)]
-    pub default: Option<String>,
-}
-
-/// Configuration for custom fields specific to a methodology.
-///
-/// These fields extend the base fields and are only available in specific methodologies.
-/// Custom fields allow methodologies to have specialized data collection requirements.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CustomFieldConfig {
-    /// Human-readable label displayed in prompts and documentation
-    pub label: String,
-    /// Data type of the field: "string", "array", "number", "boolean"
-    #[serde(rename = "type")]
-    pub field_type: String,
-    /// Whether this field must be provided when creating a use case with this methodology
-    #[serde(default)]
-    pub required: bool,
-    /// Default value if none provided (None means no default)
-    #[serde(default)]
-    pub default_value: Option<String>,
 }
 
 /// Configuration for code generation and test creation settings.

@@ -4,7 +4,6 @@
 mod application;
 mod domain;
 mod infrastructure;
-mod processors;
 mod utils; // Internal only
 
 // Explicit public exports from private modules
