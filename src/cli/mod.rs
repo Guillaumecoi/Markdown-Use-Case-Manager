@@ -23,6 +23,8 @@ mod standard;
 use anyhow::Result;
 use clap::Parser;
 
+use crate::controller::DisplayResult;
+use crate::presentation::DisplayResultFormatter;
 use args::{Cli, Commands};
 use interactive::InteractiveSession;
 use standard::{
@@ -30,8 +32,6 @@ use standard::{
     handle_list_methodologies_command, handle_methodology_info_command, handle_regenerate_command,
     handle_status_command, CliRunner,
 };
-use crate::controller::DisplayResult;
-use crate::presentation::DisplayResultFormatter;
 
 /// Execute a command with proper error handling and colored output
 fn execute_command<F>(command_fn: F)
@@ -94,7 +94,9 @@ pub fn run() -> Result<()> {
             description,
             methodology,
         } => {
-            execute_command(|| handle_create_command(&mut runner, title, category, description, methodology));
+            execute_command(|| {
+                handle_create_command(&mut runner, title, category, description, methodology)
+            });
             Ok(())
         }
         Commands::List => {
@@ -118,7 +120,9 @@ pub fn run() -> Result<()> {
             methodology,
             all,
         } => {
-            execute_command(|| handle_regenerate_command(&mut runner, use_case_id, methodology, all));
+            execute_command(|| {
+                handle_regenerate_command(&mut runner, use_case_id, methodology, all)
+            });
             Ok(())
         }
         Commands::Status => {

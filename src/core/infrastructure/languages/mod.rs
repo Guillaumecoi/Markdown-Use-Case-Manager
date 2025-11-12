@@ -24,10 +24,10 @@
 //! The `template_file` references a Handlebars template in the same directory that
 //! contains the test generation template for that language.
 
+use anyhow::Context;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-use anyhow::Context;
 
 /// Represents a programming language supported by the system.
 ///
@@ -103,11 +103,14 @@ impl LanguageDefinition {
         let data: TomlData = toml::from_str(&content)?;
 
         // Read the template file relative to the info.toml location
-        let template_path = info_path.as_ref().parent()
+        let template_path = info_path
+            .as_ref()
+            .parent()
             .ok_or_else(|| anyhow::anyhow!("Invalid info.toml path: no parent directory"))?
             .join(&data.template_file);
-        let test_template = fs::read_to_string(&template_path)
-            .with_context(|| format!("Failed to read template file: {}", template_path.display()))?;
+        let test_template = fs::read_to_string(&template_path).with_context(|| {
+            format!("Failed to read template file: {}", template_path.display())
+        })?;
 
         Ok(Self {
             name: data.name,
@@ -181,8 +184,12 @@ impl LanguageRegistry {
         let languages_dir = templates_dir.as_ref().join("languages");
 
         if languages_dir.exists() {
-            for entry in fs::read_dir(&languages_dir)
-                .with_context(|| format!("Failed to read languages directory: {}", languages_dir.display()))? {
+            for entry in fs::read_dir(&languages_dir).with_context(|| {
+                format!(
+                    "Failed to read languages directory: {}",
+                    languages_dir.display()
+                )
+            })? {
                 let entry = entry?;
                 let info_path = entry.path().join("info.toml");
 
@@ -199,7 +206,11 @@ impl LanguageRegistry {
                         }
                         Err(e) => {
                             // Log the error but continue loading other languages
-                            eprintln!("Warning: Failed to load language from {}: {}", info_path.display(), e);
+                            eprintln!(
+                                "Warning: Failed to load language from {}: {}",
+                                info_path.display(),
+                                e
+                            );
                         }
                     }
                 }
@@ -233,7 +244,8 @@ impl LanguageRegistry {
     /// # Returns
     /// A `Vec<String>` containing the primary names of all loaded languages
     pub fn available_languages(&self) -> Vec<String> {
-        self.languages.keys()
+        self.languages
+            .keys()
             .filter(|k| {
                 if let Some(lang) = self.languages.get(*k) {
                     !lang.aliases().contains(&k.as_str())
@@ -273,7 +285,13 @@ mod tests {
     use tempfile::TempDir;
 
     /// Helper function to create a temporary language directory with info.toml and template
-    fn create_test_language(dir: &std::path::Path, name: &str, aliases: &[&str], extension: &str, template_content: &str) -> std::path::PathBuf {
+    fn create_test_language(
+        dir: &std::path::Path,
+        name: &str,
+        aliases: &[&str],
+        extension: &str,
+        template_content: &str,
+    ) -> std::path::PathBuf {
         let lang_dir = dir.join(name);
         fs::create_dir(&lang_dir).unwrap();
 
@@ -281,16 +299,21 @@ mod tests {
         let aliases_str = if aliases.is_empty() {
             "[]".to_string()
         } else {
-            format!("[{}]", aliases.iter().map(|a| format!("\"{}\"", a)).collect::<Vec<_>>().join(", "))
+            format!(
+                "[{}]",
+                aliases
+                    .iter()
+                    .map(|a| format!("\"{}\"", a))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )
         };
         let info_content = format!(
             r#"name = "{}"
 aliases = {}
 file_extension = "{}"
 template_file = "test.hbs""#,
-            name,
-            aliases_str,
-            extension
+            name, aliases_str, extension
         );
         fs::write(lang_dir.join("info.toml"), info_content).unwrap();
 
@@ -303,7 +326,13 @@ template_file = "test.hbs""#,
     #[test]
     fn test_language_definition_from_toml() {
         let temp_dir = TempDir::new().unwrap();
-        let lang_dir = create_test_language(&temp_dir.path(), "testlang", &["tl"], "tl", "template content");
+        let lang_dir = create_test_language(
+            &temp_dir.path(),
+            "testlang",
+            &["tl"],
+            "tl",
+            "template content",
+        );
 
         let result = LanguageDefinition::from_toml(lang_dir.join("info.toml"));
         assert!(result.is_ok());
@@ -330,7 +359,10 @@ template_file = "test.hbs""#;
 
         let result = LanguageDefinition::from_toml(lang_dir.join("info.toml"));
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Failed to read template file"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Failed to read template file"));
     }
 
     #[test]
@@ -390,7 +422,10 @@ template_file = "test.hbs""#;
 
         let result = LanguageRegistry::new_dynamic(&temp_dir.path());
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Languages directory not found"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Languages directory not found"));
     }
 
     #[test]
@@ -439,7 +474,13 @@ template_file = "test.hbs""#;
         fs::create_dir(&languages_dir).unwrap();
 
         create_test_language(&languages_dir, "lang1", &["alias1"], "ext1", "template1");
-        create_test_language(&languages_dir, "lang2", &["alias2", "alias2b"], "ext2", "template2");
+        create_test_language(
+            &languages_dir,
+            "lang2",
+            &["alias2", "alias2b"],
+            "ext2",
+            "template2",
+        );
 
         let registry = LanguageRegistry::new_dynamic(&temp_dir.path()).unwrap();
         let available = registry.available_languages();
@@ -464,10 +505,14 @@ template_file = "test.hbs""#;
         // Create a malformed language directory (missing template file)
         let bad_lang_dir = languages_dir.join("bad");
         fs::create_dir(&bad_lang_dir).unwrap();
-        fs::write(bad_lang_dir.join("info.toml"), r#"name = "bad"
+        fs::write(
+            bad_lang_dir.join("info.toml"),
+            r#"name = "bad"
 aliases = ["b"]
 file_extension = "b"
-template_file = "test.hbs""#).unwrap();
+template_file = "test.hbs""#,
+        )
+        .unwrap();
         // Don't create the template file
 
         let result = LanguageRegistry::new_dynamic(&temp_dir.path());

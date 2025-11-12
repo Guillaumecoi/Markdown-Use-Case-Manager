@@ -24,7 +24,7 @@ use anyhow::Result;
 
 use super::dto::{DisplayResult, MethodologyInfo, SelectionOptions};
 use crate::config::Config;
-use crate::core::{LanguageRegistry, MethodologyRegistry, Methodology};
+use crate::core::{LanguageRegistry, Methodology, MethodologyRegistry};
 
 /// Controller for project initialization and management operations.
 ///
@@ -285,7 +285,8 @@ impl ProjectController {
                     output.push_str(&format!("Error getting available languages: {}\n", e));
                     // Fallback to show built-in languages if discovery fails
                     if let Ok(templates_dir) = TemplateManager::find_source_templates_dir() {
-                        if let Ok(language_registry) = LanguageRegistry::new_dynamic(&templates_dir) {
+                        if let Ok(language_registry) = LanguageRegistry::new_dynamic(&templates_dir)
+                        {
                             let builtin_languages = language_registry.available_languages();
                             output.push_str(&format!(
                                 "Built-in languages: {}\n",

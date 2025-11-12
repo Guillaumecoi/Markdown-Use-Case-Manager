@@ -27,10 +27,10 @@
 //!
 //! The methodology directory also contains Handlebars templates for different documentation styles.
 
+use anyhow::Context;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
-use anyhow::Context;
 
 /// Represents a methodology supported by the system.
 ///
@@ -97,11 +97,11 @@ impl MethodologyDefinition {
             preferred_style: String,
         }
 
-        let content = fs::read_to_string(&config_path)
-            .context("Failed to read methodology config file")?;
+        let content =
+            fs::read_to_string(&config_path).context("Failed to read methodology config file")?;
 
-        let data: TomlData = toml::from_str(&content)
-            .context("Failed to parse methodology config TOML")?;
+        let data: TomlData =
+            toml::from_str(&content).context("Failed to parse methodology config TOML")?;
 
         Ok(Self {
             name: data.template.name,
@@ -162,8 +162,9 @@ impl MethodologyRegistry {
 
         let mut methodologies = HashMap::new();
 
-        for entry in fs::read_dir(&methodologies_dir)
-            .context("Failed to read methodologies directory")? {
+        for entry in
+            fs::read_dir(&methodologies_dir).context("Failed to read methodologies directory")?
+        {
             let entry = entry?;
             let path = entry.path();
 
@@ -178,7 +179,10 @@ impl MethodologyRegistry {
                             }
                             Err(e) => {
                                 // Log the error but continue loading other methodologies
-                                eprintln!("Warning: Failed to load methodology '{}': {}", methodology_name, e);
+                                eprintln!(
+                                    "Warning: Failed to load methodology '{}': {}",
+                                    methodology_name, e
+                                );
                             }
                         }
                     }
@@ -205,7 +209,9 @@ impl MethodologyRegistry {
         }
 
         // Try case-insensitive match
-        self.methodologies.values().find(|m| m.name().eq_ignore_ascii_case(name))
+        self.methodologies
+            .values()
+            .find(|m| m.name().eq_ignore_ascii_case(name))
     }
 
     /// Returns a list of all available methodology names.
@@ -249,7 +255,12 @@ mod tests {
     use tempfile::TempDir;
 
     /// Helper function to create a temporary methodology directory with config.toml
-    fn create_test_methodology(dir: &std::path::Path, name: &str, description: &str, preferred_style: &str) -> std::path::PathBuf {
+    fn create_test_methodology(
+        dir: &std::path::Path,
+        name: &str,
+        description: &str,
+        preferred_style: &str,
+    ) -> std::path::PathBuf {
         let methodology_dir = dir.join(name);
         fs::create_dir(&methodology_dir).unwrap();
 
@@ -272,7 +283,12 @@ overwrite_test_documentation = false"#,
     #[test]
     fn test_methodology_definition_from_toml() {
         let temp_dir = TempDir::new().unwrap();
-        let methodology_dir = create_test_methodology(&temp_dir.path(), "testmethod", "Test description", "detailed");
+        let methodology_dir = create_test_methodology(
+            &temp_dir.path(),
+            "testmethod",
+            "Test description",
+            "detailed",
+        );
 
         let result = MethodologyDefinition::from_toml(methodology_dir.join("config.toml"));
         assert!(result.is_ok());
@@ -347,7 +363,12 @@ overwrite_test_documentation = false"#,
         let methodologies_dir = temp_dir.path().join("methodologies");
         fs::create_dir(&methodologies_dir).unwrap();
 
-        create_test_methodology(&methodologies_dir, "business", "Business-focused", "detailed");
+        create_test_methodology(
+            &methodologies_dir,
+            "business",
+            "Business-focused",
+            "detailed",
+        );
 
         let registry = MethodologyRegistry::new_dynamic(&temp_dir.path()).unwrap();
 

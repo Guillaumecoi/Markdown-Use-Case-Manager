@@ -1,8 +1,8 @@
 // CLI formatters - Presentation layer for displaying data
 
+mod display_result_formatter;
 mod status_formatter;
 mod use_case_formatter;
-mod display_result_formatter;
 
 // Explicit public exports
 pub use display_result_formatter::DisplayResultFormatter;

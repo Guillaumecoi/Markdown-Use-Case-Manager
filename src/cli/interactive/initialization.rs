@@ -50,7 +50,8 @@ impl Initialization {
         let methodology_infos = runner.get_available_methodologies()?; // Get this once for both steps
 
         // Step 3: Select default methodology
-        let default_methodology = Self::select_default_methodology(&selected_methodologies, &methodology_infos)?;
+        let default_methodology =
+            Self::select_default_methodology(&selected_methodologies, &methodology_infos)?;
 
         // Show summary
         Self::show_configuration_summary(&language, &selected_methodologies, &default_methodology)?;
@@ -130,7 +131,10 @@ impl Initialization {
     }
 
     /// Step 3: Select default methodology
-    fn select_default_methodology(selected_methodologies: &[String], methodology_infos: &[MethodologyInfo]) -> Result<String> {
+    fn select_default_methodology(
+        selected_methodologies: &[String],
+        methodology_infos: &[MethodologyInfo],
+    ) -> Result<String> {
         UI::show_step(
             3,
             "Default Methodology",

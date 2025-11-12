@@ -177,15 +177,14 @@ impl Config {
         MethodologyManager::get_recommendations(methodology)
     }
 
-
-
     /// Load default configuration from source-templates/config.toml
     fn load_default_from_template() -> Result<Self> {
         use crate::config::template_manager::TemplateManager;
-        use crate::core::MethodologyRegistry;
         use crate::config::types::{
-            Config, ProjectConfig, DirectoryConfig, TemplateConfig, GenerationConfig, MetadataConfig
+            Config, DirectoryConfig, GenerationConfig, MetadataConfig, ProjectConfig,
+            TemplateConfig,
         };
+        use crate::core::MethodologyRegistry;
         use std::collections::HashMap;
         use std::fs;
 
@@ -287,10 +286,10 @@ impl Default for Config {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serial_test::serial;
-    use tempfile::TempDir;
     use crate::config::TemplateManager;
     use crate::core::LanguageRegistry;
+    use serial_test::serial;
+    use tempfile::TempDir;
 
     /// Helper to initialize a project in a temporary directory with optional language
     fn init_project_with_language(language: Option<String>) -> Result<Config> {
@@ -399,9 +398,10 @@ mod tests {
         assert!(!test_dir.exists(), "Test directory should NOT exist yet");
 
         let templates_dir = Path::new(".config/.mucm").join(Config::TEMPLATES_DIR);
-        
+
         // Check if source templates are available
-        let source_templates_available = crate::config::TemplateManager::find_source_templates_dir().is_ok();
+        let source_templates_available =
+            crate::config::TemplateManager::find_source_templates_dir().is_ok();
         if source_templates_available {
             // Only check for templates if source templates were available
             assert!(templates_dir.exists(), "Templates directory should exist");
@@ -431,9 +431,10 @@ mod tests {
             let python_template = Path::new(".config/.mucm")
                 .join(Config::TEMPLATES_DIR)
                 .join("languages/python/test.hbs");
-            
+
             // Only check for template if source templates are available
-            let source_templates_available = crate::config::TemplateManager::find_source_templates_dir().is_ok();
+            let source_templates_available =
+                crate::config::TemplateManager::find_source_templates_dir().is_ok();
             if source_templates_available {
                 assert!(python_template.exists(), "Python template should exist");
             }
@@ -498,7 +499,8 @@ mod tests {
                     Ok(langs) => {
                         assert!(!langs.is_empty(), "Should have built-in languages");
                         assert!(
-                            langs.contains(&"rust".to_string()) || langs.contains(&"python".to_string())
+                            langs.contains(&"rust".to_string())
+                                || langs.contains(&"python".to_string())
                         );
                     }
                     Err(_) => {
@@ -715,7 +717,8 @@ mod tests {
         let _config = init_project_with_language(Some("rust".to_string()))?;
 
         // Templates should exist only if source templates were available
-        let source_templates_available = crate::config::TemplateManager::find_source_templates_dir().is_ok();
+        let source_templates_available =
+            crate::config::TemplateManager::find_source_templates_dir().is_ok();
         if source_templates_available {
             assert!(Config::check_templates_exist());
         } else {
@@ -756,8 +759,6 @@ mod tests {
 
         Ok(())
     }
-
-
 
     #[test]
     #[serial]

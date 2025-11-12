@@ -119,7 +119,10 @@ Total Use Cases: {{total_use_cases}}
                         for language_name in language_registry.available_languages() {
                             if let Some(language) = language_registry.get(&language_name) {
                                 let template_name = format!("{}_test", language.name());
-                                handlebars.register_template_string(&template_name, language.test_template())?;
+                                handlebars.register_template_string(
+                                    &template_name,
+                                    language.test_template(),
+                                )?;
                                 test_templates.insert(language.name().to_string(), template_name);
                             }
                         }

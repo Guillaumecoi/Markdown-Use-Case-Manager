@@ -192,7 +192,8 @@ impl UseCaseController {
         use_case_id: String,
         methodology: String,
     ) -> Result<DisplayResult> {
-        match self.app_service
+        match self
+            .app_service
             .regenerate_use_case_with_methodology(&use_case_id, &methodology)
         {
             Ok(_) => {

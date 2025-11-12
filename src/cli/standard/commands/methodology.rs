@@ -62,18 +62,16 @@ pub fn handle_regenerate_command(
 ) -> Result<()> {
     match (use_case_id, methodology, all) {
         // No args or --all flag: regenerate all use cases
-        (None, None, _) | (None, Some(_), true) => {
-            match runner.regenerate_all_use_cases() {
-                Ok(_) => {
-                    println!("✅ Regenerated all use case documentation");
-                    Ok(())
-                }
-                Err(e) => {
-                    DisplayResultFormatter::display(&DisplayResult::error(e.to_string()));
-                    std::process::exit(1);
-                }
+        (None, None, _) | (None, Some(_), true) => match runner.regenerate_all_use_cases() {
+            Ok(_) => {
+                println!("✅ Regenerated all use case documentation");
+                Ok(())
             }
-        }
+            Err(e) => {
+                DisplayResultFormatter::display(&DisplayResult::error(e.to_string()));
+                std::process::exit(1);
+            }
+        },
         // Use case ID + methodology: regenerate with different methodology
         (Some(id), Some(method), _) => {
             match runner.regenerate_use_case_with_methodology(id, method) {
@@ -92,18 +90,16 @@ pub fn handle_regenerate_command(
             }
         }
         // Use case ID only: regenerate with current methodology
-        (Some(id), None, _) => {
-            match runner.regenerate_use_case(id.clone()) {
-                Ok(_) => {
-                    println!("✅ Regenerated documentation for {}", id);
-                    Ok(())
-                }
-                Err(e) => {
-                    DisplayResultFormatter::display(&DisplayResult::error(e.to_string()));
-                    std::process::exit(1);
-                }
+        (Some(id), None, _) => match runner.regenerate_use_case(id.clone()) {
+            Ok(_) => {
+                println!("✅ Regenerated documentation for {}", id);
+                Ok(())
             }
-        }
+            Err(e) => {
+                DisplayResultFormatter::display(&DisplayResult::error(e.to_string()));
+                std::process::exit(1);
+            }
+        },
         // --all with methodology but no ID: error (doesn't make sense)
         (None, Some(_), false) => {
             DisplayResultFormatter::display(&DisplayResult::error(

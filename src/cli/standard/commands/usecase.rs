@@ -27,18 +27,21 @@ pub fn handle_create_command(
     methodology: Option<String>,
 ) -> Result<()> {
     let result = match methodology {
-        Some(methodology) => match runner.create_use_case_with_methodology(title, category, description, methodology) {
-            Ok(display_result) => display_result,
-            Err(e) => DisplayResult::error(e.to_string()),
-        },
+        Some(methodology) => {
+            match runner.create_use_case_with_methodology(title, category, description, methodology)
+            {
+                Ok(display_result) => display_result,
+                Err(e) => DisplayResult::error(e.to_string()),
+            }
+        }
         None => match runner.create_use_case(title, category, description) {
             Ok(display_result) => display_result,
             Err(e) => DisplayResult::error(e.to_string()),
         },
     };
-    
+
     DisplayResultFormatter::display(&result);
-    
+
     if result.success {
         Ok(())
     } else {

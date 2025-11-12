@@ -12,7 +12,7 @@
 /// and provides a clean, error-handling facade for CLI command handlers.
 use anyhow::Result;
 
-use crate::controller::{ProjectController, UseCaseController, DisplayResult};
+use crate::controller::{DisplayResult, ProjectController, UseCaseController};
 
 /// CLI runner that delegates to controllers
 /// This is a thin adapter between CLI interface and business logic

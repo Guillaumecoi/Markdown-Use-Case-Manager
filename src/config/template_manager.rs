@@ -445,7 +445,10 @@ mod tests {
 
         let result = TemplateManager::find_source_templates_dir();
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Source templates directory not found"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Source templates directory not found"));
 
         Ok(())
     }
@@ -458,7 +461,10 @@ mod tests {
 
         let result = TemplateManager::copy_templates_to_config(".");
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Config file not found"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Config file not found"));
 
         Ok(())
     }
@@ -475,7 +481,10 @@ mod tests {
 
         let result = TemplateManager::copy_templates_to_config(".");
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Failed to parse config file"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Failed to parse config file"));
 
         Ok(())
     }
@@ -497,7 +506,10 @@ mod tests {
 
         // Verify file was copied
         assert!(dest_dir.join("overview.hbs").exists());
-        assert_eq!(fs::read_to_string(dest_dir.join("overview.hbs"))?, "test content");
+        assert_eq!(
+            fs::read_to_string(dest_dir.join("overview.hbs"))?,
+            "test content"
+        );
 
         Ok(())
     }
@@ -535,9 +547,17 @@ mod tests {
 
         let config = Config::default();
 
-        let result = TemplateManager::copy_methodologies(&source_dir, &config, &dest_templates, &dest_methods);
+        let result = TemplateManager::copy_methodologies(
+            &source_dir,
+            &config,
+            &dest_templates,
+            &dest_methods,
+        );
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Source methodologies directory not found"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Source methodologies directory not found"));
 
         Ok(())
     }
@@ -558,9 +578,17 @@ mod tests {
         let mut config = Config::default();
         config.templates.methodologies = vec!["nonexistent".to_string()];
 
-        let result = TemplateManager::copy_methodologies(&source_dir, &config, &dest_templates, &dest_methods);
+        let result = TemplateManager::copy_methodologies(
+            &source_dir,
+            &config,
+            &dest_templates,
+            &dest_methods,
+        );
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("Methodology 'nonexistent' not found"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("Methodology 'nonexistent' not found"));
 
         Ok(())
     }
@@ -585,9 +613,17 @@ mod tests {
         let mut config = Config::default();
         config.templates.methodologies = vec!["test_method".to_string()];
 
-        let result = TemplateManager::copy_methodologies(&source_dir, &config, &dest_templates, &dest_methods);
+        let result = TemplateManager::copy_methodologies(
+            &source_dir,
+            &config,
+            &dest_templates,
+            &dest_methods,
+        );
         assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("missing config.toml file"));
+        assert!(result
+            .unwrap_err()
+            .to_string()
+            .contains("missing config.toml file"));
 
         Ok(())
     }
@@ -605,7 +641,8 @@ mod tests {
         let config = Config::default();
 
         // Should succeed even without languages directory (it's optional)
-        let result = TemplateManager::copy_language_templates(&source_dir, &config, &dest_templates);
+        let result =
+            TemplateManager::copy_language_templates(&source_dir, &config, &dest_templates);
         assert!(result.is_ok());
 
         Ok(())
@@ -626,7 +663,8 @@ mod tests {
         config.templates.test_language = "nonexistent_lang".to_string();
 
         // Should succeed but log a warning (language templates are optional)
-        let result = TemplateManager::copy_language_templates(&source_dir, &config, &dest_templates);
+        let result =
+            TemplateManager::copy_language_templates(&source_dir, &config, &dest_templates);
         assert!(result.is_ok());
 
         Ok(())
@@ -650,7 +688,10 @@ mod tests {
         assert!(dest_dir.join("file1.txt").exists());
         assert!(dest_dir.join("subdir").join("file2.txt").exists());
         assert_eq!(fs::read_to_string(dest_dir.join("file1.txt"))?, "content1");
-        assert_eq!(fs::read_to_string(dest_dir.join("subdir").join("file2.txt"))?, "content2");
+        assert_eq!(
+            fs::read_to_string(dest_dir.join("subdir").join("file2.txt"))?,
+            "content2"
+        );
 
         Ok(())
     }
@@ -689,8 +730,14 @@ mod tests {
         fs::create_dir_all(source_dir.join("subdir"))?;
         fs::write(source_dir.join("template.hbs"), "template content")?;
         fs::write(source_dir.join("config.toml"), "root config")?;
-        fs::write(source_dir.join("subdir").join("nested.hbs"), "nested template")?;
-        fs::write(source_dir.join("subdir").join("config.toml"), "nested config")?;
+        fs::write(
+            source_dir.join("subdir").join("nested.hbs"),
+            "nested template",
+        )?;
+        fs::write(
+            source_dir.join("subdir").join("config.toml"),
+            "nested config",
+        )?;
 
         TemplateManager::copy_dir_recursive_skip_config(&source_dir, &dest_dir)?;
 

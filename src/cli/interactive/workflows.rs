@@ -8,8 +8,8 @@ use inquire::{Confirm, Select, Text};
 
 use crate::cli::standard::CliRunner;
 use crate::config::{Config, TemplateManager};
-use crate::core::MethodologyRegistry;
 use crate::controller::DisplayResult;
+use crate::core::MethodologyRegistry;
 use crate::presentation::DisplayResultFormatter;
 
 /// Guided workflow for creating a use case
