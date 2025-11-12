@@ -521,60 +521,12 @@ impl UseCaseApplicationService {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::application::testing::test_helpers::init_test_project;
     use serial_test::serial;
     use std::env;
     use std::fs;
     use std::path::Path;
     use tempfile::TempDir;
-
-    /// Helper to initialize a project for tests
-    fn init_test_project(language: Option<String>) -> Result<Config> {
-        use crate::core::LanguageRegistry;
-
-        let config_dir = Path::new(".config/.mucm");
-        if !config_dir.exists() {
-            fs::create_dir_all(&config_dir)?;
-        }
-
-        let mut config = Config::default();
-
-        if let Some(ref lang) = language {
-            // Try to find source templates directory, but don't fail if not found
-            match crate::config::TemplateManager::find_source_templates_dir() {
-                Ok(templates_dir) => {
-                    let language_registry = LanguageRegistry::new_dynamic(&templates_dir)?;
-                    if let Some(lang_def) = language_registry.get(lang) {
-                        let primary_name = lang_def.name().to_string();
-                        config.generation.test_language = primary_name.clone();
-                        config.templates.test_language = primary_name.clone();
-                    } else {
-                        config.generation.test_language = lang.clone();
-                        config.templates.test_language = lang.clone();
-                    }
-                }
-                Err(_) => {
-                    // Source templates not available, just set language directly
-                    config.generation.test_language = lang.clone();
-                    config.templates.test_language = lang.clone();
-                }
-            }
-        }
-
-        config.save_in_dir(".")?;
-
-        // Only try to copy templates if source templates directory exists
-        if language.is_some() {
-            if crate::config::TemplateManager::find_source_templates_dir().is_ok() {
-                Config::copy_templates_to_config_with_language(language)?;
-            }
-        } else {
-            if crate::config::TemplateManager::find_source_templates_dir().is_ok() {
-                Config::copy_templates_to_config_with_language(None)?;
-            }
-        }
-
-        Ok(config)
-    }
 
     #[test]
     #[serial]
