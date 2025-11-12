@@ -21,15 +21,19 @@ key_features = [
     "Workflow-aware: Supports agile ceremonies and product development processes"
 ]
 
-[documentation_levels]
-
-[documentation_levels.simple]
+[[levels]]
+name = "simple"
+filename = "uc_simple.hbs"
 description = "Basic feature documentation with user story and acceptance criteria"
 
-[documentation_levels.normal]
+[[levels]]
+name = "normal"
+filename = "uc_normal.hbs"
 description = "Standard feature documentation including epic links, sprint information, and story point estimates"
 
-[documentation_levels.detailed]
+[[levels]]
+name = "detailed"
+filename = "uc_detailed.hbs"
 description = "Comprehensive feature specification with dependencies, mockups, and detailed requirements"
 
 [custom_fields]

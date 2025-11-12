@@ -21,15 +21,19 @@ key_features = [
     "Non-technical: Avoids implementation details in favor of business requirements"
 ]
 
-[documentation_levels]
-
-[documentation_levels.simple]
+[[levels]]
+name = "simple"
+filename = "uc_simple.hbs"
 description = "Basic use case structure with actors and goals, essential business information, minimal technical details"
 
-[documentation_levels.normal]
+[[levels]]
+name = "normal"
+filename = "uc_normal.hbs"
 description = "Standard business documentation, stakeholder analysis, business value assessment, cost and ROI considerations"
 
-[documentation_levels.detailed]
+[[levels]]
+name = "detailed"
+filename = "uc_detailed.hbs"
 description = "Comprehensive business case documentation, detailed stakeholder mapping, financial analysis and ROI projections, risk assessment and mitigation strategies, business process integration"
 
 [custom_fields]

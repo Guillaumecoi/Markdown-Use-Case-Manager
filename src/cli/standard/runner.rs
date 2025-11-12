@@ -209,7 +209,7 @@ impl CliRunner {
     /// Get detailed information about a specific methodology.
     ///
     /// Retrieves comprehensive information about the requested methodology,
-    /// including its display name and description.
+    /// including its display name, description, when to use it, and key features.
     ///
     /// # Arguments
     /// * `methodology` - The name of the methodology to query
@@ -217,17 +217,46 @@ impl CliRunner {
     /// # Returns
     /// Returns a formatted string with methodology details, or a not-found message.
     pub fn get_methodology_info(&mut self, methodology: String) -> Result<String> {
-        let methodologies = ProjectController::get_available_methodologies()?;
+        use crate::config::Config;
+        use crate::core::{Methodology, MethodologyRegistry};
 
         let sanitized_methodology = Self::sanitize_required_string(methodology);
-        match methodologies
-            .iter()
-            .find(|m| m.name == sanitized_methodology)
-        {
-            Some(info) => Ok(format!(
-                "Methodology: {}\nDisplay Name: {}\nDescription: {}",
-                info.name, info.display_name, info.description
-            )),
+        
+        // Always load methodology metadata (info.toml) from source templates
+        let templates_dir = Config::get_metadata_load_dir()?;
+        let registry = MethodologyRegistry::new_dynamic(&templates_dir)?;
+
+        match registry.get(&sanitized_methodology) {
+            Some(methodology) => {
+                let mut result = format!(
+                    "=== {} ===\n\n{}\n\n",
+                    methodology.title(),
+                    methodology.description()
+                );
+
+                result.push_str("When to Use:\n");
+                for item in methodology.when_to_use() {
+                    result.push_str(&format!("  • {}\n", item));
+                }
+
+                result.push_str("\nKey Features:\n");
+                for item in methodology.key_features() {
+                    result.push_str(&format!("  • {}\n", item));
+                }
+
+                result.push_str("\nAvailable Levels:\n");
+                for level in methodology.levels() {
+                    result.push_str(&format!("  • {} ({}): {}\n", 
+                        level.name, level.filename, level.description));
+                }
+
+                result.push_str(&format!(
+                    "\nPreferred Style: {}\n",
+                    methodology.preferred_style()
+                ));
+
+                Ok(result)
+            }
             None => Ok(format!(
                 "Methodology '{}' not found.",
                 sanitized_methodology

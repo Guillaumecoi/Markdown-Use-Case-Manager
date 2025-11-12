@@ -12,18 +12,13 @@
 //!
 //! ## Methodology Configuration
 //!
-//! Each methodology is defined in `source-templates/methodologies/{name}/config.toml`:
+//! Each methodology is defined in two TOML files in `source-templates/methodologies/{name}/`:
 //!
-//! ```toml
-//! [template]
-//! name = "business"
-//! description = "Business-focused documentation for stakeholders"
-//! preferred_style = "detailed"
+//! - `info.toml`: Contains user-facing information for methodology selection and usage guidance
+//! - `config.toml`: Contains technical configuration and template settings
 //!
-//! [generation]
-//! auto_generate_tests = false
-//! overwrite_test_documentation = false
-//! ```
+//! The `info.toml` file provides detailed descriptions and usage information to help users
+//! choose the appropriate methodology, while `config.toml` contains the operational settings.
 //!
 //! The methodology directory also contains Handlebars templates for different documentation styles.
 
@@ -41,18 +36,45 @@ pub trait Methodology {
     /// Returns the primary name of the methodology (e.g., "business", "developer").
     fn name(&self) -> &str;
 
+    /// Returns the title of the methodology for display purposes.
+    fn title(&self) -> &str;
+
     /// Returns a description of the methodology.
     fn description(&self) -> &str;
+
+    /// Returns when to use this methodology.
+    fn when_to_use(&self) -> &[String];
+
+    /// Returns the key features of this methodology.
+    fn key_features(&self) -> &[String];
+
+    /// Returns the available documentation levels for this methodology.
+    fn levels(&self) -> &[DocumentationLevel];
 
     /// Returns the preferred documentation style for this methodology.
     fn preferred_style(&self) -> &str;
 }
 
+/// Represents a documentation level within a methodology.
+///
+/// Each methodology can have multiple levels (e.g., simple, normal, detailed)
+/// with different templates and levels of detail.
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct DocumentationLevel {
+    /// Name of the level (e.g., "simple", "normal", "detailed")
+    pub name: String,
+    /// Template filename for this level (e.g., "uc_simple.hbs")
+    pub filename: String,
+    /// Description of what this level provides
+    pub description: String,
+}
+
 /// A methodology definition loaded from external TOML configuration.
 ///
 /// This struct represents a methodology that has been loaded from
-/// a `source-templates/methodologies/{name}/config.toml` file. It contains all
-/// the metadata and configuration needed to support that methodology in the system.
+/// `source-templates/methodologies/{name}/info.toml` and `config.toml` files.
+/// It contains all the metadata and configuration needed to support that methodology
+/// in the system and help users choose the appropriate methodology.
 ///
 /// Methodology definitions are created by reading TOML configuration files
 /// from the filesystem.
@@ -60,53 +82,94 @@ pub trait Methodology {
 pub struct MethodologyDefinition {
     /// The primary name of the methodology
     name: String,
+    /// Display title of the methodology
+    title: String,
     /// Description of the methodology
     description: String,
+    /// When to use this methodology
+    when_to_use: Vec<String>,
+    /// Key features of this methodology
+    key_features: Vec<String>,
+    /// Available documentation levels
+    levels: Vec<DocumentationLevel>,
     /// Preferred documentation style
     preferred_style: String,
 }
 
 impl MethodologyDefinition {
-    /// Creates a methodology definition by loading from a TOML configuration file.
+    /// Creates a methodology definition by loading from TOML configuration files.
     ///
-    /// This method reads the `config.toml` file at the specified path and
-    /// deserializes it into a MethodologyDefinition.
+    /// This method reads the `info.toml` and `config.toml` files from the specified
+    /// methodology directory and deserializes them into a MethodologyDefinition.
+    /// The `info.toml` provides user-facing information for methodology selection,
+    /// while `config.toml` contains the technical configuration.
     ///
     /// # Arguments
-    /// * `config_path` - Path to the `config.toml` file for the methodology
+    /// * `methodology_dir` - Path to the methodology directory containing info.toml and config.toml
     ///
     /// # Returns
     /// A `Result` containing the loaded `MethodologyDefinition` or an error
     ///
     /// # Errors
     /// This function will return an error if:
-    /// - The TOML file cannot be read or parsed
+    /// - The TOML files cannot be read or parsed
     /// - Required fields are missing from the TOML
-    /// - The `config_path` is not a valid path
-    pub fn from_toml<P: AsRef<Path>>(config_path: P) -> anyhow::Result<Self> {
-        // Deserialize directly into a temporary struct for TOML data
+    /// - The `methodology_dir` is not a valid path
+    pub fn from_toml<P: AsRef<Path>>(methodology_dir: P) -> anyhow::Result<Self> {
+        let methodology_dir = methodology_dir.as_ref();
+
+        // Load info.toml for user-facing information
         #[derive(serde::Deserialize)]
-        struct TomlData {
+        struct InfoData {
+            overview: OverviewConfig,
+            usage: UsageConfig,
+            levels: Vec<DocumentationLevel>,
+        }
+
+        #[derive(serde::Deserialize)]
+        struct OverviewConfig {
+            title: String,
+            description: String,
+        }
+
+        #[derive(serde::Deserialize)]
+        struct UsageConfig {
+            when_to_use: Vec<String>,
+            key_features: Vec<String>,
+        }
+
+        let info_path = methodology_dir.join("info.toml");
+        let info_content = fs::read_to_string(&info_path)
+            .context("Failed to read methodology info file")?;
+        let info_data: InfoData = toml::from_str(&info_content)
+            .context("Failed to parse methodology info TOML")?;
+
+        // Load config.toml for technical configuration
+        #[derive(serde::Deserialize)]
+        struct ConfigData {
             template: TemplateConfig,
         }
 
         #[derive(serde::Deserialize)]
         struct TemplateConfig {
             name: String,
-            description: String,
             preferred_style: String,
         }
 
-        let content =
-            fs::read_to_string(&config_path).context("Failed to read methodology config file")?;
-
-        let data: TomlData =
-            toml::from_str(&content).context("Failed to parse methodology config TOML")?;
+        let config_path = methodology_dir.join("config.toml");
+        let config_content = fs::read_to_string(&config_path)
+            .context("Failed to read methodology config file")?;
+        let config_data: ConfigData = toml::from_str(&config_content)
+            .context("Failed to parse methodology config TOML")?;
 
         Ok(Self {
-            name: data.template.name,
-            description: data.template.description,
-            preferred_style: data.template.preferred_style,
+            name: config_data.template.name,
+            title: info_data.overview.title,
+            description: info_data.overview.description,
+            when_to_use: info_data.usage.when_to_use,
+            key_features: info_data.usage.key_features,
+            levels: info_data.levels,
+            preferred_style: config_data.template.preferred_style,
         })
     }
 }
@@ -116,8 +179,24 @@ impl Methodology for MethodologyDefinition {
         &self.name
     }
 
+    fn title(&self) -> &str {
+        &self.title
+    }
+
     fn description(&self) -> &str {
         &self.description
+    }
+
+    fn when_to_use(&self) -> &[String] {
+        &self.when_to_use
+    }
+
+    fn key_features(&self) -> &[String] {
+        &self.key_features
+    }
+
+    fn levels(&self) -> &[DocumentationLevel] {
+        &self.levels
     }
 
     fn preferred_style(&self) -> &str {
@@ -173,7 +252,7 @@ impl MethodologyRegistry {
                     let config_path = path.join("config.toml");
 
                     if config_path.exists() {
-                        match MethodologyDefinition::from_toml(&config_path) {
+                        match MethodologyDefinition::from_toml(&path) {
                             Ok(methodology) => {
                                 methodologies.insert(methodology_name.to_string(), methodology);
                             }
@@ -254,26 +333,55 @@ mod tests {
     use std::fs;
     use tempfile::TempDir;
 
-    /// Helper function to create a temporary methodology directory with config.toml
+    /// Helper function to create a temporary methodology directory with config.toml and info.toml
     fn create_test_methodology(
         dir: &std::path::Path,
         name: &str,
+        title: &str,
         description: &str,
         preferred_style: &str,
     ) -> std::path::PathBuf {
         let methodology_dir = dir.join(name);
         fs::create_dir(&methodology_dir).unwrap();
 
+        let info_content = format!(
+            r#"[overview]
+title = "{}"
+description = "{}"
+
+[usage]
+when_to_use = [
+    "Use case 1",
+    "Use case 2"
+]
+key_features = [
+    "Feature 1",
+    "Feature 2"
+]
+
+[[levels]]
+name = "simple"
+filename = "uc_simple.hbs"
+description = "Basic level"
+
+[[levels]]
+name = "detailed"
+filename = "uc_detailed.hbs"
+description = "Detailed level"
+"#,
+            title, description
+        );
+        fs::write(methodology_dir.join("info.toml"), info_content).unwrap();
+
         let config_content = format!(
             r#"[template]
 name = "{}"
-description = "{}"
 preferred_style = "{}"
 
 [generation]
 auto_generate_tests = false
 overwrite_test_documentation = false"#,
-            name, description, preferred_style
+            name, preferred_style
         );
         fs::write(methodology_dir.join("config.toml"), config_content).unwrap();
 
@@ -286,16 +394,25 @@ overwrite_test_documentation = false"#,
         let methodology_dir = create_test_methodology(
             &temp_dir.path(),
             "testmethod",
+            "Test Methodology",
             "Test description",
             "detailed",
         );
 
-        let result = MethodologyDefinition::from_toml(methodology_dir.join("config.toml"));
+        let result = MethodologyDefinition::from_toml(&methodology_dir);
         assert!(result.is_ok());
 
         let methodology = result.unwrap();
         assert_eq!(methodology.name(), "testmethod");
+        assert_eq!(methodology.title(), "Test Methodology");
         assert_eq!(methodology.description(), "Test description");
+        assert_eq!(methodology.when_to_use(), &["Use case 1", "Use case 2"]);
+        assert_eq!(methodology.key_features(), &["Feature 1", "Feature 2"]);
+        assert_eq!(methodology.levels().len(), 2);
+        assert_eq!(methodology.levels()[0].name, "simple");
+        assert_eq!(methodology.levels()[0].filename, "uc_simple.hbs");
+        assert_eq!(methodology.levels()[1].name, "detailed");
+        assert_eq!(methodology.levels()[1].filename, "uc_detailed.hbs");
         assert_eq!(methodology.preferred_style(), "detailed");
     }
 
@@ -303,7 +420,7 @@ overwrite_test_documentation = false"#,
     fn test_methodology_definition_from_toml_missing_file() {
         let temp_dir = TempDir::new().unwrap();
 
-        let result = MethodologyDefinition::from_toml(temp_dir.path().join("nonexistent.toml"));
+        let result = MethodologyDefinition::from_toml(temp_dir.path().join("nonexistent"));
         assert!(result.is_err());
     }
 
@@ -313,10 +430,21 @@ overwrite_test_documentation = false"#,
         let methodology_dir = temp_dir.path().join("testmethod");
         fs::create_dir(&methodology_dir).unwrap();
 
-        // Create invalid TOML
-        fs::write(methodology_dir.join("config.toml"), "invalid toml content").unwrap();
+        // Create invalid info.toml
+        fs::write(methodology_dir.join("info.toml"), "invalid toml content").unwrap();
 
-        let result = MethodologyDefinition::from_toml(methodology_dir.join("config.toml"));
+        // Create valid config.toml
+        fs::write(methodology_dir.join("config.toml"), r#"
+[template]
+name = "testmethod"
+preferred_style = "detailed"
+
+[generation]
+auto_generate_tests = false
+overwrite_test_documentation = false
+"#).unwrap();
+
+        let result = MethodologyDefinition::from_toml(&methodology_dir);
         assert!(result.is_err());
     }
 
@@ -327,8 +455,8 @@ overwrite_test_documentation = false"#,
         fs::create_dir(&methodologies_dir).unwrap();
 
         // Create test methodologies
-        create_test_methodology(&methodologies_dir, "method1", "Description 1", "simple");
-        create_test_methodology(&methodologies_dir, "method2", "Description 2", "detailed");
+        create_test_methodology(&methodologies_dir, "method1", "Method 1", "Description 1", "simple");
+        create_test_methodology(&methodologies_dir, "method2", "Method 2", "Description 2", "detailed");
 
         let result = MethodologyRegistry::new_dynamic(&temp_dir.path());
         assert!(result.is_ok());
@@ -342,6 +470,7 @@ overwrite_test_documentation = false"#,
         // Check that they have correct data
         let method1 = registry.get("method1").unwrap();
         assert_eq!(method1.name(), "method1");
+        assert_eq!(method1.title(), "Method 1");
         assert_eq!(method1.description(), "Description 1");
         assert_eq!(method1.preferred_style(), "simple");
     }
@@ -366,6 +495,7 @@ overwrite_test_documentation = false"#,
         create_test_methodology(
             &methodologies_dir,
             "business",
+            "Business Methodology",
             "Business-focused",
             "detailed",
         );
@@ -390,8 +520,8 @@ overwrite_test_documentation = false"#,
         let methodologies_dir = temp_dir.path().join("methodologies");
         fs::create_dir(&methodologies_dir).unwrap();
 
-        create_test_methodology(&methodologies_dir, "method1", "Desc 1", "simple");
-        create_test_methodology(&methodologies_dir, "method2", "Desc 2", "detailed");
+        create_test_methodology(&methodologies_dir, "method1", "Method 1", "Desc 1", "simple");
+        create_test_methodology(&methodologies_dir, "method2", "Method 2", "Desc 2", "detailed");
 
         let registry = MethodologyRegistry::new_dynamic(&temp_dir.path()).unwrap();
         let available = registry.available_methodologies();
@@ -408,7 +538,7 @@ overwrite_test_documentation = false"#,
         fs::create_dir(&methodologies_dir).unwrap();
 
         // Create a valid methodology
-        create_test_methodology(&methodologies_dir, "valid", "Valid description", "simple");
+        create_test_methodology(&methodologies_dir, "valid", "Valid Methodology", "Valid description", "simple");
 
         // Create a malformed methodology directory (invalid TOML)
         let bad_methodology_dir = methodologies_dir.join("bad");
@@ -433,8 +563,8 @@ overwrite_test_documentation = false"#,
         let methodologies_dir = temp_dir.path().join("methodologies");
         fs::create_dir(&methodologies_dir).unwrap();
 
-        create_test_methodology(&methodologies_dir, "method1", "Desc 1", "simple");
-        create_test_methodology(&methodologies_dir, "method2", "Desc 2", "detailed");
+        create_test_methodology(&methodologies_dir, "method1", "Method 1", "Desc 1", "simple");
+        create_test_methodology(&methodologies_dir, "method2", "Method 2", "Desc 2", "detailed");
 
         let result = MethodologyRegistry::discover_available(&temp_dir.path());
         assert!(result.is_ok());

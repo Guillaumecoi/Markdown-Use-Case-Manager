@@ -21,15 +21,19 @@ key_features = [
     "Coverage-oriented: Includes test coverage and regression testing requirements"
 ]
 
-[documentation_levels]
-
-[documentation_levels.simple]
+[[levels]]
+name = "simple"
+filename = "uc_simple.hbs"
 description = "Basic test documentation with test type, priority, and expected results"
 
-[documentation_levels.normal]
+[[levels]]
+name = "normal"
+filename = "uc_normal.hbs"
 description = "Standard QA documentation including automation status, test data requirements, and test execution details"
 
-[documentation_levels.detailed]
+[[levels]]
+name = "detailed"
+filename = "uc_detailed.hbs"
 description = "Comprehensive testing specification with environment requirements, regression suites, performance baselines, and quality metrics"
 
 [custom_fields]

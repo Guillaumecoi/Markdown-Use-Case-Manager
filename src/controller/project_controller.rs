@@ -46,7 +46,7 @@ impl ProjectController {
         Config::load().is_ok()
     }
 
-    /// Get available programming languages for selection prompts.
+    /// Get available languages.
     ///
     /// Retrieves all supported programming languages that can be used for
     /// test generation and template selection.
@@ -56,8 +56,10 @@ impl ProjectController {
     ///
     /// TODO: Use this in interactive init workflow for language selection
     pub fn get_available_languages() -> Result<SelectionOptions> {
-        use crate::config::TemplateManager;
-        let templates_dir = TemplateManager::find_source_templates_dir()?;
+        use crate::config::Config;
+        
+        // Always load language metadata (info.toml) from source templates
+        let templates_dir = Config::get_metadata_load_dir()?;
         let languages = LanguageRegistry::discover_available(&templates_dir)?;
         Ok(SelectionOptions::new(languages))
     }
@@ -70,8 +72,10 @@ impl ProjectController {
     /// # Returns
     /// Vector of MethodologyInfo containing name, display name, and description
     pub fn get_available_methodologies() -> Result<Vec<MethodologyInfo>> {
-        use crate::config::TemplateManager;
-        let templates_dir = TemplateManager::find_source_templates_dir()?;
+        use crate::config::Config;
+        
+        // Always load methodology metadata (info.toml) from source templates
+        let templates_dir = Config::get_metadata_load_dir()?;
         let registry = MethodologyRegistry::new_dynamic(&templates_dir)?;
 
         let methodology_infos: Vec<MethodologyInfo> = registry
@@ -132,8 +136,10 @@ impl ProjectController {
 
         // Resolve language aliases to primary names
         let resolved_language = if let Some(lang) = language {
-            use crate::config::TemplateManager;
-            let templates_dir = TemplateManager::find_source_templates_dir()?;
+            use crate::config::Config;
+            
+            // Always load language metadata (info.toml) from source templates
+            let templates_dir = Config::get_metadata_load_dir()?;
             let language_registry = LanguageRegistry::new_dynamic(&templates_dir)?;
             if let Some(lang_def) = language_registry.get(&lang) {
                 lang_def.name().to_string()
@@ -265,35 +271,36 @@ impl ProjectController {
     pub fn show_languages() -> Result<String> {
         let mut output = String::from("Available programming languages:\n");
 
-        use crate::config::TemplateManager;
-        match TemplateManager::find_source_templates_dir() {
-            Ok(templates_dir) => match LanguageRegistry::discover_available(&templates_dir) {
-                Ok(languages) => {
-                    for lang in languages {
-                        output.push_str(&format!("  - {}\n", lang));
-                    }
-                    output.push_str(
-                        "\nTo initialize with a specific language: mucm init -l <language>\n",
-                    );
-                    output.push_str("To add a new language manually, create a directory: .config/.mucm/handlebars/lang-<language>/\n");
-                }
-                Err(e) => {
-                    output.push_str(&format!("Error getting available languages: {}\n", e));
-                    // Fallback to show built-in languages if discovery fails
-                    if let Ok(templates_dir) = TemplateManager::find_source_templates_dir() {
-                        if let Ok(language_registry) = LanguageRegistry::new_dynamic(&templates_dir)
-                        {
-                            let builtin_languages = language_registry.available_languages();
-                            output.push_str(&format!(
-                                "Built-in languages: {}\n",
-                                builtin_languages.join(", ")
-                            ));
-                        }
-                    }
-                }
-            },
+        use crate::config::Config;
+        
+        // Always load language metadata (info.toml) from source templates
+        let templates_dir = match Config::get_metadata_load_dir() {
+            Ok(dir) => dir,
             Err(e) => {
-                output.push_str(&format!("Error finding source templates: {}\n", e));
+                return Ok(format!("Error: Could not find templates directory: {}\n", e));
+            }
+        };
+        
+        match LanguageRegistry::discover_available(&templates_dir) {
+            Ok(languages) => {
+                for lang in languages {
+                    output.push_str(&format!("  - {}\n", lang));
+                }
+                output.push_str(
+                    "\nTo initialize with a specific language: mucm init -l <language>\n",
+                );
+                output.push_str("To add a new language manually, create a directory: .config/.mucm/handlebars/lang-<language>/\n");
+            }
+            Err(e) => {
+                output.push_str(&format!("Error getting available languages: {}\n", e));
+                // Fallback to show built-in languages if discovery fails
+                if let Ok(language_registry) = LanguageRegistry::new_dynamic(&templates_dir) {
+                    let builtin_languages = language_registry.available_languages();
+                    output.push_str(&format!(
+                        "Built-in languages: {}\n",
+                        builtin_languages.join(", ")
+                    ));
+                }
             }
         }
 

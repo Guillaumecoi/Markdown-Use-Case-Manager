@@ -199,20 +199,30 @@ impl TemplateManager {
     /// Copy methodology templates and configs.
     ///
     /// For each methodology specified in the configuration, this function:
-    /// 1. Copies all template files (excluding config.toml)
-    /// 2. Copies the methodology's config.toml to the methodologies directory
+    /// 1. Copies all methodology files to handlebars/{methodology}/ (for template rendering)
+    /// 2. Copies all methodology files to methodologies/{methodology}/ (for reference/documentation)
+    ///
+    /// File usage after copying:
+    /// - `.hbs` template files in handlebars/ are used for generating use case documentation
+    /// - `config.toml` in handlebars/ can be customized for generation settings (preferred_style)
+    /// - `info.toml` in methodologies/ serves as reference showing what's installed locally
+    /// - `info.toml` from source-templates is always used for `mucm methodology-info` commands
+    ///
+    /// This allows users to:
+    /// - Customize templates (.hbs) for their project needs
+    /// - See what methodologies are installed (info.toml in methodologies/)
+    /// - Get authoritative documentation from source (mucm commands use source info.toml)
     ///
     /// # Arguments
     /// * `source_templates_dir` - Path to the source templates directory
     /// * `config` - Project configuration containing methodology list
     /// * `config_templates_dir` - Path to the destination templates directory
-    /// * `config_methodologies_dir` - Path to the destination methodologies config directory
+    /// * `config_methodologies_dir` - Path to the destination methodologies directory
     ///
     /// # Errors
     /// This function will return an error if:
     /// - The source methodologies directory is missing
     /// - A specified methodology directory is missing
-    /// - A methodology's config.toml file is missing
     /// - Template files cannot be copied
     fn copy_methodologies(
         source_templates_dir: &Path,
@@ -238,23 +248,34 @@ impl TemplateManager {
                 );
             }
 
-            // Copy methodology templates to handlebars/{methodology}/ (skip config.toml files)
-            let target_method_templates = config_templates_dir.join(methodology);
-            Self::copy_dir_recursive_skip_config(&source_method_dir, &target_method_templates)?;
-
-            // Copy methodology config.toml to methodologies/{methodology}.toml
-            let source_config = source_method_dir.join("config.toml");
-            if source_config.exists() {
-                let target_config = config_methodologies_dir.join(format!("{}.toml", methodology));
-                fs::copy(&source_config, &target_config)?;
-                println!("✓ Copied methodology: {}", methodology);
-            } else {
+            // Validate that required files exist
+            let config_file = source_method_dir.join("config.toml");
+            if !config_file.exists() {
                 anyhow::bail!(
-                    "Methodology '{}' is missing config.toml file at {:?}",
+                    "Methodology '{}' is missing config.toml file in {:?}",
                     methodology,
-                    source_config
+                    source_method_dir
                 );
             }
+
+            let info_file = source_method_dir.join("info.toml");
+            if !info_file.exists() {
+                anyhow::bail!(
+                    "Methodology '{}' is missing info.toml file in {:?}",
+                    methodology,
+                    source_method_dir
+                );
+            }
+
+            // Copy methodology templates to handlebars/{methodology}/
+            let target_method_templates = config_templates_dir.join(methodology);
+            Self::copy_dir_recursive(&source_method_dir, &target_method_templates)?;
+
+            // Also copy to methodologies/{methodology}/ for user customization
+            let target_method_dir = config_methodologies_dir.join(methodology);
+            Self::copy_dir_recursive(&source_method_dir, &target_method_dir)?;
+
+            println!("✓ Copied methodology: {}", methodology);
         }
 
         Ok(())
@@ -331,41 +352,7 @@ impl TemplateManager {
         Ok(())
     }
 
-    /// Recursively copy a directory but skip config.toml files.
-    ///
-    /// Similar to copy_dir_recursive, but skips any files named "config.toml".
-    /// This is used when copying methodology templates to avoid duplicating
-    /// configuration files that are handled separately.
-    ///
-    /// # Arguments
-    /// * `src` - Source directory path
-    /// * `dst` - Destination directory path
-    ///
-    /// # Errors
-    /// Returns an error if directories cannot be created or files cannot be copied.
-    fn copy_dir_recursive_skip_config(src: &Path, dst: &Path) -> Result<()> {
-        fs::create_dir_all(dst)?;
 
-        for entry in fs::read_dir(src)? {
-            let entry = entry?;
-            let src_path = entry.path();
-            let file_name = entry.file_name();
-            let dst_path = dst.join(&file_name);
-
-            // Skip config.toml files - these are handled separately
-            if file_name == "config.toml" {
-                continue;
-            }
-
-            if src_path.is_dir() {
-                Self::copy_dir_recursive_skip_config(&src_path, &dst_path)?;
-            } else {
-                fs::copy(&src_path, &dst_path)?;
-            }
-        }
-
-        Ok(())
-    }
 }
 
 #[cfg(test)]
@@ -696,57 +683,5 @@ mod tests {
         Ok(())
     }
 
-    #[test]
-    #[serial]
-    fn test_copy_dir_recursive_skip_config() -> Result<()> {
-        let temp_dir = TempDir::new()?;
-        let source_dir = temp_dir.path().join("source");
-        let dest_dir = temp_dir.path().join("dest");
 
-        // Create source structure with config.toml
-        fs::create_dir(&source_dir)?;
-        fs::write(source_dir.join("template.hbs"), "template content")?;
-        fs::write(source_dir.join("config.toml"), "config content")?;
-        fs::write(source_dir.join("other.txt"), "other content")?;
-
-        TemplateManager::copy_dir_recursive_skip_config(&source_dir, &dest_dir)?;
-
-        // Verify copy - config.toml should be skipped
-        assert!(dest_dir.join("template.hbs").exists());
-        assert!(dest_dir.join("other.txt").exists());
-        assert!(!dest_dir.join("config.toml").exists());
-
-        Ok(())
-    }
-
-    #[test]
-    #[serial]
-    fn test_copy_dir_recursive_skip_config_nested() -> Result<()> {
-        let temp_dir = TempDir::new()?;
-        let source_dir = temp_dir.path().join("source");
-        let dest_dir = temp_dir.path().join("dest");
-
-        // Create nested structure with config.toml files
-        fs::create_dir_all(source_dir.join("subdir"))?;
-        fs::write(source_dir.join("template.hbs"), "template content")?;
-        fs::write(source_dir.join("config.toml"), "root config")?;
-        fs::write(
-            source_dir.join("subdir").join("nested.hbs"),
-            "nested template",
-        )?;
-        fs::write(
-            source_dir.join("subdir").join("config.toml"),
-            "nested config",
-        )?;
-
-        TemplateManager::copy_dir_recursive_skip_config(&source_dir, &dest_dir)?;
-
-        // Verify copy - all config.toml files should be skipped
-        assert!(dest_dir.join("template.hbs").exists());
-        assert!(dest_dir.join("subdir").join("nested.hbs").exists());
-        assert!(!dest_dir.join("config.toml").exists());
-        assert!(!dest_dir.join("subdir").join("config.toml").exists());
-
-        Ok(())
-    }
 }

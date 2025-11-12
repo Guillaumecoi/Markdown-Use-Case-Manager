@@ -79,6 +79,22 @@ impl Config {
         Path::new(Self::CONFIG_DIR).join(Self::CONFIG_FILE)
     }
 
+    /// Get the appropriate directory for loading methodology/language metadata (info.toml).
+    ///
+    /// **Always returns source templates directory** for metadata loading.
+    /// This ensures that info.toml files (which contain display information) come from
+    /// the authoritative source, not user customizations.
+    ///
+    /// For template files (.hbs), the TemplateEngine already handles prioritization
+    /// by checking .config/.mucm/handlebars/ first.
+    ///
+    /// # Returns
+    /// Result with PathBuf pointing to source templates directory
+    pub fn get_metadata_load_dir() -> Result<PathBuf> {
+        use crate::config::TemplateManager;
+        TemplateManager::find_source_templates_dir()
+    }
+
     /// Save configuration file only (without copying templates or creating directories).
     ///
     /// This is the first step of two-step initialization. It creates the config file
