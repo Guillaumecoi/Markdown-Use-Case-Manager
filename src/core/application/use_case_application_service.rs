@@ -1,13 +1,13 @@
 // Application service for use case operations
 // This orchestrates domain services and infrastructure
 use crate::config::Config;
+use crate::core::application::generators::{MarkdownGenerator, OverviewGenerator, TestGenerator};
 use crate::core::utils::suggest_alternatives;
 use crate::core::{
-    file_operations::FileOperations, to_snake_case, TemplateEngine, TomlUseCaseRepository, UseCase,
+    file_operations::FileOperations, TemplateEngine, TomlUseCaseRepository, UseCase,
     UseCaseRepository, UseCaseService,
 };
 use anyhow::Result;
-use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::path::Path;
 
@@ -20,6 +20,9 @@ pub struct UseCaseApplicationService {
     file_operations: FileOperations,
     template_engine: TemplateEngine,
     use_cases: Vec<UseCase>,
+    markdown_generator: MarkdownGenerator,
+    test_generator: TestGenerator,
+    overview_generator: OverviewGenerator,
 }
 
 impl UseCaseApplicationService {
@@ -29,6 +32,11 @@ impl UseCaseApplicationService {
             Box::new(TomlUseCaseRepository::new(config.clone()));
         let file_operations = FileOperations::new(config.clone());
         let template_engine = TemplateEngine::with_config(Some(&config));
+        
+        // Create generators
+        let markdown_generator = MarkdownGenerator::new(config.clone());
+        let test_generator = TestGenerator::new(config.clone());
+        let overview_generator = OverviewGenerator::new(config.clone());
 
         let use_cases = repository.load_all()?;
 
@@ -39,6 +47,9 @@ impl UseCaseApplicationService {
             file_operations,
             template_engine,
             use_cases,
+            markdown_generator,
+            test_generator,
+            overview_generator,
         })
     }
 
@@ -349,172 +360,26 @@ impl UseCaseApplicationService {
 
     /// Helper to generate use case markdown
     fn generate_use_case_markdown(&self, use_case: &UseCase) -> Result<String> {
-        // Use the default methodology from config
-        let default_methodology = &self.config.templates.default_methodology;
-        self.generate_use_case_markdown_with_methodology(use_case, default_methodology)
+        self.markdown_generator.generate(use_case)
     }
 
     /// Helper to generate use case markdown with specific methodology
-    /// Converts UseCase to JSON and passes it directly to the template engine
-    /// This allows templates to access ANY field from the TOML file without hardcoding
     fn generate_use_case_markdown_with_methodology(
         &self,
         use_case: &UseCase,
         methodology: &str,
     ) -> Result<String> {
-        // Convert UseCase directly to JSON - templates can access any field from TOML
-        let use_case_json = serde_json::to_value(use_case)?;
-
-        // Convert to HashMap for template engine compatibility
-        let mut data: HashMap<String, Value> = serde_json::from_value(use_case_json)?;
-
-        // Merge extra fields into top-level HashMap so templates can access them directly
-        if let Some(Value::Object(extra_map)) = data.remove("extra") {
-            for (key, value) in extra_map {
-                data.insert(key, value);
-            }
-        }
-
-        self.template_engine
-            .render_use_case_with_methodology(&data, methodology)
+        self.markdown_generator.generate_with_methodology(use_case, methodology)
     }
 
     /// Generate test file for a use case
     fn generate_test_file(&self, use_case: &UseCase) -> Result<()> {
-        // Check if test file already exists and overwrite is disabled
-        let file_extension = self.get_test_file_extension();
-        if self
-            .file_operations
-            .test_file_exists(use_case, &file_extension)
-            && !self.config.generation.overwrite_test_documentation
-        {
-            // Use the formatter to display the skipped message
-            use crate::presentation::UseCaseFormatter;
-            UseCaseFormatter::display_test_skipped();
-            return Ok(());
-        }
-
-        // Generate test content using template
-        let test_content = self.generate_test_content(use_case)?;
-
-        // Save the test file
-        self.file_operations
-            .save_test_file(use_case, &test_content, &file_extension)?;
-
-        // Get the test file path for display
-        let test_file_path = self.get_test_file_path(use_case)?;
-
-        // Use the formatter to display the generated message
-        use crate::presentation::UseCaseFormatter;
-        UseCaseFormatter::display_test_generated(
-            &use_case.id,
-            &test_file_path.display().to_string(),
-        );
-
-        Ok(())
-    }
-
-    /// Get the test file path for a use case
-    fn get_test_file_path(&self, use_case: &UseCase) -> Result<std::path::PathBuf> {
-        let test_dir = std::path::Path::new(&self.config.directories.test_dir);
-        let category_dir = test_dir.join(to_snake_case(&use_case.category));
-        let file_extension = self.get_test_file_extension();
-        let file_name = format!("{}.{}", to_snake_case(&use_case.id), file_extension);
-        Ok(category_dir.join(file_name))
-    }
-
-    /// Generate test content for a use case
-    fn generate_test_content(&self, use_case: &UseCase) -> Result<String> {
-        // Convert UseCase to JSON for template engine
-        let use_case_json = serde_json::to_value(use_case)?;
-        let mut data: HashMap<String, Value> = serde_json::from_value(use_case_json)?;
-
-        // Merge extra fields into top-level HashMap
-        if let Some(Value::Object(extra_map)) = data.remove("extra") {
-            for (key, value) in extra_map {
-                data.insert(key, value);
-            }
-        }
-
-        // Add generated timestamp
-        data.insert(
-            "generated_at".to_string(),
-            json!(chrono::Utc::now()
-                .format("%Y-%m-%d %H:%M:%S UTC")
-                .to_string()),
-        );
-
-        // Add snake_case version of title for class names
-        if let Some(Value::String(title)) = data.get("title") {
-            data.insert("title_snake_case".to_string(), json!(to_snake_case(title)));
-        }
-
-        // Render using test template for the configured language
-        self.template_engine
-            .render_test(&self.config.generation.test_language, &data)
-    }
-
-    /// Get the file extension for test files based on test language
-    fn get_test_file_extension(&self) -> String {
-        match self.config.generation.test_language.as_str() {
-            "python" => "py".to_string(),
-            "javascript" => "js".to_string(),
-            "rust" => "rs".to_string(),
-            _ => "txt".to_string(), // fallback
-        }
+        self.test_generator.generate(use_case)
     }
 
     /// Generate overview file
     fn generate_overview(&self) -> Result<()> {
-        let mut data = HashMap::new();
-
-        // Basic counts
-        data.insert("total_use_cases".to_string(), json!(self.use_cases.len()));
-
-        // Project name and generated date
-        data.insert("project_name".to_string(), json!(self.config.project.name));
-        data.insert(
-            "generated_date".to_string(),
-            json!(chrono::Utc::now().format("%Y-%m-%d").to_string()),
-        );
-
-        // Group use cases by category
-        let mut categories_map: HashMap<String, Vec<serde_json::Map<String, Value>>> =
-            HashMap::new();
-        for uc in &self.use_cases {
-            categories_map
-                .entry(uc.category.clone())
-                .or_default()
-                .push({
-                    let mut uc_data = serde_json::Map::new();
-                    uc_data.insert("id".to_string(), json!(uc.id));
-                    uc_data.insert("title".to_string(), json!(uc.title));
-                    uc_data.insert(
-                        "aggregated_status".to_string(),
-                        json!(uc.status().display_name()),
-                    );
-                    uc_data.insert("priority".to_string(), json!(uc.priority.to_string()));
-                    uc_data
-                });
-        }
-
-        // Convert to array format expected by template
-        let categories: Vec<serde_json::Map<String, Value>> = categories_map
-            .into_iter()
-            .map(|(category_name, use_cases)| {
-                let mut cat = serde_json::Map::new();
-                cat.insert("category_name".to_string(), json!(category_name));
-                cat.insert("use_cases".to_string(), json!(use_cases));
-                cat
-            })
-            .collect();
-
-        data.insert("categories".to_string(), json!(categories));
-
-        let overview_content = self.template_engine.render_overview(&data)?;
-        self.file_operations.save_overview(&overview_content)?;
-
-        Ok(())
+        self.overview_generator.generate(&self.use_cases)
     }
 }
 
