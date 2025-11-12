@@ -9,4 +9,4 @@ mod template_engine;
 pub use languages::LanguageRegistry;
 pub use methodologies::{Methodology, MethodologyDefinition, MethodologyRegistry};
 pub use persistence::{file_operations, TomlUseCaseRepository};
-pub use template_engine::{to_snake_case, TemplateEngine};
+pub use template_engine::TemplateEngine;

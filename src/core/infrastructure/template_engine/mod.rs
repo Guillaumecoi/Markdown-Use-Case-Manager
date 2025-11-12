@@ -2,4 +2,5 @@
 
 mod engine;
 
-pub use engine::{to_snake_case, TemplateEngine};
+// Public exports
+pub use engine::TemplateEngine;

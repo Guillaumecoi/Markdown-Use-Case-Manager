@@ -289,20 +289,3 @@ impl Default for TemplateEngine {
         Self::new().unwrap()
     }
 }
-
-// Helper function to convert to snake_case
-pub fn to_snake_case(s: &str) -> String {
-    // First convert to lowercase and replace special characters with underscores
-    let cleaned = s
-        .to_lowercase()
-        .chars()
-        .map(|c| if c.is_alphanumeric() { c } else { '_' })
-        .collect::<String>();
-
-    // Remove multiple consecutive underscores and clean up
-    cleaned
-        .split('_')
-        .filter(|part| !part.is_empty())
-        .collect::<Vec<_>>()
-        .join("_")
-}
