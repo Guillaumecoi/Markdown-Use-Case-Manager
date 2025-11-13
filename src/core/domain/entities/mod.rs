@@ -10,4 +10,4 @@ mod use_case;
 pub use metadata::Metadata;
 pub use reference_type::ReferenceType;
 pub use status::Status;
-pub use use_case::UseCase;
+pub use use_case::{Priority, UseCase};

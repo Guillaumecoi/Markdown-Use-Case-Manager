@@ -23,7 +23,7 @@ use anyhow::Result;
 ///
 /// - `TomlUseCaseRepository`: File-based, git-friendly storage
 /// - `SqliteUseCaseRepository`: Database storage with advanced querying
-pub trait UseCaseRepository: Send + Sync {
+pub trait UseCaseRepository {
     // === Basic CRUD Operations ===
 
     /// Save a use case (insert if new, update if exists).
