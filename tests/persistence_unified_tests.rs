@@ -8,7 +8,6 @@ use markdown_use_case_manager::core::{
 };
 use serial_test::serial;
 use std::env;
-use std::fs;
 use tempfile::TempDir;
 
 /// Test helper: Create a test use case
@@ -347,4 +346,7 @@ fn test_save_markdown(repo: &dyn UseCaseRepository) {
 
     // Note: We can't easily verify markdown content without backend-specific code
     // This test mainly ensures the method doesn't panic
+
+    // Clean up: delete the use case (which also removes markdown files for TOML backend)
+    repo.delete(&use_case.id).unwrap();
 }
