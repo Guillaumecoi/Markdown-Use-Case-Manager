@@ -1,4 +1,5 @@
 use crate::core::domain::entities::{Scenario, ScenarioStep, ScenarioType, Status, UseCase};
+use crate::core::domain::services::ScenarioReferenceValidator;
 use std::collections::HashSet;
 
 /// Domain service for scenario-related business logic
@@ -156,6 +157,59 @@ impl ScenarioService {
             Self::validate_scenario(scenario)?;
         }
         Ok(())
+    }
+
+    /// Validate a scenario reference before adding it
+    pub fn validate_scenario_reference(
+        scenario: &Scenario,
+        reference: &crate::core::domain::entities::ScenarioReference,
+        use_case: &UseCase,
+    ) -> Result<(), String> {
+        ScenarioReferenceValidator::validate_reference(use_case, &scenario.id, reference)
+            .map_err(|e| e.to_string())
+    }
+
+    /// Add a reference to a scenario with validation
+    pub fn add_reference_to_scenario(
+        scenario: &mut Scenario,
+        reference: crate::core::domain::entities::ScenarioReference,
+        use_case: &UseCase,
+    ) -> Result<(), String> {
+        Self::validate_scenario_reference(scenario, &reference, use_case)?;
+        scenario.add_reference(reference);
+        Ok(())
+    }
+
+    /// Remove a reference from a scenario
+    pub fn remove_reference_from_scenario(
+        scenario: &mut Scenario,
+        target_id: &str,
+        relationship: &str,
+    ) -> Result<(), String> {
+        scenario.remove_reference(target_id, relationship);
+        Ok(())
+    }
+
+    /// Get all scenarios referenced by this scenario
+    pub fn get_referenced_scenarios<'a>(
+        scenario: &Scenario,
+        all_scenarios: &'a [Scenario],
+    ) -> Vec<&'a Scenario> {
+        let referenced_ids = scenario.referenced_scenarios();
+        all_scenarios
+            .iter()
+            .filter(|s| referenced_ids.contains(&s.id.as_str()))
+            .collect()
+    }
+
+    /// Check if a scenario references another scenario
+    pub fn scenario_references_scenario(scenario: &Scenario, target_scenario_id: &str) -> bool {
+        scenario.references_scenario(target_scenario_id)
+    }
+
+    /// Check if a scenario depends on a use case
+    pub fn scenario_depends_on_use_case(scenario: &Scenario, use_case_id: &str) -> bool {
+        scenario.depends_on_use_case(use_case_id)
     }
 }
 
