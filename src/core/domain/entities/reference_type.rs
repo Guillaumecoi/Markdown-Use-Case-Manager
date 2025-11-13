@@ -45,14 +45,35 @@ mod tests {
 
     #[test]
     fn test_reference_type_from_str() {
-        assert_eq!(ReferenceType::from_str("use_case").unwrap(), ReferenceType::UseCase);
-        assert_eq!(ReferenceType::from_str("UseCase").unwrap(), ReferenceType::UseCase);
-        assert_eq!(ReferenceType::from_str("usecase").unwrap(), ReferenceType::UseCase);
-        assert_eq!(ReferenceType::from_str("uc").unwrap(), ReferenceType::UseCase);
+        assert_eq!(
+            ReferenceType::from_str("use_case").unwrap(),
+            ReferenceType::UseCase
+        );
+        assert_eq!(
+            ReferenceType::from_str("UseCase").unwrap(),
+            ReferenceType::UseCase
+        );
+        assert_eq!(
+            ReferenceType::from_str("usecase").unwrap(),
+            ReferenceType::UseCase
+        );
+        assert_eq!(
+            ReferenceType::from_str("uc").unwrap(),
+            ReferenceType::UseCase
+        );
 
-        assert_eq!(ReferenceType::from_str("scenario").unwrap(), ReferenceType::Scenario);
-        assert_eq!(ReferenceType::from_str("Scenario").unwrap(), ReferenceType::Scenario);
-        assert_eq!(ReferenceType::from_str("s").unwrap(), ReferenceType::Scenario);
+        assert_eq!(
+            ReferenceType::from_str("scenario").unwrap(),
+            ReferenceType::Scenario
+        );
+        assert_eq!(
+            ReferenceType::from_str("Scenario").unwrap(),
+            ReferenceType::Scenario
+        );
+        assert_eq!(
+            ReferenceType::from_str("s").unwrap(),
+            ReferenceType::Scenario
+        );
 
         assert!(ReferenceType::from_str("invalid").is_err());
     }

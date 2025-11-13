@@ -186,6 +186,97 @@ impl ProjectController {
         Ok(DisplayResult::success(message))
     }
 
+    /// Initialize a new project with storage backend choice (Step 1: Create config).
+    ///
+    /// Creates the initial project configuration file with user-specified
+    /// language, methodology, and storage backend preferences. This is the first step in
+    /// project initialization.
+    ///
+    /// # Arguments
+    /// * `language` - Optional programming language for test generation
+    /// * `default_methodology` - Default methodology for use case creation
+    /// * `storage` - Storage backend to use (toml or sqlite)
+    ///
+    /// # Returns
+    /// DisplayResult with success message and next steps guidance
+    ///
+    /// # Errors
+    /// Returns error if project is already initialized or configuration creation fails
+    pub fn init_project_with_storage(
+        language: Option<String>,
+        default_methodology: String,
+        storage: String,
+    ) -> Result<DisplayResult> {
+        // Check if already initialized
+        if Self::is_initialized() {
+            return Ok(DisplayResult::error(
+                "A use case manager project already exists in this directory or a parent directory"
+                    .to_string(),
+            ));
+        }
+
+        // Resolve language aliases to primary names
+        let resolved_language = if let Some(lang) = language {
+            use crate::config::Config;
+
+            // Always load language metadata (info.toml) from source templates
+            let templates_dir = Config::get_metadata_load_dir()?;
+            let language_registry = LanguageRegistry::new_dynamic(&templates_dir)?;
+            if let Some(lang_def) = language_registry.get(&lang) {
+                lang_def.name().to_string()
+            } else {
+                lang
+            }
+        } else {
+            "rust".to_string()
+        };
+
+        // Parse storage backend
+        let storage_backend = storage
+            .parse::<crate::config::StorageBackend>()
+            .map_err(anyhow::Error::msg)?;
+
+        // Create config with storage backend
+        let config = Config::for_template_with_storage(
+            Some(resolved_language),
+            Some(default_methodology.clone()),
+            storage_backend,
+        );
+
+        // Save config file
+        Config::save_config_only(&config)?;
+
+        let message = format!(
+            "✅ Configuration file created at .config/.mucm/mucm.toml\n\n\
+             📝 Please review and customize the configuration:\n\
+             - Programming language: {}\n\
+             - Default Methodology: {}\n\
+             - Storage Backend: {}\n\
+             - TOML directory: {}\n\
+             - Use case directory: {}\n\
+             - Test directory: {}\n\n\
+             ⚡ When ready, run: mucm init --finalize\n\n\
+             \n\
+             💡 The finalize step will:\n\
+             - Copy the used methodology templates\n\
+             - Copy the used language templates\n\
+             - You can use any methodology when creating use cases\n\
+             - Directories will be created when you create your first use case",
+            config.templates.test_language,
+            &config.templates.default_methodology,
+            config.storage.backend,
+            config
+                .directories
+                .toml_dir
+                .as_deref()
+                .unwrap_or("docs/use-cases"),
+            config.directories.use_case_dir,
+            config.directories.test_dir,
+        );
+
+        Ok(DisplayResult::success(message))
+    }
+
     /// Finalize project initialization (Step 2: Copy templates).
     ///
     /// Completes project setup by copying methodology and language templates

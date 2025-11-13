@@ -36,7 +36,7 @@ mod types;
 // Explicit public exports
 pub use file_manager::ConfigFileManager;
 pub use template_manager::TemplateManager;
-pub use types::Config;
+pub use types::{Config, StorageBackend, StorageConfig};
 
 // Re-export from other modules
 use anyhow::{Context, Result};
@@ -69,6 +69,28 @@ impl Config {
         if let Some(method) = methodology {
             config.templates.default_methodology = method;
         }
+        config
+    }
+
+    /// Create a minimal config for template processing with storage backend.
+    ///
+    /// This creates a basic configuration used only for template variable substitution.
+    /// It's not a complete project configuration and should not be saved directly.
+    ///
+    /// # Arguments
+    /// * `test_language` - The programming language for test templates
+    /// * `methodology` - Optional default methodology override
+    /// * `storage_backend` - The storage backend to use
+    ///
+    /// # Returns
+    /// A minimal Config instance suitable for template processing
+    pub fn for_template_with_storage(
+        test_language: Option<String>,
+        methodology: Option<String>,
+        storage_backend: StorageBackend,
+    ) -> Self {
+        let mut config = Self::for_template(test_language, methodology);
+        config.storage.backend = storage_backend;
         config
     }
 
@@ -221,6 +243,9 @@ impl Config {
                         test_language: "python".to_string(),
                         auto_generate_tests: false,
                         overwrite_test_documentation: false,
+                    },
+                    storage: StorageConfig {
+                        backend: StorageBackend::Toml,
                     },
                     metadata: MetadataConfig {
                         created: true,

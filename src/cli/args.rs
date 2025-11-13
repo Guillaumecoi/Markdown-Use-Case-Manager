@@ -22,6 +22,9 @@ pub enum Commands {
         /// Documentation methodology (feature, business, developer, tester)
         #[arg(short, long)]
         methodology: Option<String>,
+        /// Storage backend (toml or sqlite)
+        #[arg(long, short = 's', default_value = "toml")]
+        storage: String,
         /// Finalize initialization by copying templates (run after reviewing config)
         #[arg(long)]
         finalize: bool,
