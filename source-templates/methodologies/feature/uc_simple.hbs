@@ -1,35 +1,52 @@
 # {{title}}
 
-**ID:** {{id}} | **Status:** PLANNED | **Priority:** {{priority}}
+**ID:** {{id}} | **Status:** {{status}} | **Priority:** {{priority}}
 
-## Overview
 {{#if description}}
+## Overview
 {{description}}
-{{else}}
-_Brief description of what this feature does and why it's needed._
-{{/if}}
 
-## Value
+{{/if}}
+{{#if preconditions}}
+## Preconditions
+{{#each preconditions}}
+- {{this}}
+{{/each}}
+
+{{/if}}
+{{#if postconditions}}
+## Postconditions
+{{#each postconditions}}
+- {{this}}
+{{/each}}
+
+{{/if}}
 {{#if business_value}}
+## Value
 {{business_value}}
-{{else}}
-_What problem does this solve? What value does it provide?_
+
 {{/if}}
+{{#if primary_users}}
+## Target Users
+{{#each primary_users}}
+- {{this}}
+{{/each}}
 
-## Users
-**Target Users:** _Who will use this feature?_
-
-## Success
+{{/if}}
 {{#if acceptance_criteria}}
+## Success Criteria
 {{#each acceptance_criteria}}
 - {{this}}
 {{/each}}
-{{else}}
-_How will we know this feature is successful?_
-- _Success metric 1_
-- _Success metric 2_
-{{/if}}
 
+{{/if}}
+{{#if use_case_references}}
+## Related Use Cases
+{{#each use_case_references}}
+- **{{relationship}}:** {{target_id}}{{#if description}} - {{description}}{{/if}}
+{{/each}}
+
+{{/if}}
 {{#if custom_field}}
 ## Custom Fields Demo
 **Custom Field:** {{custom_field}}
@@ -46,8 +63,3 @@ _How will we know this feature is successful?_
 {{/each}}
 
 {{/if}}
-## Next Steps
-- [ ] _Define detailed requirements_
-- [ ] _Create technical design_
-- [ ] _Estimate development effort_
-- [ ] _Plan implementation_

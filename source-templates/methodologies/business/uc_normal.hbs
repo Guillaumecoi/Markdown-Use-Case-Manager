@@ -2,137 +2,93 @@
 
 **Use Case ID:** {{id}} | **Status:** {{status}} | **Priority:** {{priority}} | **Analysis Date:** {{created}}
 
-## Executive Summary
 {{#if core.description}}
+## Executive Summary
 {{description}}
-{{else}}
-_Provide a clear summary of the business case and its strategic importance._
-{{/if}}
 
-## Stakeholder Overview
+{{/if}}
 {{#if stakeholders.decision_makers}}
+## Stakeholder Overview
 ### Key Decision Makers
 {{#each stakeholders.decision_makers}}
 - **{{this}}**
 {{/each}}
-{{else}}
-### Key Decision Makers
-_Who has the authority to approve or reject this initiative?_
-{{/if}}
 
+{{/if}}
 {{#if stakeholders.primary_users}}
 ### Primary Stakeholders
 {{#each stakeholders.primary_users}}
 - **{{this}}** - _Impact and involvement_
 {{/each}}
-{{else}}
-### Primary Stakeholders
-_Who are the main stakeholders affected by this use case?_
-{{/if}}
 
-## Business Value
+{{/if}}
 {{#if business.value_proposition}}
+## Business Value
 ### Value Proposition
 {{value_proposition}}
-{{else}}
-### Value Proposition
-_What specific business value does this use case deliver?_
 
-**Strategic Benefits:**
-- _Benefit 1_
-- _Benefit 2_
-- _Benefit 3_
 {{/if}}
-
 {{#if business.success_criteria}}
 ### Success Criteria
 {{#each business.success_criteria}}
 - {{this}}
 {{/each}}
-{{else}}
-### Success Criteria
-_How will business success be measured?_
-- _Quantitative metric 1_
-- _Quantitative metric 2_
-- _Qualitative measure 1_
+
 {{/if}}
 
-## Financial Analysis
+{{#if preconditions}}
+## Preconditions
+{{#each preconditions}}
+- {{this}}
+{{/each}}
+
+{{/if}}
+{{#if postconditions}}
+## Postconditions
+{{#each postconditions}}
+- {{this}}
+{{/each}}
+
+{{/if}}
+{{#if use_case_references}}
+## Related Use Cases
+{{#each use_case_references}}
+- **{{relationship}}:** {{target_id}}{{#if description}} - {{description}}{{/if}}
+{{/each}}
+
+{{/if}}
 {{#if business.roi_analysis}}
+## Financial Analysis
 {{roi_analysis}}
-{{else}}
-### Investment Required
-- **Development costs:** _$XXX_
-- **Infrastructure costs:** _$XXX_
-- **Training costs:** _$XXX_
-- **Total investment:** _$XXX_
 
-### Expected Returns
-- **Revenue impact:** _$XXX annually_
-- **Cost savings:** _$XXX annually_
-- **Efficiency gains:** _XXX% improvement_
-- **Break-even point:** _X months_
 {{/if}}
-
-## Implementation Strategy
 {{#if business.timeline}}
+## Implementation Strategy
 ### Timeline
 {{timeline}}
-{{else}}
-### Phased Approach
-- **Phase 1:** _Foundation_ (_X weeks_)
-- **Phase 2:** _Core Implementation_ (_X weeks_)
-- **Phase 3:** _Rollout & Optimization_ (_X weeks_)
-{{/if}}
 
+{{/if}}
 {{#if business.resource_requirements}}
 ### Resource Requirements
 {{resource_requirements}}
-{{else}}
-### Resource Requirements
-**Internal Resources:**
-- _Business analyst: X weeks_
-- _Project manager: X weeks_
-- _Subject matter experts: X hours_
 
-**External Resources:**
-- _Consultants: If needed_
-- _Training: If needed_
 {{/if}}
-
-## Risk Assessment
 {{#if business.risk_factors}}
+## Risk Assessment
 ### Business Risks
 {{#each business.risk_factors}}
 - **{{this}}** - _Mitigation strategy_
 {{/each}}
-{{else}}
-### Business Risks
-- **Market Risk:** _Description and mitigation_
-- **Resource Risk:** _Description and mitigation_
-- **Timeline Risk:** _Description and mitigation_
-{{/if}}
 
-## Compliance & Governance
+{{/if}}
 {{#if business.compliance_requirements}}
+## Compliance & Governance
 ### Compliance Requirements
 {{compliance_requirements}}
-{{else}}
-### Regulatory Considerations
-_What regulatory requirements must be considered?_
 
-### Governance Requirements
-_What approval processes and documentation are needed?_
 {{/if}}
-
+{{#if last_updated}}
 ---
 
-**Business Approval Required:**
-- [ ] _Executive sponsor_
-- [ ] _Budget authority_
-- [ ] _Compliance officer_
-
-**Next Steps:**
-1. _Stakeholder approval process_
-2. _Budget allocation confirmation_
-3. _Implementation planning_
+**Last Updated:** {{last_updated}}
+{{/if}}

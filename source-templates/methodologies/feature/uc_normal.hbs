@@ -1,119 +1,91 @@
 # Feature: {{title}}
 
-**ID:** {{id}} | **Status:** PLANNED | **Priority:** {{priority}} | **Created:** {{created_date}}
+**ID:** {{id}} | **Status:** {{status}} | **Priority:** {{priority}} | **Created:** {{created_date}}
 
-## Summary
 {{#if description}}
+## Summary
 {{description}}
-{{else}}
-_Provide a clear description of the feature and its purpose._
-{{/if}}
 
-## Business Value
+{{/if}}
+{{#if preconditions}}
+## Preconditions
+{{#each preconditions}}
+- {{this}}
+{{/each}}
+
+{{/if}}
+{{#if postconditions}}
+## Postconditions
+{{#each postconditions}}
+- {{this}}
+{{/each}}
+
+{{/if}}
 {{#if value_proposition}}
+## Business Value
 {{value_proposition}}
-{{else}}
-### Value Proposition
-_What business value does this feature deliver? How does it benefit users or the organization?_
-{{/if}}
 
+{{/if}}
 {{#if success_criteria}}
 ### Success Criteria
 {{#each success_criteria}}
 - {{this}}
 {{/each}}
-{{else}}
-### Success Criteria
-_How will we measure the success of this feature?_
-- _Measurable outcome 1_
-- _Measurable outcome 2_
-- _Measurable outcome 3_
-{{/if}}
 
-## Target Audience
+{{/if}}
 {{#if primary_users}}
+## Target Audience
+
 ### Primary Users
 {{#each primary_users}}
 - {{this}}
 {{/each}}
-{{else}}
-### Primary Users
-_Who are the main users that will benefit from this feature?_
-{{/if}}
 
+{{/if}}
 {{#if secondary_users}}
 ### Secondary Users
 {{#each secondary_users}}
 - {{this}}
 {{/each}}
-{{/if}}
 
-## Requirements Overview
+{{/if}}
 {{#if objectives}}
+## Requirements Overview
+
 ### Key Objectives
 {{#each objectives}}
 - {{this}}
 {{/each}}
-{{else}}
-### Key Objectives
-_What are the main goals this feature should achieve?_
-- _Objective 1_
-- _Objective 2_
-- _Objective 3_
-{{/if}}
 
-## Implementation Approach
+{{/if}}
 {{#if solution_overview}}
+## Implementation Approach
 {{solution_overview}}
-{{else}}
-### High-Level Solution
-_What is the general approach to building this feature?_
 
-**Key Components:**
-- _Component 1: Description_
-- _Component 2: Description_
-- _Component 3: Description_
 {{/if}}
-
-## Timeline & Resources
 {{#if timeline}}
+## Timeline & Resources
+
 ### Estimated Timeline
 {{timeline}}
-{{else}}
-### Estimated Timeline
-_What is the expected development timeline?_
-- **Phase 1:** _Planning and design_ - _X weeks_
-- **Phase 2:** _Core development_ - _X weeks_
-- **Phase 3:** _Testing and rollout_ - _X weeks_
-{{/if}}
 
+{{/if}}
 {{#if resource_requirements}}
 ### Resource Requirements
 {{resource_requirements}}
-{{else}}
-### Resource Requirements
-_What team members and resources are needed?_
-- **Development:** _X developers for Y weeks_
-- **Design:** _X designers for Y weeks_
-- **Testing:** _X testers for Y weeks_
-{{/if}}
 
-## Risk Considerations
+{{/if}}
 {{#if risk_factors}}
+## Risk Considerations
 {{#each risk_factors}}
-- **Risk:** {{this}}
+- {{this}}
 {{/each}}
-{{else}}
-### Key Risks
-- **Technical Risk:** _Potential technical challenges_
-- **Timeline Risk:** _Factors that could delay delivery_
-- **User Adoption Risk:** _Challenges with user acceptance_
+
 {{/if}}
+{{#if use_case_references}}
+## Related Use Cases
+{{#each use_case_references}}
+- **{{relationship}}:** {{target_id}}{{#if description}} - {{description}}{{/if}}
+{{/each}}
 
----
-
-**Next Steps:**
-1. _Stakeholder review and approval_
-2. _Detailed technical specification_
-3. _Development planning and estimation_
-4. _Implementation kickoff_
+{{/if}}

@@ -72,6 +72,95 @@ pub enum Commands {
     },
     /// Show project status
     Status,
+    /// Manage use case preconditions
+    Precondition {
+        #[command(subcommand)]
+        command: PreconditionCommands,
+    },
+    /// Manage use case postconditions
+    Postcondition {
+        #[command(subcommand)]
+        command: PostconditionCommands,
+    },
+    /// Manage use case references
+    Reference {
+        #[command(subcommand)]
+        command: ReferenceCommands,
+    },
     /// Enter interactive mode
     Interactive,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum PreconditionCommands {
+    /// Add a precondition to a use case
+    Add {
+        /// Use case ID (e.g., UC-SEC-001)
+        use_case_id: String,
+        /// Precondition text
+        precondition: String,
+    },
+    /// List preconditions for a use case
+    List {
+        /// Use case ID (e.g., UC-SEC-001)
+        use_case_id: String,
+    },
+    /// Remove a precondition from a use case
+    Remove {
+        /// Use case ID (e.g., UC-SEC-001)
+        use_case_id: String,
+        /// Precondition index (1-based)
+        index: usize,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum PostconditionCommands {
+    /// Add a postcondition to a use case
+    Add {
+        /// Use case ID (e.g., UC-SEC-001)
+        use_case_id: String,
+        /// Postcondition text
+        postcondition: String,
+    },
+    /// List postconditions for a use case
+    List {
+        /// Use case ID (e.g., UC-SEC-001)
+        use_case_id: String,
+    },
+    /// Remove a postcondition from a use case
+    Remove {
+        /// Use case ID (e.g., UC-SEC-001)
+        use_case_id: String,
+        /// Postcondition index (1-based)
+        index: usize,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ReferenceCommands {
+    /// Add a reference to a use case
+    Add {
+        /// Use case ID (e.g., UC-SEC-001)
+        use_case_id: String,
+        /// Target use case ID
+        target_id: String,
+        /// Relationship type (dependency, extension, inclusion, alternative)
+        relationship: String,
+        /// Optional description
+        #[arg(short, long)]
+        description: Option<String>,
+    },
+    /// List references for a use case
+    List {
+        /// Use case ID (e.g., UC-SEC-001)
+        use_case_id: String,
+    },
+    /// Remove a reference from a use case
+    Remove {
+        /// Use case ID (e.g., UC-SEC-001)
+        use_case_id: String,
+        /// Target use case ID to remove
+        target_id: String,
+    },
 }

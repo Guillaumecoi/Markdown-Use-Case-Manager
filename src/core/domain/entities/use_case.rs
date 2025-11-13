@@ -1,4 +1,4 @@
-use super::{Metadata, Status};
+use super::{Metadata, Status, UseCaseReference};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
@@ -44,6 +44,18 @@ pub struct UseCase {
     pub priority: Priority,
     pub metadata: Metadata,
 
+    // NEW: Preconditions - what must be true before executing
+    #[serde(default)]
+    pub preconditions: Vec<String>,
+
+    // NEW: Postconditions - what will be true after executing
+    #[serde(default)]
+    pub postconditions: Vec<String>,
+
+    // NEW: References to other use cases
+    #[serde(default)]
+    pub use_case_references: Vec<UseCaseReference>,
+
     // Catch-all for any additional fields from TOML (including business_value,
     // acceptance_criteria, prerequisites, etc.) - fully flexible!
     #[serde(flatten)]
@@ -66,6 +78,9 @@ impl UseCase {
             description,
             priority,
             metadata: Metadata::new(),
+            preconditions: Vec::new(),
+            postconditions: Vec::new(),
+            use_case_references: Vec::new(),
             extra: std::collections::HashMap::new(),
         })
     }
@@ -74,6 +89,49 @@ impl UseCase {
         // TODO: In PR #4, update to calculate from scenarios
         // For now, maintain backward compatibility
         Status::Planned
+    }
+
+    /// Add a precondition to this use case
+    pub fn add_precondition(&mut self, condition: String) {
+        if !self.preconditions.contains(&condition) {
+            self.preconditions.push(condition);
+            self.metadata.touch();
+        }
+    }
+
+    /// Add a postcondition to this use case
+    pub fn add_postcondition(&mut self, condition: String) {
+        if !self.postconditions.contains(&condition) {
+            self.postconditions.push(condition);
+            self.metadata.touch();
+        }
+    }
+
+    /// Add a reference to another use case
+    pub fn add_reference(&mut self, reference: UseCaseReference) {
+        // Prevent duplicate references
+        if !self
+            .use_case_references
+            .iter()
+            .any(|r| r.target_id == reference.target_id && r.relationship == reference.relationship)
+        {
+            self.use_case_references.push(reference);
+            self.metadata.touch();
+        }
+    }
+
+    /// Get all use case IDs this use case depends on
+    pub fn dependencies(&self) -> Vec<&str> {
+        self.use_case_references
+            .iter()
+            .filter(|r| r.is_dependency())
+            .map(|r| r.target_id.as_str())
+            .collect()
+    }
+
+    /// Check if this use case depends on another
+    pub fn depends_on(&self, use_case_id: &str) -> bool {
+        self.dependencies().contains(&use_case_id)
     }
 }
 
@@ -429,6 +487,209 @@ mod use_case_tests {
         .unwrap();
 
         assert_eq!(use_case.status(), Status::Planned);
+    }
+
+    /// Test UseCase new initializes empty arrays for new fields
+    #[test]
+    fn test_use_case_new_initializes_empty_arrays() {
+        let use_case = UseCase::new(
+            "UC-TEST-001".to_string(),
+            "Test Use Case".to_string(),
+            "Test".to_string(),
+            "A test use case".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap();
+
+        assert!(use_case.preconditions.is_empty());
+        assert!(use_case.postconditions.is_empty());
+        assert!(use_case.use_case_references.is_empty());
+    }
+
+    /// Test add_precondition method
+    #[test]
+    fn test_add_precondition() {
+        let mut use_case = UseCase::new(
+            "UC-TEST-001".to_string(),
+            "Test Use Case".to_string(),
+            "Test".to_string(),
+            "A test use case".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap();
+
+        use_case.add_precondition("User is logged in".to_string());
+        assert_eq!(use_case.preconditions.len(), 1);
+        assert_eq!(use_case.preconditions[0], "User is logged in");
+
+        // Duplicate should not be added
+        use_case.add_precondition("User is logged in".to_string());
+        assert_eq!(use_case.preconditions.len(), 1);
+    }
+
+    /// Test add_postcondition method
+    #[test]
+    fn test_add_postcondition() {
+        let mut use_case = UseCase::new(
+            "UC-TEST-001".to_string(),
+            "Test Use Case".to_string(),
+            "Test".to_string(),
+            "A test use case".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap();
+
+        use_case.add_postcondition("Session is created".to_string());
+        assert_eq!(use_case.postconditions.len(), 1);
+        assert_eq!(use_case.postconditions[0], "Session is created");
+
+        // Duplicate should not be added
+        use_case.add_postcondition("Session is created".to_string());
+        assert_eq!(use_case.postconditions.len(), 1);
+    }
+
+    /// Test add_reference method
+    #[test]
+    fn test_add_reference() {
+        let mut use_case = UseCase::new(
+            "UC-TEST-001".to_string(),
+            "Test Use Case".to_string(),
+            "Test".to_string(),
+            "A test use case".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap();
+
+        let reference = UseCaseReference::new("UC-AUTH-001".to_string(), "depends_on".to_string());
+
+        use_case.add_reference(reference);
+        assert_eq!(use_case.use_case_references.len(), 1);
+        assert_eq!(use_case.use_case_references[0].target_id, "UC-AUTH-001");
+        assert_eq!(use_case.use_case_references[0].relationship, "depends_on");
+
+        // Duplicate reference should not be added
+        let duplicate_ref =
+            UseCaseReference::new("UC-AUTH-001".to_string(), "depends_on".to_string());
+        use_case.add_reference(duplicate_ref);
+        assert_eq!(use_case.use_case_references.len(), 1);
+    }
+
+    /// Test dependencies method
+    #[test]
+    fn test_dependencies() {
+        let mut use_case = UseCase::new(
+            "UC-TEST-001".to_string(),
+            "Test Use Case".to_string(),
+            "Test".to_string(),
+            "A test use case".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap();
+
+        use_case.add_reference(UseCaseReference::new(
+            "UC-AUTH-001".to_string(),
+            "depends_on".to_string(),
+        ));
+
+        use_case.add_reference(UseCaseReference::new(
+            "UC-OTHER-001".to_string(),
+            "extends".to_string(),
+        ));
+
+        let deps = use_case.dependencies();
+        assert_eq!(deps.len(), 1);
+        assert_eq!(deps[0], "UC-AUTH-001");
+    }
+
+    /// Test depends_on method
+    #[test]
+    fn test_depends_on() {
+        let mut use_case = UseCase::new(
+            "UC-TEST-001".to_string(),
+            "Test Use Case".to_string(),
+            "Test".to_string(),
+            "A test use case".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap();
+
+        use_case.add_reference(UseCaseReference::new(
+            "UC-AUTH-001".to_string(),
+            "depends_on".to_string(),
+        ));
+
+        assert!(use_case.depends_on("UC-AUTH-001"));
+        assert!(!use_case.depends_on("UC-OTHER-001"));
+    }
+
+    /// Test backward compatibility - old use cases without new fields
+    #[test]
+    fn test_backward_compatibility() {
+        // Old use case JSON without new fields
+        let json = r#"{
+            "id": "UC-TEST-001",
+            "title": "Test Use Case",
+            "category": "Test",
+            "description": "A test use case",
+            "priority": "Medium",
+            "metadata": {
+                "created_at": "2023-01-01T00:00:00Z",
+                "updated_at": "2023-01-01T00:00:00Z"
+            }
+        }"#;
+
+        let use_case: UseCase = serde_json::from_str(json).unwrap();
+
+        assert!(use_case.preconditions.is_empty());
+        assert!(use_case.postconditions.is_empty());
+        assert!(use_case.use_case_references.is_empty());
+    }
+
+    /// Test serialization with new fields
+    #[test]
+    fn test_serialization_with_new_fields() {
+        let mut use_case = UseCase::new(
+            "UC-TEST-001".to_string(),
+            "Test Use Case".to_string(),
+            "Test".to_string(),
+            "A test use case".to_string(),
+            "high".to_string(),
+        )
+        .unwrap();
+
+        // Add new fields
+        use_case.add_precondition("User authenticated".to_string());
+        use_case.add_precondition("Cart not empty".to_string());
+        use_case.add_postcondition("Order created".to_string());
+        use_case.add_reference(
+            UseCaseReference::new("UC-AUTH-001".to_string(), "depends_on".to_string())
+                .with_description("Authentication required".to_string()),
+        );
+
+        // Serialize
+        let serialized = serde_json::to_string(&use_case).unwrap();
+
+        // Deserialize
+        let deserialized: UseCase = serde_json::from_str(&serialized).unwrap();
+
+        // Verify all fields
+        assert_eq!(deserialized.preconditions.len(), 2);
+        assert_eq!(deserialized.preconditions[0], "User authenticated");
+        assert_eq!(deserialized.preconditions[1], "Cart not empty");
+
+        assert_eq!(deserialized.postconditions.len(), 1);
+        assert_eq!(deserialized.postconditions[0], "Order created");
+
+        assert_eq!(deserialized.use_case_references.len(), 1);
+        assert_eq!(deserialized.use_case_references[0].target_id, "UC-AUTH-001");
+        assert_eq!(
+            deserialized.use_case_references[0].relationship,
+            "depends_on"
+        );
+        assert_eq!(
+            deserialized.use_case_references[0].description,
+            Some("Authentication required".to_string())
+        );
     }
 
     /// Test UseCase TOML serialization and deserialization with custom fields

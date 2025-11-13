@@ -1,56 +1,55 @@
 # Tech Spec: {{title}}
 
-**ID:** {{id}} | **Status:** PLANNED | **Priority:** {{priority}}
+**ID:** {{id}} | **Status:** {{status}} | **Priority:** {{priority}}
 
-## Overview
 {{#if description}}
+## Overview
 {{description}}
-{{else}}
-_What needs to be built and why?_
-{{/if}}
 
-## Technical Approach
+{{/if}}
+{{#if preconditions}}
+## Preconditions
+{{#each preconditions}}
+- {{this}}
+{{/each}}
+
+{{/if}}
+{{#if postconditions}}
+## Postconditions
+{{#each postconditions}}
+- {{this}}
+{{/each}}
+
+{{/if}}
 {{#if architecture_overview}}
+## Technical Approach
 {{architecture_overview}}
-{{else}}
-_High-level technical solution approach._
-{{/if}}
 
-## Key Requirements
+{{/if}}
 {{#if objectives}}
+## Key Requirements
 {{#each objectives}}
 - {{this}}
 {{/each}}
-{{else}}
-_Core technical requirements:_
-- _Requirement 1_
-- _Requirement 2_
-{{/if}}
 
-## Implementation Notes
+{{/if}}
 {{#if development_approach}}
+## Implementation Notes
 {{development_approach}}
-{{else}}
-**Technology Stack:** _Framework, database, etc._
-**Key Components:** _Main parts to build_
-**Dependencies:** _External services or libraries_
-{{/if}}
 
-## Testing
+{{/if}}
 {{#if test_scenarios}}
+## Testing
 **Test Cases:**
 {{#each test_scenarios}}
 - {{this}}
 {{/each}}
-{{else}}
-**Test Cases:**
-- _Happy path scenario_
-- _Error handling scenario_
-- _Performance test_
-{{/if}}
 
-## Definition of Done
-- [ ] _Code complete and reviewed_
-- [ ] _Tests passing_
-- [ ] _Documentation updated_
-- [ ] _Deployed to staging_
+{{/if}}
+{{#if use_case_references}}
+## Related Use Cases
+{{#each use_case_references}}
+- **{{relationship}}:** {{target_id}}{{#if description}} - {{description}}{{/if}}
+{{/each}}
+
+{{/if}}

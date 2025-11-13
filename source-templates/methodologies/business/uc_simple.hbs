@@ -2,52 +2,58 @@
 
 **ID:** {{id}} | **Status:** PLANNED | **Priority:** {{priority}}
 
-## Business Overview
 {{#if value_proposition}}
+## Business Overview
 {{value_proposition}}
-{{else}}
-_What business value does this deliver?_
+
 {{/if}}
 
-## Stakeholders
+{{#if preconditions}}
+## Preconditions
+{{#each preconditions}}
+- {{this}}
+{{/each}}
+
+{{/if}}
+{{#if postconditions}}
+## Postconditions
+{{#each postconditions}}
+- {{this}}
+{{/each}}
+
+{{/if}}
 {{#if decision_makers}}
+## Stakeholders
 **Decision Makers:** {{#each decision_makers}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
-{{else}}
-**Decision Makers:** _Who needs to approve this?_
-{{/if}}
 
+{{/if}}
 {{#if primary_users}}
 **Affected Users:** {{#each primary_users}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
-{{else}}
-**Affected Users:** _Who will be impacted?_
-{{/if}}
 
-## Success Metrics
+{{/if}}
 {{#if success_criteria}}
+## Success Metrics
 {{#each success_criteria}}
 - {{this}}
 {{/each}}
-{{else}}
-_How will we measure business success?_
-- _Business metric 1_
-- _Business metric 2_
-{{/if}}
 
-## Investment & ROI
+{{/if}}
 {{#if roi_analysis}}
+## Investment & ROI
 {{roi_analysis}}
-{{else}}
-**Estimated Investment:** _$XXX_
-**Expected Return:** _$XXX annually_
-**Payback Period:** _X months_
-{{/if}}
 
-## Key Risks
+{{/if}}
 {{#if risk_factors}}
+## Key Risks
 {{#each risk_factors}}
 - {{this}}
 {{/each}}
-{{else}}
-- _Risk 1 and mitigation_
-- _Risk 2 and mitigation_
+
+{{/if}}
+
+{{#if use_case_references}}
+## Related Use Cases
+{{#each use_case_references}}
+- **{{relationship}}:** {{target_id}}{{#if description}} - {{description}}{{/if}}
+{{/each}}
 {{/if}}

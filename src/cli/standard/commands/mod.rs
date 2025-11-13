@@ -5,12 +5,19 @@
 /// business logic to the CliRunner. This separation keeps the CLI layer
 /// focused on user interaction while the runner manages domain operations.
 // Private modules
+mod fields;
 mod language;
 mod methodology;
 mod project;
 mod usecase;
 
 // Explicit public exports
+pub use fields::{
+    handle_postcondition_add_command, handle_postcondition_list_command,
+    handle_postcondition_remove_command, handle_precondition_add_command,
+    handle_precondition_list_command, handle_precondition_remove_command,
+    handle_reference_add_command, handle_reference_list_command, handle_reference_remove_command,
+};
 pub use language::handle_languages_command;
 pub use methodology::{
     handle_list_methodologies_command, handle_methodology_info_command, handle_regenerate_command,

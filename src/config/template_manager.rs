@@ -135,13 +135,10 @@ impl TemplateManager {
         let config_templates_dir = base_path
             .join(Config::CONFIG_DIR)
             .join(Config::TEMPLATES_DIR);
-        let config_methodologies_dir = base_path.join(Config::CONFIG_DIR).join("methodologies");
 
         // Create directories
         fs::create_dir_all(&config_templates_dir)
             .context("Failed to create config templates directory")?;
-        fs::create_dir_all(&config_methodologies_dir)
-            .context("Failed to create config methodologies directory")?;
 
         // Load the config from base_dir to see which methodologies to import
         let config_path = base_path.join(Config::CONFIG_DIR).join("mucm.toml");
@@ -160,12 +157,7 @@ impl TemplateManager {
         Self::copy_root_templates(&source_templates_dir, &config_templates_dir)?;
 
         // Copy methodologies
-        Self::copy_methodologies(
-            &source_templates_dir,
-            &config,
-            &config_templates_dir,
-            &config_methodologies_dir,
-        )?;
+        Self::copy_methodologies(&source_templates_dir, &config, &config_templates_dir)?;
 
         // Copy language templates
         Self::copy_language_templates(&source_templates_dir, &config, &config_templates_dir)?;
@@ -198,26 +190,14 @@ impl TemplateManager {
 
     /// Copy methodology templates and configs.
     ///
-    /// For each methodology specified in the configuration, this function:
-    /// 1. Copies all methodology files to handlebars/{methodology}/ (for template rendering)
-    /// 2. Copies all methodology files to methodologies/{methodology}/ (for reference/documentation)
-    ///
-    /// File usage after copying:
-    /// - `.hbs` template files in handlebars/ are used for generating use case documentation
-    /// - `config.toml` in handlebars/ can be customized for generation settings (preferred_style)
-    /// - `info.toml` in methodologies/ serves as reference showing what's installed locally
-    /// - `info.toml` from source-templates is always used for `mucm methodology-info` commands
-    ///
-    /// This allows users to:
-    /// - Customize templates (.hbs) for their project needs
-    /// - See what methodologies are installed (info.toml in methodologies/)
-    /// - Get authoritative documentation from source (mucm commands use source info.toml)
+    /// For each methodology specified in the configuration, this function
+    /// copies all methodology files to the template-assets/{methodology}/ directory
+    /// for use by the template engine and methodology registry.
     ///
     /// # Arguments
     /// * `source_templates_dir` - Path to the source templates directory
     /// * `config` - Project configuration containing methodology list
     /// * `config_templates_dir` - Path to the destination templates directory
-    /// * `config_methodologies_dir` - Path to the destination methodologies directory
     ///
     /// # Errors
     /// This function will return an error if:
@@ -228,7 +208,6 @@ impl TemplateManager {
         source_templates_dir: &Path,
         config: &Config,
         config_templates_dir: &Path,
-        config_methodologies_dir: &Path,
     ) -> Result<()> {
         let source_methodologies = source_templates_dir.join("methodologies");
         if !source_methodologies.exists() {
@@ -267,13 +246,9 @@ impl TemplateManager {
                 );
             }
 
-            // Copy methodology templates to handlebars/{methodology}/
+            // Copy methodology templates to template-assets/{methodology}/
             let target_method_templates = config_templates_dir.join(methodology);
             Self::copy_dir_recursive(&source_method_dir, &target_method_templates)?;
-
-            // Also copy to methodologies/{methodology}/ for user customization
-            let target_method_dir = config_methodologies_dir.join(methodology);
-            Self::copy_dir_recursive(&source_method_dir, &target_method_dir)?;
 
             println!("✓ Copied methodology: {}", methodology);
         }
@@ -524,11 +499,9 @@ mod tests {
         let temp_dir = TempDir::new()?;
         let source_dir = temp_dir.path().join("source");
         let dest_templates = temp_dir.path().join("templates");
-        let dest_methods = temp_dir.path().join("methods");
 
         fs::create_dir(&source_dir)?;
         fs::create_dir(&dest_templates)?;
-        fs::create_dir(&dest_methods)?;
 
         let config = Config::default();
 
@@ -536,7 +509,6 @@ mod tests {
             &source_dir,
             &config,
             &dest_templates,
-            &dest_methods,
         );
         assert!(result.is_err());
         assert!(result
@@ -554,11 +526,9 @@ mod tests {
         let source_dir = temp_dir.path().join("source");
         let methodologies_dir = source_dir.join("methodologies");
         let dest_templates = temp_dir.path().join("templates");
-        let dest_methods = temp_dir.path().join("methods");
 
         fs::create_dir_all(&methodologies_dir)?;
         fs::create_dir(&dest_templates)?;
-        fs::create_dir(&dest_methods)?;
 
         let mut config = Config::default();
         config.templates.methodologies = vec!["nonexistent".to_string()];
@@ -567,7 +537,6 @@ mod tests {
             &source_dir,
             &config,
             &dest_templates,
-            &dest_methods,
         );
         assert!(result.is_err());
         assert!(result
@@ -586,11 +555,9 @@ mod tests {
         let methodologies_dir = source_dir.join("methodologies");
         let method_dir = methodologies_dir.join("test_method");
         let dest_templates = temp_dir.path().join("templates");
-        let dest_methods = temp_dir.path().join("methods");
 
         fs::create_dir_all(&method_dir)?;
         fs::create_dir(&dest_templates)?;
-        fs::create_dir(&dest_methods)?;
 
         // Create a template file but no config.toml
         fs::write(method_dir.join("template.hbs"), "template content")?;
@@ -602,7 +569,6 @@ mod tests {
             &source_dir,
             &config,
             &dest_templates,
-            &dest_methods,
         );
         assert!(result.is_err());
         assert!(result

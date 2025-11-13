@@ -7,308 +7,110 @@
 
 ---
 
+{{#if summary}}
 ## Test Overview
 
-{{#if core.summary}}
 {{summary}}
-{{else}}
-### Testing Scope
-_Define what aspects of the use case will be tested and the overall testing approach._
-{{/if}}
 
-{{#if testing.test_strategy}}
+{{/if}}
+{{#if test_strategy}}
 ### Test Strategy
 {{test_strategy}}
-{{else}}
-### Testing Approach
-**Test Types to Execute:**
-- Unit Testing: _Component-level validation_
-- Integration Testing: _System interaction validation_
-- System Testing: _End-to-end workflow validation_
-- User Acceptance Testing: _Business requirement validation_
 
-**Test Environment Requirements:**
-- _Test data setup and management_
-- _Environment configuration needs_
-- _Tool and framework requirements_
 {{/if}}
+{{#if preconditions}}
+## Preconditions
+{{#each preconditions}}
+- {{this}}
+{{/each}}
 
+{{/if}}
+{{#if postconditions}}
+## Postconditions
+{{#each postconditions}}
+- {{this}}
+{{/each}}
+
+{{/if}}
+{{#if objectives}}
 ## Test Objectives
 
-{{#if core.objectives}}
 ### Validation Goals
-{{#each core.objectives}}
+{{#each objectives}}
 - {{this}}
 {{/each}}
-{{else}}
-### Test Objectives
-_What specific aspects need validation through testing?_
 
-**Functional Validation:**
-- _Verify core functionality works as designed_
-- _Validate business rules and logic_
-- _Confirm user workflows operate correctly_
-
-**Non-Functional Validation:**
-- _Performance meets specified requirements_
-- _Security controls function properly_
-- _System reliability and stability_
 {{/if}}
-
-{{#if testing.acceptance_criteria}}
+{{#if acceptance_criteria}}
 ### Acceptance Criteria
-{{#each testing.acceptance_criteria}}
+{{#each acceptance_criteria}}
 - {{this}}
 {{/each}}
-{{else}}
-### Pass/Fail Criteria
-**Functional Criteria:**
-- _All core features operate without errors_
-- _Business logic produces expected results_
-- _User interface behaves intuitively_
 
-**Performance Criteria:**
-- _Response times meet SLA requirements_
-- _System handles expected load volumes_
-- _Resource utilization stays within limits_
-
-**Quality Criteria:**
-- _No critical or high-severity defects_
-- _Error handling works appropriately_
-- _Data integrity maintained throughout_
 {{/if}}
-
+{{#if test_scenarios}}
 ## Test Scenarios
 
-{{#if testing.test_scenarios}}
 ### Detailed Test Cases
-{{#each testing.test_scenarios}}
+{{#each test_scenarios}}
 ### Test Scenario: {{this}}
-**Objective:** _What this test validates_
-**Preconditions:** _Setup required before test_
-**Test Steps:**
-1. _Step 1 description_
-2. _Step 2 description_
-3. _Step 3 description_
 
-**Expected Results:** _What should happen_
-**Pass Criteria:** _How to determine success_
-**Test Data:** _Data needed for execution_
-
----
 {{/each}}
-{{else}}
-### Core Test Scenarios
 
-#### Scenario 1: Happy Path Testing
-**Objective:** _Validate primary user workflow works end-to-end_
-**Preconditions:** _System is operational and test data is available_
-**Test Steps:**
-1. _User logs into the system_
-2. _User navigates to main feature_
-3. _User completes primary workflow_
-4. _System processes request successfully_
-5. _User receives confirmation_
-
-**Expected Results:** _Workflow completes without errors_
-**Test Data:** _Valid user credentials and sample data_
-
-#### Scenario 2: Error Handling
-**Objective:** _Validate system handles errors gracefully_
-**Preconditions:** _System configured for error simulation_
-**Test Steps:**
-1. _Trigger error condition_
-2. _Observe system response_
-3. _Verify error message displayed_
-4. _Confirm system remains stable_
-
-**Expected Results:** _Appropriate error handling and recovery_
-
-#### Scenario 3: Performance Testing
-**Objective:** _Validate system performance under load_
-**Preconditions:** _Performance testing environment setup_
-**Test Steps:**
-1. _Generate baseline performance metrics_
-2. _Apply increasing load levels_
-3. _Monitor response times and resource usage_
-4. _Identify performance bottlenecks_
-
-**Expected Results:** _Performance meets defined SLAs_
 {{/if}}
-
+{{#if test_data_requirements}}
 ## Test Data Requirements
 
-{{#if testing.test_data_requirements}}
 ### Test Data Strategy
 {{test_data_requirements}}
-{{else}}
-### Test Data Management
-**Data Categories Needed:**
-- _User account data: Various user types and permissions_
-- _Transaction data: Valid and edge case scenarios_
-- _Configuration data: Different system settings_
-- _Reference data: Lookup tables and master data_
 
-**Data Preparation:**
-- _Automated test data generation procedures_
-- _Data masking for sensitive information_
-- _Data refresh and cleanup processes_
-
-**Data Maintenance:**
-- _Test data version control_
-- _Data privacy and compliance considerations_
 {{/if}}
-
+{{#if testing_tools}}
 ## Testing Tools and Environment
 
-{{#if testing.testing_tools}}
 ### Test Tooling
 {{testing_tools}}
-{{else}}
-### Testing Infrastructure
-**Automated Testing Tools:**
-- _Unit testing framework: Tool and configuration_
-- _API testing: Tool and test suites_
-- _UI testing: Tool and script management_
-- _Performance testing: Tool and scenario setup_
 
-**Test Environment:**
-- _Environment specifications and access_
-- _Data setup and management procedures_
-- _Tool installation and configuration_
-
-**Continuous Integration:**
-- _Integration with CI/CD pipeline_
-- _Automated test execution triggers_
-- _Test result reporting and notifications_
 {{/if}}
-
+{{#if testing_risks}}
 ## Risk-Based Testing
 
-{{#if testing.testing_risks}}
 ### Test Risk Assessment
-{{#each testing.testing_risks}}
-- **Risk:** {{this}}
-  - **Test Coverage:** _How testing addresses this risk_
-  - **Priority:** _High/Medium/Low_
+{{#each testing_risks}}
+- {{this}}
 {{/each}}
-{{else}}
-### Testing Risk Analysis
-**High-Risk Areas Requiring Extra Testing:**
-- _Critical business logic components_
-- _Integration points with external systems_
-- _Security-sensitive functionality_
-- _Performance-critical operations_
 
-**Medium-Risk Areas:**
-- _User interface components_
-- _Data validation and transformation_
-- _Error handling and recovery_
-
-**Risk Mitigation Through Testing:**
-- _Comprehensive test coverage for high-risk areas_
-- _Multiple test types for critical functionality_
-- _Exploratory testing for edge cases_
 {{/if}}
-
+{{#if quality_metrics}}
 ## Quality Metrics
 
-{{#if testing.quality_metrics}}
 ### Test Metrics and KPIs
 {{quality_metrics}}
-{{else}}
-### Testing Metrics to Track
-**Test Coverage Metrics:**
-- _Code coverage: Target X% minimum_
-- _Requirement coverage: 100% of requirements tested_
-- _Risk coverage: All high-risk areas tested_
 
-**Quality Metrics:**
-- _Defect discovery rate by test phase_
-- _Defect escape rate to production_
-- _Test execution efficiency_
-
-**Performance Metrics:**
-- _Test automation percentage_
-- _Test execution time trends_
-- _Environment availability and stability_
 {{/if}}
-
+{{#if execution_plan}}
 ## Test Execution Plan
 
-{{#if testing.execution_plan}}
 ### Test Execution Strategy
 {{execution_plan}}
-{{else}}
-### Testing Schedule and Phases
 
-**Phase 1: Unit Testing** _(Timeline)_
-- _Developer-driven component testing_
-- _Code coverage validation_
-- _Basic functionality verification_
-
-**Phase 2: Integration Testing** _(Timeline)_
-- _API and service integration testing_
-- _Database integration validation_
-- _External system connectivity testing_
-
-**Phase 3: System Testing** _(Timeline)_
-- _End-to-end workflow testing_
-- _Performance and load testing_
-- _Security and compliance testing_
-
-**Phase 4: User Acceptance Testing** _(Timeline)_
-- _Business user validation_
-- _Real-world scenario testing_
-- _Final sign-off procedures_
 {{/if}}
-
+{{#if defect_management}}
 ## Defect Management
 
-{{#if testing.defect_management}}
 ### Defect Handling Process
 {{defect_management}}
-{{else}}
-### Bug Tracking and Resolution
-**Defect Classification:**
-- _Critical: System-breaking issues_
-- _High: Major functionality impacted_
-- _Medium: Minor functionality issues_
-- _Low: Cosmetic or enhancement requests_
 
-**Defect Workflow:**
-1. _Discovery and initial logging_
-2. _Triage and priority assignment_
-3. _Assignment to development team_
-4. _Fix implementation and verification_
-5. _Retest and closure confirmation_
-
-**Quality Gates:**
-- _No critical defects in production_
-- _High defects must be addressed before release_
-- _Medium/low defects evaluated for release impact_
 {{/if}}
+{{#if use_case_references}}
+## Related Use Cases
+{{#each use_case_references}}
+- **{{relationship}}:** {{target_id}}{{#if description}} - {{description}}{{/if}}
+{{/each}}
 
+{{/if}}
+{{#if last_updated}}
 ---
 
-**Test Sign-off Required:**
-- [ ] _QA lead approval_
-- [ ] _Test environment validation_
-- [ ] _Test data preparation complete_
-- [ ] _Automated test suite ready_
-
-**Testing Deliverables:**
-- [ ] _Test plan documentation_
-- [ ] _Test case specifications_
-- [ ] _Automated test scripts_
-- [ ] _Test data sets_
-- [ ] _Test execution reports_
-- [ ] _Defect summary and closure report_
-
-**Next Testing Steps:**
-1. _Test environment setup and validation_
-2. _Test data preparation and loading_
-3. _Test script development and validation_
-4. _Test execution planning and scheduling_
-
 **Last Updated:** {{last_updated}}
+{{/if}}

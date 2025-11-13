@@ -29,8 +29,12 @@ use args::{Cli, Commands};
 use interactive::run_interactive_session;
 use standard::{
     handle_create_command, handle_init_command, handle_languages_command, handle_list_command,
-    handle_list_methodologies_command, handle_methodology_info_command, handle_regenerate_command,
-    handle_status_command, CliRunner,
+    handle_list_methodologies_command, handle_methodology_info_command,
+    handle_postcondition_add_command, handle_postcondition_list_command,
+    handle_postcondition_remove_command, handle_precondition_add_command,
+    handle_precondition_list_command, handle_precondition_remove_command,
+    handle_reference_add_command, handle_reference_list_command, handle_reference_remove_command,
+    handle_regenerate_command, handle_status_command, CliRunner,
 };
 
 /// Execute a command with proper error handling and colored output
@@ -131,6 +135,80 @@ pub fn run() -> Result<()> {
             execute_command(|| handle_status_command(&mut runner));
             Ok(())
         }
+        Commands::Precondition { command } => match command {
+            args::PreconditionCommands::Add {
+                use_case_id,
+                precondition,
+            } => {
+                execute_command(|| {
+                    handle_precondition_add_command(&mut runner, use_case_id, precondition)
+                });
+                Ok(())
+            }
+            args::PreconditionCommands::List { use_case_id } => {
+                execute_command(|| handle_precondition_list_command(&mut runner, use_case_id));
+                Ok(())
+            }
+            args::PreconditionCommands::Remove { use_case_id, index } => {
+                execute_command(|| {
+                    handle_precondition_remove_command(&mut runner, use_case_id, index)
+                });
+                Ok(())
+            }
+        },
+        Commands::Postcondition { command } => match command {
+            args::PostconditionCommands::Add {
+                use_case_id,
+                postcondition,
+            } => {
+                execute_command(|| {
+                    handle_postcondition_add_command(&mut runner, use_case_id, postcondition)
+                });
+                Ok(())
+            }
+            args::PostconditionCommands::List { use_case_id } => {
+                execute_command(|| handle_postcondition_list_command(&mut runner, use_case_id));
+                Ok(())
+            }
+            args::PostconditionCommands::Remove { use_case_id, index } => {
+                execute_command(|| {
+                    handle_postcondition_remove_command(&mut runner, use_case_id, index)
+                });
+                Ok(())
+            }
+        },
+        Commands::Reference { command } => match command {
+            args::ReferenceCommands::Add {
+                use_case_id,
+                target_id,
+                relationship,
+                description,
+            } => {
+                execute_command(|| {
+                    handle_reference_add_command(
+                        &mut runner,
+                        use_case_id,
+                        target_id,
+                        relationship,
+                        description,
+                    )
+                });
+                Ok(())
+            }
+            args::ReferenceCommands::List { use_case_id } => {
+                execute_command(|| handle_reference_list_command(&mut runner, use_case_id));
+                Ok(())
+            }
+            args::ReferenceCommands::Remove {
+                use_case_id,
+                target_id,
+            } => {
+                execute_command(|| {
+                    handle_reference_remove_command(&mut runner, use_case_id, target_id)
+                });
+                Ok(())
+            }
+        },
         Commands::Interactive => {
             // This case is handled above, but included for completeness
             run_interactive_session()
