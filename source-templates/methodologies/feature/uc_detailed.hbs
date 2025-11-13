@@ -27,6 +27,41 @@
 {{/each}}
 
 {{/if}}
+{{#if scenarios}}
+## Scenarios
+
+{{#each scenarios}}
+### {{scenario_type}}: {{title}}
+
+**ID:** {{id}}  
+**Status:** {{status}}  
+**Description:** {{description}}
+
+{{#if persona}}
+**Persona:** {{persona}}
+{{/if}}
+
+#### Flow
+{{#each steps}}
+{{order}}. **{{actor}}** {{action}} {{description}}{{#if notes}} ({{notes}}){{/if}}
+{{/each}}
+
+{{#if preconditions}}
+#### Preconditions
+{{#each preconditions}}
+- {{this}}
+{{/each}}
+{{/if}}
+
+{{#if postconditions}}
+#### Postconditions
+{{#each postconditions}}
+- {{this}}
+{{/each}}
+{{/if}}
+
+{{/each}}
+{{/if}}
 {{#if value_proposition}}
 ## Business Value
 

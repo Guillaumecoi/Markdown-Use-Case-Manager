@@ -77,6 +77,41 @@
 {{/each}}
 
 {{/if}}
+{{#if scenarios}}
+## Scenario Analysis
+
+{{#each scenarios}}
+### {{scenario_type}}: {{title}}
+
+**Scenario ID:** {{id}}  
+**Status:** {{status}}  
+**Business Description:** {{description}}
+
+{{#if persona}}
+**Target Persona:** {{persona}}
+{{/if}}
+
+#### Business Flow
+{{#each steps}}
+{{order}}. **{{actor}}** {{action}} {{description}}{{#if notes}} ({{notes}}){{/if}}
+{{/each}}
+
+{{#if preconditions}}
+#### Scenario Preconditions
+{{#each preconditions}}
+- {{this}}
+{{/each}}
+{{/if}}
+
+{{#if postconditions}}
+#### Scenario Postconditions
+{{#each postconditions}}
+- {{this}}
+{{/each}}
+{{/if}}
+
+{{/each}}
+{{/if}}
 {{#if use_case_references}}
 ## Related Use Cases
 {{#each use_case_references}}

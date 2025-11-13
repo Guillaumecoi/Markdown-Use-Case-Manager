@@ -26,6 +26,21 @@
 {{/each}}
 
 {{/if}}
+{{#if scenarios}}
+## Scenario-Based Testing
+
+{{#each scenarios}}
+### {{scenario_type}}: {{title}}
+
+**Test Status:** {{status}}
+
+#### Test Flow
+{{#each steps}}
+{{order}}. **{{actor}}** {{action}} {{description}}
+{{/each}}
+
+{{/each}}
+{{/if}}
 {{#if objectives}}
 ## Test Objectives
 

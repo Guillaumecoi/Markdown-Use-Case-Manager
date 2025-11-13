@@ -63,6 +63,41 @@
 {{/each}}
 
 {{/if}}
+{{#if scenarios}}
+## Technical Scenarios
+
+{{#each scenarios}}
+### {{scenario_type}}: {{title}}
+
+**Scenario ID:** {{id}}  
+**Implementation Status:** {{status}}  
+**Technical Description:** {{description}}
+
+{{#if persona}}
+**Target Persona:** {{persona}}
+{{/if}}
+
+#### Technical Flow
+{{#each steps}}
+{{order}}. **{{actor}}** {{action}} {{description}}{{#if notes}} ({{notes}}){{/if}}
+{{/each}}
+
+{{#if preconditions}}
+#### Scenario Preconditions
+{{#each preconditions}}
+- {{this}}
+{{/each}}
+{{/if}}
+
+{{#if postconditions}}
+#### Scenario Postconditions
+{{#each postconditions}}
+- {{this}}
+{{/each}}
+{{/if}}
+
+{{/each}}
+{{/if}}
 {{#if development_approach}}
 ## Implementation Details
 
