@@ -7,15 +7,11 @@
 
 ---
 
-## Executive Summary
-
 {{#if core.summary}}
+## Executive Summary
 {{summary}}
-{{else}}
-### Business Overview
-_Provide a comprehensive summary of the business case and its strategic importance._
-{{/if}}
 
+{{/if}}
 ## Stakeholder Analysis
 
 {{#if stakeholders.decision_makers}}
@@ -23,68 +19,34 @@ _Provide a comprehensive summary of the business case and its strategic importan
 {{#each stakeholders.decision_makers}}
 - **{{this}}** - _Role and decision authority_
 {{/each}}
-{{else}}
-### Key Decision Makers
-_Who has the authority to approve or reject this initiative?_
-{{/if}}
 
+{{/if}}
 {{#if stakeholders.primary_users}}
 ### Primary Stakeholders
 {{#each stakeholders.primary_users}}
 - **{{this}}** - _Impact and involvement level_
 {{/each}}
-{{else}}
-### Primary Stakeholders
-_Who are the main stakeholders affected by this use case?_
-{{/if}}
 
+{{/if}}
 {{#if stakeholders.secondary_users}}
 ### Secondary Stakeholders
 {{#each stakeholders.secondary_users}}
 - **{{this}}** - _Indirect impact and considerations_
 {{/each}}
-{{else}}
-### Secondary Stakeholders
-_Who else might be impacted by this initiative?_
-{{/if}}
 
+{{/if}}
 ## Business Case
 
 {{#if business.value_proposition}}
 ### Value Proposition
 {{value_proposition}}
-{{else}}
-### Value Proposition
-_What specific business value does this use case deliver?_
 
-**Strategic Alignment:**
-_How does this align with business objectives?_
-
-**Competitive Advantage:**
-_What competitive benefits does this provide?_
 {{/if}}
-
 {{#if business.roi_analysis}}
 ### Return on Investment Analysis
 {{roi_analysis}}
-{{else}}
-### Financial Analysis
-**Investment Required:**
-- Development costs: _$XXX_
-- Infrastructure costs: _$XXX_
-- Training costs: _$XXX_
-- Total investment: _$XXX_
 
-**Expected Returns:**
-- Revenue increase: _$XXX annually_
-- Cost savings: _$XXX annually_
-- Efficiency gains: _XXX% improvement_
-
-**ROI Calculation:**
-- Break-even point: _X months_
-- 3-year ROI: _XXX%_
 {{/if}}
-
 ## Business Requirements
 
 {{#if core.objectives}}
@@ -92,114 +54,55 @@ _What competitive benefits does this provide?_
 {{#each core.objectives}}
 - {{this}}
 {{/each}}
-{{else}}
-### Core Business Objectives
-_What business goals must this use case achieve?_
-{{/if}}
 
+{{/if}}
 {{#if business.success_criteria}}
 ### Success Criteria
 {{#each business.success_criteria}}
 - {{this}}
 {{/each}}
-{{else}}
-### Key Performance Indicators
-_How will business success be measured?_
 
-**Quantitative Metrics:**
-- _Metric 1: Target value_
-- _Metric 2: Target value_
-
-**Qualitative Metrics:**
-- _Quality measure 1_
-- _Quality measure 2_
 {{/if}}
-
-## Preconditions and Postconditions
-
 {{#if preconditions}}
-### Preconditions
+## Preconditions
 {{#each preconditions}}
 - {{this}}
 {{/each}}
-{{else}}
-### Preconditions
-_What conditions must be met before this use case can be executed?_
-{{/if}}
 
+{{/if}}
 {{#if postconditions}}
-### Postconditions
+## Postconditions
 {{#each postconditions}}
 - {{this}}
 {{/each}}
-{{else}}
-### Postconditions
-_What will be true after successful execution of this use case?_
+
 {{/if}}
-
-## Use Case Relationships
-
 {{#if use_case_references}}
-### Related Use Cases
+## Related Use Cases
 {{#each use_case_references}}
 - **{{relationship}}:** {{target_id}}{{#if description}} - {{description}}{{/if}}
 {{/each}}
-{{else}}
-### Related Use Cases
-_No related use cases have been identified yet._
+
 {{/if}}
-
-## Process Impact Analysis
-
 {{#if business.process_changes}}
+## Process Impact Analysis
 ### Process Changes Required
 {{process_changes}}
-{{else}}
-### Current State Analysis
-_How do current business processes work?_
 
-### Future State Vision
-_How will processes change after implementation?_
-
-### Change Management Requirements
-_What organizational changes are needed?_
 {{/if}}
-
-## Implementation Strategy
-
 {{#if business.timeline}}
+## Implementation Strategy
 ### Business Timeline
 {{timeline}}
-{{else}}
-### Phased Implementation Approach
-**Phase 1: Foundation** _(Timeline)_
-- _Key deliverables and business milestones_
 
-**Phase 2: Core Implementation** _(Timeline)_
-- _Key deliverables and business milestones_
-
-**Phase 3: Optimization** _(Timeline)_
-- _Key deliverables and business milestones_
 {{/if}}
-
 {{#if business.resource_requirements}}
 ### Resource Requirements
 {{resource_requirements}}
-{{else}}
-### Business Resources Required
-**Internal Resources:**
-- Business analyst: _X hours/weeks_
-- Subject matter experts: _X hours/weeks_
-- Training coordinators: _X hours/weeks_
 
-**External Resources:**
-- Consultants: _If needed_
-- Training providers: _If needed_
 {{/if}}
-
-## Risk Assessment
-
 {{#if business.risk_factors}}
+## Risk Assessment
 ### Business Risks
 {{#each business.risk_factors}}
 - **Risk:** {{this}}
@@ -207,52 +110,20 @@ _What organizational changes are needed?_
   - **Probability:** _High/Medium/Low_
   - **Mitigation:** _Strategy to address_
 {{/each}}
-{{else}}
-### Risk Analysis
-**High-Impact Risks:**
-- _Risk description and mitigation strategy_
 
-**Medium-Impact Risks:**
-- _Risk description and mitigation strategy_
-
-**Low-Impact Risks:**
-- _Risk description and monitoring approach_
 {{/if}}
-
-## Compliance and Governance
-
 {{#if business.compliance_requirements}}
+## Compliance and Governance
 ### Compliance Requirements
 {{compliance_requirements}}
-{{else}}
-### Regulatory Considerations
-_What regulatory requirements must be considered?_
 
-### Data Governance
-_What data governance policies apply?_
-
-### Audit Requirements
-_What audit trails and documentation are needed?_
 {{/if}}
-
-## Communication Plan
-
 {{#if stakeholders.communication_plan}}
+## Communication Plan
 ### Stakeholder Communication
 {{communication_plan}}
-{{else}}
-### Communication Strategy
-**Key Messages:**
-- _Message for executives_
-- _Message for end users_
-- _Message for IT teams_
 
-**Communication Channels:**
-- Executive briefings: _Frequency and format_
-- Team updates: _Frequency and format_
-- Training sessions: _Schedule and approach_
 {{/if}}
-
 ---
 
 **Business Approval Required From:**

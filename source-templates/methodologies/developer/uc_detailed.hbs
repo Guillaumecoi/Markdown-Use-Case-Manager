@@ -132,26 +132,19 @@ _What specific functionality must the system provide?_
 - _Output generation: Format and delivery_
 {{/if}}
 
-## Preconditions
 {{#if preconditions}}
+## Preconditions
 {{#each preconditions}}
 - {{this}}
 {{/each}}
-{{else}}
-_What must be true before this use case can begin?_
-- _Precondition 1_
-- _Precondition 2_
-{{/if}}
 
-## Postconditions
+{{/if}}
 {{#if postconditions}}
+## Postconditions
 {{#each postconditions}}
 - {{this}}
 {{/each}}
-{{else}}
-_What will be true after this use case completes successfully?_
-- _Postcondition 1_
-- _Postcondition 2_
+
 {{/if}}
 
 ## Implementation Details
@@ -321,13 +314,11 @@ _What will be true after this use case completes successfully?_
 - _Integration examples_
 {{/if}}
 
-## Use Case References
 {{#if use_case_references}}
+## Related Use Cases
 {{#each use_case_references}}
-- **{{title}}** ({{id}}): {{description}}
+- **{{relationship}}:** {{target_id}}{{#if description}} - {{description}}{{/if}}
 {{/each}}
-{{else}}
-_No related use cases referenced_
 {{/if}}
 
 ---

@@ -16,26 +16,19 @@
 _Provide a concise description of the feature and its value proposition._
 {{/if}}
 
-## Preconditions
 {{#if preconditions}}
+## Preconditions
 {{#each preconditions}}
 - {{this}}
 {{/each}}
-{{else}}
-_What must be true before this feature can be implemented?_
-- _Precondition 1_
-- _Precondition 2_
-{{/if}}
 
-## Postconditions
+{{/if}}
 {{#if postconditions}}
+## Postconditions
 {{#each postconditions}}
 - {{this}}
 {{/each}}
-{{else}}
-_What will be true after this feature is successfully implemented?_
-- _Postcondition 1_
-- _Postcondition 2_
+
 {{/if}}
 
 ## Business Value
@@ -149,18 +142,16 @@ _What are the main risks associated with this feature?_
 _How can identified risks be addressed?_
 {{/if}}
 
-## Use Case References
 {{#if use_case_references}}
+## Related Use Cases
 {{#each use_case_references}}
-- **{{title}}** ({{id}}): {{description}}
+- **{{relationship}}:** {{target_id}}{{#if description}} - {{description}}{{/if}}
 {{/each}}
-{{else}}
-_No related use cases referenced_
 {{/if}}
 
+{{#if custom_field}}
 ## Custom Fields Test
 
-{{#if custom_field}}
 **Custom Field (String):** {{custom_field}}
 {{/if}}
 

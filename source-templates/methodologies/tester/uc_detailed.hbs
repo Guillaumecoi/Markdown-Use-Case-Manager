@@ -33,26 +33,19 @@ _Define what aspects of the use case will be tested and the overall testing appr
 - _Tool and framework requirements_
 {{/if}}
 
-## Preconditions
 {{#if preconditions}}
+## Preconditions
 {{#each preconditions}}
 - {{this}}
 {{/each}}
-{{else}}
-_What must be true before testing this use case can begin?_
-- _Precondition 1_
-- _Precondition 2_
-{{/if}}
 
-## Postconditions
+{{/if}}
 {{#if postconditions}}
+## Postconditions
 {{#each postconditions}}
 - {{this}}
 {{/each}}
-{{else}}
-_What will be true after testing this use case is completed successfully?_
-- _Postcondition 1_
-- _Postcondition 2_
+
 {{/if}}
 
 ## Test Objectives
@@ -311,13 +304,11 @@ _What specific aspects need validation through testing?_
 - _Medium/low defects evaluated for release impact_
 {{/if}}
 
-## Use Case References
 {{#if use_case_references}}
+## Related Use Cases
 {{#each use_case_references}}
-- **{{title}}** ({{id}}): {{description}}
+- **{{relationship}}:** {{target_id}}{{#if description}} - {{description}}{{/if}}
 {{/each}}
-{{else}}
-_No related use cases referenced_
 {{/if}}
 
 ---
