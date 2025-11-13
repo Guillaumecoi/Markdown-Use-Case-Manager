@@ -231,6 +231,9 @@ impl SqliteUseCaseRepository {
                             )
                         })?,
                     },
+                    preconditions: Vec::new(), // Will be populated below
+                    postconditions: Vec::new(), // Will be populated below
+                    use_case_references: Vec::new(), // Will be populated below
                     extra,
                 })
             })
@@ -251,16 +254,9 @@ impl SqliteUseCaseRepository {
             .query_map([id], |row| row.get::<_, String>(0))
             .context("Failed to execute preconditions query")?;
         for text in precondition_rows {
-            preconditions.push(serde_json::Value::String(
-                text.context("Failed to read precondition")?,
-            ));
+            preconditions.push(text.context("Failed to read precondition")?);
         }
-        if !preconditions.is_empty() {
-            use_case.extra.insert(
-                "preconditions".to_string(),
-                serde_json::Value::Array(preconditions),
-            );
-        }
+        use_case.preconditions = preconditions;
 
         // Load postconditions
         let mut postconditions = Vec::new();
@@ -272,38 +268,30 @@ impl SqliteUseCaseRepository {
             .query_map([id], |row| row.get::<_, String>(0))
             .context("Failed to execute postconditions query")?;
         for text in postcondition_rows {
-            postconditions.push(serde_json::Value::String(
-                text.context("Failed to read postcondition")?,
-            ));
+            postconditions.push(text.context("Failed to read postcondition")?);
         }
-        if !postconditions.is_empty() {
-            use_case.extra.insert(
-                "postconditions".to_string(),
-                serde_json::Value::Array(postconditions),
-            );
-        }
+        use_case.postconditions = postconditions;
 
         // Load references
         let mut references = Vec::new();
         let mut stmt = conn
             .prepare(
-                "SELECT description FROM use_case_references WHERE use_case_id = ? ORDER BY id",
+                "SELECT target_id, relationship, description FROM use_case_references WHERE use_case_id = ? ORDER BY id",
             )
             .context("Failed to prepare references query")?;
         let reference_rows = stmt
-            .query_map([id], |row| row.get::<_, String>(0))
+            .query_map([id], |row| {
+                Ok(crate::core::domain::UseCaseReference {
+                    target_id: row.get(0)?,
+                    relationship: row.get(1)?,
+                    description: row.get(2)?,
+                })
+            })
             .context("Failed to execute references query")?;
-        for text in reference_rows {
-            references.push(serde_json::Value::String(
-                text.context("Failed to read reference")?,
-            ));
+        for reference in reference_rows {
+            references.push(reference.context("Failed to read reference")?);
         }
-        if !references.is_empty() {
-            use_case.extra.insert(
-                "references".to_string(),
-                serde_json::Value::Array(references),
-            );
-        }
+        use_case.use_case_references = references;
 
         Ok(Some(use_case))
     }
@@ -361,6 +349,9 @@ impl SqliteUseCaseRepository {
                             )
                         })?,
                     },
+                    preconditions: Vec::new(), // Will be populated below
+                    postconditions: Vec::new(), // Will be populated below
+                    use_case_references: Vec::new(), // Will be populated below
                     extra,
                 })
             })
@@ -373,65 +364,52 @@ impl SqliteUseCaseRepository {
 
         // Load preconditions
         let mut preconditions = Vec::new();
-        let mut stmt = tx
-            .prepare("SELECT condition_text FROM use_case_preconditions WHERE use_case_id = ? ORDER BY condition_order")
-            .context("Failed to prepare preconditions query")?;
+        let mut stmt = tx.prepare(
+            "SELECT condition_text FROM use_case_preconditions WHERE use_case_id = ? ORDER BY condition_order"
+        )
+        .context("Failed to prepare preconditions query")?;
         let precondition_rows = stmt
             .query_map([id], |row| row.get::<_, String>(0))
             .context("Failed to execute preconditions query")?;
         for text in precondition_rows {
-            preconditions.push(serde_json::Value::String(
-                text.context("Failed to read precondition")?,
-            ));
+            preconditions.push(text.context("Failed to read precondition")?);
         }
-        if !preconditions.is_empty() {
-            use_case.extra.insert(
-                "preconditions".to_string(),
-                serde_json::Value::Array(preconditions),
-            );
-        }
+        use_case.preconditions = preconditions;
 
         // Load postconditions
         let mut postconditions = Vec::new();
-        let mut stmt = tx
-            .prepare("SELECT condition_text FROM use_case_postconditions WHERE use_case_id = ? ORDER BY condition_order")
-            .context("Failed to prepare postconditions query")?;
+        let mut stmt = tx.prepare(
+            "SELECT condition_text FROM use_case_postconditions WHERE use_case_id = ? ORDER BY condition_order"
+        )
+        .context("Failed to prepare postconditions query")?;
         let postcondition_rows = stmt
             .query_map([id], |row| row.get::<_, String>(0))
             .context("Failed to execute postconditions query")?;
         for text in postcondition_rows {
-            postconditions.push(serde_json::Value::String(
-                text.context("Failed to read postcondition")?,
-            ));
+            postconditions.push(text.context("Failed to read postcondition")?);
         }
-        if !postconditions.is_empty() {
-            use_case.extra.insert(
-                "postconditions".to_string(),
-                serde_json::Value::Array(postconditions),
-            );
-        }
+        use_case.postconditions = postconditions;
 
         // Load references
         let mut references = Vec::new();
         let mut stmt = tx
             .prepare(
-                "SELECT description FROM use_case_references WHERE use_case_id = ? ORDER BY id",
+                "SELECT target_id, relationship, description FROM use_case_references WHERE use_case_id = ? ORDER BY id",
             )
             .context("Failed to prepare references query")?;
         let reference_rows = stmt
-            .query_map([id], |row| row.get::<_, String>(0))
+            .query_map([id], |row| {
+                Ok(crate::core::domain::UseCaseReference {
+                    target_id: row.get(0)?,
+                    relationship: row.get(1)?,
+                    description: row.get(2)?,
+                })
+            })
             .context("Failed to execute references query")?;
-        for text in reference_rows {
-            references.push(serde_json::Value::String(
-                text.context("Failed to read reference")?,
-            ));
+        for reference in reference_rows {
+            references.push(reference.context("Failed to read reference")?);
         }
-        if !references.is_empty() {
-            use_case.extra.insert(
-                "references".to_string(),
-                serde_json::Value::Array(references),
-            );
-        }
+        use_case.use_case_references = references;
 
         Ok(Some(use_case))
     }
@@ -850,6 +828,9 @@ mod tests {
             description: "A test use case".to_string(),
             priority,
             metadata: Metadata::new(),
+            preconditions: Vec::new(),
+            postconditions: Vec::new(),
+            use_case_references: Vec::new(),
             extra: HashMap::new(),
         }
     }
