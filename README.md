@@ -26,6 +26,7 @@ Works great for solo developers, small teams, or any project where you want docu
 - **Extended Metadata** - Comprehensive metadata including personas, prerequisites, business value, acceptance criteria, and more
 - **Interactive CLI** - User-friendly interactive mode with guided workflows
 - **Use Case Dependencies** - Reference and link related use cases for traceability
+- **Multiple Storage Backends** - Choose between TOML files or SQLite database for use case storage
 
 ## Getting Started
 
@@ -228,6 +229,10 @@ description = "Project managed with Markdown Use Case Manager"
 methodology = "business"              # Selected methodology
 use_extended_metadata = true          # Methodology recommendation
 persona_template_enabled = true       # Persona support
+
+[storage]
+backend = "toml"                      # "toml" or "sqlite"
+database_path = ".config/mucm/usecases.db"  # SQLite location
 
 [directories]
 use_case_dir = "docs/use-cases"

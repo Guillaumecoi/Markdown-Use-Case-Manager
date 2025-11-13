@@ -76,6 +76,29 @@ test_language = "rust"                      # Or "python" or "none"
 auto_generate_tests = true                  # Create test files automatically
 ```
 
+### Storage Backend
+```toml
+[storage]
+backend = "toml"                            # Options: "toml" or "sqlite"
+database_path = ".config/mucm/usecases.db"  # SQLite database location (only used when backend = "sqlite")
+```
+
+**Storage Backend Options:**
+- `toml` - File-based storage using TOML files (default, recommended for most users)
+- `sqlite` - Database storage using SQLite (better for large projects with many use cases)
+
+**When to use SQLite:**
+- You have hundreds of use cases
+- You need better query performance
+- You want atomic operations across multiple use cases
+- You're integrating with other database-driven tools
+
+**When to stick with TOML:**
+- You want human-readable source files
+- You prefer file-based version control
+- You have a smaller number of use cases
+- You want to edit use cases directly in files
+
 ## Common Setups
 
 ### I Just Want Simple
