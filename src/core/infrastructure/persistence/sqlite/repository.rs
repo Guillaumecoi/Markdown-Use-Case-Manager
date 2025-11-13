@@ -88,8 +88,16 @@ impl SqliteUseCaseRepository {
 
     /// Save a use case to the database (internal implementation).
     fn save_internal(tx: &Transaction, use_case: &UseCase) -> Result<()> {
+        // Serialize scenarios to JSON
+        let scenarios_json = serde_json::to_value(&use_case.scenarios)
+            .context("Failed to serialize scenarios to JSON")?;
+        
+        // Add scenarios to extra for storage
+        let mut extra_with_scenarios = use_case.extra.clone();
+        extra_with_scenarios.insert("scenarios".to_string(), scenarios_json);
+        
         // Serialize extra fields to JSON
-        let extra_json = serde_json::to_string(&use_case.extra)
+        let extra_json = serde_json::to_string(&extra_with_scenarios)
             .context("Failed to serialize extra fields to JSON")?;
 
         // Insert or replace the main use case record
@@ -194,7 +202,7 @@ impl SqliteUseCaseRepository {
         let mut rows = stmt
             .query_map([id], |row| {
                 let extra_json: String = row.get(7)?;
-                let extra: std::collections::HashMap<String, serde_json::Value> =
+                let mut extra: std::collections::HashMap<String, serde_json::Value> =
                     serde_json::from_str(&extra_json).map_err(|e| {
                         rusqlite::Error::FromSqlConversionFailure(
                             7,
@@ -202,6 +210,13 @@ impl SqliteUseCaseRepository {
                             Box::new(e),
                         )
                     })?;
+                
+                // Extract scenarios from extra and deserialize
+                let scenarios = if let Some(scenarios_value) = extra.remove("scenarios") {
+                    serde_json::from_value(scenarios_value).unwrap_or_else(|_| Vec::new())
+                } else {
+                    Vec::new()
+                };
 
                 Ok(UseCase {
                     id: row.get(0)?,
@@ -234,7 +249,7 @@ impl SqliteUseCaseRepository {
                     preconditions: Vec::new(),  // Will be populated below
                     postconditions: Vec::new(), // Will be populated below
                     use_case_references: Vec::new(), // Will be populated below
-                    scenarios: Vec::new(),      // Will be populated below
+                    scenarios,
                     extra,
                 })
             })
@@ -313,7 +328,7 @@ impl SqliteUseCaseRepository {
         let mut rows = stmt
             .query_map([id], |row| {
                 let extra_json: String = row.get(7)?;
-                let extra: std::collections::HashMap<String, serde_json::Value> =
+                let mut extra: std::collections::HashMap<String, serde_json::Value> =
                     serde_json::from_str(&extra_json).map_err(|e| {
                         rusqlite::Error::FromSqlConversionFailure(
                             7,
@@ -321,6 +336,13 @@ impl SqliteUseCaseRepository {
                             Box::new(e),
                         )
                     })?;
+                
+                // Extract scenarios from extra and deserialize
+                let scenarios = if let Some(scenarios_value) = extra.remove("scenarios") {
+                    serde_json::from_value(scenarios_value).unwrap_or_else(|_| Vec::new())
+                } else {
+                    Vec::new()
+                };
 
                 Ok(UseCase {
                     id: row.get(0)?,
@@ -353,7 +375,7 @@ impl SqliteUseCaseRepository {
                     preconditions: Vec::new(),  // Will be populated below
                     postconditions: Vec::new(), // Will be populated below
                     use_case_references: Vec::new(), // Will be populated below
-                    scenarios: Vec::new(),      // Will be populated below
+                    scenarios,
                     extra,
                 })
             })

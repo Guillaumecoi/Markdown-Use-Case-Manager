@@ -6,8 +6,8 @@ mod services;
 
 // Re-exports
 pub use entities::{
-    Metadata, Priority, Scenario, ScenarioReference, ScenarioStep, ScenarioType, Status, UseCase,
-    UseCaseReference,
+    Metadata, Priority, ReferenceType, Scenario, ScenarioReference, ScenarioStep, ScenarioType,
+    Status, UseCase, UseCaseReference,
 };
 pub use repositories::UseCaseRepository;
 pub use services::{ScenarioService, UseCaseService};
