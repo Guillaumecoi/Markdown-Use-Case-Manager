@@ -38,6 +38,7 @@ Works great for solo developers, small teams, or any project where you want docu
 ### Flexible Workflow
 - **Interactive mode** - Guided workflows with smart suggestions and auto-completion
 - **Script mode** - Automation-friendly for CI/CD pipelines
+- **Field management** - Add, list, and remove preconditions, postconditions, and use case references
 - **Both modes available** - Choose based on your context
 
 ### Professional Documentation
@@ -95,6 +96,27 @@ mucm list
 mucm status
 ```
 
+### Field Management
+
+Manage use case preconditions, postconditions, and references:
+
+```bash
+# Preconditions
+mucm precondition add UC-SEC-001 "User must be authenticated"
+mucm precondition list UC-SEC-001
+mucm precondition remove UC-SEC-001 1
+
+# Postconditions  
+mucm postcondition add UC-SEC-001 "User session is established"
+mucm postcondition list UC-SEC-001
+mucm postcondition remove UC-SEC-001 1
+
+# Use case references
+mucm reference add UC-SEC-001 UC-AUTH-001 dependency "Requires authentication"
+mucm reference list UC-SEC-001
+mucm reference remove UC-SEC-001 UC-AUTH-001
+```
+
 > **Note**: Some commands have changed. Use `mucm --help` or `mucm <command> --help` for current options.
 
 > **⚠️ Important**: You **must** run `mucm init` before using any other commands.
@@ -140,6 +162,9 @@ Rich metadata support for professional documentation:
 ### **Available Fields**
 - **👥 Personas** - Target users and stakeholders
 - **📋 Prerequisites** - System requirements and dependencies  
+- **🔗 Preconditions** - Conditions that must be true before use case execution
+- **✅ Postconditions** - Conditions that will be true after successful completion
+- **🔗 Use Case References** - Relationships to other use cases (dependencies, extensions, etc.)
 - **✍️ Author/Reviewer** - Ownership and review information
 - **💰 Business Value** - Why this use case matters
 - **🔧 Complexity** - Implementation difficulty assessment
