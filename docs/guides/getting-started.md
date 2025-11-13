@@ -24,11 +24,23 @@ MUCM has 3 different methodologies. Pick one that fits your project:
 
 **Can't decide?** Start with `simple` - it's perfect for most projects and you can always regenerate with a different methodology later.
 
+### Storage Backend Options
+
+MUCM supports two storage backends:
+
+- **TOML (default)**: Human-readable files, great for version control, perfect for < 100 use cases
+- **SQLite**: Database storage, better performance for 100+ use cases, supports complex queries
+
+Start with TOML unless you know you'll have a large project. You can always migrate later if needed.
+
 ## Step 3: Set Up Your Project
 
 ```bash
-# Set up with your chosen methodology
+# Set up with your chosen methodology (uses TOML storage by default)
 mucm init --methodology simple
+
+# Or use SQLite for better performance with large projects
+mucm init --methodology simple --backend sqlite
 
 # Or let MUCM guide you through it
 mucm -i

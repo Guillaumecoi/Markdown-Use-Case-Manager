@@ -27,6 +27,94 @@
 //! with methodology-specific fields and generation settings.
 
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
+
+/// Storage backend for use cases
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StorageBackend {
+    /// TOML files (default, simple, git-friendly)
+    Toml,
+    /// SQLite database (for advanced querying)
+    Sqlite,
+}
+
+impl Default for StorageBackend {
+    fn default() -> Self {
+        StorageBackend::Toml
+    }
+}
+
+impl std::fmt::Display for StorageBackend {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            StorageBackend::Toml => write!(f, "toml"),
+            StorageBackend::Sqlite => write!(f, "sqlite"),
+        }
+    }
+}
+
+impl FromStr for StorageBackend {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "toml" => Ok(StorageBackend::Toml),
+            "sqlite" | "sql" | "db" => Ok(StorageBackend::Sqlite),
+            _ => Err(format!(
+                "Invalid storage backend: {}. Valid options: toml, sqlite",
+                s
+            )),
+        }
+    }
+}
+
+#[cfg(test)]
+mod storage_backend_tests {
+    use super::*;
+
+    #[test]
+    fn test_default_is_toml() {
+        assert_eq!(StorageBackend::default(), StorageBackend::Toml);
+    }
+
+    #[test]
+    fn test_from_str() {
+        assert_eq!(
+            StorageBackend::from_str("toml").unwrap(),
+            StorageBackend::Toml
+        );
+        assert_eq!(
+            StorageBackend::from_str("sqlite").unwrap(),
+            StorageBackend::Sqlite
+        );
+        assert_eq!(
+            StorageBackend::from_str("sql").unwrap(),
+            StorageBackend::Sqlite
+        );
+        assert_eq!(
+            StorageBackend::from_str("db").unwrap(),
+            StorageBackend::Sqlite
+        );
+        assert!(StorageBackend::from_str("invalid").is_err());
+    }
+
+    #[test]
+    fn test_display() {
+        assert_eq!(StorageBackend::Toml.to_string(), "toml");
+        assert_eq!(StorageBackend::Sqlite.to_string(), "sqlite");
+    }
+
+    #[test]
+    fn test_serialization() {
+        let backend = StorageBackend::Sqlite;
+        let json = serde_json::to_string(&backend).unwrap();
+        assert_eq!(json, r#""sqlite""#);
+
+        let deserialized: StorageBackend = serde_json::from_str(&json).unwrap();
+        assert_eq!(deserialized, StorageBackend::Sqlite);
+    }
+}
 
 /// Main configuration structure for MUCM projects.
 ///
@@ -41,6 +129,7 @@ use serde::{Deserialize, Serialize};
 /// - `base_fields`: Standard fields available to all use cases
 /// - `metadata`: Auto-generated metadata settings (creation/update timestamps)
 /// - `generation`: Code generation preferences (test language, auto-generation flags)
+/// - `storage`: Storage backend configuration (TOML or SQLite)
 ///
 /// # Example Configuration
 ///
@@ -64,6 +153,9 @@ use serde::{Deserialize, Serialize};
 /// auto_generate_tests = false
 /// overwrite_test_documentation = false
 ///
+/// [storage]
+/// backend = "toml"
+///
 /// [metadata]
 /// created = true
 /// last_updated = true
@@ -81,6 +173,9 @@ pub struct Config {
     /// Code generation preferences and settings
     #[serde(default)]
     pub generation: GenerationConfig,
+    /// Storage backend configuration
+    #[serde(default)]
+    pub storage: StorageConfig,
 }
 
 /// Project-level configuration settings.
@@ -192,4 +287,28 @@ pub struct MetadataConfig {
     /// Whether to automatically update timestamp when use case is modified
     /// Updates a "last_updated" field with the current date/time
     pub last_updated: bool,
+}
+
+/// Storage backend configuration settings.
+///
+/// Defines which storage backend to use for persisting use case data.
+/// TOML is the default for simplicity and git-friendliness, while SQLite
+/// provides better querying capabilities for larger projects.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StorageConfig {
+    /// The storage backend to use for use case persistence
+    /// Options: "toml" (default) or "sqlite"
+    pub backend: StorageBackend,
+}
+
+impl Default for StorageConfig {
+    /// Create a default storage configuration.
+    ///
+    /// Returns a configuration with TOML as the default backend
+    /// for maximum compatibility and simplicity.
+    fn default() -> Self {
+        Self {
+            backend: StorageBackend::default(),
+        }
+    }
 }

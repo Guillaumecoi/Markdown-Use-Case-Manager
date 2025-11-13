@@ -82,6 +82,38 @@ impl CliRunner {
         Ok(result)
     }
 
+    /// Initialize a new use case manager project with storage backend choice (configuration phase).
+    ///
+    /// Creates the initial project structure and configuration files with the specified storage backend.
+    /// This is the first step of initialization - templates are copied later
+    /// in `finalize_init()` to allow config review.
+    ///
+    /// # Arguments
+    /// * `language` - Optional programming language for code templates
+    /// * `methodology` - Optional default methodology (defaults to "feature")
+    /// * `storage` - Storage backend to use (toml or sqlite)
+    ///
+    /// # Returns
+    /// Returns a DisplayResult with success message.
+    pub fn init_project_with_storage(
+        &mut self,
+        language: Option<String>,
+        methodology: Option<String>,
+        storage: String,
+    ) -> Result<DisplayResult> {
+        // Sanitize inputs: trim whitespace and filter out empty strings
+        let sanitized_language = Self::sanitize_optional_string(language);
+        let sanitized_methodology =
+            Self::sanitize_optional_string(methodology).unwrap_or_else(|| "feature".to_string());
+
+        let result = ProjectController::init_project_with_storage(
+            sanitized_language,
+            sanitized_methodology,
+            storage,
+        )?;
+        Ok(result)
+    }
+
     /// Finalize project initialization (template copying phase).
     ///
     /// Completes the initialization by copying template files based on the

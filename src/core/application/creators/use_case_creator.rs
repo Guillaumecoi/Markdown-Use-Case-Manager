@@ -44,7 +44,7 @@ impl UseCaseCreator {
             .map_err(|e| anyhow::anyhow!(e))?;
 
         // Step 1: Save TOML first (source of truth)
-        repository.save_toml_only(&use_case)?;
+        repository.save(&use_case)?;
 
         // Step 2: Load from TOML to ensure we're working with persisted data
         let use_case_from_toml = repository
@@ -86,7 +86,7 @@ impl UseCaseCreator {
             .map_err(|e| anyhow::anyhow!(e))?;
 
         // Step 1: Save TOML first (source of truth) - this will include custom fields
-        repository.save_toml_only(&use_case)?;
+        repository.save(&use_case)?;
 
         // Step 2: Load from TOML to ensure we're working with persisted data
         let use_case_from_toml = repository

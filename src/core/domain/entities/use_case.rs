@@ -71,6 +71,8 @@ impl UseCase {
     }
 
     pub fn status(&self) -> Status {
+        // TODO: In PR #4, update to calculate from scenarios
+        // For now, maintain backward compatibility
         Status::Planned
     }
 }

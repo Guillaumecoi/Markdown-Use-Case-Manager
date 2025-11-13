@@ -15,6 +15,7 @@ use anyhow::Result;
 /// * `runner` - A mutable reference to the CLI runner responsible for project initialization.
 /// * `language` - Optional programming language to configure for the project.
 /// * `methodology` - Optional methodology to set as default for the project.
+/// * `storage` - Storage backend to use (toml or sqlite).
 /// * `finalize` - Whether to finalize the initialization (true) or perform initial setup (false).
 ///
 /// # Returns
@@ -23,6 +24,7 @@ pub fn handle_init_command(
     runner: &mut CliRunner,
     language: Option<String>,
     methodology: Option<String>,
+    storage: String,
     finalize: bool,
 ) -> Result<()> {
     if finalize {
@@ -33,7 +35,9 @@ pub fn handle_init_command(
         }
     } else {
         println!("Initializing use case manager project...");
-        match runner.init_project(language, methodology) {
+        // Sanitize methodology input
+        let sanitized_methodology = methodology.unwrap_or_else(|| "feature".to_string());
+        match runner.init_project_with_storage(language, Some(sanitized_methodology), storage) {
             Ok(result) => DisplayResultFormatter::display(&result),
             Err(e) => DisplayResultFormatter::display(&DisplayResult::error(e.to_string())),
         }

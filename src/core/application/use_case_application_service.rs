@@ -5,7 +5,7 @@ use crate::core::application::creators::UseCaseCreator;
 use crate::core::application::generators::{MarkdownGenerator, OverviewGenerator, TestGenerator};
 use crate::core::utils::suggest_alternatives;
 use crate::core::{
-    file_operations::FileOperations, TemplateEngine, TomlUseCaseRepository, UseCase,
+    file_operations::FileOperations, RepositoryFactory, TemplateEngine, UseCase,
     UseCaseRepository, UseCaseService,
 };
 use anyhow::Result;
@@ -30,8 +30,7 @@ impl UseCaseApplicationService {
 
     pub fn new(config: Config) -> Result<Self> {
         let use_case_service = UseCaseService::new();
-        let repository: Box<dyn UseCaseRepository> =
-            Box::new(TomlUseCaseRepository::new(config.clone()));
+        let repository: Box<dyn UseCaseRepository> = RepositoryFactory::create(&config)?;
         let file_operations = FileOperations::new(config.clone());
         let template_engine = TemplateEngine::with_config(Some(&config));
 
@@ -177,7 +176,7 @@ impl UseCaseApplicationService {
         // Generate markdown from TOML data
         let markdown_content = self.generate_use_case_markdown(&use_case)?;
         self.repository
-            .save_markdown_only(use_case_id, &markdown_content)?;
+            .save_markdown(use_case_id, &markdown_content)?;
 
         Ok(())
     }
@@ -191,7 +190,7 @@ impl UseCaseApplicationService {
             // Generate markdown from TOML data
             let markdown_content = self.generate_use_case_markdown(use_case)?;
             self.repository
-                .save_markdown_only(&use_case.id, &markdown_content)?;
+                .save_markdown(&use_case.id, &markdown_content)?;
         }
 
         self.generate_overview()?;
@@ -218,7 +217,7 @@ impl UseCaseApplicationService {
         // Generate markdown from TOML data
         let markdown_content = self.generate_use_case_markdown(&use_case)?;
         self.repository
-            .save_markdown_only(&use_case.id, &markdown_content)?;
+            .save_markdown(&use_case.id, &markdown_content)?;
 
         Ok(use_case)
     }
@@ -243,7 +242,7 @@ impl UseCaseApplicationService {
         // Generate markdown from TOML data
         let markdown_content = self.generate_use_case_markdown(&use_case)?;
         self.repository
-            .save_markdown_only(&use_case.id, &markdown_content)?;
+            .save_markdown(&use_case.id, &markdown_content)?;
 
         Ok(use_case)
     }
@@ -251,7 +250,7 @@ impl UseCaseApplicationService {
     /// Save use case with specific methodology rendering
     fn save_use_case_with_methodology(&self, use_case: &UseCase, methodology: &str) -> Result<()> {
         // Step 1: Save TOML first (source of truth)
-        self.repository.save_toml_only(use_case)?;
+        self.repository.save(use_case)?;
 
         // Step 2: Load from TOML to ensure we're working with persisted data
         let use_case_from_toml = self
@@ -263,7 +262,7 @@ impl UseCaseApplicationService {
         let markdown_content =
             self.generate_use_case_markdown_with_methodology(&use_case_from_toml, methodology)?;
         self.repository
-            .save_markdown_only(&use_case.id, &markdown_content)?;
+            .save_markdown(&use_case.id, &markdown_content)?;
 
         // Generate test file if enabled
         if self.config.generation.auto_generate_tests {

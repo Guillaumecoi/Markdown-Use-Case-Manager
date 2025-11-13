@@ -49,6 +49,48 @@ impl Status {
             )),
         }
     }
+
+    /// Check if this status represents a completed state
+    pub fn is_complete(&self) -> bool {
+        matches!(self, Status::Deployed | Status::Deprecated)
+    }
+
+    /// Check if this status represents active development
+    pub fn is_in_progress(&self) -> bool {
+        matches!(
+            self,
+            Status::InProgress | Status::Implemented | Status::Tested
+        )
+    }
+
+    /// Check if transition to target status is valid
+    pub fn can_transition_to(&self, target: &Status) -> bool {
+        use Status::*;
+        match (self, target) {
+            // Can always stay in same status
+            (a, b) if a == b => true,
+
+            // Forward progression
+            (Planned, InProgress) => true,
+            (InProgress, Implemented) => true,
+            (Implemented, Tested) => true,
+            (Tested, Deployed) => true,
+
+            // Can skip ahead
+            (Planned, Implemented | Tested | Deployed) => true,
+            (InProgress, Tested | Deployed) => true,
+            (Implemented, Deployed) => true,
+
+            // Can deprecate from any status
+            (_, Deprecated) => true,
+
+            // Can go back to planning
+            (_, Planned) => true,
+
+            // Everything else is invalid
+            _ => false,
+        }
+    }
 }
 
 impl fmt::Display for Status {
@@ -172,5 +214,82 @@ mod tests {
 
         let error = Status::from_str("invalid").unwrap_err();
         assert!(error.contains("Invalid status: invalid"));
+    }
+
+    /// Test Status::is_complete() method
+    #[test]
+    fn test_is_complete() {
+        assert!(!Status::Planned.is_complete());
+        assert!(!Status::InProgress.is_complete());
+        assert!(!Status::Implemented.is_complete());
+        assert!(!Status::Tested.is_complete());
+        assert!(Status::Deployed.is_complete());
+        assert!(Status::Deprecated.is_complete());
+    }
+
+    /// Test Status::is_in_progress() method
+    #[test]
+    fn test_is_in_progress() {
+        assert!(!Status::Planned.is_in_progress());
+        assert!(Status::InProgress.is_in_progress());
+        assert!(Status::Implemented.is_in_progress());
+        assert!(Status::Tested.is_in_progress());
+        assert!(!Status::Deployed.is_in_progress());
+        assert!(!Status::Deprecated.is_in_progress());
+    }
+
+    /// Test Status::can_transition_to() method for valid transitions
+    #[test]
+    fn test_can_transition_to_forward() {
+        assert!(Status::Planned.can_transition_to(&Status::InProgress));
+        assert!(Status::InProgress.can_transition_to(&Status::Implemented));
+        assert!(Status::Implemented.can_transition_to(&Status::Tested));
+        assert!(Status::Tested.can_transition_to(&Status::Deployed));
+    }
+
+    /// Test Status::can_transition_to() method for skip-ahead transitions
+    #[test]
+    fn test_can_transition_to_skip() {
+        assert!(Status::Planned.can_transition_to(&Status::Deployed));
+        assert!(Status::InProgress.can_transition_to(&Status::Tested));
+    }
+
+    /// Test Status::can_transition_to() method for deprecation transitions
+    #[test]
+    fn test_can_transition_to_deprecate() {
+        assert!(Status::Planned.can_transition_to(&Status::Deprecated));
+        assert!(Status::Deployed.can_transition_to(&Status::Deprecated));
+    }
+
+    /// Test Status::can_transition_to() method for invalid transitions
+    #[test]
+    fn test_can_transition_to_invalid() {
+        assert!(!Status::Deployed.can_transition_to(&Status::Implemented));
+        assert!(!Status::Tested.can_transition_to(&Status::InProgress));
+    }
+
+    /// Test Status::can_transition_to() method for same status (should always be true)
+    #[test]
+    fn test_can_transition_to_same_status() {
+        for &status in &[
+            Status::Planned,
+            Status::InProgress,
+            Status::Implemented,
+            Status::Tested,
+            Status::Deployed,
+            Status::Deprecated,
+        ] {
+            assert!(status.can_transition_to(&status));
+        }
+    }
+
+    /// Test Status::can_transition_to() method for backward transitions to Planned
+    #[test]
+    fn test_can_transition_to_back_to_planned() {
+        assert!(Status::InProgress.can_transition_to(&Status::Planned));
+        assert!(Status::Implemented.can_transition_to(&Status::Planned));
+        assert!(Status::Tested.can_transition_to(&Status::Planned));
+        assert!(Status::Deployed.can_transition_to(&Status::Planned));
+        assert!(Status::Deprecated.can_transition_to(&Status::Planned));
     }
 }

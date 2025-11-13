@@ -82,9 +82,12 @@ pub fn run() -> Result<()> {
         Commands::Init {
             language,
             methodology,
+            storage,
             finalize,
         } => {
-            execute_command(|| handle_init_command(&mut runner, language, methodology, finalize));
+            execute_command(|| {
+                handle_init_command(&mut runner, language, methodology, storage, finalize)
+            });
             Ok(())
         }
         Commands::Create {
