@@ -5,10 +5,10 @@ use std::str::FromStr;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ScenarioType {
-    HappyPath,        // Main success scenario
-    AlternativeFlow,  // Valid alternative path
-    ExceptionFlow,    // Error/exception handling
-    Extension,        // Extension point
+    HappyPath,       // Main success scenario
+    AlternativeFlow, // Valid alternative path
+    ExceptionFlow,   // Error/exception handling
+    Extension,       // Extension point
 }
 
 impl Default for ScenarioType {
@@ -64,27 +64,63 @@ mod tests {
     #[test]
     fn test_scenario_type_display() {
         assert_eq!(ScenarioType::HappyPath.to_string(), "happy_path");
-        assert_eq!(ScenarioType::AlternativeFlow.to_string(), "alternative_flow");
+        assert_eq!(
+            ScenarioType::AlternativeFlow.to_string(),
+            "alternative_flow"
+        );
         assert_eq!(ScenarioType::ExceptionFlow.to_string(), "exception_flow");
         assert_eq!(ScenarioType::Extension.to_string(), "extension");
     }
 
     #[test]
     fn test_scenario_type_from_str_valid() {
-        assert_eq!(ScenarioType::from_str("happy_path").unwrap(), ScenarioType::HappyPath);
-        assert_eq!(ScenarioType::from_str("happy").unwrap(), ScenarioType::HappyPath);
-        assert_eq!(ScenarioType::from_str("main").unwrap(), ScenarioType::HappyPath);
+        assert_eq!(
+            ScenarioType::from_str("happy_path").unwrap(),
+            ScenarioType::HappyPath
+        );
+        assert_eq!(
+            ScenarioType::from_str("happy").unwrap(),
+            ScenarioType::HappyPath
+        );
+        assert_eq!(
+            ScenarioType::from_str("main").unwrap(),
+            ScenarioType::HappyPath
+        );
 
-        assert_eq!(ScenarioType::from_str("alternative_flow").unwrap(), ScenarioType::AlternativeFlow);
-        assert_eq!(ScenarioType::from_str("alternative").unwrap(), ScenarioType::AlternativeFlow);
-        assert_eq!(ScenarioType::from_str("alt").unwrap(), ScenarioType::AlternativeFlow);
+        assert_eq!(
+            ScenarioType::from_str("alternative_flow").unwrap(),
+            ScenarioType::AlternativeFlow
+        );
+        assert_eq!(
+            ScenarioType::from_str("alternative").unwrap(),
+            ScenarioType::AlternativeFlow
+        );
+        assert_eq!(
+            ScenarioType::from_str("alt").unwrap(),
+            ScenarioType::AlternativeFlow
+        );
 
-        assert_eq!(ScenarioType::from_str("exception_flow").unwrap(), ScenarioType::ExceptionFlow);
-        assert_eq!(ScenarioType::from_str("exception").unwrap(), ScenarioType::ExceptionFlow);
-        assert_eq!(ScenarioType::from_str("error").unwrap(), ScenarioType::ExceptionFlow);
+        assert_eq!(
+            ScenarioType::from_str("exception_flow").unwrap(),
+            ScenarioType::ExceptionFlow
+        );
+        assert_eq!(
+            ScenarioType::from_str("exception").unwrap(),
+            ScenarioType::ExceptionFlow
+        );
+        assert_eq!(
+            ScenarioType::from_str("error").unwrap(),
+            ScenarioType::ExceptionFlow
+        );
 
-        assert_eq!(ScenarioType::from_str("extension").unwrap(), ScenarioType::Extension);
-        assert_eq!(ScenarioType::from_str("ext").unwrap(), ScenarioType::Extension);
+        assert_eq!(
+            ScenarioType::from_str("extension").unwrap(),
+            ScenarioType::Extension
+        );
+        assert_eq!(
+            ScenarioType::from_str("ext").unwrap(),
+            ScenarioType::Extension
+        );
     }
 
     #[test]
@@ -113,9 +149,21 @@ mod tests {
 
     #[test]
     fn test_scenario_type_case_insensitive_parsing() {
-        assert_eq!(ScenarioType::from_str("HAPPY_PATH").unwrap(), ScenarioType::HappyPath);
-        assert_eq!(ScenarioType::from_str("Alternative_Flow").unwrap(), ScenarioType::AlternativeFlow);
-        assert_eq!(ScenarioType::from_str("Exception_Flow").unwrap(), ScenarioType::ExceptionFlow);
-        assert_eq!(ScenarioType::from_str("EXTENSION").unwrap(), ScenarioType::Extension);
+        assert_eq!(
+            ScenarioType::from_str("HAPPY_PATH").unwrap(),
+            ScenarioType::HappyPath
+        );
+        assert_eq!(
+            ScenarioType::from_str("Alternative_Flow").unwrap(),
+            ScenarioType::AlternativeFlow
+        );
+        assert_eq!(
+            ScenarioType::from_str("Exception_Flow").unwrap(),
+            ScenarioType::ExceptionFlow
+        );
+        assert_eq!(
+            ScenarioType::from_str("EXTENSION").unwrap(),
+            ScenarioType::Extension
+        );
     }
 }

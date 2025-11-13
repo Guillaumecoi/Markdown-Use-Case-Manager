@@ -630,7 +630,10 @@ impl UseCaseController {
             Err(e) => return Ok(DisplayResult::error(e)),
         };
 
-        match self.app_service.update_scenario_status(&use_case_id, &scenario_title, status_enum) {
+        match self
+            .app_service
+            .update_scenario_status(&use_case_id, &scenario_title, status_enum)
+        {
             Ok(_) => Ok(DisplayResult::success(format!(
                 "Updated status of scenario '{}' in use case: {}",
                 scenario_title, use_case_id
@@ -667,12 +670,17 @@ impl UseCaseController {
                             scenario.steps.len()
                         ));
                         if !scenario.description.is_empty() {
-                            result.push_str(&format!("    Description: {}\n", scenario.description));
+                            result
+                                .push_str(&format!("    Description: {}\n", scenario.description));
                         }
                         if !scenario.steps.is_empty() {
                             result.push_str("    Steps:\n");
                             for (i, step) in scenario.steps.iter().enumerate() {
-                                result.push_str(&format!("      {}. {}\n", i + 1, step.description));
+                                result.push_str(&format!(
+                                    "      {}. {}\n",
+                                    i + 1,
+                                    step.description
+                                ));
                             }
                         }
                     }
@@ -703,7 +711,10 @@ impl UseCaseController {
         scenario_title: String,
         order: u32,
     ) -> Result<DisplayResult> {
-        match self.app_service.remove_scenario_step(&use_case_id, &scenario_title, order) {
+        match self
+            .app_service
+            .remove_scenario_step(&use_case_id, &scenario_title, order)
+        {
             Ok(_) => Ok(DisplayResult::success(format!(
                 "Removed step {} from scenario '{}' in use case: {}",
                 order, scenario_title, use_case_id

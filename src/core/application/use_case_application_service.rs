@@ -3,16 +3,13 @@
 use crate::config::Config;
 use crate::core::application::creators::{ScenarioCreator, UseCaseCreator};
 use crate::core::application::generators::{MarkdownGenerator, OverviewGenerator, TestGenerator};
+use crate::core::domain::UseCaseService;
 use crate::core::utils::suggest_alternatives;
 use crate::core::{
-    domain::{Scenario, ScenarioType, UseCaseReference}, 
-    file_operations::FileOperations, 
-    RepositoryFactory, 
-    TemplateEngine,
-    UseCase, 
-    UseCaseRepository, 
+    domain::{Scenario, ScenarioType, UseCaseReference},
+    file_operations::FileOperations,
+    RepositoryFactory, TemplateEngine, UseCase, UseCaseRepository,
 };
-use crate::core::domain::UseCaseService;
 use anyhow::Result;
 
 /// Application service that coordinates use case operations
@@ -366,12 +363,9 @@ impl UseCaseApplicationService {
         let index = self.find_use_case_index(use_case_id)?;
         let mut use_case = self.use_cases[index].clone();
 
-        let step = self.scenario_creator.create_scenario_step(
-            order,
-            actor,
-            action,
-            expected_result,
-        );
+        let step =
+            self.scenario_creator
+                .create_scenario_step(order, actor, action, expected_result);
 
         use_case.add_step_to_scenario(scenario_id, step)?;
         self.repository.save(&use_case)?;

@@ -133,7 +133,10 @@ mod tests {
 
         assert_eq!(scenario.id, "UC-AUTH-001-S01");
         assert_eq!(scenario.title, "Successful login");
-        assert_eq!(scenario.description, "User successfully logs in with valid credentials");
+        assert_eq!(
+            scenario.description,
+            "User successfully logs in with valid credentials"
+        );
         assert_eq!(scenario.scenario_type, ScenarioType::HappyPath);
         assert_eq!(scenario.status, Status::Planned);
         assert!(scenario.persona.is_none());
@@ -152,8 +155,18 @@ mod tests {
             ScenarioType::HappyPath,
         );
 
-        let step1 = ScenarioStep::new(2, "User".to_string(), "enters".to_string(), "credentials".to_string());
-        let step2 = ScenarioStep::new(1, "User".to_string(), "navigates".to_string(), "to login page".to_string());
+        let step1 = ScenarioStep::new(
+            2,
+            "User".to_string(),
+            "enters".to_string(),
+            "credentials".to_string(),
+        );
+        let step2 = ScenarioStep::new(
+            1,
+            "User".to_string(),
+            "navigates".to_string(),
+            "to login page".to_string(),
+        );
 
         scenario.add_step(step1);
         scenario.add_step(step2);
@@ -203,9 +216,24 @@ mod tests {
             ScenarioType::HappyPath,
         );
 
-        scenario.add_step(ScenarioStep::new(1, "User".to_string(), "enters".to_string(), "credentials".to_string()));
-        scenario.add_step(ScenarioStep::new(2, "System".to_string(), "verifies".to_string(), "credentials".to_string()));
-        scenario.add_step(ScenarioStep::new(3, "User".to_string(), "sees".to_string(), "dashboard".to_string()));
+        scenario.add_step(ScenarioStep::new(
+            1,
+            "User".to_string(),
+            "enters".to_string(),
+            "credentials".to_string(),
+        ));
+        scenario.add_step(ScenarioStep::new(
+            2,
+            "System".to_string(),
+            "verifies".to_string(),
+            "credentials".to_string(),
+        ));
+        scenario.add_step(ScenarioStep::new(
+            3,
+            "User".to_string(),
+            "sees".to_string(),
+            "dashboard".to_string(),
+        ));
 
         let actors = scenario.actors();
         assert_eq!(actors.len(), 2);
@@ -221,7 +249,8 @@ mod tests {
             "Auth".to_string(),
             "Handle user login".to_string(),
             "high".to_string(),
-        ).unwrap();
+        )
+        .unwrap();
 
         use_case.add_precondition("Application is running".to_string());
 
@@ -248,7 +277,8 @@ mod tests {
             "Auth".to_string(),
             "Handle user login".to_string(),
             "high".to_string(),
-        ).unwrap();
+        )
+        .unwrap();
 
         use_case.add_postcondition("Audit log updated".to_string());
 
@@ -291,9 +321,16 @@ mod tests {
             ScenarioType::HappyPath,
         );
 
-        scenario.add_step(ScenarioStep::new(1, "User".to_string(), "enters".to_string(), "credentials".to_string()));
+        scenario.add_step(ScenarioStep::new(
+            1,
+            "User".to_string(),
+            "enters".to_string(),
+            "credentials".to_string(),
+        ));
         scenario.add_precondition("Valid account".to_string());
-        scenario.extra.insert("test_field".to_string(), json!("test_value"));
+        scenario
+            .extra
+            .insert("test_field".to_string(), json!("test_value"));
 
         let serialized = serde_json::to_string(&scenario).unwrap();
         let deserialized: Scenario = serde_json::from_str(&serialized).unwrap();

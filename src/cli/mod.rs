@@ -219,7 +219,13 @@ pub fn run() -> Result<()> {
                 description,
             } => {
                 execute_command(|| {
-                    handle_scenario_add_command(&mut runner, use_case_id, title, scenario_type, description)
+                    handle_scenario_add_command(
+                        &mut runner,
+                        use_case_id,
+                        title,
+                        scenario_type,
+                        description,
+                    )
                 });
                 Ok(())
             }
@@ -230,7 +236,13 @@ pub fn run() -> Result<()> {
                 order,
             } => {
                 execute_command(|| {
-                    handle_scenario_add_step_command(&mut runner, use_case_id, scenario_title, step, order)
+                    handle_scenario_add_step_command(
+                        &mut runner,
+                        use_case_id,
+                        scenario_title,
+                        step,
+                        order,
+                    )
                 });
                 Ok(())
             }
@@ -240,7 +252,12 @@ pub fn run() -> Result<()> {
                 status,
             } => {
                 execute_command(|| {
-                    handle_scenario_update_status_command(&mut runner, use_case_id, scenario_title, status)
+                    handle_scenario_update_status_command(
+                        &mut runner,
+                        use_case_id,
+                        scenario_title,
+                        status,
+                    )
                 });
                 Ok(())
             }
@@ -254,7 +271,12 @@ pub fn run() -> Result<()> {
                 order,
             } => {
                 execute_command(|| {
-                    handle_scenario_remove_step_command(&mut runner, use_case_id, scenario_title, order)
+                    handle_scenario_remove_step_command(
+                        &mut runner,
+                        use_case_id,
+                        scenario_title,
+                        order,
+                    )
                 });
                 Ok(())
             }

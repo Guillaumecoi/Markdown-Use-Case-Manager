@@ -98,7 +98,7 @@ impl UseCase {
         self.scenarios
             .iter()
             .map(|s| s.status)
-            .min()  // Status implements Ord
+            .min() // Status implements Ord
             .unwrap_or(Status::Planned)
     }
 
@@ -166,35 +166,56 @@ impl UseCase {
     }
 
     /// Add a step to a specific scenario
-    pub fn add_step_to_scenario(&mut self, scenario_id: &str, step: super::ScenarioStep) -> anyhow::Result<()> {
+    pub fn add_step_to_scenario(
+        &mut self,
+        scenario_id: &str,
+        step: super::ScenarioStep,
+    ) -> anyhow::Result<()> {
         if let Some(scenario) = self.scenarios.iter_mut().find(|s| s.id == scenario_id) {
             scenario.add_step(step);
             self.metadata.touch();
             Ok(())
         } else {
-            Err(anyhow::anyhow!("Scenario with ID '{}' not found", scenario_id))
+            Err(anyhow::anyhow!(
+                "Scenario with ID '{}' not found",
+                scenario_id
+            ))
         }
     }
 
     /// Update the status of a specific scenario
-    pub fn update_scenario_status(&mut self, scenario_id: &str, new_status: Status) -> anyhow::Result<()> {
+    pub fn update_scenario_status(
+        &mut self,
+        scenario_id: &str,
+        new_status: Status,
+    ) -> anyhow::Result<()> {
         if let Some(scenario) = self.scenarios.iter_mut().find(|s| s.id == scenario_id) {
             scenario.set_status(new_status);
             self.metadata.touch();
             Ok(())
         } else {
-            Err(anyhow::anyhow!("Scenario with ID '{}' not found", scenario_id))
+            Err(anyhow::anyhow!(
+                "Scenario with ID '{}' not found",
+                scenario_id
+            ))
         }
     }
 
     /// Remove a step from a specific scenario
-    pub fn remove_step_from_scenario(&mut self, scenario_id: &str, step_order: u32) -> anyhow::Result<()> {
+    pub fn remove_step_from_scenario(
+        &mut self,
+        scenario_id: &str,
+        step_order: u32,
+    ) -> anyhow::Result<()> {
         if let Some(scenario) = self.scenarios.iter_mut().find(|s| s.id == scenario_id) {
             scenario.remove_step(step_order);
             self.metadata.touch();
             Ok(())
         } else {
-            Err(anyhow::anyhow!("Scenario with ID '{}' not found", scenario_id))
+            Err(anyhow::anyhow!(
+                "Scenario with ID '{}' not found",
+                scenario_id
+            ))
         }
     }
 }

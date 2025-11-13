@@ -58,7 +58,10 @@ impl ScenarioService {
     }
 
     /// Update scenario status with validation
-    pub fn update_scenario_status(scenario: &mut Scenario, new_status: Status) -> Result<(), String> {
+    pub fn update_scenario_status(
+        scenario: &mut Scenario,
+        new_status: Status,
+    ) -> Result<(), String> {
         // Validate status transition
         if !scenario.status.can_transition_to(&new_status) {
             return Err(format!(
@@ -85,7 +88,10 @@ impl ScenarioService {
     }
 
     /// Remove a step from a scenario
-    pub fn remove_step_from_scenario(scenario: &mut Scenario, step_order: usize) -> Result<(), String> {
+    pub fn remove_step_from_scenario(
+        scenario: &mut Scenario,
+        step_order: usize,
+    ) -> Result<(), String> {
         let initial_len = scenario.steps.len();
         scenario.steps.retain(|s| s.order != step_order);
 
@@ -126,7 +132,10 @@ impl ScenarioService {
     }
 
     /// Get scenarios by type from a use case
-    pub fn get_scenarios_by_type(use_case: &UseCase, scenario_type: ScenarioType) -> Vec<&Scenario> {
+    pub fn get_scenarios_by_type(
+        use_case: &UseCase,
+        scenario_type: ScenarioType,
+    ) -> Vec<&Scenario> {
         use_case.scenarios_by_type(scenario_type)
     }
 
@@ -171,7 +180,8 @@ mod tests {
             "Test".to_string(),
             "A test use case".to_string(),
             "medium".to_string(),
-        ).unwrap()
+        )
+        .unwrap()
     }
 
     #[test]
@@ -265,7 +275,9 @@ mod tests {
         scenario.set_status(Status::Tested);
 
         // Cannot go backward in the workflow (Tested -> Implemented is invalid)
-        assert!(ScenarioService::update_scenario_status(&mut scenario, Status::Implemented).is_err());
+        assert!(
+            ScenarioService::update_scenario_status(&mut scenario, Status::Implemented).is_err()
+        );
     }
 
     #[test]
@@ -420,7 +432,8 @@ mod tests {
             ScenarioType::ExceptionFlow,
         ));
 
-        let happy_paths = ScenarioService::get_scenarios_by_type(&use_case, ScenarioType::HappyPath);
+        let happy_paths =
+            ScenarioService::get_scenarios_by_type(&use_case, ScenarioType::HappyPath);
         assert_eq!(happy_paths.len(), 1);
         assert_eq!(happy_paths[0].title, "Happy Path");
     }
