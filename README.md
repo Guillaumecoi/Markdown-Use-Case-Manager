@@ -11,22 +11,40 @@ Your use cases live alongside your code, version-controlled and readable by anyo
 
 Works great for solo developers, small teams, or any project where you want documentation that travels with your code.
 
-## Features
+## Key Features
 
-- **Interactive CLI Mode** - Beautiful terminal interface with arrow key navigation and guided workflows
-- **Script-Friendly** - Perfect for automation with all commands available in both modes
-- **Automatic ID Generation** - Organize use cases by categories with automatic ID generation
-- **Progress Tracking** - Track progress from planning to deployment
-- **Documentation Generation** - Generate consistent documentation and test scaffolding  
-- **Intelligent Naming** - Prevent conflicts with intelligent naming
-- **Flexible Export** - Export to any markdown-compatible format
-- **Test Generation** - Support automatic test generation
-- **Custom Templates** - Customizable generation templates
-- **Flexible Configuration** - Flexible configuration
-- **Extended Metadata** - Comprehensive metadata including personas, prerequisites, business value, acceptance criteria, and more
-- **Interactive CLI** - User-friendly interactive mode with guided workflows
-- **Use Case Dependencies** - Reference and link related use cases for traceability
-- **Multiple Storage Backends** - Choose between TOML files or SQLite database for use case storage
+### Modular Template System
+- **Dynamic methodology templates** - Choose between Developer, Tester, Business, and Feature-focused approaches
+- **Language-specific test generation** - Python, Rust, and JavaScript support with customizable test templates
+- **Fully customizable templates** - Modify Handlebars templates to match your team's needs
+- **Mix and match** - Different methodologies for different use case categories
+
+### Dual Storage Backends
+
+**TOML (Default)**
+- Human-readable source of truth that lives in your repository
+- View and edit directly in GitHub/GitLab without special tools
+- Perfect for code review and version control
+- Ideal for small to medium projects (< 100 use cases)
+- Manual editing friendly
+
+**SQLite**
+- High-performance database for large projects (100+ use cases)
+- Complex queries and relationship tracking
+- Transaction support for data integrity
+- CLI-driven workflow (not manually editable)
+- Not easily viewable on GitHub/GitLab web interface
+
+### Flexible Workflow
+- **Interactive mode** - Guided workflows with smart suggestions and auto-completion
+- **Script mode** - Automation-friendly for CI/CD pipelines
+- **Both modes available** - Choose based on your context
+
+### Professional Documentation
+- **Extended metadata** - Personas, prerequisites, business value, acceptance criteria
+- **Use case dependencies** - Reference and link related use cases
+- **Status tracking** - Progress from planning to deployment with automatic rollup
+- **Markdown export** - Works with any static site generator or documentation platform
 
 ## Getting Started
 
@@ -48,12 +66,7 @@ For the best user experience, use interactive mode:
 mucm -i                          # Start interactive mode
 ```
 
-The interactive mode provides:
-- **🔧 Guided use case creation** with optional extended metadata
-- **📋 Extended metadata management** for existing use cases  
-- **⚙️ Settings configuration** with auto-initialization
-- **📊 Project status overview** and management
-- **✨ Auto-initialization** for new projects
+When you run `mucm -i` without an existing project, it launches a project initialization wizard that guides you through language selection, methodology choices (Developer, Tester, Business, Feature), and storage backend configuration (TOML or SQLite). Once initialized, interactive mode provides menu-driven access to all mucm commands.
 
 ### Basic Usage
 
@@ -66,33 +79,25 @@ mucm interactive               # or mucm -i
 
 ![interactive terminal screenshot](images/interactive.png)
 
-The interactive mode provides:
-- **Smart category suggestions** from existing use cases
-- **Step-by-step workflows** for creating use cases and scenarios
-- **Auto-completion** for use case and scenario selection
-- **Visual feedback** with colors and clear prompts
-
 #### Script Mode (Perfect for Automation)
 
 ```bash
 # Initialize your project (REQUIRED FIRST STEP)
-mucm init
+mucm init                        # Uses TOML storage (default)
+# or
+mucm init --backend sqlite       # Uses SQLite for larger projects
 
 # Create your first use case  
 mucm create "User Login" --category "Security"
-
-# Add scenarios to your use case
-mucm add-scenario "UC-SEC-001" "Login with email and password"
-
-# Update scenario status
-mucm update-status "UC-SEC-001-S01" --status "implemented"
 
 # View your documentation
 mucm list
 mucm status
 ```
 
-> **⚠️ Important**: You **must** run `mucm init` before using any other commands. This ensures your project is properly configured. All commands that create, modify, or read use cases require initialization. See [Initialization Enforcement](docs/INITIALIZATION_ENFORCEMENT.md) for details.
+> **Note**: Some commands have changed. Use `mucm --help` or `mucm <command> --help` for current options.
+
+> **⚠️ Important**: You **must** run `mucm init` before using any other commands.
 
 ### What You Get
 
@@ -170,55 +175,43 @@ Secure authentication improves user trust and reduces support tickets
 - Multi-factor authentication supported
 ```
 
-## Documentation
-
-Comprehensive documentation is available in the [`docs/`](docs/) directory:
-
-### 📚 Core Documentation
-- **[Getting Started](docs/README.md)** - Complete documentation map and quick start guide
-- **[Template Methodologies](docs/methodologies/)** - Individual guides for each methodology:
-  - [Simple](docs/methodologies/simple.md) - Lightweight documentation
-  - [Business](docs/methodologies/business.md) - Enterprise business analysis  
-  - [Testing](docs/methodologies/testing.md) - Test-driven quality assurance
-- **[Template Comparisons](docs/template-comparisons.md)** - Side-by-side methodology examples
-
-### 🔗 Quick Links
-- **[CLI Reference](docs/cli-reference.md)** - Complete command documentation
-- **[Configuration Guide](docs/configuration.md)** - Setup and customization
-- **[Best Practices](docs/best-practices.md)** - Recommended workflows
-- **[Integration Guide](docs/integration.md)** - CI/CD and static site generators
-
 ## Template Methodologies
 
-Choose from three practical template methodologies:
+Choose from four dynamic template methodologies, each optimized for different team focuses:
 
-### 📋 Simple
-**Best for**: Rapid prototyping, small teams, minimal overhead
+### Developer
+**Best for**: Engineering teams, technical implementation focus
 ```bash
-mucm init --methodology simple
+mucm init --methodology developer
 ```
 
-### 💼 Business Analysis  
-**Best for**: Enterprise projects, stakeholder focus, business requirements
+### Tester
+**Best for**: QA teams, test-driven development, quality assurance
+```bash
+mucm init --methodology tester
+```
+
+### Business
+**Best for**: Product managers, stakeholder communication, business requirements
 ```bash
 mucm init --methodology business
 ```
 
-### 🧪 Testing & QA
-**Best for**: Test-driven development, quality assurance, automation focus
+### Feature
+**Best for**: Feature teams, user story focus, agile workflows
 ```bash
-mucm init --methodology testing
+mucm init --methodology feature
 ```
 
 Each methodology provides:
-- **Methodology-specific templates** optimized for different documentation approaches
+- **Methodology-specific templates** optimized for different team perspectives
 - **Tailored configurations** with recommended settings
-- **Template customization** for specific use cases
-- **Seamless CLI integration** with guided setup
+- **Language-specific test templates** (Python, Rust, JavaScript)
+- **Fully customizable** - modify Handlebars templates to match your needs
 
 ## Configuration
 
-The tool automatically creates methodology-specific configurations:
+The tool automatically creates configurations based on your choices:
 
 ```toml
 [project]
@@ -226,39 +219,47 @@ name = "My Project"
 description = "Project managed with Markdown Use Case Manager"
 
 [templates]
-methodology = "business"              # Selected methodology
-use_extended_metadata = true          # Methodology recommendation
-persona_template_enabled = true       # Persona support
+methodology = "developer"             # developer, tester, business, or feature
+use_extended_metadata = true          # Extended fields support
+persona_template_enabled = true       # Persona templates
 
 [storage]
-backend = "toml"                      # "toml" or "sqlite"
-database_path = ".config/mucm/usecases.db"  # SQLite location
+backend = "toml"                      # toml (default) or sqlite
+database_path = ".config/mucm/usecases.db"  # SQLite location (when using sqlite)
 
 [directories]
 use_case_dir = "docs/use-cases"
 test_dir = "tests/use-cases"
 
 [generation]
-test_language = "rust"                # rust, python, or none
+test_language = "rust"                # rust, python, javascript, or none
 auto_generate_tests = true
 ```
 
-## Template System 🎨
+## Template System
 
 All templates are organized by methodology and fully customizable:
 
 ```
-templates/methodologies/
-├── simple/          # Lightweight documentation
-├── business/        # Business analysis approach
-└── testing/         # Test-driven quality assurance
+source-templates/methodologies/
+├── developer/       # Engineering focus
+├── tester/          # QA and testing focus
+├── business/        # Business analysis
+└── feature/         # Feature/user story focus
 ```
 
 Each methodology includes:
-- Use case templates (`use_case_*.hbs`)
-- Persona templates (`persona.hbs`) 
-- Overview templates (`overview.hbs`)
-- Methodology-specific formatting
+- Use case templates with different detail levels (`uc_simple.hbs`, `uc_normal.hbs`, `uc_detailed.hbs`)
+- Methodology-specific configurations
+- Custom field support
+
+Plus language-specific test templates:
+```
+source-templates/languages/
+├── python/          # Python test templates
+├── rust/            # Rust test templates
+└── javascript/      # JavaScript test templates
+```
 
 ## Deployment
 

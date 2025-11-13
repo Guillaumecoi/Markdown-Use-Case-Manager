@@ -26,14 +26,21 @@ mucm init [options]
 **Options:**
 - `-m, --methodology <style>` - Pick your style: simple, business, testing
 - `-l, --language <lang>` - Test language: rust, python, or none
+- `-b, --backend <backend>` - Storage backend: toml (default) or sqlite
 
 **Examples:**
 ```bash
 # Set up with Business methodology
 mucm init --methodology business
 
+# Set up with SQLite backend for large projects
+mucm init --backend sqlite
+
 # Set up with Python tests and Testing methodology
 mucm init --language python --methodology testing
+
+# Combine options
+mucm init --methodology business --backend sqlite
 
 # Let MUCM ask you questions (easiest!)
 mucm init
@@ -43,6 +50,10 @@ mucm init
 - `simple` - Quick and easy, no complicated stuff
 - `business` - Good for business analysis and stakeholder focus
 - `testing` - Great if you write automated tests and focus on quality
+
+**Which storage backend should I pick?**
+- `toml` (default) - Human-readable files, great for small/medium projects (< 100 use cases)
+- `sqlite` - Database storage, better performance for large projects (100+ use cases)
 
 **Simple**: Lightweight, rapid development
 ```bash  

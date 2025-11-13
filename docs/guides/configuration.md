@@ -79,25 +79,29 @@ auto_generate_tests = true                  # Create test files automatically
 ### Storage Backend
 ```toml
 [storage]
-backend = "toml"                            # Options: "toml" or "sqlite"
+backend = "toml"                            # Options: "toml" (default) or "sqlite"
 database_path = ".config/mucm/usecases.db"  # SQLite database location (only used when backend = "sqlite")
 ```
 
-**Storage Backend Options:**
-- `toml` - File-based storage using TOML files (default, recommended for most users)
-- `sqlite` - Database storage using SQLite (better for large projects with many use cases)
+**Choosing Your Storage Backend:**
 
-**When to use SQLite:**
-- You have hundreds of use cases
-- You need better query performance
-- You want atomic operations across multiple use cases
-- You're integrating with other database-driven tools
+**TOML (Default)**
+- Human-readable files you can edit directly
+- Great for version control and code review
+- Perfect for small to medium projects (< 100 use cases)
+- No database setup required
 
-**When to stick with TOML:**
-- You want human-readable source files
-- You prefer file-based version control
-- You have a smaller number of use cases
-- You want to edit use cases directly in files
+**SQLite**
+- High-performance database storage
+- Optimized for large projects (100+ use cases)
+- Faster queries and bulk operations
+- Automatic schema migrations
+- Transaction support for data integrity
+
+**How to Choose:**
+- Start with TOML (default) for most projects
+- Switch to SQLite when you have 100+ use cases or need better query performance
+- Use `mucm init --backend sqlite` to start with SQLite from the beginning
 
 ## Common Setups
 
@@ -118,6 +122,9 @@ use_extended_metadata = true               # More detailed fields
 
 [generation]
 test_language = "python"
+
+[storage]
+backend = "sqlite"                         # Better for large business projects
 ```
 
 ### I Work at a Big Company
