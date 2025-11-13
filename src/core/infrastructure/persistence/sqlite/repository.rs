@@ -86,18 +86,218 @@ impl SqliteUseCaseRepository {
         Ok(result)
     }
 
+    /// Load scenarios for a use case from relational tables (Connection version).
+    fn load_scenarios_for_use_case(conn: &Connection, use_case_id: &str) -> Result<Vec<crate::core::domain::Scenario>> {
+        use crate::core::domain::{Scenario, ScenarioStep, ScenarioReference, ReferenceType, ScenarioType, Status};
+
+        let mut scenarios = Vec::new();
+
+        // Load all scenarios for this use case
+        let mut stmt = conn.prepare(
+            "SELECT id, title, description, scenario_type, status, persona, created_at, updated_at, extra_json
+             FROM scenarios WHERE use_case_id = ? ORDER BY id"
+        )?;
+        
+        let scenario_rows = stmt.query_map([use_case_id], |row| {
+            let scenario_id: String = row.get(0)?;
+            let extra_json: String = row.get(8)?;
+            let extra: std::collections::HashMap<String, serde_json::Value> =
+                serde_json::from_str(&extra_json).unwrap_or_default();
+
+            Ok((scenario_id, (
+                row.get::<_, String>(1)?,  // title
+                row.get::<_, String>(2)?,  // description
+                row.get::<_, String>(3)?,  // scenario_type
+                row.get::<_, String>(4)?,  // status
+                row.get::<_, Option<String>>(5)?,  // persona
+                row.get::<_, String>(6)?,  // created_at
+                row.get::<_, String>(7)?,  // updated_at
+                extra,
+            )))
+        })?;
+
+        for scenario_result in scenario_rows {
+            let (scenario_id, (title, description, scenario_type_str, status_str, persona, created_at_str, updated_at_str, extra)) = scenario_result?;
+
+            // Parse scenario type and status
+            let scenario_type = scenario_type_str.parse().unwrap_or_default();
+            let status = crate::core::domain::Status::from_str(&status_str).unwrap_or(crate::core::domain::Status::Planned);
+
+            // Load steps
+            let mut steps_stmt = conn.prepare(
+                "SELECT step_order, actor, action, description, notes FROM scenario_steps WHERE scenario_id = ? ORDER BY step_order"
+            )?;
+            let step_rows = steps_stmt.query_map([&scenario_id], |row| {
+                Ok(ScenarioStep {
+                    order: row.get(0)?,
+                    actor: row.get(1)?,
+                    action: row.get(2)?,
+                    description: row.get(3)?,
+                    notes: row.get(4)?,
+                })
+            })?;
+            let steps: Vec<ScenarioStep> = step_rows.collect::<Result<Vec<_>, _>>()?;
+
+            // Load preconditions
+            let mut precond_stmt = conn.prepare(
+                "SELECT condition_text FROM scenario_preconditions WHERE scenario_id = ? ORDER BY condition_order"
+            )?;
+            let precond_rows = precond_stmt.query_map([&scenario_id], |row| row.get::<_, String>(0))?;
+            let preconditions: Vec<String> = precond_rows.collect::<Result<Vec<_>, _>>()?;
+
+            // Load postconditions
+            let mut postcond_stmt = conn.prepare(
+                "SELECT condition_text FROM scenario_postconditions WHERE scenario_id = ? ORDER BY condition_order"
+            )?;
+            let postcond_rows = postcond_stmt.query_map([&scenario_id], |row| row.get::<_, String>(0))?;
+            let postconditions: Vec<String> = postcond_rows.collect::<Result<Vec<_>, _>>()?;
+
+            // Load references
+            let mut ref_stmt = conn.prepare(
+                "SELECT ref_type, target_id, relationship, description FROM scenario_references WHERE scenario_id = ? ORDER BY id"
+            )?;
+            let ref_rows = ref_stmt.query_map([&scenario_id], |row| {
+                let ref_type_str: String = row.get(0)?;
+                let ref_type = ref_type_str.parse().unwrap_or(crate::core::domain::ReferenceType::UseCase);
+                Ok(ScenarioReference {
+                    ref_type,
+                    target_id: row.get(1)?,
+                    relationship: row.get(2)?,
+                    description: row.get(3)?,
+                })
+            })?;
+            let references: Vec<ScenarioReference> = ref_rows.collect::<Result<Vec<_>, _>>()?;
+
+            scenarios.push(Scenario {
+                id: scenario_id,
+                title,
+                description,
+                scenario_type,
+                status,
+                persona,
+                steps,
+                preconditions,
+                postconditions,
+                references,
+                metadata: crate::core::domain::Metadata {
+                    created_at: created_at_str.parse().context("Failed to parse created_at")?,
+                    updated_at: updated_at_str.parse().context("Failed to parse updated_at")?,
+                },
+                extra,
+            });
+        }
+
+        Ok(scenarios)
+    }
+
+    /// Load scenarios for a use case from relational tables (Transaction version).
+    fn load_scenarios_for_use_case_tx(tx: &Transaction, use_case_id: &str) -> Result<Vec<crate::core::domain::Scenario>> {
+        use crate::core::domain::{Scenario, ScenarioStep, ScenarioReference};
+
+        let mut scenarios = Vec::new();
+
+        // Load all scenarios for this use case
+        let mut stmt = tx.prepare(
+            "SELECT id, title, description, scenario_type, status, persona, created_at, updated_at, extra_json
+             FROM scenarios WHERE use_case_id = ? ORDER BY id"
+        )?;
+        
+        let scenario_rows = stmt.query_map([use_case_id], |row| {
+            let scenario_id: String = row.get(0)?;
+            let extra_json: String = row.get(8)?;
+            let extra: std::collections::HashMap<String, serde_json::Value> =
+                serde_json::from_str(&extra_json).unwrap_or_default();
+
+            Ok((scenario_id, (
+                row.get::<_, String>(1)?,  // title
+                row.get::<_, String>(2)?,  // description
+                row.get::<_, String>(3)?,  // scenario_type
+                row.get::<_, String>(4)?,  // status
+                row.get::<_, Option<String>>(5)?,  // persona
+                row.get::<_, String>(6)?,  // created_at
+                row.get::<_, String>(7)?,  // updated_at
+                extra,
+            )))
+        })?;
+
+        for scenario_result in scenario_rows {
+            let (scenario_id, (title, description, scenario_type_str, status_str, persona, created_at_str, updated_at_str, extra)) = scenario_result?;
+
+            // Parse scenario type and status
+            let scenario_type = scenario_type_str.parse().unwrap_or_default();
+            let status = crate::core::domain::Status::from_str(&status_str).unwrap_or(crate::core::domain::Status::Planned);
+
+            // Load steps
+            let mut steps_stmt = tx.prepare(
+                "SELECT step_order, actor, action, description, notes FROM scenario_steps WHERE scenario_id = ? ORDER BY step_order"
+            )?;
+            let step_rows = steps_stmt.query_map([&scenario_id], |row| {
+                Ok(ScenarioStep {
+                    order: row.get(0)?,
+                    actor: row.get(1)?,
+                    action: row.get(2)?,
+                    description: row.get(3)?,
+                    notes: row.get(4)?,
+                })
+            })?;
+            let steps: Vec<ScenarioStep> = step_rows.collect::<Result<Vec<_>, _>>()?;
+
+            // Load preconditions
+            let mut precond_stmt = tx.prepare(
+                "SELECT condition_text FROM scenario_preconditions WHERE scenario_id = ? ORDER BY condition_order"
+            )?;
+            let precond_rows = precond_stmt.query_map([&scenario_id], |row| row.get::<_, String>(0))?;
+            let preconditions: Vec<String> = precond_rows.collect::<Result<Vec<_>, _>>()?;
+
+            // Load postconditions
+            let mut postcond_stmt = tx.prepare(
+                "SELECT condition_text FROM scenario_postconditions WHERE scenario_id = ? ORDER BY condition_order"
+            )?;
+            let postcond_rows = postcond_stmt.query_map([&scenario_id], |row| row.get::<_, String>(0))?;
+            let postconditions: Vec<String> = postcond_rows.collect::<Result<Vec<_>, _>>()?;
+
+            // Load references
+            let mut ref_stmt = tx.prepare(
+                "SELECT ref_type, target_id, relationship, description FROM scenario_references WHERE scenario_id = ? ORDER BY id"
+            )?;
+            let ref_rows = ref_stmt.query_map([&scenario_id], |row| {
+                let ref_type_str: String = row.get(0)?;
+                let ref_type = ref_type_str.parse().unwrap_or(crate::core::domain::ReferenceType::UseCase);
+                Ok(ScenarioReference {
+                    ref_type,
+                    target_id: row.get(1)?,
+                    relationship: row.get(2)?,
+                    description: row.get(3)?,
+                })
+            })?;
+            let references: Vec<ScenarioReference> = ref_rows.collect::<Result<Vec<_>, _>>()?;
+
+            scenarios.push(Scenario {
+                id: scenario_id,
+                title,
+                description,
+                scenario_type,
+                status,
+                persona,
+                steps,
+                preconditions,
+                postconditions,
+                references,
+                metadata: crate::core::domain::Metadata {
+                    created_at: created_at_str.parse().context("Failed to parse created_at")?,
+                    updated_at: updated_at_str.parse().context("Failed to parse updated_at")?,
+                },
+                extra,
+            });
+        }
+
+        Ok(scenarios)
+    }
+
     /// Save a use case to the database (internal implementation).
     fn save_internal(tx: &Transaction, use_case: &UseCase) -> Result<()> {
-        // Serialize scenarios to JSON
-        let scenarios_json = serde_json::to_value(&use_case.scenarios)
-            .context("Failed to serialize scenarios to JSON")?;
-        
-        // Add scenarios to extra for storage
-        let mut extra_with_scenarios = use_case.extra.clone();
-        extra_with_scenarios.insert("scenarios".to_string(), scenarios_json);
-        
-        // Serialize extra fields to JSON
-        let extra_json = serde_json::to_string(&extra_with_scenarios)
+        // Serialize extra fields to JSON (scenarios are now in separate tables)
+        let extra_json = serde_json::to_string(&use_case.extra)
             .context("Failed to serialize extra fields to JSON")?;
 
         // Insert or replace the main use case record
@@ -121,7 +321,7 @@ impl SqliteUseCaseRepository {
         )
         .context("Failed to save use case")?;
 
-        // Clear existing preconditions and postconditions
+        // Clear existing preconditions, postconditions, and references
         tx.execute(
             "DELETE FROM use_case_preconditions WHERE use_case_id = ?",
             [&use_case.id],
@@ -138,48 +338,108 @@ impl SqliteUseCaseRepository {
         )
         .context("Failed to clear existing references")?;
 
-        // Insert preconditions if they exist
-        if let Some(preconditions) = use_case.extra.get("preconditions") {
-            if let Some(preconditions_array) = preconditions.as_array() {
-                for (index, precondition) in preconditions_array.iter().enumerate() {
-                    if let Some(text) = precondition.as_str() {
-                        tx.execute(
-                            "INSERT INTO use_case_preconditions (use_case_id, condition_order, condition_text) VALUES (?, ?, ?)",
-                            params![use_case.id, index as i32, text],
-                        )
-                        .context("Failed to save precondition")?;
-                    }
-                }
-            }
+        // Clear existing scenarios (CASCADE will delete related data)
+        tx.execute(
+            "DELETE FROM scenarios WHERE use_case_id = ?",
+            [&use_case.id],
+        )
+        .context("Failed to clear existing scenarios")?;
+
+        // Insert preconditions
+        for (index, precondition) in use_case.preconditions.iter().enumerate() {
+            tx.execute(
+                "INSERT INTO use_case_preconditions (use_case_id, condition_order, condition_text) VALUES (?, ?, ?)",
+                params![use_case.id, index as i32, precondition],
+            )
+            .context("Failed to save precondition")?;
         }
 
-        // Insert postconditions if they exist
-        if let Some(postconditions) = use_case.extra.get("postconditions") {
-            if let Some(postconditions_array) = postconditions.as_array() {
-                for (index, postcondition) in postconditions_array.iter().enumerate() {
-                    if let Some(text) = postcondition.as_str() {
-                        tx.execute(
-                            "INSERT INTO use_case_postconditions (use_case_id, condition_order, condition_text) VALUES (?, ?, ?)",
-                            params![use_case.id, index as i32, text],
-                        )
-                        .context("Failed to save postcondition")?;
-                    }
-                }
-            }
+        // Insert postconditions
+        for (index, postcondition) in use_case.postconditions.iter().enumerate() {
+            tx.execute(
+                "INSERT INTO use_case_postconditions (use_case_id, condition_order, condition_text) VALUES (?, ?, ?)",
+                params![use_case.id, index as i32, postcondition],
+            )
+            .context("Failed to save postcondition")?;
         }
 
-        // Insert references if they exist
-        if let Some(references) = use_case.extra.get("references") {
-            if let Some(references_array) = references.as_array() {
-                for (index, reference) in references_array.iter().enumerate() {
-                    if let Some(text) = reference.as_str() {
-                        tx.execute(
-                            "INSERT INTO use_case_references (use_case_id, target_id, relationship, description) VALUES (?, ?, ?, ?)",
-                            params![use_case.id, format!("REF-{}", index), "reference", text],
-                        )
-                        .context("Failed to save reference")?;
-                    }
-                }
+        // Insert use case references
+        for reference in &use_case.use_case_references {
+            tx.execute(
+                "INSERT INTO use_case_references (use_case_id, target_id, relationship, description) VALUES (?, ?, ?, ?)",
+                params![use_case.id, reference.target_id, reference.relationship, reference.description],
+            )
+            .context("Failed to save use case reference")?;
+        }
+
+        // Insert scenarios
+        for scenario in &use_case.scenarios {
+            // Serialize scenario extra fields
+            let scenario_extra_json = serde_json::to_string(&scenario.extra)
+                .context("Failed to serialize scenario extra fields")?;
+
+            tx.execute(
+                "INSERT INTO scenarios (id, use_case_id, title, description, scenario_type, status, persona, created_at, updated_at, extra_json)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                params![
+                    scenario.id,
+                    use_case.id,
+                    scenario.title,
+                    scenario.description,
+                    scenario.scenario_type.to_string(),
+                    scenario.status.to_string(),
+                    scenario.persona,
+                    scenario.metadata.created_at.to_rfc3339(),
+                    scenario.metadata.updated_at.to_rfc3339(),
+                    scenario_extra_json,
+                ],
+            )
+            .context("Failed to save scenario")?;
+
+            // Insert scenario steps
+            for step in &scenario.steps {
+                tx.execute(
+                    "INSERT INTO scenario_steps (scenario_id, step_order, actor, action, description, notes)
+                     VALUES (?, ?, ?, ?, ?, ?)",
+                    params![scenario.id, step.order, step.actor, step.action, step.description, step.notes],
+                )
+                .context("Failed to save scenario step")?;
+            }
+
+            // Insert scenario preconditions
+            for (index, precondition) in scenario.preconditions.iter().enumerate() {
+                tx.execute(
+                    "INSERT INTO scenario_preconditions (scenario_id, condition_order, condition_text)
+                     VALUES (?, ?, ?)",
+                    params![scenario.id, index as i32, precondition],
+                )
+                .context("Failed to save scenario precondition")?;
+            }
+
+            // Insert scenario postconditions
+            for (index, postcondition) in scenario.postconditions.iter().enumerate() {
+                tx.execute(
+                    "INSERT INTO scenario_postconditions (scenario_id, condition_order, condition_text)
+                     VALUES (?, ?, ?)",
+                    params![scenario.id, index as i32, postcondition],
+                )
+                .context("Failed to save scenario postcondition")?;
+            }
+
+            // Insert scenario references
+            for reference in &scenario.references {
+                tx.execute(
+                    "INSERT INTO scenario_references (scenario_id, ref_type, target_id, relationship, description)
+                     VALUES (?, ?, ?, ?, ?)",
+                    params![
+                        scenario.id,
+                        reference.ref_type.to_string(),
+                        reference.target_id,
+                        reference.relationship,
+                        reference.description,
+                    ],
+                )
+                .context("Failed to save scenario reference")?;
             }
         }
 
@@ -202,7 +462,7 @@ impl SqliteUseCaseRepository {
         let mut rows = stmt
             .query_map([id], |row| {
                 let extra_json: String = row.get(7)?;
-                let mut extra: std::collections::HashMap<String, serde_json::Value> =
+                let extra: std::collections::HashMap<String, serde_json::Value> =
                     serde_json::from_str(&extra_json).map_err(|e| {
                         rusqlite::Error::FromSqlConversionFailure(
                             7,
@@ -210,13 +470,6 @@ impl SqliteUseCaseRepository {
                             Box::new(e),
                         )
                     })?;
-                
-                // Extract scenarios from extra and deserialize
-                let scenarios = if let Some(scenarios_value) = extra.remove("scenarios") {
-                    serde_json::from_value(scenarios_value).unwrap_or_else(|_| Vec::new())
-                } else {
-                    Vec::new()
-                };
 
                 Ok(UseCase {
                     id: row.get(0)?,
@@ -249,7 +502,7 @@ impl SqliteUseCaseRepository {
                     preconditions: Vec::new(),  // Will be populated below
                     postconditions: Vec::new(), // Will be populated below
                     use_case_references: Vec::new(), // Will be populated below
-                    scenarios,
+                    scenarios: Vec::new(), // Will be loaded from relational tables
                     extra,
                 })
             })
@@ -309,6 +562,10 @@ impl SqliteUseCaseRepository {
         }
         use_case.use_case_references = references;
 
+        // Load scenarios from relational tables
+        let scenarios = Self::load_scenarios_for_use_case(conn, id)?;
+        use_case.scenarios = scenarios;
+
         Ok(Some(use_case))
     }
 
@@ -328,7 +585,7 @@ impl SqliteUseCaseRepository {
         let mut rows = stmt
             .query_map([id], |row| {
                 let extra_json: String = row.get(7)?;
-                let mut extra: std::collections::HashMap<String, serde_json::Value> =
+                let extra: std::collections::HashMap<String, serde_json::Value> =
                     serde_json::from_str(&extra_json).map_err(|e| {
                         rusqlite::Error::FromSqlConversionFailure(
                             7,
@@ -336,13 +593,6 @@ impl SqliteUseCaseRepository {
                             Box::new(e),
                         )
                     })?;
-                
-                // Extract scenarios from extra and deserialize
-                let scenarios = if let Some(scenarios_value) = extra.remove("scenarios") {
-                    serde_json::from_value(scenarios_value).unwrap_or_else(|_| Vec::new())
-                } else {
-                    Vec::new()
-                };
 
                 Ok(UseCase {
                     id: row.get(0)?,
@@ -375,7 +625,7 @@ impl SqliteUseCaseRepository {
                     preconditions: Vec::new(),  // Will be populated below
                     postconditions: Vec::new(), // Will be populated below
                     use_case_references: Vec::new(), // Will be populated below
-                    scenarios,
+                    scenarios: Vec::new(), // Will be loaded from relational tables
                     extra,
                 })
             })
@@ -434,6 +684,10 @@ impl SqliteUseCaseRepository {
             references.push(reference.context("Failed to read reference")?);
         }
         use_case.use_case_references = references;
+
+        // Load scenarios from relational tables
+        let scenarios = Self::load_scenarios_for_use_case_tx(tx, id)?;
+        use_case.scenarios = scenarios;
 
         Ok(Some(use_case))
     }

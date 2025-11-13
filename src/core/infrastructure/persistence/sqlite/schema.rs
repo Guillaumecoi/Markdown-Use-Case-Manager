@@ -231,6 +231,7 @@ impl Schema {
                 step_order INTEGER NOT NULL,
                 actor TEXT NOT NULL,
                 action TEXT NOT NULL,
+                description TEXT NOT NULL,
                 notes TEXT,
                 FOREIGN KEY (scenario_id) REFERENCES scenarios(id) ON DELETE CASCADE
             )",
