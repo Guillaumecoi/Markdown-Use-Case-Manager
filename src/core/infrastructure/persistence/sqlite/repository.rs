@@ -234,6 +234,7 @@ impl SqliteUseCaseRepository {
                     preconditions: Vec::new(),  // Will be populated below
                     postconditions: Vec::new(), // Will be populated below
                     use_case_references: Vec::new(), // Will be populated below
+                    scenarios: Vec::new(), // Will be populated below
                     extra,
                 })
             })
@@ -352,6 +353,7 @@ impl SqliteUseCaseRepository {
                     preconditions: Vec::new(),  // Will be populated below
                     postconditions: Vec::new(), // Will be populated below
                     use_case_references: Vec::new(), // Will be populated below
+                    scenarios: Vec::new(), // Will be populated below
                     extra,
                 })
             })
@@ -834,6 +836,7 @@ mod tests {
             preconditions: Vec::new(),
             postconditions: Vec::new(),
             use_case_references: Vec::new(),
+            scenarios: Vec::new(),
             extra: HashMap::new(),
         }
     }

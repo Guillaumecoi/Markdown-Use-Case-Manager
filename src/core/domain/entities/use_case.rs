@@ -1,4 +1,4 @@
-use super::{Metadata, Status, UseCaseReference};
+use super::{Metadata, Scenario, ScenarioType, Status, UseCaseReference};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
@@ -56,6 +56,10 @@ pub struct UseCase {
     #[serde(default)]
     pub use_case_references: Vec<UseCaseReference>,
 
+    // NEW: Scenarios for this use case
+    #[serde(default)]
+    pub scenarios: Vec<Scenario>,
+
     // Catch-all for any additional fields from TOML (including business_value,
     // acceptance_criteria, prerequisites, etc.) - fully flexible!
     #[serde(flatten)]
@@ -81,14 +85,21 @@ impl UseCase {
             preconditions: Vec::new(),
             postconditions: Vec::new(),
             use_case_references: Vec::new(),
+            scenarios: Vec::new(),
             extra: std::collections::HashMap::new(),
         })
     }
 
     pub fn status(&self) -> Status {
-        // TODO: In PR #4, update to calculate from scenarios
-        // For now, maintain backward compatibility
-        Status::Planned
+        if self.scenarios.is_empty() {
+            return Status::Planned;
+        }
+
+        self.scenarios
+            .iter()
+            .map(|s| s.status)
+            .min()  // Status implements Ord
+            .unwrap_or(Status::Planned)
     }
 
     /// Add a precondition to this use case
@@ -132,6 +143,26 @@ impl UseCase {
     /// Check if this use case depends on another
     pub fn depends_on(&self, use_case_id: &str) -> bool {
         self.dependencies().contains(&use_case_id)
+    }
+
+    /// Get next scenario ID for this use case
+    pub fn next_scenario_id(&self) -> String {
+        let next_num = self.scenarios.len() + 1;
+        format!("{}-S{:02}", self.id, next_num)
+    }
+
+    /// Add a scenario
+    pub fn add_scenario(&mut self, scenario: Scenario) {
+        self.scenarios.push(scenario);
+        self.metadata.touch();
+    }
+
+    /// Get scenarios by type
+    pub fn scenarios_by_type(&self, scenario_type: ScenarioType) -> Vec<&Scenario> {
+        self.scenarios
+            .iter()
+            .filter(|s| s.scenario_type == scenario_type)
+            .collect()
     }
 }
 
@@ -504,6 +535,7 @@ mod use_case_tests {
         assert!(use_case.preconditions.is_empty());
         assert!(use_case.postconditions.is_empty());
         assert!(use_case.use_case_references.is_empty());
+        assert!(use_case.scenarios.is_empty());
     }
 
     /// Test add_precondition method
@@ -643,6 +675,7 @@ mod use_case_tests {
         assert!(use_case.preconditions.is_empty());
         assert!(use_case.postconditions.is_empty());
         assert!(use_case.use_case_references.is_empty());
+        assert!(use_case.scenarios.is_empty());
     }
 
     /// Test serialization with new fields
@@ -752,5 +785,158 @@ mod use_case_tests {
         );
         assert_eq!(deserialized.extra["story_points"], json!(5));
         assert_eq!(deserialized.extra["is_critical"], json!(true));
+    }
+
+    /// Test UseCase status calculation from scenarios
+    #[test]
+    fn test_use_case_status_from_scenarios() {
+        let mut use_case = UseCase::new(
+            "UC-TEST-001".to_string(),
+            "Test Use Case".to_string(),
+            "Test".to_string(),
+            "A test use case".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap();
+
+        // No scenarios - should be Planned
+        assert_eq!(use_case.status(), Status::Planned);
+
+        // Add scenarios with different statuses
+        let scenario1 = Scenario::new(
+            "UC-TEST-001-S01".to_string(),
+            "Happy Path".to_string(),
+            "Main success scenario".to_string(),
+            ScenarioType::HappyPath,
+        );
+        // scenario1 status is Planned by default
+
+        let mut scenario2 = Scenario::new(
+            "UC-TEST-001-S02".to_string(),
+            "Error Case".to_string(),
+            "Error handling scenario".to_string(),
+            ScenarioType::ExceptionFlow,
+        );
+        scenario2.set_status(Status::Implemented);
+
+        use_case.add_scenario(scenario1);
+        use_case.add_scenario(scenario2);
+
+        // Status should be the minimum (earliest) status: Planned
+        assert_eq!(use_case.status(), Status::Planned);
+
+        // Update all scenarios to Implemented
+        for scenario in &mut use_case.scenarios {
+            scenario.set_status(Status::Implemented);
+        }
+        assert_eq!(use_case.status(), Status::Implemented);
+    }
+
+    /// Test next_scenario_id method
+    #[test]
+    fn test_next_scenario_id() {
+        let mut use_case = UseCase::new(
+            "UC-TEST-001".to_string(),
+            "Test Use Case".to_string(),
+            "Test".to_string(),
+            "A test use case".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap();
+
+        assert_eq!(use_case.next_scenario_id(), "UC-TEST-001-S01");
+
+        use_case.add_scenario(Scenario::new(
+            "UC-TEST-001-S01".to_string(),
+            "First Scenario".to_string(),
+            "Description".to_string(),
+            ScenarioType::HappyPath,
+        ));
+
+        assert_eq!(use_case.next_scenario_id(), "UC-TEST-001-S02");
+
+        use_case.add_scenario(Scenario::new(
+            "UC-TEST-001-S02".to_string(),
+            "Second Scenario".to_string(),
+            "Description".to_string(),
+            ScenarioType::AlternativeFlow,
+        ));
+
+        assert_eq!(use_case.next_scenario_id(), "UC-TEST-001-S03");
+    }
+
+    /// Test add_scenario method
+    #[test]
+    fn test_add_scenario() {
+        let mut use_case = UseCase::new(
+            "UC-TEST-001".to_string(),
+            "Test Use Case".to_string(),
+            "Test".to_string(),
+            "A test use case".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap();
+
+        let scenario = Scenario::new(
+            "UC-TEST-001-S01".to_string(),
+            "Test Scenario".to_string(),
+            "A test scenario".to_string(),
+            ScenarioType::HappyPath,
+        );
+
+        use_case.add_scenario(scenario);
+
+        assert_eq!(use_case.scenarios.len(), 1);
+        assert_eq!(use_case.scenarios[0].id, "UC-TEST-001-S01");
+        assert_eq!(use_case.scenarios[0].title, "Test Scenario");
+    }
+
+    /// Test scenarios_by_type method
+    #[test]
+    fn test_scenarios_by_type() {
+        let mut use_case = UseCase::new(
+            "UC-TEST-001".to_string(),
+            "Test Use Case".to_string(),
+            "Test".to_string(),
+            "A test use case".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap();
+
+        use_case.add_scenario(Scenario::new(
+            "UC-TEST-001-S01".to_string(),
+            "Happy Path".to_string(),
+            "Success scenario".to_string(),
+            ScenarioType::HappyPath,
+        ));
+
+        use_case.add_scenario(Scenario::new(
+            "UC-TEST-001-S02".to_string(),
+            "Alternative Flow".to_string(),
+            "Alternative scenario".to_string(),
+            ScenarioType::AlternativeFlow,
+        ));
+
+        use_case.add_scenario(Scenario::new(
+            "UC-TEST-001-S03".to_string(),
+            "Exception Flow".to_string(),
+            "Error scenario".to_string(),
+            ScenarioType::ExceptionFlow,
+        ));
+
+        let happy_paths = use_case.scenarios_by_type(ScenarioType::HappyPath);
+        assert_eq!(happy_paths.len(), 1);
+        assert_eq!(happy_paths[0].title, "Happy Path");
+
+        let alt_flows = use_case.scenarios_by_type(ScenarioType::AlternativeFlow);
+        assert_eq!(alt_flows.len(), 1);
+        assert_eq!(alt_flows[0].title, "Alternative Flow");
+
+        let exc_flows = use_case.scenarios_by_type(ScenarioType::ExceptionFlow);
+        assert_eq!(exc_flows.len(), 1);
+        assert_eq!(exc_flows[0].title, "Exception Flow");
+
+        let extensions = use_case.scenarios_by_type(ScenarioType::Extension);
+        assert!(extensions.is_empty());
     }
 }
