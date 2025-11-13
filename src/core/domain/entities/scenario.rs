@@ -1,4 +1,4 @@
-use super::{Metadata, ScenarioStep, ScenarioType, Status, UseCase};
+use super::{Metadata, ScenarioReference, ScenarioStep, ScenarioType, Status, UseCase};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -30,6 +30,10 @@ pub struct Scenario {
     #[serde(default)]
     pub postconditions: Vec<String>,
 
+    /// References to other scenarios or use cases
+    #[serde(default)]
+    pub references: Vec<ScenarioReference>,
+
     /// Flexible extra fields
     #[serde(flatten)]
     pub extra: HashMap<String, serde_json::Value>,
@@ -53,6 +57,7 @@ impl Scenario {
             steps: Vec::new(),
             preconditions: Vec::new(),
             postconditions: Vec::new(),
+            references: Vec::new(),
             extra: HashMap::new(),
         }
     }
@@ -113,6 +118,51 @@ impl Scenario {
     /// Remove a step by order
     pub fn remove_step(&mut self, step_order: u32) {
         self.steps.retain(|step| step.order != step_order as usize);
+        self.metadata.touch();
+    }
+
+    /// Add a reference to another scenario or use case
+    pub fn add_reference(&mut self, reference: ScenarioReference) {
+        // Prevent duplicate references
+        if !self.references.iter().any(|r| {
+            r.ref_type == reference.ref_type
+                && r.target_id == reference.target_id
+                && r.relationship == reference.relationship
+        }) {
+            self.references.push(reference);
+            self.metadata.touch();
+        }
+    }
+
+    /// Check if this scenario references another scenario
+    pub fn references_scenario(&self, scenario_id: &str) -> bool {
+        self.references.iter().any(|r| {
+            matches!(r.ref_type, super::ReferenceType::Scenario) && r.target_id == scenario_id
+        })
+    }
+
+    /// Check if this scenario depends on a use case
+    pub fn depends_on_use_case(&self, use_case_id: &str) -> bool {
+        self.references.iter().any(|r| {
+            matches!(r.ref_type, super::ReferenceType::UseCase)
+                && r.target_id == use_case_id
+                && r.is_dependency()
+        })
+    }
+
+    /// Get all scenario IDs this scenario references
+    pub fn referenced_scenarios(&self) -> Vec<&str> {
+        self.references
+            .iter()
+            .filter(|r| matches!(r.ref_type, super::ReferenceType::UseCase))
+            .map(|r| r.target_id.as_str())
+            .collect()
+    }
+
+    /// Remove a reference
+    pub fn remove_reference(&mut self, target_id: &str, relationship: &str) {
+        self.references
+            .retain(|r| !(r.target_id == target_id && r.relationship == relationship));
         self.metadata.touch();
     }
 }
