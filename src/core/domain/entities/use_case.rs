@@ -218,6 +218,49 @@ impl UseCase {
             ))
         }
     }
+
+    /// Add a reference to a specific scenario
+    pub fn add_reference_to_scenario(
+        &mut self,
+        scenario_id: &str,
+        reference: crate::core::domain::entities::ScenarioReference,
+    ) -> anyhow::Result<()> {
+        let scenario_index = self
+            .scenarios
+            .iter()
+            .position(|s| s.id == scenario_id)
+            .ok_or_else(|| anyhow::anyhow!("Scenario with ID '{}' not found", scenario_id))?;
+
+        // Validate the reference
+        crate::core::domain::services::ScenarioReferenceValidator::validate_reference(
+            self,
+            &self.scenarios[scenario_index].id,
+            &reference,
+        )?;
+
+        // Add the reference
+        self.scenarios[scenario_index].add_reference(reference);
+        self.metadata.touch();
+        Ok(())
+    }
+
+    /// Remove a reference from a specific scenario
+    pub fn remove_reference_from_scenario(
+        &mut self,
+        scenario_id: &str,
+        target_id: &str,
+        relationship: &str,
+    ) -> anyhow::Result<()> {
+        let scenario_index = self
+            .scenarios
+            .iter()
+            .position(|s| s.id == scenario_id)
+            .ok_or_else(|| anyhow::anyhow!("Scenario with ID '{}' not found", scenario_id))?;
+
+        self.scenarios[scenario_index].remove_reference(target_id, relationship);
+        self.metadata.touch();
+        Ok(())
+    }
 }
 
 #[cfg(test)]
