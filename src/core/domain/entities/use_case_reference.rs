@@ -58,10 +58,7 @@ mod tests {
 
     #[test]
     fn test_use_case_reference_creation() {
-        let reference = UseCaseReference::new(
-            "UC-AUTH-001".to_string(),
-            "depends_on".to_string(),
-        );
+        let reference = UseCaseReference::new("UC-AUTH-001".to_string(), "depends_on".to_string());
 
         assert_eq!(reference.target_id, "UC-AUTH-001");
         assert_eq!(reference.relationship, "depends_on");
@@ -70,13 +67,13 @@ mod tests {
 
     #[test]
     fn test_use_case_reference_with_description() {
-        let reference = UseCaseReference::new(
-            "UC-AUTH-001".to_string(),
-            "depends_on".to_string(),
-        )
-        .with_description("Requires authentication".to_string());
+        let reference = UseCaseReference::new("UC-AUTH-001".to_string(), "depends_on".to_string())
+            .with_description("Requires authentication".to_string());
 
-        assert_eq!(reference.description, Some("Requires authentication".to_string()));
+        assert_eq!(
+            reference.description,
+            Some("Requires authentication".to_string())
+        );
     }
 
     #[test]
@@ -100,11 +97,8 @@ mod tests {
 
     #[test]
     fn test_serialization() {
-        let reference = UseCaseReference::new(
-            "UC-AUTH-001".to_string(),
-            "depends_on".to_string(),
-        )
-        .with_description("Requires authentication".to_string());
+        let reference = UseCaseReference::new("UC-AUTH-001".to_string(), "depends_on".to_string())
+            .with_description("Requires authentication".to_string());
 
         let json = serde_json::to_string(&reference).unwrap();
         let deserialized: UseCaseReference = serde_json::from_str(&json).unwrap();
@@ -114,10 +108,7 @@ mod tests {
 
     #[test]
     fn test_serialization_without_description() {
-        let reference = UseCaseReference::new(
-            "UC-AUTH-001".to_string(),
-            "depends_on".to_string(),
-        );
+        let reference = UseCaseReference::new("UC-AUTH-001".to_string(), "depends_on".to_string());
 
         let json = serde_json::to_string(&reference).unwrap();
         let deserialized: UseCaseReference = serde_json::from_str(&json).unwrap();

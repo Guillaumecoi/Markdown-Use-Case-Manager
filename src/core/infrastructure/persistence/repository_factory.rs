@@ -5,9 +5,9 @@
 //! identical interfaces through the UseCaseRepository trait.
 
 use crate::config::{Config, StorageBackend};
-use crate::core::infrastructure::persistence::traits::UseCaseRepository;
-use crate::core::infrastructure::persistence::toml::TomlUseCaseRepository;
 use crate::core::infrastructure::persistence::sqlite::SqliteUseCaseRepository;
+use crate::core::infrastructure::persistence::toml::TomlUseCaseRepository;
+use crate::core::infrastructure::persistence::traits::UseCaseRepository;
 use anyhow::{Context, Result};
 
 /// Repository factory for creating use case repositories based on configuration
@@ -37,12 +37,15 @@ impl RepositoryFactory {
             StorageBackend::Sqlite => {
                 // For SQLite, we need to determine the database path
                 // Use a default path in the project directory
-                let db_path = std::path::Path::new(".config").join("mucm").join("usecases.db");
+                let db_path = std::path::Path::new(".config")
+                    .join("mucm")
+                    .join("usecases.db");
 
                 // Create parent directories if they don't exist
                 if let Some(parent) = db_path.parent() {
-                    std::fs::create_dir_all(parent)
-                        .with_context(|| format!("Failed to create database directory {:?}", parent))?;
+                    std::fs::create_dir_all(parent).with_context(|| {
+                        format!("Failed to create database directory {:?}", parent)
+                    })?;
                 }
 
                 let repo = SqliteUseCaseRepository::new(&db_path)?;

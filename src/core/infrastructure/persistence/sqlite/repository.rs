@@ -231,7 +231,7 @@ impl SqliteUseCaseRepository {
                             )
                         })?,
                     },
-                    preconditions: Vec::new(), // Will be populated below
+                    preconditions: Vec::new(),  // Will be populated below
                     postconditions: Vec::new(), // Will be populated below
                     use_case_references: Vec::new(), // Will be populated below
                     extra,
@@ -349,7 +349,7 @@ impl SqliteUseCaseRepository {
                             )
                         })?,
                     },
-                    preconditions: Vec::new(), // Will be populated below
+                    preconditions: Vec::new(),  // Will be populated below
                     postconditions: Vec::new(), // Will be populated below
                     use_case_references: Vec::new(), // Will be populated below
                     extra,
@@ -613,7 +613,10 @@ impl TransactionalRepository for SqliteUseCaseRepository {
         let tx = conn.transaction().context("Failed to start transaction")?;
 
         // Create a temporary repository that uses the transaction
-        let tx_repo = TransactionalSqliteRepository { tx: &tx, db_path: &self.db_path };
+        let tx_repo = TransactionalSqliteRepository {
+            tx: &tx,
+            db_path: &self.db_path,
+        };
 
         let result = f(&tx_repo as &dyn UseCaseRepository)?;
 

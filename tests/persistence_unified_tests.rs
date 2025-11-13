@@ -3,9 +3,7 @@
 //! This module tests both TOML and SQLite backends with identical test suites
 //! to ensure feature parity and correctness.
 
-use markdown_use_case_manager::core::{
-    SqliteUseCaseRepository, UseCase, UseCaseRepository,
-};
+use markdown_use_case_manager::core::{SqliteUseCaseRepository, UseCase, UseCaseRepository};
 use serial_test::serial;
 use std::env;
 use tempfile::TempDir;
@@ -18,14 +16,20 @@ fn create_test_use_case() -> UseCase {
         "test".to_string(),
         "A test use case for persistence testing".to_string(),
         "medium".to_string(),
-    ).unwrap()
+    )
+    .unwrap()
 }
 
 /// Test helper: Create a test use case with extra fields
 fn create_test_use_case_with_extra() -> UseCase {
     let mut use_case = create_test_use_case();
-    use_case.extra.insert("custom_field".to_string(), serde_json::json!("custom_value"));
-    use_case.extra.insert("number_field".to_string(), serde_json::json!(42));
+    use_case.extra.insert(
+        "custom_field".to_string(),
+        serde_json::json!("custom_value"),
+    );
+    use_case
+        .extra
+        .insert("number_field".to_string(), serde_json::json!(42));
     use_case
 }
 
@@ -40,7 +44,9 @@ fn create_toml_repository() -> (TempDir, Box<dyn UseCaseRepository>) {
     ConfigFileManager::save_in_dir(&config, ".").unwrap();
 
     let config = markdown_use_case_manager::config::Config::load().unwrap();
-    let repo = Box::new(markdown_use_case_manager::core::TomlUseCaseRepository::new(config)) as Box<dyn UseCaseRepository>;
+    let repo = Box::new(markdown_use_case_manager::core::TomlUseCaseRepository::new(
+        config,
+    )) as Box<dyn UseCaseRepository>;
 
     (temp_dir, repo)
 }
@@ -50,7 +56,8 @@ fn create_sqlite_repository() -> (TempDir, Box<dyn UseCaseRepository>) {
     let temp_dir = TempDir::new().unwrap();
     let db_path = temp_dir.path().join("test.db");
 
-    let repo = Box::new(SqliteUseCaseRepository::new(&db_path).unwrap()) as Box<dyn UseCaseRepository>;
+    let repo =
+        Box::new(SqliteUseCaseRepository::new(&db_path).unwrap()) as Box<dyn UseCaseRepository>;
 
     // Create markdown directory that the SQLite repository expects
     std::fs::create_dir_all(temp_dir.path().join("markdown")).unwrap();
@@ -94,7 +101,11 @@ fn test_sqlite_backend() {
 fn test_backend_name(repo: &dyn UseCaseRepository) {
     // Test backend identification
     let name = repo.backend_name();
-    assert!(name == "toml" || name == "sqlite", "Backend name should be 'toml' or 'sqlite', got: {}", name);
+    assert!(
+        name == "toml" || name == "sqlite",
+        "Backend name should be 'toml' or 'sqlite', got: {}",
+        name
+    );
 }
 
 fn test_health_check(repo: &dyn UseCaseRepository) {
@@ -109,7 +120,9 @@ fn test_save_and_load(repo: &dyn UseCaseRepository) {
     repo.save(&use_case).expect("Save should succeed");
 
     // Load by ID
-    let loaded = repo.load_by_id(&use_case.id).expect("Load by ID should succeed");
+    let loaded = repo
+        .load_by_id(&use_case.id)
+        .expect("Load by ID should succeed");
     assert!(loaded.is_some(), "Use case should be found");
     let loaded = loaded.unwrap();
 
@@ -126,13 +139,23 @@ fn test_save_with_extra_fields(repo: &dyn UseCaseRepository) {
     let use_case = create_test_use_case_with_extra();
 
     // Save
-    repo.save(&use_case).expect("Save with extra fields should succeed");
+    repo.save(&use_case)
+        .expect("Save with extra fields should succeed");
 
     // Load and verify extra fields
-    let loaded = repo.load_by_id(&use_case.id).expect("Load should succeed").unwrap();
+    let loaded = repo
+        .load_by_id(&use_case.id)
+        .expect("Load should succeed")
+        .unwrap();
 
-    assert_eq!(loaded.extra.get("custom_field"), Some(&serde_json::json!("custom_value")));
-    assert_eq!(loaded.extra.get("number_field"), Some(&serde_json::json!(42)));
+    assert_eq!(
+        loaded.extra.get("custom_field"),
+        Some(&serde_json::json!("custom_value"))
+    );
+    assert_eq!(
+        loaded.extra.get("number_field"),
+        Some(&serde_json::json!(42))
+    );
 }
 
 fn test_delete(repo: &dyn UseCaseRepository) {
@@ -140,19 +163,31 @@ fn test_delete(repo: &dyn UseCaseRepository) {
 
     // Save then delete
     repo.save(&use_case).expect("Save should succeed");
-    assert!(repo.exists(&use_case.id).unwrap(), "Use case should exist before delete");
+    assert!(
+        repo.exists(&use_case.id).unwrap(),
+        "Use case should exist before delete"
+    );
 
     repo.delete(&use_case.id).expect("Delete should succeed");
-    assert!(!repo.exists(&use_case.id).unwrap(), "Use case should not exist after delete");
+    assert!(
+        !repo.exists(&use_case.id).unwrap(),
+        "Use case should not exist after delete"
+    );
 }
 
 fn test_exists(repo: &dyn UseCaseRepository) {
     let use_case = create_test_use_case();
 
-    assert!(!repo.exists(&use_case.id).unwrap(), "Use case should not exist initially");
+    assert!(
+        !repo.exists(&use_case.id).unwrap(),
+        "Use case should not exist initially"
+    );
 
     repo.save(&use_case).expect("Save should succeed");
-    assert!(repo.exists(&use_case.id).unwrap(), "Use case should exist after save");
+    assert!(
+        repo.exists(&use_case.id).unwrap(),
+        "Use case should exist after save"
+    );
 }
 
 fn test_find_by_category(repo: &dyn UseCaseRepository) {
@@ -162,21 +197,24 @@ fn test_find_by_category(repo: &dyn UseCaseRepository) {
         "test_cat".to_string(),
         "".to_string(),
         "medium".to_string(),
-    ).unwrap();
+    )
+    .unwrap();
     let use_case2 = UseCase::new(
         "UC-CAT-002".to_string(),
         "Category Test 2".to_string(),
         "test_cat".to_string(),
         "".to_string(),
         "medium".to_string(),
-    ).unwrap();
+    )
+    .unwrap();
     let use_case3 = UseCase::new(
         "UC-CAT-003".to_string(),
         "Category Test 3".to_string(),
         "other_cat".to_string(),
         "".to_string(),
         "medium".to_string(),
-    ).unwrap();
+    )
+    .unwrap();
 
     // Save all
     repo.save(&use_case1).unwrap();
@@ -185,7 +223,11 @@ fn test_find_by_category(repo: &dyn UseCaseRepository) {
 
     // Find by category
     let found = repo.find_by_category("test_cat").unwrap();
-    assert_eq!(found.len(), 2, "Should find 2 use cases in test_cat category");
+    assert_eq!(
+        found.len(),
+        2,
+        "Should find 2 use cases in test_cat category"
+    );
 
     let ids: Vec<String> = found.iter().map(|uc| uc.id.clone()).collect();
     assert!(ids.contains(&"UC-CAT-001".to_string()));
@@ -199,21 +241,24 @@ fn test_find_by_priority(repo: &dyn UseCaseRepository) {
         "test".to_string(),
         "".to_string(),
         "high".to_string(),
-    ).unwrap();
+    )
+    .unwrap();
     let use_case2 = UseCase::new(
         "UC-PRI-002".to_string(),
         "Priority Test 2".to_string(),
         "test".to_string(),
         "".to_string(),
         "high".to_string(),
-    ).unwrap();
+    )
+    .unwrap();
     let use_case3 = UseCase::new(
         "UC-PRI-003".to_string(),
         "Priority Test 3".to_string(),
         "test".to_string(),
         "".to_string(),
         "medium".to_string(),
-    ).unwrap();
+    )
+    .unwrap();
 
     // Save all
     repo.save(&use_case1).unwrap();
@@ -236,21 +281,24 @@ fn test_search_by_title(repo: &dyn UseCaseRepository) {
         "auth".to_string(),
         "".to_string(),
         "medium".to_string(),
-    ).unwrap();
+    )
+    .unwrap();
     let use_case2 = UseCase::new(
         "UC-SEARCH-002".to_string(),
         "Data Processing Pipeline".to_string(),
         "data".to_string(),
         "".to_string(),
         "medium".to_string(),
-    ).unwrap();
+    )
+    .unwrap();
     let use_case3 = UseCase::new(
         "UC-SEARCH-003".to_string(),
         "User Profile Management".to_string(),
         "user".to_string(),
         "".to_string(),
         "medium".to_string(),
-    ).unwrap();
+    )
+    .unwrap();
 
     // Save all
     repo.save(&use_case1).unwrap();
@@ -268,9 +316,30 @@ fn test_search_by_title(repo: &dyn UseCaseRepository) {
 
 fn test_save_batch(repo: &dyn UseCaseRepository) {
     let use_cases = vec![
-        UseCase::new("UC-BATCH-001".to_string(), "Batch Test 1".to_string(), "batch".to_string(), "".to_string(), "medium".to_string()).unwrap(),
-        UseCase::new("UC-BATCH-002".to_string(), "Batch Test 2".to_string(), "batch".to_string(), "".to_string(), "medium".to_string()).unwrap(),
-        UseCase::new("UC-BATCH-003".to_string(), "Batch Test 3".to_string(), "batch".to_string(), "".to_string(), "medium".to_string()).unwrap(),
+        UseCase::new(
+            "UC-BATCH-001".to_string(),
+            "Batch Test 1".to_string(),
+            "batch".to_string(),
+            "".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap(),
+        UseCase::new(
+            "UC-BATCH-002".to_string(),
+            "Batch Test 2".to_string(),
+            "batch".to_string(),
+            "".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap(),
+        UseCase::new(
+            "UC-BATCH-003".to_string(),
+            "Batch Test 3".to_string(),
+            "batch".to_string(),
+            "".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap(),
     ];
 
     // Save batch
@@ -278,7 +347,11 @@ fn test_save_batch(repo: &dyn UseCaseRepository) {
 
     // Verify all were saved
     for use_case in &use_cases {
-        assert!(repo.exists(&use_case.id).unwrap(), "Use case {} should exist", use_case.id);
+        assert!(
+            repo.exists(&use_case.id).unwrap(),
+            "Use case {} should exist",
+            use_case.id
+        );
     }
 
     // Verify load_all includes them
@@ -288,9 +361,30 @@ fn test_save_batch(repo: &dyn UseCaseRepository) {
 
 fn test_delete_batch(repo: &dyn UseCaseRepository) {
     let use_cases = vec![
-        UseCase::new("UC-DEL-001".to_string(), "Delete Test 1".to_string(), "delete".to_string(), "".to_string(), "medium".to_string()).unwrap(),
-        UseCase::new("UC-DEL-002".to_string(), "Delete Test 2".to_string(), "delete".to_string(), "".to_string(), "medium".to_string()).unwrap(),
-        UseCase::new("UC-DEL-003".to_string(), "Delete Test 3".to_string(), "delete".to_string(), "".to_string(), "medium".to_string()).unwrap(),
+        UseCase::new(
+            "UC-DEL-001".to_string(),
+            "Delete Test 1".to_string(),
+            "delete".to_string(),
+            "".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap(),
+        UseCase::new(
+            "UC-DEL-002".to_string(),
+            "Delete Test 2".to_string(),
+            "delete".to_string(),
+            "".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap(),
+        UseCase::new(
+            "UC-DEL-003".to_string(),
+            "Delete Test 3".to_string(),
+            "delete".to_string(),
+            "".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap(),
     ];
 
     // Save all first
@@ -309,14 +403,32 @@ fn test_delete_batch(repo: &dyn UseCaseRepository) {
 
     // Verify they're gone
     for use_case in &use_cases {
-        assert!(!repo.exists(&use_case.id).unwrap(), "Use case {} should be deleted", use_case.id);
+        assert!(
+            !repo.exists(&use_case.id).unwrap(),
+            "Use case {} should be deleted",
+            use_case.id
+        );
     }
 }
 
 fn test_load_all(repo: &dyn UseCaseRepository) {
     let use_cases = vec![
-        UseCase::new("UC-ALL-001".to_string(), "Load All Test 1".to_string(), "load".to_string(), "".to_string(), "medium".to_string()).unwrap(),
-        UseCase::new("UC-ALL-002".to_string(), "Load All Test 2".to_string(), "load".to_string(), "".to_string(), "medium".to_string()).unwrap(),
+        UseCase::new(
+            "UC-ALL-001".to_string(),
+            "Load All Test 1".to_string(),
+            "load".to_string(),
+            "".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap(),
+        UseCase::new(
+            "UC-ALL-002".to_string(),
+            "Load All Test 2".to_string(),
+            "load".to_string(),
+            "".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap(),
     ];
 
     // Save all

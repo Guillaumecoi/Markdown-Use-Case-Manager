@@ -244,4 +244,273 @@ impl UseCaseController {
         UseCaseFormatter::display_all_regenerated(count);
         Ok(())
     }
+
+    /// Add a precondition to a use case.
+    ///
+    /// Adds a new precondition to the specified use case.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `precondition` - The precondition text to add
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or precondition cannot be added
+    pub fn add_precondition(
+        &mut self,
+        use_case_id: String,
+        precondition: String,
+    ) -> Result<DisplayResult> {
+        match self
+            .app_service
+            .add_precondition(&use_case_id, precondition)
+        {
+            Ok(_) => Ok(DisplayResult::success(format!(
+                "Added precondition to use case: {}",
+                use_case_id
+            ))),
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// List preconditions for a use case.
+    ///
+    /// Retrieves and displays all preconditions for the specified use case.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    ///
+    /// # Returns
+    /// DisplayResult with preconditions list
+    ///
+    /// # Errors
+    /// Returns error if use case not found
+    pub fn list_preconditions(&mut self, use_case_id: String) -> Result<DisplayResult> {
+        match self.app_service.get_preconditions(&use_case_id) {
+            Ok(preconditions) => {
+                let mut result = format!("Preconditions for {}:\n", use_case_id);
+                if preconditions.is_empty() {
+                    result.push_str("  No preconditions found.");
+                } else {
+                    for (i, precondition) in preconditions.iter().enumerate() {
+                        result.push_str(&format!("  {}. {}\n", i + 1, precondition));
+                    }
+                }
+                Ok(DisplayResult::success(result))
+            }
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Remove a precondition from a use case.
+    ///
+    /// Removes the precondition at the specified index from the use case.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `index` - The 1-based index of the precondition to remove
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or index is invalid
+    pub fn remove_precondition(
+        &mut self,
+        use_case_id: String,
+        index: usize,
+    ) -> Result<DisplayResult> {
+        match self.app_service.remove_precondition(&use_case_id, index) {
+            Ok(_) => Ok(DisplayResult::success(format!(
+                "Removed precondition {} from use case: {}",
+                index, use_case_id
+            ))),
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Add a postcondition to a use case.
+    ///
+    /// Adds a new postcondition to the specified use case.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `postcondition` - The postcondition text to add
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or postcondition cannot be added
+    pub fn add_postcondition(
+        &mut self,
+        use_case_id: String,
+        postcondition: String,
+    ) -> Result<DisplayResult> {
+        match self
+            .app_service
+            .add_postcondition(&use_case_id, postcondition)
+        {
+            Ok(_) => Ok(DisplayResult::success(format!(
+                "Added postcondition to use case: {}",
+                use_case_id
+            ))),
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// List postconditions for a use case.
+    ///
+    /// Retrieves and displays all postconditions for the specified use case.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    ///
+    /// # Returns
+    /// DisplayResult with postconditions list
+    ///
+    /// # Errors
+    /// Returns error if use case not found
+    pub fn list_postconditions(&mut self, use_case_id: String) -> Result<DisplayResult> {
+        match self.app_service.get_postconditions(&use_case_id) {
+            Ok(postconditions) => {
+                let mut result = format!("Postconditions for {}:\n", use_case_id);
+                if postconditions.is_empty() {
+                    result.push_str("  No postconditions found.");
+                } else {
+                    for (i, postcondition) in postconditions.iter().enumerate() {
+                        result.push_str(&format!("  {}. {}\n", i + 1, postcondition));
+                    }
+                }
+                Ok(DisplayResult::success(result))
+            }
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Remove a postcondition from a use case.
+    ///
+    /// Removes the postcondition at the specified index from the use case.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `index` - The 1-based index of the postcondition to remove
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or index is invalid
+    pub fn remove_postcondition(
+        &mut self,
+        use_case_id: String,
+        index: usize,
+    ) -> Result<DisplayResult> {
+        match self.app_service.remove_postcondition(&use_case_id, index) {
+            Ok(_) => Ok(DisplayResult::success(format!(
+                "Removed postcondition {} from use case: {}",
+                index, use_case_id
+            ))),
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Add a reference to a use case.
+    ///
+    /// Adds a new reference relationship to the specified use case.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `target_id` - The ID of the target use case
+    /// * `relationship` - The type of relationship (dependency, extension, inclusion, alternative)
+    /// * `description` - Optional description of the relationship
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or reference cannot be added
+    pub fn add_reference(
+        &mut self,
+        use_case_id: String,
+        target_id: String,
+        relationship: String,
+        description: Option<String>,
+    ) -> Result<DisplayResult> {
+        match self
+            .app_service
+            .add_reference(&use_case_id, target_id, relationship, description)
+        {
+            Ok(_) => Ok(DisplayResult::success(format!(
+                "Added reference to use case: {}",
+                use_case_id
+            ))),
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// List references for a use case.
+    ///
+    /// Retrieves and displays all references for the specified use case.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    ///
+    /// # Returns
+    /// DisplayResult with references list
+    ///
+    /// # Errors
+    /// Returns error if use case not found
+    pub fn list_references(&mut self, use_case_id: String) -> Result<DisplayResult> {
+        match self.app_service.get_references(&use_case_id) {
+            Ok(references) => {
+                let mut result = format!("References for {}:\n", use_case_id);
+                if references.is_empty() {
+                    result.push_str("  No references found.");
+                } else {
+                    for reference in &references {
+                        result.push_str(&format!(
+                            "  - {} ({})",
+                            reference.target_id, reference.relationship
+                        ));
+                        if let Some(desc) = &reference.description {
+                            result.push_str(&format!(": {}", desc));
+                        }
+                        result.push('\n');
+                    }
+                }
+                Ok(DisplayResult::success(result))
+            }
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Remove a reference from a use case.
+    ///
+    /// Removes the reference to the specified target use case.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `target_id` - The ID of the target use case to remove reference to
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or reference doesn't exist
+    pub fn remove_reference(
+        &mut self,
+        use_case_id: String,
+        target_id: String,
+    ) -> Result<DisplayResult> {
+        match self.app_service.remove_reference(&use_case_id, &target_id) {
+            Ok(_) => Ok(DisplayResult::success(format!(
+                "Removed reference to {} from use case: {}",
+                target_id, use_case_id
+            ))),
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
 }

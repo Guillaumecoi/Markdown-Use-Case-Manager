@@ -347,6 +347,207 @@ impl CliRunner {
         let controller = self.ensure_use_case_controller()?;
         controller.regenerate_all_use_cases()
     }
+
+    /// Add a precondition to a use case.
+    ///
+    /// Adds a new precondition to the specified use case.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `precondition` - The precondition text to add
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or precondition cannot be added
+    pub fn add_precondition(
+        &mut self,
+        use_case_id: String,
+        precondition: String,
+    ) -> Result<DisplayResult> {
+        let controller = self.ensure_use_case_controller()?;
+        controller.add_precondition(
+            Self::sanitize_required_string(use_case_id),
+            Self::sanitize_required_string(precondition),
+        )
+    }
+
+    /// List preconditions for a use case.
+    ///
+    /// Retrieves and displays all preconditions for the specified use case.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    ///
+    /// # Returns
+    /// DisplayResult with preconditions list
+    ///
+    /// # Errors
+    /// Returns error if use case not found
+    pub fn list_preconditions(&mut self, use_case_id: String) -> Result<DisplayResult> {
+        let controller = self.ensure_use_case_controller()?;
+        controller.list_preconditions(Self::sanitize_required_string(use_case_id))
+    }
+
+    /// Remove a precondition from a use case.
+    ///
+    /// Removes the precondition at the specified index from the use case.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `index` - The 1-based index of the precondition to remove
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or index is invalid
+    pub fn remove_precondition(
+        &mut self,
+        use_case_id: String,
+        index: usize,
+    ) -> Result<DisplayResult> {
+        let controller = self.ensure_use_case_controller()?;
+        controller.remove_precondition(Self::sanitize_required_string(use_case_id), index)
+    }
+
+    /// Add a postcondition to a use case.
+    ///
+    /// Adds a new postcondition to the specified use case.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `postcondition` - The postcondition text to add
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or postcondition cannot be added
+    pub fn add_postcondition(
+        &mut self,
+        use_case_id: String,
+        postcondition: String,
+    ) -> Result<DisplayResult> {
+        let controller = self.ensure_use_case_controller()?;
+        controller.add_postcondition(
+            Self::sanitize_required_string(use_case_id),
+            Self::sanitize_required_string(postcondition),
+        )
+    }
+
+    /// List postconditions for a use case.
+    ///
+    /// Retrieves and displays all postconditions for the specified use case.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    ///
+    /// # Returns
+    /// DisplayResult with postconditions list
+    ///
+    /// # Errors
+    /// Returns error if use case not found
+    pub fn list_postconditions(&mut self, use_case_id: String) -> Result<DisplayResult> {
+        let controller = self.ensure_use_case_controller()?;
+        controller.list_postconditions(Self::sanitize_required_string(use_case_id))
+    }
+
+    /// Remove a postcondition from a use case.
+    ///
+    /// Removes the postcondition at the specified index from the use case.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `index` - The 1-based index of the postcondition to remove
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or index is invalid
+    pub fn remove_postcondition(
+        &mut self,
+        use_case_id: String,
+        index: usize,
+    ) -> Result<DisplayResult> {
+        let controller = self.ensure_use_case_controller()?;
+        controller.remove_postcondition(Self::sanitize_required_string(use_case_id), index)
+    }
+
+    /// Add a reference to a use case.
+    ///
+    /// Adds a new reference relationship to the specified use case.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `target_id` - The ID of the target use case
+    /// * `relationship` - The type of relationship (dependency, extension, inclusion, alternative)
+    /// * `description` - Optional description of the relationship
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or reference cannot be added
+    pub fn add_reference(
+        &mut self,
+        use_case_id: String,
+        target_id: String,
+        relationship: String,
+        description: Option<String>,
+    ) -> Result<DisplayResult> {
+        let controller = self.ensure_use_case_controller()?;
+        controller.add_reference(
+            Self::sanitize_required_string(use_case_id),
+            Self::sanitize_required_string(target_id),
+            Self::sanitize_required_string(relationship),
+            Self::sanitize_optional_string(description),
+        )
+    }
+
+    /// List references for a use case.
+    ///
+    /// Retrieves and displays all references for the specified use case.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    ///
+    /// # Returns
+    /// DisplayResult with references list
+    ///
+    /// # Errors
+    /// Returns error if use case not found
+    pub fn list_references(&mut self, use_case_id: String) -> Result<DisplayResult> {
+        let controller = self.ensure_use_case_controller()?;
+        controller.list_references(Self::sanitize_required_string(use_case_id))
+    }
+
+    /// Remove a reference from a use case.
+    ///
+    /// Removes the reference to the specified target use case.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `target_id` - The ID of the target use case to remove reference to
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or reference doesn't exist
+    pub fn remove_reference(
+        &mut self,
+        use_case_id: String,
+        target_id: String,
+    ) -> Result<DisplayResult> {
+        let controller = self.ensure_use_case_controller()?;
+        controller.remove_reference(
+            Self::sanitize_required_string(use_case_id),
+            Self::sanitize_required_string(target_id),
+        )
+    }
 }
 
 #[cfg(test)]

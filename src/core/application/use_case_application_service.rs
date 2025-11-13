@@ -5,8 +5,8 @@ use crate::core::application::creators::UseCaseCreator;
 use crate::core::application::generators::{MarkdownGenerator, OverviewGenerator, TestGenerator};
 use crate::core::utils::suggest_alternatives;
 use crate::core::{
-    file_operations::FileOperations, RepositoryFactory, TemplateEngine, UseCase,
-    UseCaseRepository, UseCaseService,
+    domain::UseCaseReference, file_operations::FileOperations, RepositoryFactory, TemplateEngine,
+    UseCase, UseCaseRepository, UseCaseService,
 };
 use anyhow::Result;
 
@@ -197,7 +197,140 @@ impl UseCaseApplicationService {
         Ok(())
     }
 
+    // ========== Field Management Methods ==========
+
+    /// Add a precondition to a use case
+    pub fn add_precondition(&mut self, use_case_id: &str, precondition: String) -> Result<()> {
+        let index = self.find_use_case_index(use_case_id)?;
+        let mut use_case = self.use_cases[index].clone();
+        use_case.add_precondition(precondition);
+        self.repository.save(&use_case)?;
+        self.use_cases[index] = use_case;
+        Ok(())
+    }
+
+    /// Get all preconditions for a use case
+    pub fn get_preconditions(&self, use_case_id: &str) -> Result<Vec<String>> {
+        let use_case = self.find_use_case_by_id(use_case_id)?;
+        Ok(use_case.preconditions.clone())
+    }
+
+    /// Remove a precondition from a use case
+    pub fn remove_precondition(&mut self, use_case_id: &str, index: usize) -> Result<()> {
+        let index_in_vec = self.find_use_case_index(use_case_id)?;
+        let mut use_case = self.use_cases[index_in_vec].clone();
+
+        // Convert 1-based index to 0-based
+        let zero_based_index = index.saturating_sub(1);
+        if zero_based_index >= use_case.preconditions.len() {
+            return Err(anyhow::anyhow!(
+                "Precondition index {} is out of bounds",
+                index
+            ));
+        }
+
+        use_case.preconditions.remove(zero_based_index);
+        self.repository.save(&use_case)?;
+        self.use_cases[index_in_vec] = use_case;
+        Ok(())
+    }
+
+    /// Add a postcondition to a use case
+    pub fn add_postcondition(&mut self, use_case_id: &str, postcondition: String) -> Result<()> {
+        let index = self.find_use_case_index(use_case_id)?;
+        let mut use_case = self.use_cases[index].clone();
+        use_case.add_postcondition(postcondition);
+        self.repository.save(&use_case)?;
+        self.use_cases[index] = use_case;
+        Ok(())
+    }
+
+    /// Get all postconditions for a use case
+    pub fn get_postconditions(&self, use_case_id: &str) -> Result<Vec<String>> {
+        let use_case = self.find_use_case_by_id(use_case_id)?;
+        Ok(use_case.postconditions.clone())
+    }
+
+    /// Remove a postcondition from a use case
+    pub fn remove_postcondition(&mut self, use_case_id: &str, index: usize) -> Result<()> {
+        let index_in_vec = self.find_use_case_index(use_case_id)?;
+        let mut use_case = self.use_cases[index_in_vec].clone();
+
+        // Convert 1-based index to 0-based
+        let zero_based_index = index.saturating_sub(1);
+        if zero_based_index >= use_case.postconditions.len() {
+            return Err(anyhow::anyhow!(
+                "Postcondition index {} is out of bounds",
+                index
+            ));
+        }
+
+        use_case.postconditions.remove(zero_based_index);
+        self.repository.save(&use_case)?;
+        self.use_cases[index_in_vec] = use_case;
+        Ok(())
+    }
+
+    /// Add a reference to a use case
+    pub fn add_reference(
+        &mut self,
+        use_case_id: &str,
+        target_id: String,
+        relationship: String,
+        description: Option<String>,
+    ) -> Result<()> {
+        let index = self.find_use_case_index(use_case_id)?;
+        let mut use_case = self.use_cases[index].clone();
+        let reference = UseCaseReference::new(target_id, relationship);
+        let reference = if let Some(desc) = description {
+            reference.with_description(desc)
+        } else {
+            reference
+        };
+        use_case.add_reference(reference);
+        self.repository.save(&use_case)?;
+        self.use_cases[index] = use_case;
+        Ok(())
+    }
+
+    /// Get all references for a use case
+    pub fn get_references(&self, use_case_id: &str) -> Result<Vec<UseCaseReference>> {
+        let use_case = self.find_use_case_by_id(use_case_id)?;
+        Ok(use_case.use_case_references.clone())
+    }
+
+    /// Remove a reference from a use case
+    pub fn remove_reference(&mut self, use_case_id: &str, target_id: &str) -> Result<()> {
+        let index = self.find_use_case_index(use_case_id)?;
+        let mut use_case = self.use_cases[index].clone();
+        use_case
+            .use_case_references
+            .retain(|r| r.target_id != target_id);
+        self.repository.save(&use_case)?;
+        self.use_cases[index] = use_case;
+        Ok(())
+    }
+
     // ========== Private Helpers (Delegation) ==========
+
+    /// Helper to find a use case index by ID
+    fn find_use_case_index(&self, use_case_id: &str) -> Result<usize> {
+        self.use_cases
+            .iter()
+            .position(|uc| uc.id == use_case_id)
+            .ok_or_else(|| {
+                let available_ids: Vec<String> =
+                    self.use_cases.iter().map(|uc| uc.id.clone()).collect();
+                let error_msg = suggest_alternatives(use_case_id, &available_ids, "Use case");
+                anyhow::anyhow!("{}", error_msg)
+            })
+    }
+
+    /// Helper to find a use case by ID (immutable)
+    fn find_use_case_by_id(&self, use_case_id: &str) -> Result<&UseCase> {
+        let index = self.find_use_case_index(use_case_id)?;
+        Ok(&self.use_cases[index])
+    }
 
     /// Internal helper to create use cases
     fn create_use_case_internal(

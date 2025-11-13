@@ -110,9 +110,11 @@ impl UseCase {
     /// Add a reference to another use case
     pub fn add_reference(&mut self, reference: UseCaseReference) {
         // Prevent duplicate references
-        if !self.use_case_references.iter().any(|r| {
-            r.target_id == reference.target_id && r.relationship == reference.relationship
-        }) {
+        if !self
+            .use_case_references
+            .iter()
+            .any(|r| r.target_id == reference.target_id && r.relationship == reference.relationship)
+        {
             self.use_case_references.push(reference);
             self.metadata.touch();
         }
@@ -558,10 +560,7 @@ mod use_case_tests {
         )
         .unwrap();
 
-        let reference = UseCaseReference::new(
-            "UC-AUTH-001".to_string(),
-            "depends_on".to_string(),
-        );
+        let reference = UseCaseReference::new("UC-AUTH-001".to_string(), "depends_on".to_string());
 
         use_case.add_reference(reference);
         assert_eq!(use_case.use_case_references.len(), 1);
@@ -569,10 +568,8 @@ mod use_case_tests {
         assert_eq!(use_case.use_case_references[0].relationship, "depends_on");
 
         // Duplicate reference should not be added
-        let duplicate_ref = UseCaseReference::new(
-            "UC-AUTH-001".to_string(),
-            "depends_on".to_string(),
-        );
+        let duplicate_ref =
+            UseCaseReference::new("UC-AUTH-001".to_string(), "depends_on".to_string());
         use_case.add_reference(duplicate_ref);
         assert_eq!(use_case.use_case_references.len(), 1);
     }
@@ -664,11 +661,10 @@ mod use_case_tests {
         use_case.add_precondition("User authenticated".to_string());
         use_case.add_precondition("Cart not empty".to_string());
         use_case.add_postcondition("Order created".to_string());
-        use_case.add_reference(UseCaseReference::new(
-            "UC-AUTH-001".to_string(),
-            "depends_on".to_string(),
-        )
-        .with_description("Authentication required".to_string()));
+        use_case.add_reference(
+            UseCaseReference::new("UC-AUTH-001".to_string(), "depends_on".to_string())
+                .with_description("Authentication required".to_string()),
+        );
 
         // Serialize
         let serialized = serde_json::to_string(&use_case).unwrap();
@@ -686,8 +682,14 @@ mod use_case_tests {
 
         assert_eq!(deserialized.use_case_references.len(), 1);
         assert_eq!(deserialized.use_case_references[0].target_id, "UC-AUTH-001");
-        assert_eq!(deserialized.use_case_references[0].relationship, "depends_on");
-        assert_eq!(deserialized.use_case_references[0].description, Some("Authentication required".to_string()));
+        assert_eq!(
+            deserialized.use_case_references[0].relationship,
+            "depends_on"
+        );
+        assert_eq!(
+            deserialized.use_case_references[0].description,
+            Some("Authentication required".to_string())
+        );
     }
 
     /// Test UseCase TOML serialization and deserialization with custom fields

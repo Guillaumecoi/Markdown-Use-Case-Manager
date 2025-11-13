@@ -1,20 +1,18 @@
-use markdown_use_case_manager::core::{Priority, RepositoryFactory, UseCase, UseCaseRepository, Metadata};
-use markdown_use_case_manager::config::{Config, StorageBackend};
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use std::collections::HashMap;
+use markdown_use_case_manager::config::{Config, StorageBackend};
+use markdown_use_case_manager::core::{RepositoryFactory, UseCase, UseCaseRepository};
 use tempfile::TempDir;
 
 /// Create a test use case with the given ID
 fn create_test_use_case(id: &str, title: &str, category: &str) -> UseCase {
-    UseCase {
-        id: id.to_string(),
-        title: title.to_string(),
-        category: category.to_string(),
-        description: "A test use case for benchmarking".to_string(),
-        priority: Priority::Medium,
-        metadata: Metadata::new(),
-        extra: HashMap::new(),
-    }
+    UseCase::new(
+        id.to_string(),
+        title.to_string(),
+        category.to_string(),
+        "A test use case for benchmarking".to_string(),
+        "medium".to_string(),
+    )
+    .expect("Failed to create test use case")
 }
 
 /// Create multiple test use cases
@@ -31,18 +29,26 @@ fn create_test_use_cases(count: usize) -> Vec<UseCase> {
 }
 
 /// Benchmark setup for a specific backend
-fn setup_backend(backend: StorageBackend, temp_dir: &TempDir) -> (Config, Box<dyn UseCaseRepository>) {
+fn setup_backend(
+    backend: StorageBackend,
+    temp_dir: &TempDir,
+) -> (Config, Box<dyn UseCaseRepository>) {
     // Create a minimal config
     let mut config = Config::default();
     config.storage.backend = backend;
 
     // Set up directories in temp dir
-    config.directories.use_case_dir = temp_dir.path().join("use-cases").to_string_lossy().to_string();
+    config.directories.use_case_dir = temp_dir
+        .path()
+        .join("use-cases")
+        .to_string_lossy()
+        .to_string();
     config.directories.toml_dir = Some(temp_dir.path().join("toml").to_string_lossy().to_string());
 
     let repository = if backend == StorageBackend::Sqlite {
         let db_path = temp_dir.path().join("benchmark.db");
-        RepositoryFactory::create_with_db_path(&config, &db_path).expect("Failed to create repository")
+        RepositoryFactory::create_with_db_path(&config, &db_path)
+            .expect("Failed to create repository")
     } else {
         RepositoryFactory::create(&config).expect("Failed to create repository")
     };
@@ -120,7 +126,8 @@ fn bench_load_by_id(c: &mut Criterion, backend: StorageBackend, use_case_count: 
         |b| {
             b.iter(|| {
                 for use_case in &use_cases {
-                    let _result = black_box(repository.load_by_id(&use_case.id)).expect("Load by ID failed");
+                    let _result =
+                        black_box(repository.load_by_id(&use_case.id)).expect("Load by ID failed");
                 }
             })
         },
@@ -144,10 +151,14 @@ fn bench_find_by_category(c: &mut Criterion, backend: StorageBackend, use_case_c
     };
 
     c.bench_function(
-        &format!("find_by_category_{}_{}_use_cases", backend_name, use_case_count),
+        &format!(
+            "find_by_category_{}_{}_use_cases",
+            backend_name, use_case_count
+        ),
         |b| {
             b.iter(|| {
-                let _result = black_box(repository.find_by_category("benchmark")).expect("Find by category failed");
+                let _result = black_box(repository.find_by_category("benchmark"))
+                    .expect("Find by category failed");
             })
         },
     );
@@ -184,12 +195,16 @@ mod tests {
 
         // Test load by id
         for use_case in &use_cases {
-            let loaded = repository.load_by_id(&use_case.id).expect("Load by ID failed");
+            let loaded = repository
+                .load_by_id(&use_case.id)
+                .expect("Load by ID failed");
             assert!(loaded.is_some());
         }
 
         // Test find by category
-        let found = repository.find_by_category("benchmark").expect("Find by category failed");
+        let found = repository
+            .find_by_category("benchmark")
+            .expect("Find by category failed");
         assert_eq!(found.len(), 10);
     }
 
@@ -211,12 +226,16 @@ mod tests {
 
         // Test load by id
         for use_case in &use_cases {
-            let loaded = repository.load_by_id(&use_case.id).expect("Load by ID failed");
+            let loaded = repository
+                .load_by_id(&use_case.id)
+                .expect("Load by ID failed");
             assert!(loaded.is_some());
         }
 
         // Test find by category
-        let found = repository.find_by_category("benchmark").expect("Find by category failed");
+        let found = repository
+            .find_by_category("benchmark")
+            .expect("Find by category failed");
         assert_eq!(found.len(), 10);
     }
 }
