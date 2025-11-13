@@ -56,6 +56,14 @@ impl DisplayResult {
             message,
         }
     }
+
+    /// Check if the operation was successful.
+    ///
+    /// # Returns
+    /// true if the operation succeeded, false otherwise
+    pub fn is_success(&self) -> bool {
+        self.success
+    }
 }
 
 /// Available options for user selection in interactive prompts.
