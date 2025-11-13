@@ -87,6 +87,11 @@ pub enum Commands {
         #[command(subcommand)]
         command: ReferenceCommands,
     },
+    /// Manage use case scenarios
+    Scenario {
+        #[command(subcommand)]
+        command: ScenarioCommands,
+    },
     /// Enter interactive mode
     Interactive,
 }
@@ -162,5 +167,57 @@ pub enum ReferenceCommands {
         use_case_id: String,
         /// Target use case ID to remove
         target_id: String,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ScenarioCommands {
+    /// Add a scenario to a use case
+    Add {
+        /// Use case ID (e.g., UC-SEC-001)
+        use_case_id: String,
+        /// Scenario title
+        title: String,
+        /// Scenario type (main, alternative, exception)
+        #[arg(short, long)]
+        scenario_type: String,
+        /// Optional description
+        #[arg(short, long)]
+        description: Option<String>,
+    },
+    /// Add a step to a scenario
+    AddStep {
+        /// Use case ID (e.g., UC-SEC-001)
+        use_case_id: String,
+        /// Scenario title
+        scenario_title: String,
+        /// Step description
+        step: String,
+        /// Step order (1-based, optional - will be appended if not specified)
+        #[arg(short, long)]
+        order: Option<u32>,
+    },
+    /// Update scenario status
+    UpdateStatus {
+        /// Use case ID (e.g., UC-SEC-001)
+        use_case_id: String,
+        /// Scenario title
+        scenario_title: String,
+        /// New status (planned, in-progress, completed, deprecated)
+        status: String,
+    },
+    /// List scenarios for a use case
+    List {
+        /// Use case ID (e.g., UC-SEC-001)
+        use_case_id: String,
+    },
+    /// Remove a step from a scenario
+    RemoveStep {
+        /// Use case ID (e.g., UC-SEC-001)
+        use_case_id: String,
+        /// Scenario title
+        scenario_title: String,
+        /// Step order to remove (1-based)
+        order: u32,
     },
 }

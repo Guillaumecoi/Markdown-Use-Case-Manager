@@ -11,8 +11,8 @@ use crate::core::{
     TemplateEngine,
     UseCase, 
     UseCaseRepository, 
-    UseCaseService,
 };
+use crate::core::domain::UseCaseService;
 use anyhow::Result;
 
 /// Application service that coordinates use case operations

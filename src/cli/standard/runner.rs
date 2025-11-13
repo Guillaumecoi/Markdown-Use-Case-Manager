@@ -548,6 +548,141 @@ impl CliRunner {
             Self::sanitize_required_string(target_id),
         )
     }
+
+    /// Add a scenario to a use case.
+    ///
+    /// Adds a new scenario to the specified use case.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `title` - The title of the scenario
+    /// * `scenario_type` - The type of scenario (main, alternative, exception)
+    /// * `description` - Optional description of the scenario
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or scenario cannot be added
+    pub fn add_scenario(
+        &mut self,
+        use_case_id: String,
+        title: String,
+        scenario_type: String,
+        description: Option<String>,
+    ) -> Result<DisplayResult> {
+        let controller = self.ensure_use_case_controller()?;
+        controller.add_scenario(
+            Self::sanitize_required_string(use_case_id),
+            Self::sanitize_required_string(title),
+            Self::sanitize_required_string(scenario_type),
+            Self::sanitize_optional_string(description),
+        )
+    }
+
+    /// Add a step to a scenario.
+    ///
+    /// Adds a new step to the specified scenario.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `scenario_title` - The title of the scenario
+    /// * `step` - The step description to add
+    /// * `order` - Optional 1-based order for the step
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case or scenario not found or step cannot be added
+    pub fn add_scenario_step(
+        &mut self,
+        use_case_id: String,
+        scenario_title: String,
+        step: String,
+        order: Option<u32>,
+    ) -> Result<DisplayResult> {
+        let controller = self.ensure_use_case_controller()?;
+        controller.add_scenario_step(
+            Self::sanitize_required_string(use_case_id),
+            Self::sanitize_required_string(scenario_title),
+            Self::sanitize_required_string(step),
+            order,
+        )
+    }
+
+    /// Update scenario status.
+    ///
+    /// Updates the status of the specified scenario.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `scenario_title` - The title of the scenario
+    /// * `status` - The new status for the scenario
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case or scenario not found or status update fails
+    pub fn update_scenario_status(
+        &mut self,
+        use_case_id: String,
+        scenario_title: String,
+        status: String,
+    ) -> Result<DisplayResult> {
+        let controller = self.ensure_use_case_controller()?;
+        controller.update_scenario_status(
+            Self::sanitize_required_string(use_case_id),
+            Self::sanitize_required_string(scenario_title),
+            Self::sanitize_required_string(status),
+        )
+    }
+
+    /// List scenarios for a use case.
+    ///
+    /// Retrieves and displays all scenarios for the specified use case.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    ///
+    /// # Returns
+    /// DisplayResult with scenarios list
+    ///
+    /// # Errors
+    /// Returns error if use case not found
+    pub fn list_scenarios(&mut self, use_case_id: String) -> Result<DisplayResult> {
+        let controller = self.ensure_use_case_controller()?;
+        controller.list_scenarios(Self::sanitize_required_string(use_case_id))
+    }
+
+    /// Remove a step from a scenario.
+    ///
+    /// Removes the step at the specified order from the scenario.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `scenario_title` - The title of the scenario
+    /// * `order` - The 1-based order of the step to remove
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case or scenario not found or step doesn't exist
+    pub fn remove_scenario_step(
+        &mut self,
+        use_case_id: String,
+        scenario_title: String,
+        order: u32,
+    ) -> Result<DisplayResult> {
+        let controller = self.ensure_use_case_controller()?;
+        controller.remove_scenario_step(
+            Self::sanitize_required_string(use_case_id),
+            Self::sanitize_required_string(scenario_title),
+            order,
+        )
+    }
 }
 
 #[cfg(test)]
