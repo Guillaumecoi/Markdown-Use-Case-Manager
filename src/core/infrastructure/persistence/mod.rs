@@ -6,6 +6,8 @@
 pub mod file_operations;
 pub mod sqlite;
 pub mod toml;
+pub mod traits;
 
 // Re-export for convenience
 pub use toml::TomlUseCaseRepository;
+pub use traits::{TransactionalRepository, UseCaseRepository};
