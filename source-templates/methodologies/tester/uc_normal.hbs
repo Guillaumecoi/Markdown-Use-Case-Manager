@@ -25,6 +25,28 @@ _Define the scope and objectives of testing for this use case._
 - _Tool setup needs_
 {{/if}}
 
+## Preconditions
+{{#if preconditions}}
+{{#each preconditions}}
+- {{this}}
+{{/each}}
+{{else}}
+_What must be true before testing this use case can begin?_
+- _Precondition 1_
+- _Precondition 2_
+{{/if}}
+
+## Postconditions
+{{#if postconditions}}
+{{#each postconditions}}
+- {{this}}
+{{/each}}
+{{else}}
+_What will be true after testing this use case is completed successfully?_
+- _Postcondition 1_
+- _Postcondition 2_
+{{/if}}
+
 ## Test Objectives
 {{#if core.objectives}}
 ### Validation Goals
@@ -155,6 +177,15 @@ _What specific aspects need validation through testing?_
 - _Integration points_
 - _Security-sensitive functions_
 - _Performance-critical operations_
+{{/if}}
+
+## Use Case References
+{{#if use_case_references}}
+{{#each use_case_references}}
+- **{{title}}** ({{id}}): {{description}}
+{{/each}}
+{{else}}
+_No related use cases referenced_
 {{/if}}
 
 ---

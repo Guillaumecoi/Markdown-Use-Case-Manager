@@ -9,6 +9,28 @@
 _What are we testing and why?_
 {{/if}}
 
+## Preconditions
+{{#if preconditions}}
+{{#each preconditions}}
+- {{this}}
+{{/each}}
+{{else}}
+_What must be true before testing this use case can begin?_
+- _Precondition 1_
+- _Precondition 2_
+{{/if}}
+
+## Postconditions
+{{#if postconditions}}
+{{#each postconditions}}
+- {{this}}
+{{/each}}
+{{else}}
+_What will be true after testing this use case is completed successfully?_
+- _Postcondition 1_
+- _Postcondition 2_
+{{/if}}
+
 ## Test Scenarios
 {{#if test_scenarios}}
 {{#each test_scenarios}}
@@ -41,6 +63,15 @@ _What test data do we need?_
 - _Valid user accounts_
 - _Sample transaction data_
 - _Edge case data sets_
+{{/if}}
+
+## Use Case References
+{{#if use_case_references}}
+{{#each use_case_references}}
+- **{{title}}** ({{id}}): {{description}}
+{{/each}}
+{{else}}
+_No related use cases referenced_
 {{/if}}
 
 ## Definition of Done

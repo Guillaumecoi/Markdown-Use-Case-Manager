@@ -9,6 +9,28 @@
 _Provide a clear description of the feature and its purpose._
 {{/if}}
 
+## Preconditions
+{{#if preconditions}}
+{{#each preconditions}}
+- {{this}}
+{{/each}}
+{{else}}
+_What must be true before this feature can be implemented?_
+- _Precondition 1_
+- _Precondition 2_
+{{/if}}
+
+## Postconditions
+{{#if postconditions}}
+{{#each postconditions}}
+- {{this}}
+{{/each}}
+{{else}}
+_What will be true after this feature is successfully implemented?_
+- _Postcondition 1_
+- _Postcondition 2_
+{{/if}}
+
 ## Business Value
 {{#if value_proposition}}
 {{value_proposition}}
@@ -108,6 +130,15 @@ _What team members and resources are needed?_
 - **Technical Risk:** _Potential technical challenges_
 - **Timeline Risk:** _Factors that could delay delivery_
 - **User Adoption Risk:** _Challenges with user acceptance_
+{{/if}}
+
+## Use Case References
+{{#if use_case_references}}
+{{#each use_case_references}}
+- **{{title}}** ({{id}}): {{description}}
+{{/each}}
+{{else}}
+_No related use cases referenced_
 {{/if}}
 
 ---

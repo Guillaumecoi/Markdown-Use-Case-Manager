@@ -9,6 +9,28 @@
 _What business value does this deliver?_
 {{/if}}
 
+## Preconditions
+{{#if preconditions}}
+{{#each preconditions}}
+- {{this}}
+{{/each}}
+{{else}}
+_What must be true before this use case can begin?_
+- _Precondition 1_
+- _Precondition 2_
+{{/if}}
+
+## Postconditions
+{{#if postconditions}}
+{{#each postconditions}}
+- {{this}}
+{{/each}}
+{{else}}
+_What will be true after this use case completes successfully?_
+- _Postcondition 1_
+- _Postcondition 2_
+{{/if}}
+
 ## Stakeholders
 {{#if decision_makers}}
 **Decision Makers:** {{#each decision_makers}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
@@ -50,4 +72,13 @@ _How will we measure business success?_
 {{else}}
 - _Risk 1 and mitigation_
 - _Risk 2 and mitigation_
+{{/if}}
+
+## Use Case References
+{{#if use_case_references}}
+{{#each use_case_references}}
+- **{{title}}** ({{id}}): {{description}}
+{{/each}}
+{{else}}
+_No related use cases referenced_
 {{/if}}

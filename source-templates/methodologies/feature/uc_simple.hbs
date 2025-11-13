@@ -9,6 +9,28 @@
 _Brief description of what this feature does and why it's needed._
 {{/if}}
 
+## Preconditions
+{{#if preconditions}}
+{{#each preconditions}}
+- {{this}}
+{{/each}}
+{{else}}
+_What must be true before this feature can be implemented?_
+- _Precondition 1_
+- _Precondition 2_
+{{/if}}
+
+## Postconditions
+{{#if postconditions}}
+{{#each postconditions}}
+- {{this}}
+{{/each}}
+{{else}}
+_What will be true after this feature is successfully implemented?_
+- _Postcondition 1_
+- _Postcondition 2_
+{{/if}}
+
 ## Value
 {{#if business_value}}
 {{business_value}}
@@ -28,6 +50,15 @@ _What problem does this solve? What value does it provide?_
 _How will we know this feature is successful?_
 - _Success metric 1_
 - _Success metric 2_
+{{/if}}
+
+## Use Case References
+{{#if use_case_references}}
+{{#each use_case_references}}
+- **{{title}}** ({{id}}): {{description}}
+{{/each}}
+{{else}}
+_No related use cases referenced_
 {{/if}}
 
 {{#if custom_field}}

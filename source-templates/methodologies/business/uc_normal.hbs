@@ -57,6 +57,40 @@ _How will business success be measured?_
 - _Qualitative measure 1_
 {{/if}}
 
+## Preconditions and Postconditions
+
+{{#if preconditions}}
+### Preconditions
+{{#each preconditions}}
+- {{this}}
+{{/each}}
+{{else}}
+### Preconditions
+_What conditions must be met before this use case can be executed?_
+{{/if}}
+
+{{#if postconditions}}
+### Postconditions
+{{#each postconditions}}
+- {{this}}
+{{/each}}
+{{else}}
+### Postconditions
+_What will be true after successful execution of this use case?_
+{{/if}}
+
+## Use Case Relationships
+
+{{#if use_case_references}}
+### Related Use Cases
+{{#each use_case_references}}
+- **{{relationship}}:** {{target_id}}{{#if description}} - {{description}}{{/if}}
+{{/each}}
+{{else}}
+### Related Use Cases
+_No related use cases have been identified yet._
+{{/if}}
+
 ## Financial Analysis
 {{#if business.roi_analysis}}
 {{roi_analysis}}
