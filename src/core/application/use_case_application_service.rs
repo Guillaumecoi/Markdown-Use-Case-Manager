@@ -6,7 +6,7 @@ use crate::core::application::generators::{MarkdownGenerator, OverviewGenerator,
 use crate::core::domain::UseCaseService;
 use crate::core::utils::suggest_alternatives;
 use crate::core::{
-    domain::{Scenario, ScenarioType, UseCaseReference},
+    domain::{Scenario, ScenarioReference, ScenarioType, UseCaseReference},
     file_operations::FileOperations,
     RepositoryFactory, TemplateEngine, UseCase, UseCaseRepository,
 };
@@ -412,6 +412,62 @@ impl UseCaseApplicationService {
         self.use_cases[index] = use_case;
 
         Ok(())
+    }
+
+    /// Add a reference to a scenario
+    pub fn add_scenario_reference(
+        &mut self,
+        use_case_id: &str,
+        scenario_id: &str,
+        reference: ScenarioReference,
+    ) -> Result<()> {
+        let index = self.find_use_case_index(use_case_id)?;
+        let mut use_case = self.use_cases[index].clone();
+
+        use_case.add_reference_to_scenario(scenario_id, reference)?;
+        self.repository.save(&use_case)?;
+        self.use_cases[index] = use_case;
+
+        Ok(())
+    }
+
+    /// Remove a reference from a scenario
+    pub fn remove_scenario_reference(
+        &mut self,
+        use_case_id: &str,
+        scenario_id: &str,
+        target_id: &str,
+        relationship: &str,
+    ) -> Result<()> {
+        let index = self.find_use_case_index(use_case_id)?;
+        let mut use_case = self.use_cases[index].clone();
+
+        use_case.remove_reference_from_scenario(scenario_id, target_id, relationship)?;
+        self.repository.save(&use_case)?;
+        self.use_cases[index] = use_case;
+
+        Ok(())
+    }
+
+    /// Get all scenarios referenced by a scenario
+    pub fn get_scenario_references(
+        &self,
+        use_case_id: &str,
+        scenario_id: &str,
+    ) -> Result<Vec<ScenarioReference>> {
+        let use_case = self.find_use_case_by_id(use_case_id)?;
+        let scenario = use_case
+            .scenarios
+            .iter()
+            .find(|s| s.id == scenario_id)
+            .ok_or_else(|| {
+                let available_ids: Vec<String> =
+                    use_case.scenarios.iter().map(|s| s.id.clone()).collect();
+                let error_msg = suggest_alternatives(scenario_id, &available_ids, "Scenario");
+                anyhow::anyhow!("{}", error_msg)
+            })?;
+
+        Ok(scenario.references.clone())
     }
 
     // ========== Private Helpers (Delegation) ==========
