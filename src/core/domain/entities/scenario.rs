@@ -109,6 +109,12 @@ impl Scenario {
         self.status = status;
         self.metadata.touch();
     }
+
+    /// Remove a step by order
+    pub fn remove_step(&mut self, step_order: u32) {
+        self.steps.retain(|step| step.order != step_order as usize);
+        self.metadata.touch();
+    }
 }
 
 #[cfg(test)]
