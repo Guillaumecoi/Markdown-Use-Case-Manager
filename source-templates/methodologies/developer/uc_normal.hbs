@@ -1,30 +1,17 @@
 # Technical Specification: {{title}}
 
-**Use Case ID:** {{id}} | **Status:** PLANNED | **Priority:** {{priority}} | **Created:** {{created_date}}
+**Use Case ID:** {{id}} | **Status:** {{status}} | **Priority:** {{priority}} | **Created:** {{created_date}}
 
-## Technical Overview
 {{#if description}}
+## Technical Overview
 {{description}}
-{{else}}
-_Provide a technical summary of what needs to be built and the overall approach._
-{{/if}}
 
+{{/if}}
 {{#if architecture_overview}}
 ### Architecture Approach
 {{architecture_overview}}
-{{else}}
-### Architecture Approach
-_Describe the high-level technical solution._
 
-**System Components:**
-- _Component 1: Purpose and responsibilities_
-- _Component 2: Purpose and responsibilities_
-
-**Integration Points:**
-- _External system 1: How we connect_
-- _External system 2: How we connect_
 {{/if}}
-
 {{#if preconditions}}
 ## Preconditions
 {{#each preconditions}}
@@ -39,150 +26,73 @@ _Describe the high-level technical solution._
 {{/each}}
 
 {{/if}}
-
-## Functional Requirements
 {{#if objectives}}
+## Functional Requirements
 {{#each objectives}}
 - {{this}}
 {{/each}}
-{{else}}
-_What specific functionality must the system provide?_
-- _Feature 1: Detailed description_
-- _Feature 2: Detailed description_
-- _Feature 3: Detailed description_
-{{/if}}
 
-## Technical Requirements
+{{/if}}
 {{#if performance_requirements}}
+## Technical Requirements
+
 ### Performance Requirements
 {{performance_requirements}}
-{{else}}
-### Performance Requirements
-- **Response Time:** _< X seconds for user actions_
-- **Throughput:** _X requests/transactions per second_
-- **Concurrent Users:** _Support X simultaneous users_
-{{/if}}
 
+{{/if}}
 {{#if security_requirements}}
 ### Security Requirements
 {{security_requirements}}
-{{else}}
-### Security Requirements
-- **Authentication:** _How users are authenticated_
-- **Authorization:** _How access is controlled_
-- **Data Protection:** _Encryption and data handling_
-{{/if}}
 
-## Implementation Details
+{{/if}}
 {{#if development_approach}}
+## Implementation Details
+
 ### Development Approach
 {{development_approach}}
-{{else}}
-### Technology Stack
-- **Frontend:** _Technology and version_
-- **Backend:** _Framework and version_
-- **Database:** _Type and version_
-- **Infrastructure:** _Cloud/hosting approach_
 
-### Development Standards
-- _Coding conventions and best practices_
-- _Code review process_
-- _Testing requirements_
 {{/if}}
-
 {{#if data_requirements}}
 ### Data Requirements
 {{data_requirements}}
-{{else}}
-### Data Requirements
-**Data Sources:**
-- _Source 1: Format and access method_
-- _Source 2: Format and access method_
 
-**Data Storage:**
-- _Storage requirements and capacity_
-- _Backup and retention policies_
 {{/if}}
-
-## Testing Strategy
 {{#if test_scenarios}}
+## Testing Strategy
+
 ### Test Scenarios
 {{#each test_scenarios}}
 - {{this}}
 {{/each}}
-{{else}}
-### Test Scenarios
-**Unit Tests:**
-- _Component 1 functionality_
-- _Component 2 functionality_
 
-**Integration Tests:**
-- _API integration testing_
-- _Database integration testing_
-
-**End-to-End Tests:**
-- _Complete user workflow testing_
 {{/if}}
-
 {{#if acceptance_criteria}}
 ### Acceptance Criteria
 {{#each acceptance_criteria}}
 - {{this}}
 {{/each}}
-{{else}}
-### Acceptance Criteria
-- _All unit tests pass (>95% coverage)_
-- _All integration tests pass_
-- _Performance meets specified requirements_
-- _Security requirements validated_
-{{/if}}
 
-## Deployment & Operations
+{{/if}}
 {{#if deployment_strategy}}
+## Deployment & Operations
+
 ### Deployment Strategy
 {{deployment_strategy}}
-{{else}}
-### Deployment Strategy
-**Environments:**
-- _Development: Purpose and configuration_
-- _Staging: Purpose and configuration_
-- _Production: Purpose and configuration_
 
-**Deployment Process:**
-- _CI/CD pipeline setup_
-- _Automated testing gates_
-- _Rollback procedures_
 {{/if}}
-
-## Risk Mitigation
 {{#if technical_risks}}
+## Risk Mitigation
+
 ### Technical Risks
 {{#each technical_risks}}
-- **{{this}}** - _Mitigation approach_
+- {{this}}
 {{/each}}
-{{else}}
-### Technical Risks
-- **Technology Risk:** _New technology challenges_
-- **Integration Risk:** _External system dependencies_
-- **Performance Risk:** _Scalability concerns_
-{{/if}}
 
+{{/if}}
 {{#if use_case_references}}
 ## Related Use Cases
 {{#each use_case_references}}
 - **{{relationship}}:** {{target_id}}{{#if description}} - {{description}}{{/if}}
 {{/each}}
+
 {{/if}}
-
----
-
-**Technical Sign-off:**
-- [ ] _Technical lead approval_
-- [ ] _Security review complete_
-- [ ] _Architecture review complete_
-
-**Implementation Checklist:**
-- [ ] _Development environment ready_
-- [ ] _CI/CD pipeline configured_
-- [ ] _Code standards documented_
-- [ ] _Testing framework setup_
