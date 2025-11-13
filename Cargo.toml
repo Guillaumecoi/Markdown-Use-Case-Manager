@@ -16,6 +16,10 @@ categories = ["command-line-utilities", "development-tools", "template-engine"]
 name = "mucm"
 path = "src/main.rs"
 
+[lib]
+name = "markdown_use_case_manager"
+path = "src/lib.rs"
+
 [dependencies]
 # CLI and argument parsing
 clap = { version = "4.0", features = ["derive", "color"] }

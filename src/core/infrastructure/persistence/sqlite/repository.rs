@@ -32,6 +32,8 @@ use std::sync::Mutex;
 pub struct SqliteUseCaseRepository {
     /// Thread-safe database connection
     conn: Mutex<Connection>,
+    /// Path to the database file (used for relative markdown storage)
+    db_path: std::path::PathBuf,
 }
 
 impl SqliteUseCaseRepository {
@@ -48,6 +50,7 @@ impl SqliteUseCaseRepository {
     /// let repo = SqliteUseCaseRepository::new("usecases.db")?;
     /// ```
     pub fn new<P: AsRef<Path>>(db_path: P) -> Result<Self> {
+        let db_path_buf = db_path.as_ref().to_path_buf();
         let conn = Connection::open(&db_path)
             .with_context(|| format!("Failed to open database at {:?}", db_path.as_ref()))?;
 
@@ -60,6 +63,7 @@ impl SqliteUseCaseRepository {
 
         Ok(Self {
             conn: Mutex::new(conn),
+            db_path: db_path_buf,
         })
     }
 
@@ -494,10 +498,11 @@ impl UseCaseRepository for SqliteUseCaseRepository {
     }
 
     fn save_markdown(&self, use_case_id: &str, content: &str) -> Result<()> {
-        // For now, save to a markdown directory
-        // TODO: In a future PR, integrate with the markdown generation system
-        let markdown_dir = std::path::Path::new("markdown");
-        std::fs::create_dir_all(markdown_dir)
+        // Save markdown files in a directory relative to the database location
+        // This ensures test isolation and proper organization
+        let db_dir = self.db_path.parent().unwrap_or(std::path::Path::new("."));
+        let markdown_dir = db_dir.join("markdown");
+        std::fs::create_dir_all(&markdown_dir)
             .with_context(|| format!("Failed to create markdown directory {:?}", markdown_dir))?;
 
         let filename = format!("{}.md", use_case_id);
@@ -630,7 +635,7 @@ impl TransactionalRepository for SqliteUseCaseRepository {
         let tx = conn.transaction().context("Failed to start transaction")?;
 
         // Create a temporary repository that uses the transaction
-        let tx_repo = TransactionalSqliteRepository { tx: &tx };
+        let tx_repo = TransactionalSqliteRepository { tx: &tx, db_path: &self.db_path };
 
         let result = f(&tx_repo as &dyn UseCaseRepository)?;
 
@@ -645,6 +650,7 @@ impl TransactionalRepository for SqliteUseCaseRepository {
 /// to provide transactional operations.
 struct TransactionalSqliteRepository<'a> {
     tx: &'a Transaction<'a>,
+    db_path: &'a std::path::Path,
 }
 
 impl<'a> UseCaseRepository for TransactionalSqliteRepository<'a> {
@@ -707,10 +713,11 @@ impl<'a> UseCaseRepository for TransactionalSqliteRepository<'a> {
     }
 
     fn save_markdown(&self, use_case_id: &str, content: &str) -> Result<()> {
-        // For now, save to a markdown directory
-        // TODO: In a future PR, integrate with the markdown generation system
-        let markdown_dir = std::path::Path::new("markdown");
-        std::fs::create_dir_all(markdown_dir)
+        // Save markdown files in a directory relative to the database location
+        // This ensures test isolation and proper organization
+        let db_dir = self.db_path.parent().unwrap_or(std::path::Path::new("."));
+        let markdown_dir = db_dir.join("markdown");
+        std::fs::create_dir_all(&markdown_dir)
             .with_context(|| format!("Failed to create markdown directory {:?}", markdown_dir))?;
 
         let filename = format!("{}.md", use_case_id);
@@ -1225,8 +1232,9 @@ mod tests {
         let content = "# Test Use Case\n\nThis is a test markdown file.";
         repo.save_markdown("UC-TEST-001", content).unwrap();
 
-        // Verify file was created
-        let markdown_path = std::path::Path::new("markdown/UC-TEST-001.md");
+        // Verify file was created in directory relative to database
+        let db_dir = temp_db.path().parent().unwrap_or(std::path::Path::new("."));
+        let markdown_path = db_dir.join("markdown/UC-TEST-001.md");
         assert!(markdown_path.exists());
 
         // Verify content
@@ -1234,7 +1242,11 @@ mod tests {
         assert_eq!(saved_content, content);
 
         // Clean up
-        std::fs::remove_file(markdown_path).unwrap();
-        std::fs::remove_dir("markdown").unwrap();
+        let markdown_dir = db_dir.join("markdown");
+        let markdown_path = markdown_dir.join("UC-TEST-001.md");
+        let _ = std::fs::remove_file(&markdown_path);
+        if markdown_dir.exists() {
+            let _ = std::fs::remove_dir(markdown_dir);
+        }
     }
 }

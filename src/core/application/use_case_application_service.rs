@@ -5,7 +5,7 @@ use crate::core::application::creators::UseCaseCreator;
 use crate::core::application::generators::{MarkdownGenerator, OverviewGenerator, TestGenerator};
 use crate::core::utils::suggest_alternatives;
 use crate::core::{
-    file_operations::FileOperations, TemplateEngine, TomlUseCaseRepository, UseCase,
+    file_operations::FileOperations, RepositoryFactory, TemplateEngine, UseCase,
     UseCaseRepository, UseCaseService,
 };
 use anyhow::Result;
@@ -30,8 +30,7 @@ impl UseCaseApplicationService {
 
     pub fn new(config: Config) -> Result<Self> {
         let use_case_service = UseCaseService::new();
-        let repository: Box<dyn UseCaseRepository> =
-            Box::new(TomlUseCaseRepository::new(config.clone()));
+        let repository: Box<dyn UseCaseRepository> = RepositoryFactory::create(&config)?;
         let file_operations = FileOperations::new(config.clone());
         let template_engine = TemplateEngine::with_config(Some(&config));
 

@@ -32,18 +32,27 @@ impl UseCaseRepository for TomlUseCaseRepository {
 
     fn find_by_category(&self, category: &str) -> Result<Vec<UseCase>> {
         let all_cases = self.load_all()?;
-        Ok(all_cases.into_iter().filter(|uc| uc.category == category).collect())
+        Ok(all_cases
+            .into_iter()
+            .filter(|uc| uc.category == category)
+            .collect())
     }
 
     fn find_by_priority(&self, priority: &str) -> Result<Vec<UseCase>> {
         let all_cases = self.load_all()?;
-        Ok(all_cases.into_iter().filter(|uc| uc.priority.to_string().to_lowercase() == priority.to_lowercase()).collect())
+        Ok(all_cases
+            .into_iter()
+            .filter(|uc| uc.priority.to_string().to_lowercase() == priority.to_lowercase())
+            .collect())
     }
 
     fn search_by_title(&self, query: &str) -> Result<Vec<UseCase>> {
         let all_cases = self.load_all()?;
         let query_lower = query.to_lowercase();
-        Ok(all_cases.into_iter().filter(|uc| uc.title.to_lowercase().contains(&query_lower)).collect())
+        Ok(all_cases
+            .into_iter()
+            .filter(|uc| uc.title.to_lowercase().contains(&query_lower))
+            .collect())
     }
 
     fn save_batch(&self, use_cases: &[UseCase]) -> Result<()> {
