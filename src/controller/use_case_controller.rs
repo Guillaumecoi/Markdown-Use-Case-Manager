@@ -168,7 +168,15 @@ impl UseCaseController {
     /// # Errors
     /// Returns error if category retrieval fails
     pub fn get_categories(&mut self) -> Result<SelectionOptions> {
-        let categories = self.app_service.get_all_categories()?;
+        // Inline: get_all_categories (PR #13)
+        let mut categories: Vec<String> = self
+            .app_service
+            .get_all_use_cases()
+            .iter()
+            .map(|uc| uc.category.clone())
+            .collect();
+        categories.sort();
+        categories.dedup();
         Ok(SelectionOptions::new(categories))
     }
 

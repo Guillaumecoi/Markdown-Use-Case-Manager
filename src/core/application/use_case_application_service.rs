@@ -3,11 +3,9 @@
 use crate::config::Config;
 use crate::core::application::creators::{ScenarioCreator, UseCaseCreator};
 use crate::core::application::generators::{MarkdownGenerator, OverviewGenerator, TestGenerator};
-use crate::core::domain::UseCaseService;
 use crate::core::utils::suggest_alternatives;
 use crate::core::{
     domain::{Scenario, ScenarioReference, ScenarioType, UseCaseReference},
-    file_operations::FileOperations,
     RepositoryFactory, TemplateEngine, UseCase, UseCaseRepository,
 };
 use anyhow::Result;
@@ -16,9 +14,7 @@ use anyhow::Result;
 /// This replaces the old UseCaseCoordinator with clean architecture
 pub struct UseCaseApplicationService {
     config: Config,
-    use_case_service: UseCaseService,
     repository: Box<dyn UseCaseRepository>,
-    file_operations: FileOperations,
     template_engine: TemplateEngine,
     use_cases: Vec<UseCase>,
     use_case_creator: UseCaseCreator,
@@ -32,9 +28,7 @@ impl UseCaseApplicationService {
     // ========== Initialization ==========
 
     pub fn new(config: Config) -> Result<Self> {
-        let use_case_service = UseCaseService::new();
         let repository: Box<dyn UseCaseRepository> = RepositoryFactory::create(&config)?;
-        let file_operations = FileOperations::new(config.clone());
         let template_engine = TemplateEngine::with_config(Some(&config));
 
         // Initialize creator and generators
@@ -48,9 +42,7 @@ impl UseCaseApplicationService {
 
         Ok(Self {
             config,
-            use_case_service,
             repository,
-            file_operations,
             template_engine,
             use_cases,
             use_case_creator,
@@ -73,23 +65,8 @@ impl UseCaseApplicationService {
         &self.use_cases
     }
 
-    /// Get all use case IDs from repository
-    pub fn get_all_use_case_ids(&self) -> Result<Vec<String>> {
-        Ok(self.use_cases.iter().map(|uc| uc.id.clone()).collect())
-    }
-
-    /// Get all categories in use
-    pub fn get_all_categories(&self) -> Result<Vec<String>> {
-        let mut categories: Vec<String> = self
-            .use_cases
-            .iter()
-            .map(|uc| uc.category.clone())
-            .collect();
-
-        categories.sort();
-        categories.dedup();
-        Ok(categories)
-    }
+    // Deleted: get_all_use_case_ids() - never used (PR #13)
+    // Deleted: get_all_categories() - never used (PR #13)
 
     // ========== Use Case Creation ==========
 
@@ -509,28 +486,7 @@ impl UseCaseApplicationService {
         Ok(&self.use_cases[index])
     }
 
-    /// Internal helper to create use cases
-    fn create_use_case_internal(
-        &self,
-        title: String,
-        category: String,
-        description: Option<String>,
-    ) -> Result<UseCase> {
-        let use_case = self.use_case_creator.create_use_case(
-            title,
-            category,
-            description,
-            &self.use_cases,
-            self.repository.as_ref(),
-        )?;
-
-        // Generate markdown from TOML data
-        let markdown_content = self.generate_use_case_markdown(&use_case)?;
-        self.repository
-            .save_markdown(&use_case.id, &markdown_content)?;
-
-        Ok(use_case)
-    }
+    // Deleted: create_use_case_internal() - never used (PR #13)
 
     /// Internal helper to create use cases with methodology custom fields
     fn create_use_case_with_methodology_internal(
@@ -637,11 +593,11 @@ mod tests {
         )?;
         assert_eq!(use_case_id, "UC-TES-001");
 
-        let use_case_ids = coordinator.get_all_use_case_ids()?;
+        let use_case_ids: Vec<String> = coordinator.use_cases.iter().map(|uc| uc.id.clone()).collect();
         assert_eq!(use_case_ids.len(), 1);
         assert!(use_case_ids.contains(&"UC-TES-001".to_string()));
 
-        let final_use_case_ids = coordinator.get_all_use_case_ids()?;
+        let final_use_case_ids: Vec<String> = coordinator.use_cases.iter().map(|uc| uc.id.clone()).collect();
         assert_eq!(final_use_case_ids.len(), 1);
 
         Ok(())
@@ -657,7 +613,9 @@ mod tests {
         let mut coordinator = UseCaseApplicationService::load()?;
         let default_methodology = coordinator.config.templates.default_methodology.clone();
 
-        let categories = coordinator.get_all_categories()?;
+        let mut categories: Vec<String> = coordinator.use_cases.iter().map(|uc| uc.category.clone()).collect();
+        categories.sort();
+        categories.dedup();
         assert!(categories.is_empty());
 
         coordinator.create_use_case_with_methodology(
@@ -681,12 +639,14 @@ mod tests {
             &default_methodology,
         )?;
 
-        let categories = coordinator.get_all_categories()?;
+        let mut categories: Vec<String> = coordinator.use_cases.iter().map(|uc| uc.category.clone()).collect();
+        categories.sort();
+        categories.dedup();
         assert_eq!(categories.len(), 2);
         assert_eq!(categories[0], "api");
         assert_eq!(categories[1], "authentication");
 
-        let use_case_ids = coordinator.get_all_use_case_ids()?;
+        let use_case_ids: Vec<String> = coordinator.use_cases.iter().map(|uc| uc.id.clone()).collect();
         assert_eq!(use_case_ids.len(), 3);
         assert!(use_case_ids.contains(&"UC-AUT-001".to_string()));
         assert!(use_case_ids.contains(&"UC-API-001".to_string()));
@@ -720,10 +680,12 @@ mod tests {
             &default_methodology,
         )?;
 
-        let all_use_cases = coordinator.get_all_use_case_ids()?;
+        let all_use_cases: Vec<String> = coordinator.use_cases.iter().map(|uc| uc.id.clone()).collect();
         assert_eq!(all_use_cases.len(), 2);
 
-        let categories = coordinator.get_all_categories()?;
+        let mut categories: Vec<String> = coordinator.use_cases.iter().map(|uc| uc.category.clone()).collect();
+        categories.sort();
+        categories.dedup();
         assert_eq!(categories.len(), 2);
         assert!(categories.contains(&"api".to_string()));
         assert!(categories.contains(&"auth".to_string()));
