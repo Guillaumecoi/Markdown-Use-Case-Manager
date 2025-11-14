@@ -1,8 +1,0 @@
-id = "minimal-persona"
-name = "Minimal User"
-description = "Minimal persona"
-goal = "Do stuff"
-
-[metadata]
-created_at = "2025-11-14T03:18:04.944662947Z"
-updated_at = "2025-11-14T03:18:04.944662947Z"
