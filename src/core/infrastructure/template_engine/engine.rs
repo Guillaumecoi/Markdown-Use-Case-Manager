@@ -17,6 +17,9 @@ pub struct TemplateEngine {
 impl TemplateEngine {
     pub fn new() -> Result<Self, Box<dyn std::error::Error>> {
         let mut handlebars = Handlebars::new();
+        
+        // Register custom helpers for actor and persona support
+        super::helpers::register_helpers(&mut handlebars);
 
         // First try to load templates from user's config directory
         // Then fall back to source-templates if not found
