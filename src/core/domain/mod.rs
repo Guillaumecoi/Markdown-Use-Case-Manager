@@ -9,5 +9,5 @@ pub use entities::{
     Actor, Metadata, Persona, Priority, ReferenceType, Scenario, ScenarioReference, ScenarioStep, 
     ScenarioType, Status, UseCase, UseCaseReference,
 };
-pub use repositories::UseCaseRepository;
+pub use repositories::{PersonaRepository, UseCaseRepository};
 pub use services::{ScenarioService, UseCaseService};
