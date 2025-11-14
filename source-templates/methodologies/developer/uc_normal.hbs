@@ -26,6 +26,21 @@
 {{/each}}
 
 {{/if}}
+{{#if scenarios}}
+## Technical Scenarios
+
+{{#each scenarios}}
+### {{scenario_type}}: {{title}}
+
+**Status:** {{status}}
+
+#### Technical Flow
+{{#each steps}}
+{{order}}. **{{actor}}** {{action}} {{description}}
+{{/each}}
+
+{{/each}}
+{{/if}}
 {{#if objectives}}
 ## Functional Requirements
 {{#each objectives}}

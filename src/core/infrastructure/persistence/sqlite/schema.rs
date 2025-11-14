@@ -22,6 +22,8 @@ impl Schema {
     /// - Metadata table for version tracking
     /// - Use cases table with core fields
     /// - Preconditions, postconditions, and references tables
+    /// - Scenarios table with all fixed fields
+    /// - Scenario steps and references tables with foreign keys
     /// - All necessary indexes for query performance
     ///
     /// # Arguments
@@ -35,6 +37,11 @@ impl Schema {
         Self::create_use_case_preconditions_table(conn)?;
         Self::create_use_case_postconditions_table(conn)?;
         Self::create_use_case_references_table(conn)?;
+        Self::create_scenarios_table(conn)?;
+        Self::create_scenario_steps_table(conn)?;
+        Self::create_scenario_preconditions_table(conn)?;
+        Self::create_scenario_postconditions_table(conn)?;
+        Self::create_scenario_references_table(conn)?;
         Self::set_schema_version(conn, SCHEMA_VERSION)?;
         Ok(())
     }
@@ -173,6 +180,153 @@ impl Schema {
         Ok(())
     }
 
+    /// Create scenarios table with all fixed fields.
+    pub(super) fn create_scenarios_table(conn: &Connection) -> Result<()> {
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS scenarios (
+                id TEXT PRIMARY KEY,
+                use_case_id TEXT NOT NULL,
+                title TEXT NOT NULL,
+                description TEXT NOT NULL,
+                scenario_type TEXT NOT NULL,
+                status TEXT NOT NULL,
+                persona TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                version INTEGER NOT NULL DEFAULT 1,
+                extra_json TEXT NOT NULL DEFAULT '{}',
+                FOREIGN KEY (use_case_id) REFERENCES use_cases(id) ON DELETE CASCADE
+            )",
+            [],
+        )?;
+
+        // Indexes for common queries
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_scenarios_use_case 
+             ON scenarios(use_case_id)",
+            [],
+        )?;
+
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_scenarios_type 
+             ON scenarios(scenario_type)",
+            [],
+        )?;
+
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_scenarios_status 
+             ON scenarios(status)",
+            [],
+        )?;
+
+        Ok(())
+    }
+
+    /// Create scenario steps table with foreign key.
+    fn create_scenario_steps_table(conn: &Connection) -> Result<()> {
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS scenario_steps (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                scenario_id TEXT NOT NULL,
+                step_order INTEGER NOT NULL,
+                actor TEXT NOT NULL,
+                action TEXT NOT NULL,
+                description TEXT NOT NULL,
+                notes TEXT,
+                FOREIGN KEY (scenario_id) REFERENCES scenarios(id) ON DELETE CASCADE
+            )",
+            [],
+        )?;
+
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_scenario_steps_scenario 
+             ON scenario_steps(scenario_id)",
+            [],
+        )?;
+
+        Ok(())
+    }
+
+    /// Create scenario preconditions table with foreign key.
+    fn create_scenario_preconditions_table(conn: &Connection) -> Result<()> {
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS scenario_preconditions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                scenario_id TEXT NOT NULL,
+                condition_order INTEGER NOT NULL,
+                condition_text TEXT NOT NULL,
+                FOREIGN KEY (scenario_id) REFERENCES scenarios(id) ON DELETE CASCADE
+            )",
+            [],
+        )?;
+
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_scenario_preconditions_scenario 
+             ON scenario_preconditions(scenario_id)",
+            [],
+        )?;
+
+        Ok(())
+    }
+
+    /// Create scenario postconditions table with foreign key.
+    fn create_scenario_postconditions_table(conn: &Connection) -> Result<()> {
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS scenario_postconditions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                scenario_id TEXT NOT NULL,
+                condition_order INTEGER NOT NULL,
+                condition_text TEXT NOT NULL,
+                FOREIGN KEY (scenario_id) REFERENCES scenarios(id) ON DELETE CASCADE
+            )",
+            [],
+        )?;
+
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_scenario_postconditions_scenario 
+             ON scenario_postconditions(scenario_id)",
+            [],
+        )?;
+
+        Ok(())
+    }
+
+    /// Create scenario references table with foreign keys.
+    fn create_scenario_references_table(conn: &Connection) -> Result<()> {
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS scenario_references (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                scenario_id TEXT NOT NULL,
+                ref_type TEXT NOT NULL,
+                target_id TEXT NOT NULL,
+                relationship TEXT NOT NULL,
+                description TEXT,
+                FOREIGN KEY (scenario_id) REFERENCES scenarios(id) ON DELETE CASCADE
+            )",
+            [],
+        )?;
+
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_scenario_references_scenario 
+             ON scenario_references(scenario_id)",
+            [],
+        )?;
+
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_scenario_references_target 
+             ON scenario_references(target_id)",
+            [],
+        )?;
+
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_scenario_references_type 
+             ON scenario_references(ref_type)",
+            [],
+        )?;
+
+        Ok(())
+    }
+
     /// Get current schema version from database.
     ///
     /// # Returns
@@ -226,6 +380,11 @@ mod tests {
         assert!(tables.contains(&"use_case_preconditions".to_string()));
         assert!(tables.contains(&"use_case_postconditions".to_string()));
         assert!(tables.contains(&"use_case_references".to_string()));
+        assert!(tables.contains(&"scenarios".to_string()));
+        assert!(tables.contains(&"scenario_steps".to_string()));
+        assert!(tables.contains(&"scenario_preconditions".to_string()));
+        assert!(tables.contains(&"scenario_postconditions".to_string()));
+        assert!(tables.contains(&"scenario_references".to_string()));
     }
 
     #[test]

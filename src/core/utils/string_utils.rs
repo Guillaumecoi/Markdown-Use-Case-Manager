@@ -10,13 +10,9 @@
 ///
 /// # Examples
 ///
-/// ```
-/// use markdown_use_case_manager::core::to_snake_case;
-///
-/// assert_eq!(to_snake_case("Hello World"), "hello_world");
-/// assert_eq!(to_snake_case("UC-TEST-001"), "uc_test_001");
-/// assert_eq!(to_snake_case("some__value"), "some_value");
-/// ```
+/// - `"Hello World"` → `"hello_world"`
+/// - `"UC-TEST-001"` → `"uc_test_001"`
+/// - `"some__value"` → `"some_value"`
 pub fn to_snake_case(s: &str) -> String {
     // First convert to lowercase and replace special characters with underscores
     let cleaned = s

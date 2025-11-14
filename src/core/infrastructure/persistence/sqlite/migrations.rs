@@ -22,12 +22,6 @@ impl Migrator {
     ///
     /// # Returns
     /// `Ok(())` on success, error if migration fails
-    ///
-    /// # Examples
-    /// ```ignore
-    /// let conn = Connection::open("use_cases.db")?;
-    /// Migrator::migrate(&conn)?; // Brings DB to latest version
-    /// ```
     pub fn migrate(conn: &Connection) -> Result<()> {
         let current_version = Self::current_version(conn)?;
 

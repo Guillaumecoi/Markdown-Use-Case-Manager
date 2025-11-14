@@ -9,6 +9,7 @@ mod fields;
 mod language;
 mod methodology;
 mod project;
+mod scenarios;
 mod usecase;
 
 // Explicit public exports
@@ -23,4 +24,8 @@ pub use methodology::{
     handle_list_methodologies_command, handle_methodology_info_command, handle_regenerate_command,
 };
 pub use project::{handle_init_command, handle_status_command};
+pub use scenarios::{
+    handle_scenario_add_command, handle_scenario_add_step_command, handle_scenario_list_command,
+    handle_scenario_remove_step_command, handle_scenario_update_status_command,
+};
 pub use usecase::{handle_create_command, handle_list_command};

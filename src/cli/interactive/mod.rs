@@ -33,5 +33,9 @@ mod selectors;
 mod ui;
 mod workflows;
 
+#[cfg(test)]
+mod tests;
+
 // Public exports
 pub use menus::menu::run_interactive_session;
+pub(crate) use runner::InteractiveRunner;

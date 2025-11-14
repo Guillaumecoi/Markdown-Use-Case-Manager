@@ -297,6 +297,32 @@ Since everything is just markdown, your documentation works everywhere:
 - **Hugo** - Fast static site generator
 - **Any markdown processor** - Pandoc, GitBook, etc.
 
+## Development
+
+### Running Tests
+
+The test suite includes integration tests that modify global state (current working directory).
+For best results, use **cargo nextest** which provides superior test isolation:
+
+```bash
+# Install nextest (one time)
+cargo install cargo-nextest
+
+# Run tests with nextest (recommended)
+cargo nextest run
+
+# Alternative: run with standard test runner
+cargo test --lib
+
+# If tests fail with cargo test, run modules individually:
+cargo test --lib controller::tests::use_case_controller_tests
+cargo test --lib controller::tests::project_controller_tests
+cargo test --lib cli::interactive::tests
+```
+
+All tests are marked with `#[serial]` to run sequentially and avoid race conditions.
+Nextest handles test isolation more effectively than the standard test runner.
+
 ## Contributing
 
 Issues and pull requests welcome!

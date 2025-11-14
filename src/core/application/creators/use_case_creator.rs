@@ -1,7 +1,7 @@
 use crate::config::Config;
+use crate::core::domain::UseCaseService;
 use crate::core::{
     Methodology, MethodologyDefinition, MethodologyRegistry, UseCase, UseCaseRepository,
-    UseCaseService,
 };
 use anyhow::Result;
 use serde_json::Value;
@@ -41,7 +41,7 @@ impl UseCaseCreator {
         let use_case = self
             .use_case_service
             .create_use_case(use_case_id.clone(), title, category, description)
-            .map_err(|e| anyhow::anyhow!(e))?;
+            .map_err(|e: String| anyhow::anyhow!(e))?;
 
         // Step 1: Save TOML first (source of truth)
         repository.save(&use_case)?;
@@ -83,7 +83,7 @@ impl UseCaseCreator {
                 description,
                 extra_fields,
             )
-            .map_err(|e| anyhow::anyhow!(e))?;
+            .map_err(|e: String| anyhow::anyhow!(e))?;
 
         // Step 1: Save TOML first (source of truth) - this will include custom fields
         repository.save(&use_case)?;

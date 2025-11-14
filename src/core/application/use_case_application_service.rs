@@ -1,12 +1,14 @@
 // Application service for use case operations
 // This orchestrates domain services and infrastructure
 use crate::config::Config;
-use crate::core::application::creators::UseCaseCreator;
+use crate::core::application::creators::{ScenarioCreator, UseCaseCreator};
 use crate::core::application::generators::{MarkdownGenerator, OverviewGenerator, TestGenerator};
+use crate::core::domain::UseCaseService;
 use crate::core::utils::suggest_alternatives;
 use crate::core::{
-    domain::UseCaseReference, file_operations::FileOperations, RepositoryFactory, TemplateEngine,
-    UseCase, UseCaseRepository, UseCaseService,
+    domain::{Scenario, ScenarioReference, ScenarioType, UseCaseReference},
+    file_operations::FileOperations,
+    RepositoryFactory, TemplateEngine, UseCase, UseCaseRepository,
 };
 use anyhow::Result;
 
@@ -20,6 +22,7 @@ pub struct UseCaseApplicationService {
     template_engine: TemplateEngine,
     use_cases: Vec<UseCase>,
     use_case_creator: UseCaseCreator,
+    scenario_creator: ScenarioCreator,
     markdown_generator: MarkdownGenerator,
     test_generator: TestGenerator,
     overview_generator: OverviewGenerator,
@@ -36,6 +39,7 @@ impl UseCaseApplicationService {
 
         // Initialize creator and generators
         let use_case_creator = UseCaseCreator::new(config.clone());
+        let scenario_creator = ScenarioCreator::new(config.clone());
         let markdown_generator = MarkdownGenerator::new(config.clone());
         let test_generator = TestGenerator::new(config.clone());
         let overview_generator = OverviewGenerator::new(config.clone());
@@ -50,6 +54,7 @@ impl UseCaseApplicationService {
             template_engine,
             use_cases,
             use_case_creator,
+            scenario_creator,
             markdown_generator,
             test_generator,
             overview_generator,
@@ -309,6 +314,160 @@ impl UseCaseApplicationService {
         self.repository.save(&use_case)?;
         self.use_cases[index] = use_case;
         Ok(())
+    }
+
+    // ========== Scenario Management Methods ==========
+
+    /// Add a scenario to a use case
+    pub fn add_scenario(
+        &mut self,
+        use_case_id: &str,
+        title: String,
+        scenario_type: ScenarioType,
+        description: Option<String>,
+        preconditions: Vec<String>,
+        postconditions: Vec<String>,
+        actors: Vec<String>,
+    ) -> Result<String> {
+        let index = self.find_use_case_index(use_case_id)?;
+        let use_case = &self.use_cases[index];
+
+        let scenario = self.scenario_creator.create_scenario(
+            use_case,
+            title,
+            scenario_type,
+            description,
+            preconditions,
+            postconditions,
+            actors,
+        );
+
+        let mut updated_use_case = self.use_cases[index].clone();
+        updated_use_case.add_scenario(scenario.clone());
+        self.repository.save(&updated_use_case)?;
+        self.use_cases[index] = updated_use_case;
+
+        Ok(scenario.id)
+    }
+
+    /// Add a step to an existing scenario
+    pub fn add_scenario_step(
+        &mut self,
+        use_case_id: &str,
+        scenario_id: &str,
+        order: u32,
+        actor: String,
+        action: String,
+        expected_result: Option<String>,
+    ) -> Result<()> {
+        let index = self.find_use_case_index(use_case_id)?;
+        let mut use_case = self.use_cases[index].clone();
+
+        let step =
+            self.scenario_creator
+                .create_scenario_step(order, actor, action, expected_result);
+
+        use_case.add_step_to_scenario(scenario_id, step)?;
+        self.repository.save(&use_case)?;
+        self.use_cases[index] = use_case;
+
+        Ok(())
+    }
+
+    /// Update the status of a scenario
+    pub fn update_scenario_status(
+        &mut self,
+        use_case_id: &str,
+        scenario_id: &str,
+        new_status: crate::core::Status,
+    ) -> Result<()> {
+        let index = self.find_use_case_index(use_case_id)?;
+        let mut use_case = self.use_cases[index].clone();
+
+        use_case.update_scenario_status(scenario_id, new_status)?;
+        self.repository.save(&use_case)?;
+        self.use_cases[index] = use_case;
+
+        Ok(())
+    }
+
+    /// Get all scenarios for a use case
+    pub fn get_scenarios(&self, use_case_id: &str) -> Result<Vec<Scenario>> {
+        let use_case = self.find_use_case_by_id(use_case_id)?;
+        Ok(use_case.scenarios.clone())
+    }
+
+    /// Remove a step from a scenario
+    pub fn remove_scenario_step(
+        &mut self,
+        use_case_id: &str,
+        scenario_id: &str,
+        step_order: u32,
+    ) -> Result<()> {
+        let index = self.find_use_case_index(use_case_id)?;
+        let mut use_case = self.use_cases[index].clone();
+
+        use_case.remove_step_from_scenario(scenario_id, step_order)?;
+        self.repository.save(&use_case)?;
+        self.use_cases[index] = use_case;
+
+        Ok(())
+    }
+
+    /// Add a reference to a scenario
+    pub fn add_scenario_reference(
+        &mut self,
+        use_case_id: &str,
+        scenario_id: &str,
+        reference: ScenarioReference,
+    ) -> Result<()> {
+        let index = self.find_use_case_index(use_case_id)?;
+        let mut use_case = self.use_cases[index].clone();
+
+        use_case.add_reference_to_scenario(scenario_id, reference)?;
+        self.repository.save(&use_case)?;
+        self.use_cases[index] = use_case;
+
+        Ok(())
+    }
+
+    /// Remove a reference from a scenario
+    pub fn remove_scenario_reference(
+        &mut self,
+        use_case_id: &str,
+        scenario_id: &str,
+        target_id: &str,
+        relationship: &str,
+    ) -> Result<()> {
+        let index = self.find_use_case_index(use_case_id)?;
+        let mut use_case = self.use_cases[index].clone();
+
+        use_case.remove_reference_from_scenario(scenario_id, target_id, relationship)?;
+        self.repository.save(&use_case)?;
+        self.use_cases[index] = use_case;
+
+        Ok(())
+    }
+
+    /// Get all scenarios referenced by a scenario
+    pub fn get_scenario_references(
+        &self,
+        use_case_id: &str,
+        scenario_id: &str,
+    ) -> Result<Vec<ScenarioReference>> {
+        let use_case = self.find_use_case_by_id(use_case_id)?;
+        let scenario = use_case
+            .scenarios
+            .iter()
+            .find(|s| s.id == scenario_id)
+            .ok_or_else(|| {
+                let available_ids: Vec<String> =
+                    use_case.scenarios.iter().map(|s| s.id.clone()).collect();
+                let error_msg = suggest_alternatives(scenario_id, &available_ids, "Scenario");
+                anyhow::anyhow!("{}", error_msg)
+            })?;
+
+        Ok(scenario.references.clone())
     }
 
     // ========== Private Helpers (Delegation) ==========

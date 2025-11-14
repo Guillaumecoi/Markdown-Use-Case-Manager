@@ -1,8 +1,10 @@
-//! Use case creation logic
+//! Use case and scenario creation logic
 //!
 //! This module contains components responsible for creating new use cases
-//! with proper validation, unique ID generation, and methodology support.
+//! and scenarios with proper validation, unique ID generation, and methodology support.
 
+mod scenario_creator;
 mod use_case_creator;
 
+pub use scenario_creator::ScenarioCreator;
 pub use use_case_creator::UseCaseCreator;

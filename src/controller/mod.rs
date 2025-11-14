@@ -28,6 +28,9 @@ mod dto;
 mod project_controller;
 mod use_case_controller;
 
+#[cfg(test)]
+mod tests;
+
 // Re-export commonly used controllers
 pub use project_controller::ProjectController;
 pub use use_case_controller::UseCaseController;

@@ -32,6 +32,41 @@
 {{/each}}
 
 {{/if}}
+{{#if scenarios}}
+## Scenario-Based Testing
+
+{{#each scenarios}}
+### {{scenario_type}}: {{title}}
+
+**Scenario ID:** {{id}}  
+**Test Status:** {{status}}  
+**Test Description:** {{description}}
+
+{{#if persona}}
+**Test Persona:** {{persona}}
+{{/if}}
+
+#### Test Flow
+{{#each steps}}
+{{order}}. **{{actor}}** {{action}} {{description}}{{#if notes}} ({{notes}}){{/if}}
+{{/each}}
+
+{{#if preconditions}}
+#### Test Preconditions
+{{#each preconditions}}
+- {{this}}
+{{/each}}
+{{/if}}
+
+{{#if postconditions}}
+#### Test Postconditions
+{{#each postconditions}}
+- {{this}}
+{{/each}}
+{{/if}}
+
+{{/each}}
+{{/if}}
 {{#if objectives}}
 ## Test Objectives
 

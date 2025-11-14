@@ -21,13 +21,6 @@ impl RepositoryFactory {
     ///
     /// # Returns
     /// A boxed trait object implementing UseCaseRepository, or an error if creation fails
-    ///
-    /// # Examples
-    /// ```ignore
-    /// let config = Config::load()?;
-    /// let repository = RepositoryFactory::create(&config)?;
-    /// assert_eq!(repository.backend_name(), "toml"); // or "sqlite"
-    /// ```
     pub fn create(config: &Config) -> Result<Box<dyn UseCaseRepository>> {
         match config.storage.backend {
             StorageBackend::Toml => {

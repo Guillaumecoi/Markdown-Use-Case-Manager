@@ -34,7 +34,9 @@ use standard::{
     handle_postcondition_remove_command, handle_precondition_add_command,
     handle_precondition_list_command, handle_precondition_remove_command,
     handle_reference_add_command, handle_reference_list_command, handle_reference_remove_command,
-    handle_regenerate_command, handle_status_command, CliRunner,
+    handle_regenerate_command, handle_scenario_add_command, handle_scenario_add_step_command,
+    handle_scenario_list_command, handle_scenario_remove_step_command,
+    handle_scenario_update_status_command, handle_status_command, CliRunner,
 };
 
 /// Execute a command with proper error handling and colored output
@@ -205,6 +207,76 @@ pub fn run() -> Result<()> {
             } => {
                 execute_command(|| {
                     handle_reference_remove_command(&mut runner, use_case_id, target_id)
+                });
+                Ok(())
+            }
+        },
+        Commands::Scenario { command } => match command {
+            args::ScenarioCommands::Add {
+                use_case_id,
+                title,
+                scenario_type,
+                description,
+            } => {
+                execute_command(|| {
+                    handle_scenario_add_command(
+                        &mut runner,
+                        use_case_id,
+                        title,
+                        scenario_type,
+                        description,
+                    )
+                });
+                Ok(())
+            }
+            args::ScenarioCommands::AddStep {
+                use_case_id,
+                scenario_title,
+                step,
+                order,
+            } => {
+                execute_command(|| {
+                    handle_scenario_add_step_command(
+                        &mut runner,
+                        use_case_id,
+                        scenario_title,
+                        step,
+                        order,
+                    )
+                });
+                Ok(())
+            }
+            args::ScenarioCommands::UpdateStatus {
+                use_case_id,
+                scenario_title,
+                status,
+            } => {
+                execute_command(|| {
+                    handle_scenario_update_status_command(
+                        &mut runner,
+                        use_case_id,
+                        scenario_title,
+                        status,
+                    )
+                });
+                Ok(())
+            }
+            args::ScenarioCommands::List { use_case_id } => {
+                execute_command(|| handle_scenario_list_command(&mut runner, use_case_id));
+                Ok(())
+            }
+            args::ScenarioCommands::RemoveStep {
+                use_case_id,
+                scenario_title,
+                order,
+            } => {
+                execute_command(|| {
+                    handle_scenario_remove_step_command(
+                        &mut runner,
+                        use_case_id,
+                        scenario_title,
+                        order,
+                    )
                 });
                 Ok(())
             }

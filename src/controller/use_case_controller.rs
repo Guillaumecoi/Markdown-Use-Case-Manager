@@ -20,12 +20,11 @@
 //! 3. **Regeneration**: Markdown can be regenerated when templates or data change
 //! 4. **Methodology Changes**: Use cases can be regenerated with different methodologies
 
-use anyhow::Result;
-
-use super::dto::{DisplayResult, SelectionOptions};
 use crate::config::Config;
-use crate::core::UseCaseApplicationService;
+use crate::controller::dto::{DisplayResult, SelectionOptions};
+use crate::core::{ScenarioType, Status, UseCaseApplicationService};
 use crate::presentation::{StatusFormatter, UseCaseFormatter};
+use anyhow::Result;
 
 /// Controller for use case operations and management.
 ///
@@ -509,6 +508,216 @@ impl UseCaseController {
             Ok(_) => Ok(DisplayResult::success(format!(
                 "Removed reference to {} from use case: {}",
                 target_id, use_case_id
+            ))),
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Add a scenario to a use case.
+    ///
+    /// Adds a new scenario to the specified use case.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `title` - The title of the scenario
+    /// * `scenario_type` - The type of scenario (main, alternative, exception)
+    /// * `description` - Optional description of the scenario
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or scenario cannot be added
+    pub fn add_scenario(
+        &mut self,
+        use_case_id: String,
+        title: String,
+        scenario_type: String,
+        description: Option<String>,
+    ) -> Result<DisplayResult> {
+        let scenario_type_enum = match scenario_type.as_str() {
+            "happy_path" | "happy" | "main" => ScenarioType::HappyPath,
+            "alternative_flow" | "alternative" | "alt" => ScenarioType::AlternativeFlow,
+            "exception_flow" | "exception" | "error" => ScenarioType::ExceptionFlow,
+            "extension" | "ext" => ScenarioType::Extension,
+            _ => return Ok(DisplayResult::error(format!("Invalid scenario type: {}. Must be 'main', 'alternative', 'exception', or 'extension'", scenario_type))),
+        };
+
+        match self.app_service.add_scenario(
+            &use_case_id,
+            title,
+            scenario_type_enum,
+            description,
+            vec![], // empty preconditions for now
+            vec![], // empty postconditions for now
+            vec![], // empty actors for now
+        ) {
+            Ok(scenario_id) => Ok(DisplayResult::success(format!(
+                "Added scenario '{}' to use case: {}",
+                scenario_id, use_case_id
+            ))),
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Add a step to a scenario.
+    ///
+    /// Adds a new step to the specified scenario.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `scenario_title` - The title of the scenario
+    /// * `step` - The step description to add
+    /// * `order` - Optional 1-based order for the step
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case or scenario not found or step cannot be added
+    pub fn add_scenario_step(
+        &mut self,
+        use_case_id: String,
+        scenario_title: String,
+        step: String,
+        order: Option<u32>,
+    ) -> Result<DisplayResult> {
+        // For now, we'll use default values for the required parameters
+        // In a real implementation, we'd need to get these from the user
+        let order_val = order.unwrap_or(0); // 0 means append
+        let actor = "User".to_string(); // Default actor
+        let action = step; // Use the step as the action
+        let expected_result = None; // No expected result for now
+
+        match self.app_service.add_scenario_step(
+            &use_case_id,
+            &scenario_title,
+            order_val,
+            actor,
+            action,
+            expected_result,
+        ) {
+            Ok(_) => Ok(DisplayResult::success(format!(
+                "Added step to scenario '{}' in use case: {}",
+                scenario_title, use_case_id
+            ))),
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Update scenario status.
+    ///
+    /// Updates the status of the specified scenario.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `scenario_title` - The title of the scenario
+    /// * `status` - The new status for the scenario
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case or scenario not found or status update fails
+    pub fn update_scenario_status(
+        &mut self,
+        use_case_id: String,
+        scenario_title: String,
+        status: String,
+    ) -> Result<DisplayResult> {
+        let status_enum = match Status::from_str(&status) {
+            Ok(s) => s,
+            Err(e) => return Ok(DisplayResult::error(e)),
+        };
+
+        match self
+            .app_service
+            .update_scenario_status(&use_case_id, &scenario_title, status_enum)
+        {
+            Ok(_) => Ok(DisplayResult::success(format!(
+                "Updated status of scenario '{}' in use case: {}",
+                scenario_title, use_case_id
+            ))),
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// List scenarios for a use case.
+    ///
+    /// Retrieves and displays all scenarios for the specified use case.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    ///
+    /// # Returns
+    /// DisplayResult with scenarios list
+    ///
+    /// # Errors
+    /// Returns error if use case not found
+    pub fn list_scenarios(&mut self, use_case_id: String) -> Result<DisplayResult> {
+        match self.app_service.get_scenarios(&use_case_id) {
+            Ok(scenarios) => {
+                let mut result = format!("Scenarios for {}:\n", use_case_id);
+                if scenarios.is_empty() {
+                    result.push_str("  No scenarios found.");
+                } else {
+                    for scenario in &scenarios {
+                        result.push_str(&format!(
+                            "  - {} ({}): {} - {} steps\n",
+                            scenario.title,
+                            scenario.scenario_type,
+                            scenario.status,
+                            scenario.steps.len()
+                        ));
+                        if !scenario.description.is_empty() {
+                            result
+                                .push_str(&format!("    Description: {}\n", scenario.description));
+                        }
+                        if !scenario.steps.is_empty() {
+                            result.push_str("    Steps:\n");
+                            for (i, step) in scenario.steps.iter().enumerate() {
+                                result.push_str(&format!(
+                                    "      {}. {}\n",
+                                    i + 1,
+                                    step.description
+                                ));
+                            }
+                        }
+                    }
+                }
+                Ok(DisplayResult::success(result))
+            }
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Remove a step from a scenario.
+    ///
+    /// Removes the step at the specified order from the scenario.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `scenario_title` - The title of the scenario
+    /// * `order` - The 1-based order of the step to remove
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case or scenario not found or step doesn't exist
+    pub fn remove_scenario_step(
+        &mut self,
+        use_case_id: String,
+        scenario_title: String,
+        order: u32,
+    ) -> Result<DisplayResult> {
+        match self
+            .app_service
+            .remove_scenario_step(&use_case_id, &scenario_title, order)
+        {
+            Ok(_) => Ok(DisplayResult::success(format!(
+                "Removed step {} from scenario '{}' in use case: {}",
+                order, scenario_title, use_case_id
             ))),
             Err(e) => Ok(DisplayResult::error(e.to_string())),
         }

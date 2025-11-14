@@ -21,6 +21,21 @@
 {{/each}}
 
 {{/if}}
+{{#if scenarios}}
+## Scenarios
+
+{{#each scenarios}}
+### {{scenario_type}}: {{title}}
+
+**Status:** {{status}}
+
+#### Flow
+{{#each steps}}
+{{order}}. **{{actor}}** {{action}} {{description}}
+{{/each}}
+
+{{/each}}
+{{/if}}
 {{#if value_proposition}}
 ## Business Value
 {{value_proposition}}

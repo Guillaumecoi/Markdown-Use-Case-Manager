@@ -50,6 +50,21 @@
 {{/each}}
 
 {{/if}}
+{{#if scenarios}}
+## Scenario Analysis
+
+{{#each scenarios}}
+### {{scenario_type}}: {{title}}
+
+**Status:** {{status}}
+
+#### Business Flow
+{{#each steps}}
+{{order}}. **{{actor}}** {{action}} {{description}}
+{{/each}}
+
+{{/each}}
+{{/if}}
 {{#if use_case_references}}
 ## Related Use Cases
 {{#each use_case_references}}

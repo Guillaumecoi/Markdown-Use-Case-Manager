@@ -11,7 +11,10 @@ mod utils; // Internal only
 pub use application::UseCaseApplicationService;
 
 // Re-export domain types (from domain's public interface)
-pub use domain::{Metadata, Priority, Status, UseCase, UseCaseService};
+pub use domain::{
+    Metadata, Priority, ReferenceType, Scenario, ScenarioReference, ScenarioStep, ScenarioType,
+    Status, UseCase, UseCaseReference,
+};
 
 // Re-export infrastructure types (from infrastructure's public interface)
 pub use infrastructure::{

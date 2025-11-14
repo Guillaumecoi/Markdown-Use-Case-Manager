@@ -505,11 +505,7 @@ mod tests {
 
         let config = Config::default();
 
-        let result = TemplateManager::copy_methodologies(
-            &source_dir,
-            &config,
-            &dest_templates,
-        );
+        let result = TemplateManager::copy_methodologies(&source_dir, &config, &dest_templates);
         assert!(result.is_err());
         assert!(result
             .unwrap_err()
@@ -533,11 +529,7 @@ mod tests {
         let mut config = Config::default();
         config.templates.methodologies = vec!["nonexistent".to_string()];
 
-        let result = TemplateManager::copy_methodologies(
-            &source_dir,
-            &config,
-            &dest_templates,
-        );
+        let result = TemplateManager::copy_methodologies(&source_dir, &config, &dest_templates);
         assert!(result.is_err());
         assert!(result
             .unwrap_err()
@@ -565,11 +557,7 @@ mod tests {
         let mut config = Config::default();
         config.templates.methodologies = vec!["test_method".to_string()];
 
-        let result = TemplateManager::copy_methodologies(
-            &source_dir,
-            &config,
-            &dest_templates,
-        );
+        let result = TemplateManager::copy_methodologies(&source_dir, &config, &dest_templates);
         assert!(result.is_err());
         assert!(result
             .unwrap_err()
