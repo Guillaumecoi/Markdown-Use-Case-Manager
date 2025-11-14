@@ -28,6 +28,20 @@
 
 {{/if}}
 {{#if scenarios}}
+## Actors and Personas
+
+### Actors Involved
+{{#each (unique_actors scenarios)}}
+- **{{this}}**
+{{/each}}
+
+{{#if (has_personas scenarios)}}
+### Target Personas
+{{#each (unique_personas scenarios)}}
+- 🙂 **{{this}}**
+{{/each}}
+{{/if}}
+
 ## Scenarios
 
 {{#each scenarios}}
@@ -38,7 +52,7 @@
 **Description:** {{description}}
 
 {{#if persona}}
-**Persona:** {{persona}}
+**Persona:** 🙂 {{persona}}
 {{/if}}
 
 #### Flow

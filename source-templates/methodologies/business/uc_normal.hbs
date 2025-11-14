@@ -51,12 +51,26 @@
 
 {{/if}}
 {{#if scenarios}}
+## Actors and Personas
+
+### System Actors
+{{#each (unique_actors scenarios)}}
+- **{{this}}**
+{{/each}}
+
+{{#if (has_personas scenarios)}}
+### Target Personas
+{{#each (unique_personas scenarios)}}
+- 🙂 **{{this}}**
+{{/each}}
+{{/if}}
+
 ## Scenario Analysis
 
 {{#each scenarios}}
 ### {{scenario_type}}: {{title}}
 
-**Status:** {{status}}
+**Status:** {{status}}{{#if persona}} | **Persona:** 🙂 {{persona}}{{/if}}
 
 #### Business Flow
 {{#each steps}}

@@ -56,6 +56,22 @@
 {{/each}}
 
 {{/if}}
+{{#if scenarios}}
+## Actors and Personas
+
+### System Actors
+{{#each (unique_actors scenarios)}}
+- **{{this}}** - _System or external entity participating in scenarios_
+{{/each}}
+
+{{#if (has_personas scenarios)}}
+### Target Personas
+{{#each (unique_personas scenarios)}}
+- **{{this}}** - _User persona experiencing this scenario_
+{{/each}}
+{{/if}}
+
+{{/if}}
 {{#if business.success_criteria}}
 ### Success Criteria
 {{#each business.success_criteria}}
@@ -88,7 +104,7 @@
 **Business Description:** {{description}}
 
 {{#if persona}}
-**Target Persona:** {{persona}}
+**Target Persona:** 🙂 {{persona}}
 {{/if}}
 
 #### Business Flow

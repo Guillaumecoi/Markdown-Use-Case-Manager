@@ -33,6 +33,20 @@
 
 {{/if}}
 {{#if scenarios}}
+## Test Actors and Personas
+
+### Actors Under Test
+{{#each (unique_actors scenarios)}}
+- **{{this}}** - _System or user role being tested_
+{{/each}}
+
+{{#if (has_personas scenarios)}}
+### Test Personas
+{{#each (unique_personas scenarios)}}
+- 🙂 **{{this}}** - _User profile for test scenarios_
+{{/each}}
+{{/if}}
+
 ## Scenario-Based Testing
 
 {{#each scenarios}}
@@ -43,7 +57,7 @@
 **Test Description:** {{description}}
 
 {{#if persona}}
-**Test Persona:** {{persona}}
+**Test Persona:** 🙂 {{persona}}
 {{/if}}
 
 #### Test Flow

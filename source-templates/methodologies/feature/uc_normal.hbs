@@ -22,12 +22,26 @@
 
 {{/if}}
 {{#if scenarios}}
+## Actors and Personas
+
+### Actors
+{{#each (unique_actors scenarios)}}
+- **{{this}}**
+{{/each}}
+
+{{#if (has_personas scenarios)}}
+### Personas
+{{#each (unique_personas scenarios)}}
+- 🙂 **{{this}}**
+{{/each}}
+{{/if}}
+
 ## Scenarios
 
 {{#each scenarios}}
 ### {{scenario_type}}: {{title}}
 
-**Status:** {{status}}
+**Status:** {{status}}{{#if persona}} | **Persona:** 🙂 {{persona}}{{/if}}
 
 #### Flow
 {{#each steps}}
