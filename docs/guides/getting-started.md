@@ -74,15 +74,65 @@ your-project/
         └── uc_sec_001.rs           # Test files (if you want them)
 ```
 
+## Working with Actors and Personas
+
+MUCM supports two ways to represent users in your scenarios:
+
+### Quick Start: Actors
+
+**Actors** are simple role names used in scenario steps. Use these for straightforward use cases:
+
+```bash
+# Actors are defined inline in scenarios using the Actor enum
+# Examples: User, Admin, System, Guest
+```
+
+When writing scenarios, you can use predefined actors like `User`, `Admin`, `System`, or create custom ones.
+
+### Advanced: Personas
+
+**Personas** are detailed user archetypes with goals, technical levels, and context. Create these when you need:
+- Detailed user profiles for documentation
+- Understanding different user skill levels
+- Tailoring scenarios to specific user types
+
+```bash
+# Create a persona
+mucm persona create "Power User Sarah" \
+  --description "Experienced user who needs advanced features" \
+  --tech-level 8 \
+  --goals "Increase efficiency,Automate workflows"
+
+# List personas
+mucm persona list
+
+# Reference personas in your scenarios by ID
+```
+
+**Personas vs Actors:**
+- **Actors** are simple roles (`User`, `Admin`) used directly in scenario steps
+- **Personas** are rich user profiles stored separately and referenced in scenarios
+- Use actors for quick scenarios, personas when you need detailed user context
+
+### Interactive Mode
+
+The easiest way to create personas:
+
+```bash
+mucm -i
+# Choose "Persona Management" → "Create New Persona"
+```
+
 ## What's Next?
 
 Now that you're set up, here are some good next steps:
 
 1. **Learn the methodologies** - Use `mucm methodology-info <name>` to understand each approach
 2. **Try different methodologies** - Use `mucm regenerate UC-XXX-001 --methodology business` to see the differences
-3. **Customize your setup** - Read the [configuration guide](configuration.md) to make it yours
-4. **Get better at writing** - See our [best practices](best-practices.md) for tips
-5. **Connect with other tools** - Look at [integration](integration.md) for CI/CD and websites
+3. **Create personas** - Define your user archetypes with `mucm persona create` or `mucm -i`
+4. **Customize your setup** - Read the [configuration guide](configuration.md) to make it yours
+5. **Get better at writing** - See our [best practices](best-practices.md) for tips
+6. **Connect with other tools** - Look at [integration](integration.md) for CI/CD and websites
 
 ## Need Help?
 
