@@ -424,7 +424,17 @@ impl UseCaseApplicationService {
         let index = self.find_use_case_index(use_case_id)?;
         let mut use_case = self.use_cases[index].clone();
 
-        use_case.add_reference_to_scenario(scenario_id, reference)?;
+        // Inline the functionality of deleted add_reference_to_scenario
+        let scenario_index = use_case
+            .scenarios
+            .iter()
+            .position(|s| s.id == scenario_id)
+            .ok_or_else(|| anyhow::anyhow!("Scenario with ID '{}' not found", scenario_id))?;
+
+        // Add the reference directly to the scenario
+        use_case.scenarios[scenario_index].add_reference(reference);
+        use_case.metadata.touch();
+        
         self.repository.save(&use_case)?;
         self.use_cases[index] = use_case;
 
@@ -442,7 +452,15 @@ impl UseCaseApplicationService {
         let index = self.find_use_case_index(use_case_id)?;
         let mut use_case = self.use_cases[index].clone();
 
-        use_case.remove_reference_from_scenario(scenario_id, target_id, relationship)?;
+        // Inline the functionality of deleted remove_reference_from_scenario
+        let scenario_index = use_case
+            .scenarios
+            .iter()
+            .position(|s| s.id == scenario_id)
+            .ok_or_else(|| anyhow::anyhow!("Scenario with ID '{}' not found", scenario_id))?;
+
+        use_case.scenarios[scenario_index].remove_reference(target_id, relationship);
+        use_case.metadata.touch();
         self.repository.save(&use_case)?;
         self.use_cases[index] = use_case;
 

@@ -168,8 +168,8 @@ mod tests {
         let mut config = Config::default();
         config.storage.backend = StorageBackend::Toml;
 
-        let repository = RepositoryFactory::create(&config)?;
-        assert_eq!(repository.backend_name(), "toml");
+        let _repository = RepositoryFactory::create(&config)?;
+        // backend_name() method was removed in PR #11
 
         Ok(())
     }
@@ -184,8 +184,8 @@ mod tests {
         let mut config = Config::default();
         config.storage.backend = StorageBackend::Sqlite;
 
-        let repository = RepositoryFactory::create(&config)?;
-        assert_eq!(repository.backend_name(), "sqlite");
+        let _repository = RepositoryFactory::create(&config)?;
+        // backend_name() method was removed in PR #11
 
         Ok(())
     }
@@ -201,8 +201,8 @@ mod tests {
         config.storage.backend = StorageBackend::Sqlite;
 
         let custom_db_path = temp_dir.path().join("custom.db");
-        let repository = RepositoryFactory::create_with_db_path(&config, &custom_db_path)?;
-        assert_eq!(repository.backend_name(), "sqlite");
+        let _repository = RepositoryFactory::create_with_db_path(&config, &custom_db_path)?;
+        // backend_name() method was removed in PR #11
 
         // Verify the database file was created
         assert!(custom_db_path.exists());
