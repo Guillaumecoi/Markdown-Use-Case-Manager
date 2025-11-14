@@ -130,6 +130,7 @@ mod storage_backend_tests {
 /// - `metadata`: Auto-generated metadata settings (creation/update timestamps)
 /// - `generation`: Code generation preferences (test language, auto-generation flags)
 /// - `storage`: Storage backend configuration (TOML or SQLite)
+/// - `persona_fields`: Global custom fields for personas (optional)
 ///
 /// # Example Configuration
 ///
@@ -159,6 +160,11 @@ mod storage_backend_tests {
 /// [metadata]
 /// created = true
 /// last_updated = true
+///
+/// [persona_fields]
+/// department = { label = "Department", type = "string", required = false }
+/// experience_level = { label = "Experience Level", type = "string", required = false }
+/// pain_points = { label = "Pain Points", type = "array", required = false }
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -176,6 +182,9 @@ pub struct Config {
     /// Storage backend configuration
     #[serde(default)]
     pub storage: StorageConfig,
+    /// Global custom fields for personas (optional)
+    #[serde(default)]
+    pub persona_fields: std::collections::HashMap<String, crate::core::CustomFieldConfig>,
 }
 
 /// Project-level configuration settings.

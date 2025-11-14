@@ -18,9 +18,9 @@ pub use domain::{
 
 // Re-export infrastructure types (from infrastructure's public interface)
 pub use infrastructure::{
-    file_operations, LanguageRegistry, Methodology, MethodologyDefinition, MethodologyRegistry,
-    RepositoryFactory, SqliteUseCaseRepository, TemplateEngine, TomlUseCaseRepository,
-    TransactionalRepository, UseCaseRepository,
+    file_operations, CustomFieldConfig, LanguageRegistry, Methodology, MethodologyDefinition,
+    MethodologyRegistry, RepositoryFactory, SqliteUseCaseRepository, TemplateEngine,
+    TomlUseCaseRepository, TransactionalRepository, UseCaseRepository,
 };
 
 // Re-export utility functions

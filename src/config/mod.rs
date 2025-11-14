@@ -251,6 +251,7 @@ impl Config {
                         created: true,
                         last_updated: true,
                     },
+                    persona_fields: std::collections::HashMap::new(),
                 });
             }
         };
