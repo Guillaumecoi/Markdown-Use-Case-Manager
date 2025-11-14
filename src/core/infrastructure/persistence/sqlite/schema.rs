@@ -42,6 +42,7 @@ impl Schema {
         Self::create_scenario_preconditions_table(conn)?;
         Self::create_scenario_postconditions_table(conn)?;
         Self::create_scenario_references_table(conn)?;
+        Self::create_personas_table(conn)?;
         Self::set_schema_version(conn, SCHEMA_VERSION)?;
         Ok(())
     }
@@ -327,6 +328,39 @@ impl Schema {
         Ok(())
     }
 
+    /// Create personas table.
+    fn create_personas_table(conn: &Connection) -> Result<()> {
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS personas (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                description TEXT NOT NULL,
+                goal TEXT NOT NULL,
+                context TEXT,
+                tech_level INTEGER,
+                usage_frequency TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )",
+            [],
+        )?;
+
+        // Indexes for common queries
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_personas_name 
+             ON personas(name COLLATE NOCASE)",
+            [],
+        )?;
+
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_personas_tech_level 
+             ON personas(tech_level)",
+            [],
+        )?;
+
+        Ok(())
+    }
+
     /// Get current schema version from database.
     ///
     /// # Returns
@@ -385,6 +419,7 @@ mod tests {
         assert!(tables.contains(&"scenario_preconditions".to_string()));
         assert!(tables.contains(&"scenario_postconditions".to_string()));
         assert!(tables.contains(&"scenario_references".to_string()));
+        assert!(tables.contains(&"personas".to_string()));
     }
 
     #[test]
