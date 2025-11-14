@@ -98,15 +98,12 @@ mod use_case_controller_tests {
                 "business".to_string(),
             )
             .unwrap();
-        
+
         // Extract the use case ID from the message
         let use_case_id = extract_use_case_id(&create_result.message);
 
         // Add a precondition
-        let result = controller.add_precondition(
-            use_case_id,
-            "User must be logged in".to_string(),
-        );
+        let result = controller.add_precondition(use_case_id, "User must be logged in".to_string());
 
         assert!(result.is_ok());
         let display = result.unwrap();
@@ -137,10 +134,7 @@ mod use_case_controller_tests {
             )
             .unwrap();
         controller
-            .add_precondition(
-                use_case_id.clone(),
-                "System must be online".to_string(),
-            )
+            .add_precondition(use_case_id.clone(), "System must be online".to_string())
             .unwrap();
 
         // List preconditions
@@ -169,10 +163,7 @@ mod use_case_controller_tests {
         let use_case_id = extract_use_case_id(&create_result.message);
 
         // Add a postcondition
-        let result = controller.add_postcondition(
-            use_case_id,
-            "User is logged in".to_string(),
-        );
+        let result = controller.add_postcondition(use_case_id, "User is logged in".to_string());
 
         assert!(result.is_ok());
         let display = result.unwrap();
@@ -194,7 +185,7 @@ mod use_case_controller_tests {
             )
             .unwrap();
         let uc_id_1 = extract_use_case_id(&result1.message);
-        
+
         let result2 = controller
             .create_use_case_with_methodology(
                 "Test UC 2".to_string(),
@@ -233,7 +224,7 @@ mod use_case_controller_tests {
             )
             .unwrap();
         let uc_id_1 = extract_use_case_id(&result1.message);
-        
+
         let result2 = controller
             .create_use_case_with_methodology(
                 "Test UC 2".to_string(),
@@ -354,7 +345,7 @@ mod use_case_controller_tests {
             )
             .unwrap();
         let use_case_id = extract_use_case_id(&result.message);
-        
+
         controller
             .add_scenario(
                 use_case_id.clone(),
@@ -375,7 +366,11 @@ mod use_case_controller_tests {
 
         assert!(result.is_ok(), "Result error: {:?}", result);
         let display = result.unwrap();
-        assert!(display.is_success(), "Failed with message: {}", display.message);
+        assert!(
+            display.is_success(),
+            "Failed with message: {}",
+            display.message
+        );
     }
 
     #[test]
@@ -393,7 +388,7 @@ mod use_case_controller_tests {
             )
             .unwrap();
         let use_case_id = extract_use_case_id(&result.message);
-        
+
         controller
             .add_scenario(
                 use_case_id.clone(),
@@ -436,7 +431,7 @@ mod use_case_controller_tests {
             )
             .unwrap();
         let use_case_id = extract_use_case_id(&result.message);
-        
+
         controller
             .add_scenario(
                 use_case_id.clone(),
@@ -584,8 +579,9 @@ mod project_controller_tests {
     fn test_init_project_creates_config() {
         let _temp_dir = setup_empty_dir();
 
-        let result = ProjectController::init_project(Some("rust".to_string()), "business".to_string());
-        
+        let result =
+            ProjectController::init_project(Some("rust".to_string()), "business".to_string());
+
         assert!(result.is_ok());
         let display = result.unwrap();
         assert!(display.is_success());
@@ -601,8 +597,9 @@ mod project_controller_tests {
         ProjectController::init_project(Some("rust".to_string()), "business".to_string()).unwrap();
 
         // Try to initialize again
-        let result = ProjectController::init_project(Some("rust".to_string()), "business".to_string());
-        
+        let result =
+            ProjectController::init_project(Some("rust".to_string()), "business".to_string());
+
         assert!(result.is_ok());
         let display = result.unwrap();
         assert!(!display.is_success());
@@ -619,7 +616,7 @@ mod project_controller_tests {
             "business".to_string(),
             "sqlite".to_string(),
         );
-        
+
         assert!(result.is_ok());
         let display = result.unwrap();
         assert!(display.is_success());
@@ -646,7 +643,7 @@ mod project_controller_tests {
         assert!(result.is_ok());
         let methodologies = result.unwrap();
         assert!(!methodologies.is_empty());
-        
+
         // Verify structure
         for methodology in methodologies {
             assert!(!methodology.name.is_empty());

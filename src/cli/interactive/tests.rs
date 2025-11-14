@@ -56,7 +56,7 @@ mod interactive_runner_tests {
         assert!(result.is_ok());
         let methodologies = result.unwrap();
         assert!(!methodologies.is_empty());
-        
+
         // Verify methodology info structure
         for methodology in methodologies {
             assert!(!methodology.name.is_empty());
@@ -244,7 +244,7 @@ mod workflow_tests {
 
         // Create use cases with different methodologies
         let methodologies = vec!["business", "developer", "feature", "tester"];
-        
+
         for (i, methodology) in methodologies.iter().enumerate() {
             let result = runner.create_use_case_interactive(
                 format!("UC {}", i + 1),

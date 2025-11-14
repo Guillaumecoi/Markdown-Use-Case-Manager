@@ -82,8 +82,13 @@ impl SqliteUseCaseRepository {
     }
 
     /// Load scenarios for a use case from relational tables (Connection version).
-    fn load_scenarios_for_use_case(conn: &Connection, use_case_id: &str) -> Result<Vec<crate::core::domain::Scenario>> {
-        use crate::core::domain::{Scenario, ScenarioStep, ScenarioReference, ReferenceType, ScenarioType, Status};
+    fn load_scenarios_for_use_case(
+        conn: &Connection,
+        use_case_id: &str,
+    ) -> Result<Vec<crate::core::domain::Scenario>> {
+        use crate::core::domain::{
+            ReferenceType, Scenario, ScenarioReference, ScenarioStep, ScenarioType, Status,
+        };
 
         let mut scenarios = Vec::new();
 
@@ -92,31 +97,47 @@ impl SqliteUseCaseRepository {
             "SELECT id, title, description, scenario_type, status, persona, created_at, updated_at, extra_json
              FROM scenarios WHERE use_case_id = ? ORDER BY id"
         )?;
-        
+
         let scenario_rows = stmt.query_map([use_case_id], |row| {
             let scenario_id: String = row.get(0)?;
             let extra_json: String = row.get(8)?;
             let extra: std::collections::HashMap<String, serde_json::Value> =
                 serde_json::from_str(&extra_json).unwrap_or_default();
 
-            Ok((scenario_id, (
-                row.get::<_, String>(1)?,  // title
-                row.get::<_, String>(2)?,  // description
-                row.get::<_, String>(3)?,  // scenario_type
-                row.get::<_, String>(4)?,  // status
-                row.get::<_, Option<String>>(5)?,  // persona
-                row.get::<_, String>(6)?,  // created_at
-                row.get::<_, String>(7)?,  // updated_at
-                extra,
-            )))
+            Ok((
+                scenario_id,
+                (
+                    row.get::<_, String>(1)?,         // title
+                    row.get::<_, String>(2)?,         // description
+                    row.get::<_, String>(3)?,         // scenario_type
+                    row.get::<_, String>(4)?,         // status
+                    row.get::<_, Option<String>>(5)?, // persona
+                    row.get::<_, String>(6)?,         // created_at
+                    row.get::<_, String>(7)?,         // updated_at
+                    extra,
+                ),
+            ))
         })?;
 
         for scenario_result in scenario_rows {
-            let (scenario_id, (title, description, scenario_type_str, status_str, persona, created_at_str, updated_at_str, extra)) = scenario_result?;
+            let (
+                scenario_id,
+                (
+                    title,
+                    description,
+                    scenario_type_str,
+                    status_str,
+                    persona,
+                    created_at_str,
+                    updated_at_str,
+                    extra,
+                ),
+            ) = scenario_result?;
 
             // Parse scenario type and status
             let scenario_type = scenario_type_str.parse().unwrap_or_default();
-            let status = crate::core::domain::Status::from_str(&status_str).unwrap_or(crate::core::domain::Status::Planned);
+            let status = crate::core::domain::Status::from_str(&status_str)
+                .unwrap_or(crate::core::domain::Status::Planned);
 
             // Load steps
             let mut steps_stmt = conn.prepare(
@@ -137,14 +158,16 @@ impl SqliteUseCaseRepository {
             let mut precond_stmt = conn.prepare(
                 "SELECT condition_text FROM scenario_preconditions WHERE scenario_id = ? ORDER BY condition_order"
             )?;
-            let precond_rows = precond_stmt.query_map([&scenario_id], |row| row.get::<_, String>(0))?;
+            let precond_rows =
+                precond_stmt.query_map([&scenario_id], |row| row.get::<_, String>(0))?;
             let preconditions: Vec<String> = precond_rows.collect::<Result<Vec<_>, _>>()?;
 
             // Load postconditions
             let mut postcond_stmt = conn.prepare(
                 "SELECT condition_text FROM scenario_postconditions WHERE scenario_id = ? ORDER BY condition_order"
             )?;
-            let postcond_rows = postcond_stmt.query_map([&scenario_id], |row| row.get::<_, String>(0))?;
+            let postcond_rows =
+                postcond_stmt.query_map([&scenario_id], |row| row.get::<_, String>(0))?;
             let postconditions: Vec<String> = postcond_rows.collect::<Result<Vec<_>, _>>()?;
 
             // Load references
@@ -153,7 +176,9 @@ impl SqliteUseCaseRepository {
             )?;
             let ref_rows = ref_stmt.query_map([&scenario_id], |row| {
                 let ref_type_str: String = row.get(0)?;
-                let ref_type = ref_type_str.parse().unwrap_or(crate::core::domain::ReferenceType::UseCase);
+                let ref_type = ref_type_str
+                    .parse()
+                    .unwrap_or(crate::core::domain::ReferenceType::UseCase);
                 Ok(ScenarioReference {
                     ref_type,
                     target_id: row.get(1)?,
@@ -175,8 +200,12 @@ impl SqliteUseCaseRepository {
                 postconditions,
                 references,
                 metadata: crate::core::domain::Metadata {
-                    created_at: created_at_str.parse().context("Failed to parse created_at")?,
-                    updated_at: updated_at_str.parse().context("Failed to parse updated_at")?,
+                    created_at: created_at_str
+                        .parse()
+                        .context("Failed to parse created_at")?,
+                    updated_at: updated_at_str
+                        .parse()
+                        .context("Failed to parse updated_at")?,
                 },
                 extra,
             });
@@ -186,8 +215,11 @@ impl SqliteUseCaseRepository {
     }
 
     /// Load scenarios for a use case from relational tables (Transaction version).
-    fn load_scenarios_for_use_case_tx(tx: &Transaction, use_case_id: &str) -> Result<Vec<crate::core::domain::Scenario>> {
-        use crate::core::domain::{Scenario, ScenarioStep, ScenarioReference};
+    fn load_scenarios_for_use_case_tx(
+        tx: &Transaction,
+        use_case_id: &str,
+    ) -> Result<Vec<crate::core::domain::Scenario>> {
+        use crate::core::domain::{Scenario, ScenarioReference, ScenarioStep};
 
         let mut scenarios = Vec::new();
 
@@ -196,31 +228,47 @@ impl SqliteUseCaseRepository {
             "SELECT id, title, description, scenario_type, status, persona, created_at, updated_at, extra_json
              FROM scenarios WHERE use_case_id = ? ORDER BY id"
         )?;
-        
+
         let scenario_rows = stmt.query_map([use_case_id], |row| {
             let scenario_id: String = row.get(0)?;
             let extra_json: String = row.get(8)?;
             let extra: std::collections::HashMap<String, serde_json::Value> =
                 serde_json::from_str(&extra_json).unwrap_or_default();
 
-            Ok((scenario_id, (
-                row.get::<_, String>(1)?,  // title
-                row.get::<_, String>(2)?,  // description
-                row.get::<_, String>(3)?,  // scenario_type
-                row.get::<_, String>(4)?,  // status
-                row.get::<_, Option<String>>(5)?,  // persona
-                row.get::<_, String>(6)?,  // created_at
-                row.get::<_, String>(7)?,  // updated_at
-                extra,
-            )))
+            Ok((
+                scenario_id,
+                (
+                    row.get::<_, String>(1)?,         // title
+                    row.get::<_, String>(2)?,         // description
+                    row.get::<_, String>(3)?,         // scenario_type
+                    row.get::<_, String>(4)?,         // status
+                    row.get::<_, Option<String>>(5)?, // persona
+                    row.get::<_, String>(6)?,         // created_at
+                    row.get::<_, String>(7)?,         // updated_at
+                    extra,
+                ),
+            ))
         })?;
 
         for scenario_result in scenario_rows {
-            let (scenario_id, (title, description, scenario_type_str, status_str, persona, created_at_str, updated_at_str, extra)) = scenario_result?;
+            let (
+                scenario_id,
+                (
+                    title,
+                    description,
+                    scenario_type_str,
+                    status_str,
+                    persona,
+                    created_at_str,
+                    updated_at_str,
+                    extra,
+                ),
+            ) = scenario_result?;
 
             // Parse scenario type and status
             let scenario_type = scenario_type_str.parse().unwrap_or_default();
-            let status = crate::core::domain::Status::from_str(&status_str).unwrap_or(crate::core::domain::Status::Planned);
+            let status = crate::core::domain::Status::from_str(&status_str)
+                .unwrap_or(crate::core::domain::Status::Planned);
 
             // Load steps
             let mut steps_stmt = tx.prepare(
@@ -241,14 +289,16 @@ impl SqliteUseCaseRepository {
             let mut precond_stmt = tx.prepare(
                 "SELECT condition_text FROM scenario_preconditions WHERE scenario_id = ? ORDER BY condition_order"
             )?;
-            let precond_rows = precond_stmt.query_map([&scenario_id], |row| row.get::<_, String>(0))?;
+            let precond_rows =
+                precond_stmt.query_map([&scenario_id], |row| row.get::<_, String>(0))?;
             let preconditions: Vec<String> = precond_rows.collect::<Result<Vec<_>, _>>()?;
 
             // Load postconditions
             let mut postcond_stmt = tx.prepare(
                 "SELECT condition_text FROM scenario_postconditions WHERE scenario_id = ? ORDER BY condition_order"
             )?;
-            let postcond_rows = postcond_stmt.query_map([&scenario_id], |row| row.get::<_, String>(0))?;
+            let postcond_rows =
+                postcond_stmt.query_map([&scenario_id], |row| row.get::<_, String>(0))?;
             let postconditions: Vec<String> = postcond_rows.collect::<Result<Vec<_>, _>>()?;
 
             // Load references
@@ -257,7 +307,9 @@ impl SqliteUseCaseRepository {
             )?;
             let ref_rows = ref_stmt.query_map([&scenario_id], |row| {
                 let ref_type_str: String = row.get(0)?;
-                let ref_type = ref_type_str.parse().unwrap_or(crate::core::domain::ReferenceType::UseCase);
+                let ref_type = ref_type_str
+                    .parse()
+                    .unwrap_or(crate::core::domain::ReferenceType::UseCase);
                 Ok(ScenarioReference {
                     ref_type,
                     target_id: row.get(1)?,
@@ -279,8 +331,12 @@ impl SqliteUseCaseRepository {
                 postconditions,
                 references,
                 metadata: crate::core::domain::Metadata {
-                    created_at: created_at_str.parse().context("Failed to parse created_at")?,
-                    updated_at: updated_at_str.parse().context("Failed to parse updated_at")?,
+                    created_at: created_at_str
+                        .parse()
+                        .context("Failed to parse created_at")?,
+                    updated_at: updated_at_str
+                        .parse()
+                        .context("Failed to parse updated_at")?,
                 },
                 extra,
             });
@@ -497,7 +553,7 @@ impl SqliteUseCaseRepository {
                     preconditions: Vec::new(),  // Will be populated below
                     postconditions: Vec::new(), // Will be populated below
                     use_case_references: Vec::new(), // Will be populated below
-                    scenarios: Vec::new(), // Will be loaded from relational tables
+                    scenarios: Vec::new(),      // Will be loaded from relational tables
                     extra,
                 })
             })
@@ -620,7 +676,7 @@ impl SqliteUseCaseRepository {
                     preconditions: Vec::new(),  // Will be populated below
                     postconditions: Vec::new(), // Will be populated below
                     use_case_references: Vec::new(), // Will be populated below
-                    scenarios: Vec::new(), // Will be loaded from relational tables
+                    scenarios: Vec::new(),      // Will be loaded from relational tables
                     extra,
                 })
             })

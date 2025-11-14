@@ -289,7 +289,10 @@ fn test_toml_reference_with_all_relationship_types() {
     // Verify all relationship types preserved
     assert_eq!(loaded.scenarios[0].references.len(), 5);
     for (i, relationship) in relationships.iter().enumerate() {
-        assert_eq!(loaded.scenarios[0].references[i].relationship, *relationship);
+        assert_eq!(
+            loaded.scenarios[0].references[i].relationship,
+            *relationship
+        );
     }
 }
 
@@ -324,6 +327,9 @@ fn test_sqlite_reference_with_all_relationship_types() {
     // Verify all relationship types preserved
     assert_eq!(loaded.scenarios[0].references.len(), 5);
     for (i, relationship) in relationships.iter().enumerate() {
-        assert_eq!(loaded.scenarios[0].references[i].relationship, *relationship);
+        assert_eq!(
+            loaded.scenarios[0].references[i].relationship,
+            *relationship
+        );
     }
 }
