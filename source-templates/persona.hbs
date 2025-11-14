@@ -1,42 +1,46 @@
-# Persona: {{name}}
+# {{emoji}} {{name}}
 
+**ID:** `{{id}}`
+
+## Description
 {{description}}
 
-## Basic Information
+## Goal
+{{goal}}
 
-- **Role:** {{role}}
-- **Experience Level:** {{experience_level}}
-- **Department/Context:** {{department}}
+{{#if context}}
+## Context
+{{context}}
+{{/if}}
 
-## Key Characteristics
+{{#if tech_level}}
+## Technical Proficiency
+**Level:** {{tech_level}}/5 {{#if (eq tech_level 1)}}⭐{{/if}}{{#if (eq tech_level 2)}}⭐⭐{{/if}}{{#if (eq tech_level 3)}}⭐⭐⭐{{/if}}{{#if (eq tech_level 4)}}⭐⭐⭐⭐{{/if}}{{#if (eq tech_level 5)}}⭐⭐⭐⭐⭐{{/if}}
+{{/if}}
 
-{{#each characteristics}}
+{{#if usage_frequency}}
+## Usage Frequency
+**{{usage_frequency}}**
+{{/if}}
+
+{{#if extra}}
+## Additional Information
+{{#each extra}}
+### {{@key}}
+{{#if (is_array this)}}
+{{#each this}}
 - {{this}}
 {{/each}}
-
-## Primary Goals
-
-{{#each goals}}
-- {{this}}
+{{else if (is_object this)}}
+```json
+{{json this}}
+```
+{{else}}
+{{this}}
+{{/if}}
 {{/each}}
-
-## Main Challenges
-
-{{#each pain_points}}
-- {{this}}
-{{/each}}
-
-## Technical Background
-
-{{#each technical_skills}}
-- {{this}}
-{{/each}}
-
-## Usage Context
-
-{{#each context_of_use}}
-- {{this}}
-{{/each}}
+{{/if}}
 
 ---
-*This persona follows a simple, straightforward format for quick reference and easy updates.*
+*Created: {{metadata.created_at}}*  
+{{#if metadata.updated_at}}*Last Updated: {{metadata.updated_at}}*{{/if}}
