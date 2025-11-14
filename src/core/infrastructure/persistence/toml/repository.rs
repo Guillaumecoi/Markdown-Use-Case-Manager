@@ -30,61 +30,6 @@ impl UseCaseRepository for TomlUseCaseRepository {
         self.save_markdown_only(use_case_id, markdown_content)
     }
 
-    fn find_by_category(&self, category: &str) -> Result<Vec<UseCase>> {
-        let all_cases = self.load_all()?;
-        Ok(all_cases
-            .into_iter()
-            .filter(|uc| uc.category == category)
-            .collect())
-    }
-
-    fn find_by_priority(&self, priority: &str) -> Result<Vec<UseCase>> {
-        let all_cases = self.load_all()?;
-        Ok(all_cases
-            .into_iter()
-            .filter(|uc| uc.priority.to_string().to_lowercase() == priority.to_lowercase())
-            .collect())
-    }
-
-    fn search_by_title(&self, query: &str) -> Result<Vec<UseCase>> {
-        let all_cases = self.load_all()?;
-        let query_lower = query.to_lowercase();
-        Ok(all_cases
-            .into_iter()
-            .filter(|uc| uc.title.to_lowercase().contains(&query_lower))
-            .collect())
-    }
-
-    fn save_batch(&self, use_cases: &[UseCase]) -> Result<()> {
-        for use_case in use_cases {
-            self.save(use_case)?;
-        }
-        Ok(())
-    }
-
-    fn delete_batch(&self, ids: &[&str]) -> Result<()> {
-        for id in ids {
-            self.delete(id)?;
-        }
-        Ok(())
-    }
-
-    fn backend_name(&self) -> &'static str {
-        "toml"
-    }
-
-    fn health_check(&self) -> Result<()> {
-        let toml_dir = Path::new(self.config.directories.get_toml_dir());
-        if !toml_dir.exists() {
-            fs::create_dir_all(toml_dir)?;
-        }
-        // Try to create a temporary file to check write permissions
-        let test_file = toml_dir.join(".health_check.tmp");
-        fs::write(&test_file, "test")?;
-        fs::remove_file(&test_file)?;
-        Ok(())
-    }
-
     fn load_all(&self) -> Result<Vec<UseCase>> {
         let toml_dir = Path::new(self.config.directories.get_toml_dir());
         let mut use_cases = Vec::new();
@@ -120,35 +65,6 @@ impl UseCaseRepository for TomlUseCaseRepository {
     fn load_by_id(&self, id: &str) -> Result<Option<UseCase>> {
         let all_cases = self.load_all()?;
         Ok(all_cases.into_iter().find(|uc| uc.id == id))
-    }
-
-    fn delete(&self, id: &str) -> Result<()> {
-        // Find the use case to get its category
-        let use_case = self
-            .load_by_id(id)?
-            .ok_or_else(|| anyhow::anyhow!("Use case not found: {}", id))?;
-
-        let category_snake = to_snake_case(&use_case.category);
-
-        // Delete TOML file
-        let toml_dir = Path::new(self.config.directories.get_toml_dir()).join(&category_snake);
-        let toml_path = toml_dir.join(format!("{}.toml", id));
-        if toml_path.exists() {
-            fs::remove_file(&toml_path)?;
-        }
-
-        // Delete markdown file
-        let md_dir = Path::new(&self.config.directories.use_case_dir).join(&category_snake);
-        let md_path = md_dir.join(format!("{}.md", id));
-        if md_path.exists() {
-            fs::remove_file(&md_path)?;
-        }
-
-        Ok(())
-    }
-
-    fn exists(&self, id: &str) -> Result<bool> {
-        Ok(self.load_by_id(id)?.is_some())
     }
 }
 

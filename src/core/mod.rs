@@ -20,7 +20,7 @@ pub use domain::{
 pub use infrastructure::{
     file_operations, CustomFieldConfig, LanguageRegistry, Methodology, MethodologyDefinition,
     MethodologyRegistry, RepositoryFactory, SqliteUseCaseRepository, TemplateEngine,
-    TomlUseCaseRepository, TransactionalRepository, UseCaseRepository,
+    TomlUseCaseRepository, UseCaseRepository,
 };
 
 // Re-export utility functions

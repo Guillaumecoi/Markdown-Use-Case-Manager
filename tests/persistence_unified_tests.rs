@@ -67,17 +67,8 @@ fn create_sqlite_repository() -> (TempDir, Box<dyn UseCaseRepository>) {
 
 /// Run all persistence tests against a repository
 fn run_all_tests(repo: &dyn UseCaseRepository) {
-    test_backend_name(repo);
-    test_health_check(repo);
     test_save_and_load(repo);
     test_save_with_extra_fields(repo);
-    test_delete(repo);
-    test_exists(repo);
-    test_find_by_category(repo);
-    test_find_by_priority(repo);
-    test_search_by_title(repo);
-    test_save_batch(repo);
-    test_delete_batch(repo);
     test_load_all(repo);
     test_save_markdown(repo);
 }
@@ -97,21 +88,6 @@ fn test_sqlite_backend() {
 }
 
 // ===== Individual Test Functions =====
-
-fn test_backend_name(repo: &dyn UseCaseRepository) {
-    // Test backend identification
-    let name = repo.backend_name();
-    assert!(
-        name == "toml" || name == "sqlite",
-        "Backend name should be 'toml' or 'sqlite', got: {}",
-        name
-    );
-}
-
-fn test_health_check(repo: &dyn UseCaseRepository) {
-    // Test health check
-    repo.health_check().expect("Health check should pass");
-}
 
 fn test_save_and_load(repo: &dyn UseCaseRepository) {
     let use_case = create_test_use_case();
