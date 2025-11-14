@@ -5,12 +5,15 @@
 //! identical interfaces through the UseCaseRepository trait.
 
 use crate::config::{Config, StorageBackend};
-use crate::core::infrastructure::persistence::sqlite::SqliteUseCaseRepository;
-use crate::core::infrastructure::persistence::toml::TomlUseCaseRepository;
+use crate::core::domain::PersonaRepository;
+use crate::core::infrastructure::persistence::sqlite::{SqlitePersonaRepository, SqliteUseCaseRepository};
+use crate::core::infrastructure::persistence::toml::{TomlPersonaRepository, TomlUseCaseRepository};
 use crate::core::infrastructure::persistence::traits::UseCaseRepository;
 use anyhow::{Context, Result};
+use rusqlite::Connection;
+use std::sync::{Arc, Mutex};
 
-/// Repository factory for creating use case repositories based on configuration
+/// Repository factory for creating use case and persona repositories based on configuration
 pub struct RepositoryFactory;
 
 impl RepositoryFactory {
@@ -72,6 +75,74 @@ impl RepositoryFactory {
             }
         }
     }
+
+    /// Create a persona repository based on the provided configuration
+    ///
+    /// # Arguments
+    /// * `config` - The application configuration containing storage backend settings
+    ///
+    /// # Returns
+    /// A boxed trait object implementing PersonaRepository, or an error if creation fails
+    pub fn create_persona_repository(config: &Config) -> Result<Box<dyn PersonaRepository>> {
+        match config.storage.backend {
+            StorageBackend::Toml => {
+                let repo = TomlPersonaRepository::new(config.clone());
+                Ok(Box::new(repo))
+            }
+            StorageBackend::Sqlite => {
+                // For SQLite, we need to determine the database path
+                let db_path = std::path::Path::new(".config")
+                    .join("mucm")
+                    .join("usecases.db");
+
+                // Create parent directories if they don't exist
+                if let Some(parent) = db_path.parent() {
+                    std::fs::create_dir_all(parent).with_context(|| {
+                        format!("Failed to create database directory {:?}", parent)
+                    })?;
+                }
+
+                // Open connection and initialize schema
+                let conn = Connection::open(&db_path)
+                    .with_context(|| format!("Failed to open database at {:?}", db_path))?;
+                SqlitePersonaRepository::initialize(&conn)?;
+
+                let repo = SqlitePersonaRepository::new(Arc::new(Mutex::new(conn)));
+                Ok(Box::new(repo))
+            }
+        }
+    }
+
+    /// Create a persona repository with a custom database path (SQLite only)
+    ///
+    /// This is useful for testing or when you want to specify a custom database location.
+    ///
+    /// # Arguments
+    /// * `config` - The application configuration
+    /// * `db_path` - Custom path for the SQLite database (ignored for TOML backend)
+    ///
+    /// # Returns
+    /// A boxed trait object implementing PersonaRepository
+    pub fn create_persona_repository_with_db_path<P: AsRef<std::path::Path>>(
+        config: &Config,
+        db_path: P,
+    ) -> Result<Box<dyn PersonaRepository>> {
+        match config.storage.backend {
+            StorageBackend::Toml => {
+                let repo = TomlPersonaRepository::new(config.clone());
+                Ok(Box::new(repo))
+            }
+            StorageBackend::Sqlite => {
+                // Open connection and initialize schema
+                let conn = Connection::open(db_path.as_ref())
+                    .with_context(|| format!("Failed to open database at {:?}", db_path.as_ref()))?;
+                SqlitePersonaRepository::initialize(&conn)?;
+
+                let repo = SqlitePersonaRepository::new(Arc::new(Mutex::new(conn)));
+                Ok(Box::new(repo))
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -127,6 +198,91 @@ mod tests {
         let custom_db_path = temp_dir.path().join("custom.db");
         let repository = RepositoryFactory::create_with_db_path(&config, &custom_db_path)?;
         assert_eq!(repository.backend_name(), "sqlite");
+
+        // Verify the database file was created
+        assert!(custom_db_path.exists());
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_create_toml_persona_repository() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        env::set_current_dir(&temp_dir)?;
+
+        // Create a minimal config for testing
+        let mut config = Config::default();
+        config.storage.backend = StorageBackend::Toml;
+
+        let repository = RepositoryFactory::create_persona_repository(&config)?;
+        
+        // Test basic operations
+        use crate::core::domain::Persona;
+        let persona = Persona::new(
+            "test-persona".to_string(),
+            "Test User".to_string(),
+            "Test description".to_string(),
+            "Test goal".to_string(),
+        );
+        
+        repository.save(&persona)?;
+        assert!(repository.exists("test-persona")?);
+        
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_create_sqlite_persona_repository() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        env::set_current_dir(&temp_dir)?;
+
+        // Create a minimal config for testing
+        let mut config = Config::default();
+        config.storage.backend = StorageBackend::Sqlite;
+
+        let repository = RepositoryFactory::create_persona_repository(&config)?;
+        
+        // Test basic operations
+        use crate::core::domain::Persona;
+        let persona = Persona::new(
+            "test-persona".to_string(),
+            "Test User".to_string(),
+            "Test description".to_string(),
+            "Test goal".to_string(),
+        );
+        
+        repository.save(&persona)?;
+        assert!(repository.exists("test-persona")?);
+        
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_create_persona_repository_with_custom_db_path() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        env::set_current_dir(&temp_dir)?;
+
+        // Create a minimal config for testing
+        let mut config = Config::default();
+        config.storage.backend = StorageBackend::Sqlite;
+
+        let custom_db_path = temp_dir.path().join("custom.db");
+        let repository = RepositoryFactory::create_persona_repository_with_db_path(&config, &custom_db_path)?;
+        
+        // Test basic operations
+        use crate::core::domain::Persona;
+        let persona = Persona::new(
+            "test-persona".to_string(),
+            "Test User".to_string(),
+            "Test description".to_string(),
+            "Test goal".to_string(),
+        );
+        
+        repository.save(&persona)?;
+        assert!(repository.exists("test-persona")?);
 
         // Verify the database file was created
         assert!(custom_db_path.exists());
