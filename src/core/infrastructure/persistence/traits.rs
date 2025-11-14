@@ -33,13 +33,6 @@ pub trait UseCaseRepository {
     ///
     /// # Returns
     /// `Ok(())` on success, error if save fails
-    ///
-    /// # Examples
-    /// ```ignore
-    /// let repo = create_repository();
-    /// let use_case = UseCase::new(...);
-    /// repo.save(&use_case)?;
-    /// ```
     fn save(&self, use_case: &UseCase) -> Result<()>;
 
     /// Load all use cases from storage.
@@ -187,16 +180,8 @@ pub trait UseCaseRepository {
 /// Transaction support for backends that support atomic operations.
 ///
 /// This trait is optional and only implemented by backends that can
-/// guarantee atomicity (e.g., SQLite).
-///
-/// # Example
-/// ```ignore
-/// repo.with_transaction(|tx_repo| {
-///     tx_repo.save(&uc1)?;
-///     tx_repo.save(&uc2)?;
-///     Ok(()) // Both saved or none saved
-/// })?;
-/// ```
+/// guarantee atomicity (e.g., SQLite). The `with_transaction` method ensures
+/// that either all operations succeed (commit) or none do (rollback).
 pub trait TransactionalRepository: UseCaseRepository {
     /// Execute operations within a transaction.
     ///

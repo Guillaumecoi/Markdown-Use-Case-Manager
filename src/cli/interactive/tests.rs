@@ -1,6 +1,11 @@
 //! Interactive runner tests
 //!
 //! Tests for the interactive CLI runner, focusing on basic workflows and coordination.
+//!
+//! ## Running Tests
+//!
+//! These tests modify global state and should be run with `cargo nextest run` for best results.
+//! See the documentation in `controller/tests.rs` for more details.
 
 #[cfg(test)]
 mod interactive_runner_tests {

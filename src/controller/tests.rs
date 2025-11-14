@@ -1,6 +1,19 @@
 //! Controller integration tests
 //!
 //! Tests for the controller layer, focusing on basic operations and scenario management.
+//!
+//! ## Running Tests
+//!
+//! These tests modify global state (current working directory) and are marked with `#[serial]`
+//! to run sequentially. For best results, use `cargo nextest run` which provides better test
+//! isolation than the standard test runner.
+//!
+//! If using `cargo test`, some tests may fail due to directory state pollution between test
+//! modules. In that case, run the test modules individually:
+//! ```sh
+//! cargo test --lib controller::tests::use_case_controller_tests
+//! cargo test --lib controller::tests::project_controller_tests
+//! ```
 
 #[cfg(test)]
 mod use_case_controller_tests {

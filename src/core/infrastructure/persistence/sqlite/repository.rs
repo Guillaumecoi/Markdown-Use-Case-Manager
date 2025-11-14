@@ -44,11 +44,6 @@ impl SqliteUseCaseRepository {
     ///
     /// # Returns
     /// New repository instance, or error if database setup fails
-    ///
-    /// # Examples
-    /// ```ignore
-    /// let repo = SqliteUseCaseRepository::new("usecases.db")?;
-    /// ```
     pub fn new<P: AsRef<Path>>(db_path: P) -> Result<Self> {
         let db_path_buf = db_path.as_ref().to_path_buf();
         let conn = Connection::open(&db_path)
