@@ -1,4 +1,4 @@
-use super::{Metadata, ScenarioReference, ScenarioStep, ScenarioType, Status, UseCase};
+use super::{Actor, Metadata, ScenarioReference, ScenarioStep, ScenarioType, Status, UseCase};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -77,7 +77,7 @@ impl Scenario {
     }
 
     /// Get list of actors involved in this scenario
-    pub fn actors(&self) -> Vec<String> {
+    pub fn actors(&self) -> Vec<Actor> {
         self.steps
             .iter()
             .map(|step| step.actor.clone())
@@ -207,13 +207,13 @@ mod tests {
 
         let step1 = ScenarioStep::new(
             2,
-            "User".to_string(),
+            Actor::User,
             "enters".to_string(),
             "credentials".to_string(),
         );
         let step2 = ScenarioStep::new(
             1,
-            "User".to_string(),
+            Actor::User,
             "navigates".to_string(),
             "to login page".to_string(),
         );
@@ -268,27 +268,27 @@ mod tests {
 
         scenario.add_step(ScenarioStep::new(
             1,
-            "User".to_string(),
+            Actor::User,
             "enters".to_string(),
             "credentials".to_string(),
         ));
         scenario.add_step(ScenarioStep::new(
             2,
-            "System".to_string(),
+            Actor::System,
             "verifies".to_string(),
             "credentials".to_string(),
         ));
         scenario.add_step(ScenarioStep::new(
             3,
-            "User".to_string(),
+            Actor::User,
             "sees".to_string(),
             "dashboard".to_string(),
         ));
 
         let actors = scenario.actors();
         assert_eq!(actors.len(), 2);
-        assert!(actors.contains(&"User".to_string()));
-        assert!(actors.contains(&"System".to_string()));
+        assert!(actors.contains(&Actor::User));
+        assert!(actors.contains(&Actor::System));
     }
 
     #[test]
@@ -373,7 +373,7 @@ mod tests {
 
         scenario.add_step(ScenarioStep::new(
             1,
-            "User".to_string(),
+            Actor::User,
             "enters".to_string(),
             "credentials".to_string(),
         ));

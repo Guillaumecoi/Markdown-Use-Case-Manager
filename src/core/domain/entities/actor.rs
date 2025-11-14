@@ -1,3 +1,4 @@
+use rusqlite::types::{FromSql, FromSqlError, FromSqlResult, ToSql, ToSqlOutput, ValueRef};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
@@ -175,5 +176,19 @@ mod tests {
         assert_eq!(set.len(), 2);
         assert!(set.contains(&Actor::User));
         assert!(set.contains(&Actor::System));
+    }
+}
+
+// SQL conversion implementations for SQLite persistence
+impl ToSql for Actor {
+    fn to_sql(&self) -> rusqlite::Result<ToSqlOutput<'_>> {
+        Ok(ToSqlOutput::from(self.name().to_string()))
+    }
+}
+
+impl FromSql for Actor {
+    fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
+        let s = value.as_str()?;
+        Actor::from_str(s).map_err(|e| FromSqlError::Other(Box::new(std::io::Error::new(std::io::ErrorKind::InvalidData, e))))
     }
 }
