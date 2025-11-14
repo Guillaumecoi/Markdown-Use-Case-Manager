@@ -106,6 +106,74 @@ impl InteractiveRunner {
         let controller = self.ensure_use_case_controller()?;
         controller.show_status()
     }
+
+    /// Create a persona interactively
+    pub fn create_persona_interactive(
+        &mut self,
+        id: String,
+        name: String,
+        description: String,
+        goal: String,
+        context: Option<String>,
+        tech_level: Option<u8>,
+        usage_frequency: Option<String>,
+    ) -> Result<String> {
+        use crate::cli::standard::handle_persona_command;
+        use crate::cli::args::PersonaCommands;
+        use crate::config::Config;
+
+        let config = Config::load()?;
+        let command = PersonaCommands::Create {
+            id,
+            name,
+            description,
+            goal,
+            context,
+            tech_level,
+            usage_frequency,
+        };
+
+        handle_persona_command(command, &config)?;
+        Ok("Persona created successfully!".to_string())
+    }
+
+    /// List all personas
+    pub fn list_personas(&self) -> Result<()> {
+        use crate::cli::standard::handle_persona_command;
+        use crate::cli::args::PersonaCommands;
+        use crate::config::Config;
+
+        let config = Config::load()?;
+        let command = PersonaCommands::List;
+        handle_persona_command(command, &config)
+    }
+
+    /// Show persona details
+    pub fn show_persona(&self, id: &str) -> Result<()> {
+        use crate::cli::standard::handle_persona_command;
+        use crate::cli::args::PersonaCommands;
+        use crate::config::Config;
+
+        let config = Config::load()?;
+        let command = PersonaCommands::Show {
+            id: id.to_string(),
+        };
+        handle_persona_command(command, &config)
+    }
+
+    /// Delete a persona
+    pub fn delete_persona(&self, id: &str) -> Result<String> {
+        use crate::cli::standard::handle_persona_command;
+        use crate::cli::args::PersonaCommands;
+        use crate::config::Config;
+
+        let config = Config::load()?;
+        let command = PersonaCommands::Delete {
+            id: id.to_string(),
+        };
+        handle_persona_command(command, &config)?;
+        Ok(format!("Persona '{}' deleted successfully!", id))
+    }
 }
 
 // Re-export for convenience
