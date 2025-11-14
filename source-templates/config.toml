@@ -25,3 +25,13 @@ reviewer = { label = "Reviewer", type = "string", required = false }
 created = true      # Auto-set when use case is created
 last_updated = true # Auto-updated when use case is modified
 
+# Global custom fields for personas (optional)
+# These fields will be available when creating personas and will be stored in the persona's extra fields
+[persona_fields]
+department = { label = "Department", type = "string", required = false }
+experience_level = { label = "Experience Level", type = "string", required = false }
+pain_points = { label = "Pain Points", type = "array", required = false }
+motivations = { label = "Motivations", type = "array", required = false }
+technical_skills = { label = "Technical Skills", type = "array", required = false }
+tools_used = { label = "Tools Used", type = "array", required = false }
+

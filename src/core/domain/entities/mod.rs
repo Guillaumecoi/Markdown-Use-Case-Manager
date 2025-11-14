@@ -1,7 +1,9 @@
 // Domain entities - Core business objects
 
 // Private modules
+mod actor;
 mod metadata;
+mod persona;
 mod reference_type;
 mod scenario;
 mod scenario_reference;
@@ -12,7 +14,9 @@ mod use_case;
 mod use_case_reference;
 
 // Explicit public exports (visible to parent modules)
+pub use actor::Actor;
 pub use metadata::Metadata;
+pub use persona::Persona;
 pub use reference_type::ReferenceType;
 pub use scenario::Scenario;
 pub use scenario_reference::ScenarioReference;

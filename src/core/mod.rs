@@ -12,15 +12,15 @@ pub use application::UseCaseApplicationService;
 
 // Re-export domain types (from domain's public interface)
 pub use domain::{
-    Metadata, Priority, ReferenceType, Scenario, ScenarioReference, ScenarioStep, ScenarioType,
-    Status, UseCase, UseCaseReference,
+    Actor, Metadata, Persona, PersonaRepository, Priority, ReferenceType, Scenario,
+    ScenarioReference, ScenarioStep, ScenarioType, Status, UseCase, UseCaseReference,
 };
 
 // Re-export infrastructure types (from infrastructure's public interface)
 pub use infrastructure::{
-    file_operations, LanguageRegistry, Methodology, MethodologyDefinition, MethodologyRegistry,
-    RepositoryFactory, SqliteUseCaseRepository, TemplateEngine, TomlUseCaseRepository,
-    TransactionalRepository, UseCaseRepository,
+    file_operations, CustomFieldConfig, LanguageRegistry, Methodology, MethodologyDefinition,
+    MethodologyRegistry, RepositoryFactory, SqliteUseCaseRepository, TemplateEngine,
+    TomlUseCaseRepository, TransactionalRepository, UseCaseRepository,
 };
 
 // Re-export utility functions

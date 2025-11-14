@@ -8,6 +8,7 @@ use anyhow::Result;
 use crate::cli::interactive::menus::settings::Settings;
 use crate::cli::interactive::ui::UI;
 use crate::cli::interactive::workflows::initialization::Initialization;
+use crate::cli::interactive::workflows::persona::PersonaWorkflow;
 use crate::cli::interactive::workflows::use_case::UseCaseWorkflow;
 use crate::cli::standard::CliRunner;
 
@@ -51,7 +52,13 @@ fn create_main_menu_options() -> Vec<MenuOption<CliRunner>> {
             }
             Ok(false) // Don't exit
         }),
-        MenuOption::new("📋 List all use cases", |runner: &mut CliRunner| {
+        MenuOption::new("� Manage personas", |_| {
+            if let Err(e) = PersonaWorkflow::manage_personas() {
+                UI::show_error(&format!("Error managing personas: {}", e))?;
+            }
+            Ok(false) // Don't exit
+        }),
+        MenuOption::new("�📋 List all use cases", |runner: &mut CliRunner| {
             if let Err(e) = runner.list_use_cases() {
                 UI::show_error(&format!("Error listing use cases: {}", e))?;
             }

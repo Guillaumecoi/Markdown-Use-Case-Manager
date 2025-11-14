@@ -148,6 +148,43 @@ auto_generate_tests = true
 test_framework = "pytest"
 ```
 
+## Custom Fields
+
+### Global Persona Fields
+
+Add custom fields that apply to all personas in your project:
+
+```toml
+[persona_fields]
+department = { label = "Department", type = "string", required = false }
+experience_level = { label = "Experience Level", type = "string", required = false }
+pain_points = { label = "Pain Points", type = "array", required = false }
+technical_skills = { label = "Technical Skills", type = "array", required = false }
+```
+
+**Field types:** `"string"`, `"number"`, `"boolean"`, `"array"`
+
+These fields will appear in your persona TOML files and rendered documentation.
+
+### Methodology-Specific Use Case Fields
+
+Each methodology can have its own custom fields defined in its config. These live in the methodology directory:
+
+**Location:** `source-templates/methodologies/{methodology-name}/config.toml`
+
+**Example:**
+```toml
+[custom_fields]
+risk_level = { label = "Risk Level", type = "string", required = true }
+business_value = { label = "Business Value", type = "number", required = false }
+compliance_tags = { label = "Compliance Tags", type = "array", required = false }
+```
+
+This allows different methodologies to track different information:
+- **Business** methodology might need budget and stakeholder info
+- **Developer** methodology might need technical debt and refactoring notes  
+- **Tester** methodology might need test coverage and defect tracking
+
 ## Need Help?
 
 **Broke something?** Run `mucm status` to check if your config is valid.

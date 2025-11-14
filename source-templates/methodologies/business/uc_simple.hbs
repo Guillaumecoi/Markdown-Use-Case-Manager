@@ -23,10 +23,13 @@
 
 {{/if}}
 {{#if scenarios}}
+## Actors & Personas
+{{#each (unique_actors scenarios)}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}{{#if (has_personas scenarios)}} | Personas: {{#each (unique_personas scenarios)}}🙂 {{this}}{{#unless @last}}, {{/unless}}{{/each}}{{/if}}
+
 ## Scenarios
 
 {{#each scenarios}}
-### {{title}} ({{scenario_type}})
+### {{title}} ({{scenario_type}}){{#if persona}} - 🙂 {{persona}}{{/if}}
 
 {{#each steps}}
 {{order}}. {{actor}} {{action}} {{description}}

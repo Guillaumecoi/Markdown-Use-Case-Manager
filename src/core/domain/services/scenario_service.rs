@@ -1,4 +1,4 @@
-use crate::core::domain::entities::{Scenario, ScenarioStep, ScenarioType, Status, UseCase};
+use crate::core::domain::entities::{Actor, Scenario, ScenarioStep, ScenarioType, Status, UseCase};
 use crate::core::domain::services::ScenarioReferenceValidator;
 use std::collections::HashSet;
 
@@ -22,8 +22,11 @@ impl ScenarioService {
 
         // Validate steps
         for (index, step) in scenario.steps.iter().enumerate() {
-            if step.actor.trim().is_empty() {
-                return Err(format!("Step {}: actor cannot be empty", index + 1));
+            // Actor is an enum so it can't be empty, but we can check for empty Custom actors
+            if let Actor::Custom(name) = &step.actor {
+                if name.trim().is_empty() {
+                    return Err(format!("Step {}: actor name cannot be empty", index + 1));
+                }
             }
             if step.action.trim().is_empty() {
                 return Err(format!("Step {}: action cannot be empty", index + 1));
@@ -46,8 +49,11 @@ impl ScenarioService {
 
     /// Validate that a scenario step is valid
     pub fn validate_scenario_step(step: &ScenarioStep) -> Result<(), String> {
-        if step.actor.trim().is_empty() {
-            return Err("Step actor cannot be empty".to_string());
+        // Actor is an enum so it can't be empty, but we can check for empty Custom actors
+        if let Actor::Custom(name) = &step.actor {
+            if name.trim().is_empty() {
+                return Err("Step actor name cannot be empty".to_string());
+            }
         }
         if step.action.trim().is_empty() {
             return Err("Step action cannot be empty".to_string());
@@ -113,7 +119,7 @@ impl ScenarioService {
     }
 
     /// Get all unique actors in a scenario
-    pub fn get_scenario_actors(scenario: &Scenario) -> Vec<String> {
+    pub fn get_scenario_actors(scenario: &Scenario) -> Vec<Actor> {
         scenario.actors()
     }
 
@@ -243,7 +249,7 @@ mod tests {
         let mut scenario = create_test_scenario();
         scenario.add_step(ScenarioStep::new(
             1,
-            "User".to_string(),
+            Actor::User,
             "clicks".to_string(),
             "button".to_string(),
         ));
@@ -276,13 +282,13 @@ mod tests {
         let mut scenario = create_test_scenario();
         scenario.add_step(ScenarioStep::new(
             1,
-            "User".to_string(),
+            Actor::User,
             "clicks".to_string(),
             "button".to_string(),
         ));
         scenario.add_step(ScenarioStep::new(
             1, // duplicate order
-            "System".to_string(),
+            Actor::System,
             "responds".to_string(),
             "success".to_string(),
         ));
@@ -292,12 +298,7 @@ mod tests {
 
     #[test]
     fn test_validate_scenario_step_valid() {
-        let step = ScenarioStep::new(
-            1,
-            "User".to_string(),
-            "clicks".to_string(),
-            "button".to_string(),
-        );
+        let step = ScenarioStep::new(1, Actor::User, "clicks".to_string(), "button".to_string());
 
         assert!(ScenarioService::validate_scenario_step(&step).is_ok());
     }
@@ -306,7 +307,7 @@ mod tests {
     fn test_validate_scenario_step_empty_actor() {
         let step = ScenarioStep::new(
             1,
-            "".to_string(),
+            Actor::Custom("".to_string()),
             "clicks".to_string(),
             "button".to_string(),
         );
@@ -337,12 +338,7 @@ mod tests {
     #[test]
     fn test_add_step_to_scenario() {
         let mut scenario = create_test_scenario();
-        let step = ScenarioStep::new(
-            1,
-            "User".to_string(),
-            "clicks".to_string(),
-            "button".to_string(),
-        );
+        let step = ScenarioStep::new(1, Actor::User, "clicks".to_string(), "button".to_string());
 
         assert!(ScenarioService::add_step_to_scenario(&mut scenario, step).is_ok());
         assert_eq!(scenario.steps.len(), 1);
@@ -351,15 +347,10 @@ mod tests {
     #[test]
     fn test_add_step_to_scenario_duplicate_order() {
         let mut scenario = create_test_scenario();
-        let step1 = ScenarioStep::new(
-            1,
-            "User".to_string(),
-            "clicks".to_string(),
-            "button".to_string(),
-        );
+        let step1 = ScenarioStep::new(1, Actor::User, "clicks".to_string(), "button".to_string());
         let step2 = ScenarioStep::new(
             1, // duplicate
-            "System".to_string(),
+            Actor::System,
             "responds".to_string(),
             "success".to_string(),
         );
@@ -373,7 +364,7 @@ mod tests {
         let mut scenario = create_test_scenario();
         scenario.add_step(ScenarioStep::new(
             1,
-            "User".to_string(),
+            Actor::User,
             "clicks".to_string(),
             "button".to_string(),
         ));
@@ -394,13 +385,13 @@ mod tests {
         let mut scenario = create_test_scenario();
         scenario.add_step(ScenarioStep::new(
             3,
-            "User".to_string(),
+            Actor::User,
             "clicks".to_string(),
             "button".to_string(),
         ));
         scenario.add_step(ScenarioStep::new(
             1,
-            "User".to_string(),
+            Actor::User,
             "opens".to_string(),
             "page".to_string(),
         ));
@@ -416,27 +407,27 @@ mod tests {
         let mut scenario = create_test_scenario();
         scenario.add_step(ScenarioStep::new(
             1,
-            "User".to_string(),
+            Actor::User,
             "clicks".to_string(),
             "button".to_string(),
         ));
         scenario.add_step(ScenarioStep::new(
             2,
-            "System".to_string(),
+            Actor::System,
             "responds".to_string(),
             "success".to_string(),
         ));
         scenario.add_step(ScenarioStep::new(
             3,
-            "User".to_string(),
+            Actor::User,
             "sees".to_string(),
             "result".to_string(),
         ));
 
         let actors = ScenarioService::get_scenario_actors(&scenario);
         assert_eq!(actors.len(), 2);
-        assert!(actors.contains(&"User".to_string()));
-        assert!(actors.contains(&"System".to_string()));
+        assert!(actors.contains(&Actor::User));
+        assert!(actors.contains(&Actor::System));
     }
 
     #[test]
@@ -460,7 +451,7 @@ mod tests {
 
         scenario.add_step(ScenarioStep::new(
             1,
-            "User".to_string(),
+            Actor::User,
             "clicks".to_string(),
             "button".to_string(),
         ));
@@ -497,7 +488,7 @@ mod tests {
         let mut scenario = create_test_scenario();
         scenario.add_step(ScenarioStep::new(
             1,
-            "User".to_string(),
+            Actor::User,
             "clicks".to_string(),
             "button".to_string(),
         ));

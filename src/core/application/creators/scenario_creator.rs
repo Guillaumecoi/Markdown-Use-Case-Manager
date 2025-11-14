@@ -1,5 +1,5 @@
 use crate::config::Config;
-use crate::core::domain::{Scenario, ScenarioStep, ScenarioType, UseCase};
+use crate::core::domain::{Actor, Scenario, ScenarioStep, ScenarioType, UseCase};
 
 /// Handles scenario creation and management
 pub struct ScenarioCreator {
@@ -50,7 +50,9 @@ impl ScenarioCreator {
         action: String,
         expected_result: Option<String>,
     ) -> ScenarioStep {
-        let description = expected_result.unwrap_or_else(|| format!("{} {}", actor, action));
-        ScenarioStep::new(order as usize, actor, action, description)
+        let actor_enum: Actor = actor.into(); // Convert String to Actor using From<String>
+        let description =
+            expected_result.unwrap_or_else(|| format!("{} {}", actor_enum.name(), action));
+        ScenarioStep::new(order as usize, actor_enum, action, description)
     }
 }

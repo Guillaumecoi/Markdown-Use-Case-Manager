@@ -92,6 +92,11 @@ pub enum Commands {
         #[command(subcommand)]
         command: ScenarioCommands,
     },
+    /// Manage personas
+    Persona {
+        #[command(subcommand)]
+        command: PersonaCommands,
+    },
     /// Enter interactive mode
     Interactive,
 }
@@ -219,5 +224,41 @@ pub enum ScenarioCommands {
         scenario_title: String,
         /// Step order to remove (1-based)
         order: u32,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum PersonaCommands {
+    /// Create a new persona
+    Create {
+        /// Persona ID (e.g., "admin", "customer")
+        id: String,
+        /// Persona name
+        name: String,
+        /// Persona description
+        description: String,
+        /// Primary goal
+        goal: String,
+        /// Context/background information
+        #[arg(long)]
+        context: Option<String>,
+        /// Technical proficiency level (1-5)
+        #[arg(long)]
+        tech_level: Option<u8>,
+        /// Frequency of system use (e.g., "daily", "weekly", "occasional")
+        #[arg(long)]
+        usage_frequency: Option<String>,
+    },
+    /// List all personas
+    List,
+    /// Show persona details
+    Show {
+        /// Persona ID
+        id: String,
+    },
+    /// Delete a persona
+    Delete {
+        /// Persona ID
+        id: String,
     },
 }

@@ -64,6 +64,20 @@
 
 {{/if}}
 {{#if scenarios}}
+## Actors and Personas
+
+### System Actors
+{{#each (unique_actors scenarios)}}
+- **{{this}}** - _Technical entity in system interactions_
+{{/each}}
+
+{{#if (has_personas scenarios)}}
+### User Personas
+{{#each (unique_personas scenarios)}}
+- **{{this}}** - _End-user profile for scenario_
+{{/each}}
+{{/if}}
+
 ## Technical Scenarios
 
 {{#each scenarios}}
@@ -74,7 +88,7 @@
 **Technical Description:** {{description}}
 
 {{#if persona}}
-**Target Persona:** {{persona}}
+**Target Persona:** 🙂 {{persona}}
 {{/if}}
 
 #### Technical Flow

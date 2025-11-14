@@ -311,6 +311,79 @@ mucm reference remove <USE_CASE_ID> <TARGET_ID>
 mucm reference remove UC-SEC-001 UC-AUTH-001
 ```
 
+### `persona`
+
+Manage personas (user archetypes for scenarios).
+
+#### `persona create`
+
+Create a new persona.
+
+```bash
+mucm persona create [OPTIONS] <NAME>
+```
+
+**Arguments:**
+- `<NAME>`: Persona name
+
+**Options:**
+- `-d, --description <DESCRIPTION>`: Persona description
+- `-g, --goals <GOALS>`: Comma-separated list of goals
+- `-t, --tech-level <TECH_LEVEL>`: Technical level (0-10)
+- `-c, --context <CONTEXT>`: Usage context
+
+**Examples:**
+```bash
+mucm persona create "Power User Sarah"
+mucm persona create "Developer Dan" --description "Senior backend developer" --tech-level 9
+mucm persona create "Business User Bob" --goals "Reduce costs,Improve efficiency" --tech-level 3
+```
+
+#### `persona list`
+
+List all personas in the project.
+
+```bash
+mucm persona list
+```
+
+**Examples:**
+```bash
+mucm persona list
+```
+
+#### `persona show`
+
+Show detailed information about a specific persona.
+
+```bash
+mucm persona show <PERSONA_ID>
+```
+
+**Arguments:**
+- `<PERSONA_ID>`: Persona ID (e.g., power-user-sarah)
+
+**Examples:**
+```bash
+mucm persona show power-user-sarah
+```
+
+#### `persona delete`
+
+Delete a persona.
+
+```bash
+mucm persona delete <PERSONA_ID>
+```
+
+**Arguments:**
+- `<PERSONA_ID>`: Persona ID to delete (e.g., power-user-sarah)
+
+**Examples:**
+```bash
+mucm persona delete power-user-sarah
+```
+
 ### `interactive`
 
 Launch interactive mode for guided workflows.

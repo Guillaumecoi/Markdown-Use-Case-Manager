@@ -8,6 +8,7 @@
 mod fields;
 mod language;
 mod methodology;
+mod persona;
 mod project;
 mod scenarios;
 mod usecase;
@@ -23,6 +24,7 @@ pub use language::handle_languages_command;
 pub use methodology::{
     handle_list_methodologies_command, handle_methodology_info_command, handle_regenerate_command,
 };
+pub use persona::handle_persona_command;
 pub use project::{handle_init_command, handle_status_command};
 pub use scenarios::{
     handle_scenario_add_command, handle_scenario_add_step_command, handle_scenario_list_command,
