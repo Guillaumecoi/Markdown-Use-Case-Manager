@@ -149,14 +149,14 @@ mod tests {
     fn create_test_repo() -> (TomlPersonaRepository, TempDir) {
         let temp_dir = TempDir::new().unwrap();
         let temp_path = temp_dir.path().to_str().unwrap();
-        
+
         // Create a test config pointing to temp directory
         // Important: use_case_dir must be in format "{base}/docs/use-cases"
         // so that get_markdown_dir() can extract "{base}/docs/personas"
         let mut config = Config::default();
         config.directories.use_case_dir = format!("{}/docs/use-cases", temp_path);
         config.directories.toml_dir = Some(format!("{}/.mucm", temp_path));
-        
+
         let repo = TomlPersonaRepository::new(config);
         (repo, temp_dir)
     }
@@ -185,7 +185,10 @@ mod tests {
         let loaded_persona = loaded.unwrap();
         assert_eq!(loaded_persona.id, "test-persona");
         assert_eq!(loaded_persona.name, "Test User");
-        assert_eq!(loaded_persona.description, "A test persona for unit testing");
+        assert_eq!(
+            loaded_persona.description,
+            "A test persona for unit testing"
+        );
         assert_eq!(loaded_persona.goal, "Complete testing tasks efficiently");
         assert_eq!(loaded_persona.tech_level, Some(4));
         assert_eq!(loaded_persona.usage_frequency, Some("daily".to_string()));
@@ -255,7 +258,8 @@ mod tests {
         repo.save(&persona).unwrap();
 
         let markdown_content = "# Test User\n\nA test persona documentation.";
-        repo.save_markdown("test-persona", markdown_content).unwrap();
+        repo.save_markdown("test-persona", markdown_content)
+            .unwrap();
 
         let md_dir_str = repo.get_markdown_dir();
         let md_path = Path::new(&md_dir_str).join("test-persona.md");
@@ -287,8 +291,8 @@ mod tests {
     fn test_persona_with_context() {
         let (repo, _temp_dir) = create_test_repo();
 
-        let persona = create_test_persona()
-            .with_context("Works remotely from home office".to_string());
+        let persona =
+            create_test_persona().with_context("Works remotely from home office".to_string());
         repo.save(&persona).unwrap();
 
         let loaded = repo.load_by_id("test-persona").unwrap().unwrap();

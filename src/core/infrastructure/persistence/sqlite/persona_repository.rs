@@ -210,7 +210,10 @@ mod tests {
         let loaded_persona = loaded.unwrap();
         assert_eq!(loaded_persona.id, "test-persona");
         assert_eq!(loaded_persona.name, "Test User");
-        assert_eq!(loaded_persona.description, "A test persona for unit testing");
+        assert_eq!(
+            loaded_persona.description,
+            "A test persona for unit testing"
+        );
         assert_eq!(loaded_persona.goal, "Complete testing tasks efficiently");
         assert_eq!(loaded_persona.tech_level, Some(4));
         assert_eq!(loaded_persona.usage_frequency, Some("daily".to_string()));
@@ -290,8 +293,8 @@ mod tests {
     fn test_persona_with_context() {
         let repo = create_test_repo();
 
-        let persona = create_test_persona()
-            .with_context("Works remotely from home office".to_string());
+        let persona =
+            create_test_persona().with_context("Works remotely from home office".to_string());
         repo.save(&persona).unwrap();
 
         let loaded = repo.load_by_id("test-persona").unwrap().unwrap();

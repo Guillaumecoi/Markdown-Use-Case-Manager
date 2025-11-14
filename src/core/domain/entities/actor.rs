@@ -167,12 +167,12 @@ mod tests {
     #[test]
     fn test_hash() {
         use std::collections::HashSet;
-        
+
         let mut set = HashSet::new();
         set.insert(Actor::User);
         set.insert(Actor::System);
         set.insert(Actor::User); // Duplicate
-        
+
         assert_eq!(set.len(), 2);
         assert!(set.contains(&Actor::User));
         assert!(set.contains(&Actor::System));
@@ -189,6 +189,11 @@ impl ToSql for Actor {
 impl FromSql for Actor {
     fn column_result(value: ValueRef<'_>) -> FromSqlResult<Self> {
         let s = value.as_str()?;
-        Actor::from_str(s).map_err(|e| FromSqlError::Other(Box::new(std::io::Error::new(std::io::ErrorKind::InvalidData, e))))
+        Actor::from_str(s).map_err(|e| {
+            FromSqlError::Other(Box::new(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                e,
+            )))
+        })
     }
 }

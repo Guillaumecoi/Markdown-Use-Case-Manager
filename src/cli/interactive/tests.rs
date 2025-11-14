@@ -282,7 +282,9 @@ mod persona_workflow_tests {
         (temp_dir, runner, config)
     }
 
-    fn setup_test_env_with_backend(backend: StorageBackend) -> (TempDir, InteractiveRunner, Config) {
+    fn setup_test_env_with_backend(
+        backend: StorageBackend,
+    ) -> (TempDir, InteractiveRunner, Config) {
         let temp_dir = TempDir::new().unwrap();
         env::set_current_dir(&temp_dir).unwrap();
 
@@ -309,7 +311,11 @@ mod persona_workflow_tests {
             None,
         );
 
-        assert!(result.is_ok(), "Failed to create persona: {:?}", result.err());
+        assert!(
+            result.is_ok(),
+            "Failed to create persona: {:?}",
+            result.err()
+        );
         let message = result.unwrap();
         assert_eq!(message, "Persona created successfully!");
 
@@ -317,7 +323,7 @@ mod persona_workflow_tests {
         let repo = RepositoryFactory::create_persona_repository(&config).unwrap();
         let persona = repo.load_by_id("dev-user").unwrap();
         assert!(persona.is_some());
-        
+
         let persona = persona.unwrap();
         assert_eq!(persona.id, "dev-user");
         assert_eq!(persona.name, "Developer User");
@@ -345,8 +351,11 @@ mod persona_workflow_tests {
         // Verify all fields were saved
         let repo = RepositoryFactory::create_persona_repository(&config).unwrap();
         let persona = repo.load_by_id("senior-dev").unwrap().unwrap();
-        
-        assert_eq!(persona.context, Some("Remote work, multiple time zones".to_string()));
+
+        assert_eq!(
+            persona.context,
+            Some("Remote work, multiple time zones".to_string())
+        );
         assert_eq!(persona.tech_level, Some(5));
         assert_eq!(persona.usage_frequency, Some("daily".to_string()));
     }
@@ -425,8 +434,11 @@ mod persona_workflow_tests {
         // Should fail with validation error
         assert!(result.is_err(), "Expected error for tech level > 5");
         let error_msg = result.unwrap_err().to_string();
-        assert!(error_msg.contains("Tech level must be between 1 and 5"), 
-            "Expected tech level validation error, got: {}", error_msg);
+        assert!(
+            error_msg.contains("Tech level must be between 1 and 5"),
+            "Expected tech level validation error, got: {}",
+            error_msg
+        );
     }
 
     #[test]
@@ -860,7 +872,8 @@ mod persona_workflow_tests {
 
         // Test SQLite backend
         {
-            let (_temp_dir, mut runner, config) = setup_test_env_with_backend(StorageBackend::Sqlite);
+            let (_temp_dir, mut runner, config) =
+                setup_test_env_with_backend(StorageBackend::Sqlite);
 
             runner
                 .create_persona_interactive(

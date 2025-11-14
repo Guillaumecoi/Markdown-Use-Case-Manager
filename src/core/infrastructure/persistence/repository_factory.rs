@@ -6,8 +6,12 @@
 
 use crate::config::{Config, StorageBackend};
 use crate::core::domain::PersonaRepository;
-use crate::core::infrastructure::persistence::sqlite::{SqlitePersonaRepository, SqliteUseCaseRepository};
-use crate::core::infrastructure::persistence::toml::{TomlPersonaRepository, TomlUseCaseRepository};
+use crate::core::infrastructure::persistence::sqlite::{
+    SqlitePersonaRepository, SqliteUseCaseRepository,
+};
+use crate::core::infrastructure::persistence::toml::{
+    TomlPersonaRepository, TomlUseCaseRepository,
+};
 use crate::core::infrastructure::persistence::traits::UseCaseRepository;
 use anyhow::{Context, Result};
 use rusqlite::Connection;
@@ -134,8 +138,9 @@ impl RepositoryFactory {
             }
             StorageBackend::Sqlite => {
                 // Open connection and initialize schema
-                let conn = Connection::open(db_path.as_ref())
-                    .with_context(|| format!("Failed to open database at {:?}", db_path.as_ref()))?;
+                let conn = Connection::open(db_path.as_ref()).with_context(|| {
+                    format!("Failed to open database at {:?}", db_path.as_ref())
+                })?;
                 SqlitePersonaRepository::initialize(&conn)?;
 
                 let repo = SqlitePersonaRepository::new(Arc::new(Mutex::new(conn)));
@@ -216,7 +221,7 @@ mod tests {
         config.storage.backend = StorageBackend::Toml;
 
         let repository = RepositoryFactory::create_persona_repository(&config)?;
-        
+
         // Test basic operations
         use crate::core::domain::Persona;
         let persona = Persona::new(
@@ -225,10 +230,10 @@ mod tests {
             "Test description".to_string(),
             "Test goal".to_string(),
         );
-        
+
         repository.save(&persona)?;
         assert!(repository.exists("test-persona")?);
-        
+
         Ok(())
     }
 
@@ -243,7 +248,7 @@ mod tests {
         config.storage.backend = StorageBackend::Sqlite;
 
         let repository = RepositoryFactory::create_persona_repository(&config)?;
-        
+
         // Test basic operations
         use crate::core::domain::Persona;
         let persona = Persona::new(
@@ -252,10 +257,10 @@ mod tests {
             "Test description".to_string(),
             "Test goal".to_string(),
         );
-        
+
         repository.save(&persona)?;
         assert!(repository.exists("test-persona")?);
-        
+
         Ok(())
     }
 
@@ -270,8 +275,9 @@ mod tests {
         config.storage.backend = StorageBackend::Sqlite;
 
         let custom_db_path = temp_dir.path().join("custom.db");
-        let repository = RepositoryFactory::create_persona_repository_with_db_path(&config, &custom_db_path)?;
-        
+        let repository =
+            RepositoryFactory::create_persona_repository_with_db_path(&config, &custom_db_path)?;
+
         // Test basic operations
         use crate::core::domain::Persona;
         let persona = Persona::new(
@@ -280,7 +286,7 @@ mod tests {
             "Test description".to_string(),
             "Test goal".to_string(),
         );
-        
+
         repository.save(&persona)?;
         assert!(repository.exists("test-persona")?);
 

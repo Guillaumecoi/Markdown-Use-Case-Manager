@@ -51,7 +51,8 @@ impl ScenarioCreator {
         expected_result: Option<String>,
     ) -> ScenarioStep {
         let actor_enum: Actor = actor.into(); // Convert String to Actor using From<String>
-        let description = expected_result.unwrap_or_else(|| format!("{} {}", actor_enum.name(), action));
+        let description =
+            expected_result.unwrap_or_else(|| format!("{} {}", actor_enum.name(), action));
         ScenarioStep::new(order as usize, actor_enum, action, description)
     }
 }

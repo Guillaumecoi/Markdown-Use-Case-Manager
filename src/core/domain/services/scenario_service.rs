@@ -298,12 +298,7 @@ mod tests {
 
     #[test]
     fn test_validate_scenario_step_valid() {
-        let step = ScenarioStep::new(
-            1,
-            Actor::User,
-            "clicks".to_string(),
-            "button".to_string(),
-        );
+        let step = ScenarioStep::new(1, Actor::User, "clicks".to_string(), "button".to_string());
 
         assert!(ScenarioService::validate_scenario_step(&step).is_ok());
     }
@@ -343,12 +338,7 @@ mod tests {
     #[test]
     fn test_add_step_to_scenario() {
         let mut scenario = create_test_scenario();
-        let step = ScenarioStep::new(
-            1,
-            Actor::User,
-            "clicks".to_string(),
-            "button".to_string(),
-        );
+        let step = ScenarioStep::new(1, Actor::User, "clicks".to_string(), "button".to_string());
 
         assert!(ScenarioService::add_step_to_scenario(&mut scenario, step).is_ok());
         assert_eq!(scenario.steps.len(), 1);
@@ -357,12 +347,7 @@ mod tests {
     #[test]
     fn test_add_step_to_scenario_duplicate_order() {
         let mut scenario = create_test_scenario();
-        let step1 = ScenarioStep::new(
-            1,
-            Actor::User,
-            "clicks".to_string(),
-            "button".to_string(),
-        );
+        let step1 = ScenarioStep::new(1, Actor::User, "clicks".to_string(), "button".to_string());
         let step2 = ScenarioStep::new(
             1, // duplicate
             Actor::System,

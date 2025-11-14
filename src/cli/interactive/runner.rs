@@ -118,8 +118,8 @@ impl InteractiveRunner {
         tech_level: Option<u8>,
         usage_frequency: Option<String>,
     ) -> Result<String> {
-        use crate::cli::standard::handle_persona_command;
         use crate::cli::args::PersonaCommands;
+        use crate::cli::standard::handle_persona_command;
         use crate::config::Config;
 
         let config = Config::load()?;
@@ -139,8 +139,8 @@ impl InteractiveRunner {
 
     /// List all personas
     pub fn list_personas(&self) -> Result<()> {
-        use crate::cli::standard::handle_persona_command;
         use crate::cli::args::PersonaCommands;
+        use crate::cli::standard::handle_persona_command;
         use crate::config::Config;
 
         let config = Config::load()?;
@@ -150,27 +150,23 @@ impl InteractiveRunner {
 
     /// Show persona details
     pub fn show_persona(&self, id: &str) -> Result<()> {
-        use crate::cli::standard::handle_persona_command;
         use crate::cli::args::PersonaCommands;
+        use crate::cli::standard::handle_persona_command;
         use crate::config::Config;
 
         let config = Config::load()?;
-        let command = PersonaCommands::Show {
-            id: id.to_string(),
-        };
+        let command = PersonaCommands::Show { id: id.to_string() };
         handle_persona_command(command, &config)
     }
 
     /// Delete a persona
     pub fn delete_persona(&self, id: &str) -> Result<String> {
-        use crate::cli::standard::handle_persona_command;
         use crate::cli::args::PersonaCommands;
+        use crate::cli::standard::handle_persona_command;
         use crate::config::Config;
 
         let config = Config::load()?;
-        let command = PersonaCommands::Delete {
-            id: id.to_string(),
-        };
+        let command = PersonaCommands::Delete { id: id.to_string() };
         handle_persona_command(command, &config)?;
         Ok(format!("Persona '{}' deleted successfully!", id))
     }

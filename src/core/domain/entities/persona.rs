@@ -7,30 +7,30 @@ use std::collections::HashMap;
 pub struct Persona {
     /// Unique identifier (e.g., "customer", "admin", "guest")
     pub id: String,
-    
+
     /// Display name
     pub name: String,
-    
+
     /// Persona description
     pub description: String,
-    
+
     /// Primary goal of this persona
     pub goal: String,
-    
+
     /// Context/background information
     #[serde(default)]
     pub context: Option<String>,
-    
+
     /// Technical proficiency level (1-5)
     #[serde(default)]
     pub tech_level: Option<u8>,
-    
+
     /// Frequency of system use
     #[serde(default)]
-    pub usage_frequency: Option<String>,  // "daily", "weekly", "occasional"
-    
+    pub usage_frequency: Option<String>, // "daily", "weekly", "occasional"
+
     pub metadata: Metadata,
-    
+
     /// Flexible extra fields
     #[serde(flatten)]
     pub extra: HashMap<String, serde_json::Value>,

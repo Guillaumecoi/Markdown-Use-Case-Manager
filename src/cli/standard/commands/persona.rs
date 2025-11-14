@@ -72,8 +72,7 @@ fn create_persona(
         anyhow::bail!("Persona with ID '{}' already exists", id);
     }
 
-    repo.save(&persona)
-        .context("Failed to save persona")?;
+    repo.save(&persona).context("Failed to save persona")?;
 
     println!("✓ Created persona: {} ({})", persona.name, persona.id);
     Ok(())
@@ -447,8 +446,11 @@ mod tests {
 
         let repo = RepositoryFactory::create_persona_repository(&config)?;
         let persona = repo.load_by_id("full-persona")?.unwrap();
-        
-        assert_eq!(persona.context, Some("Remote developer in Europe".to_string()));
+
+        assert_eq!(
+            persona.context,
+            Some("Remote developer in Europe".to_string())
+        );
         assert_eq!(persona.tech_level, Some(5));
         assert_eq!(persona.usage_frequency, Some("daily".to_string()));
 
@@ -475,7 +477,7 @@ mod tests {
 
         let repo = RepositoryFactory::create_persona_repository(&config)?;
         let persona = repo.load_by_id("minimal-persona")?.unwrap();
-        
+
         assert_eq!(persona.context, None);
         assert_eq!(persona.tech_level, None);
         assert_eq!(persona.usage_frequency, None);

@@ -103,26 +103,11 @@ mod tests {
 
     #[test]
     fn test_scenario_step_equality() {
-        let step1 = ScenarioStep::new(
-            1,
-            Actor::User,
-            "enters".to_string(),
-            "data".to_string(),
-        );
+        let step1 = ScenarioStep::new(1, Actor::User, "enters".to_string(), "data".to_string());
 
-        let step2 = ScenarioStep::new(
-            1,
-            Actor::User,
-            "enters".to_string(),
-            "data".to_string(),
-        );
+        let step2 = ScenarioStep::new(1, Actor::User, "enters".to_string(), "data".to_string());
 
-        let step3 = ScenarioStep::new(
-            2,
-            Actor::User,
-            "enters".to_string(),
-            "data".to_string(),
-        );
+        let step3 = ScenarioStep::new(2, Actor::User, "enters".to_string(), "data".to_string());
 
         assert_eq!(step1, step2);
         assert_ne!(step1, step3);

@@ -1,6 +1,4 @@
-use handlebars::{
-    Context, Handlebars, Helper, HelperResult, Output, RenderContext, RenderError,
-};
+use handlebars::{Context, Handlebars, Helper, HelperResult, Output, RenderContext, RenderError};
 use serde_json::Value;
 use std::collections::HashSet;
 
@@ -13,7 +11,7 @@ pub fn register_helpers(handlebars: &mut Handlebars) {
 
 /// Helper to extract unique actors from scenarios  
 /// Usage: {{#each (unique_actors scenarios)}}{{this}}{{/each}}
-/// 
+///
 /// This is a Handlebars helper function that returns an array value.
 /// The returned value is stored in the context and can be iterated over.
 fn unique_actors_helper(
@@ -64,9 +62,10 @@ fn unique_actors_helper(
     actors_vec.sort();
 
     // Write as JSON which Handlebars will parse
-    let json_str = serde_json::to_string(&actors_vec).map_err(|e| RenderError::new(e.to_string()))?;
+    let json_str =
+        serde_json::to_string(&actors_vec).map_err(|e| RenderError::new(e.to_string()))?;
     out.write(&json_str)?;
-    
+
     Ok(())
 }
 
@@ -147,7 +146,8 @@ fn unique_personas_helper(
     personas_vec.sort();
 
     // Write as JSON which Handlebars will parse
-    let json_str = serde_json::to_string(&personas_vec).map_err(|e| RenderError::new(e.to_string()))?;
+    let json_str =
+        serde_json::to_string(&personas_vec).map_err(|e| RenderError::new(e.to_string()))?;
     out.write(&json_str)?;
 
     Ok(())
