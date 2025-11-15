@@ -134,7 +134,7 @@ fn bench_load_by_id(c: &mut Criterion, backend: StorageBackend, use_case_count: 
     );
 }
 
-/// Benchmark find_by_category operations
+/// Benchmark filter by category operations (load_all + filter)
 fn bench_find_by_category(c: &mut Criterion, backend: StorageBackend, use_case_count: usize) {
     let temp_dir = TempDir::new().expect("Failed to create temp dir");
     let (_config, repository) = setup_backend(backend, &temp_dir);
@@ -152,13 +152,16 @@ fn bench_find_by_category(c: &mut Criterion, backend: StorageBackend, use_case_c
 
     c.bench_function(
         &format!(
-            "find_by_category_{}_{}_use_cases",
+            "filter_by_category_{}_{}_use_cases",
             backend_name, use_case_count
         ),
         |b| {
             b.iter(|| {
-                let _result = black_box(repository.find_by_category("benchmark"))
-                    .expect("Find by category failed");
+                let all_use_cases = black_box(repository.load_all()).expect("Load all failed");
+                let _filtered: Vec<_> = all_use_cases
+                    .iter()
+                    .filter(|uc| uc.category == "benchmark")
+                    .collect();
             })
         },
     );
@@ -201,10 +204,12 @@ mod tests {
             assert!(loaded.is_some());
         }
 
-        // Test find by category
-        let found = repository
-            .find_by_category("benchmark")
-            .expect("Find by category failed");
+        // Test filter by category (using load_all + filter)
+        let all_use_cases = repository.load_all().expect("Load all failed");
+        let found: Vec<_> = all_use_cases
+            .iter()
+            .filter(|uc| uc.category == "benchmark")
+            .collect();
         assert_eq!(found.len(), 10);
     }
 
@@ -232,10 +237,12 @@ mod tests {
             assert!(loaded.is_some());
         }
 
-        // Test find by category
-        let found = repository
-            .find_by_category("benchmark")
-            .expect("Find by category failed");
+        // Test filter by category (using load_all + filter)
+        let all_use_cases = repository.load_all().expect("Load all failed");
+        let found: Vec<_> = all_use_cases
+            .iter()
+            .filter(|uc| uc.category == "benchmark")
+            .collect();
         assert_eq!(found.len(), 10);
     }
 }
