@@ -1,4 +1,4 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
 use markdown_use_case_manager::config::{Config, StorageBackend};
 use markdown_use_case_manager::core::{RepositoryFactory, UseCase, UseCaseRepository};
 use tempfile::TempDir;
@@ -72,7 +72,7 @@ fn bench_save(c: &mut Criterion, backend: StorageBackend, use_case_count: usize)
         |b| {
             b.iter(|| {
                 for use_case in &use_cases {
-                    black_box(repository.save(use_case)).expect("Save failed");
+                    std::hint::black_box(repository.save(use_case)).expect("Save failed");
                 }
             })
         },
@@ -99,7 +99,7 @@ fn bench_load_all(c: &mut Criterion, backend: StorageBackend, use_case_count: us
         &format!("load_all_{}_{}_use_cases", backend_name, use_case_count),
         |b| {
             b.iter(|| {
-                let _result = black_box(repository.load_all()).expect("Load all failed");
+                let _result = std::hint::black_box(repository.load_all()).expect("Load all failed");
             })
         },
     );
@@ -127,7 +127,7 @@ fn bench_load_by_id(c: &mut Criterion, backend: StorageBackend, use_case_count: 
             b.iter(|| {
                 for use_case in &use_cases {
                     let _result =
-                        black_box(repository.load_by_id(&use_case.id)).expect("Load by ID failed");
+                        std::hint::black_box(repository.load_by_id(&use_case.id)).expect("Load by ID failed");
                 }
             })
         },
@@ -157,7 +157,7 @@ fn bench_find_by_category(c: &mut Criterion, backend: StorageBackend, use_case_c
         ),
         |b| {
             b.iter(|| {
-                let all_use_cases = black_box(repository.load_all()).expect("Load all failed");
+                let all_use_cases = std::hint::black_box(repository.load_all()).expect("Load all failed");
                 let _filtered: Vec<_> = all_use_cases
                     .iter()
                     .filter(|uc| uc.category == "benchmark")
