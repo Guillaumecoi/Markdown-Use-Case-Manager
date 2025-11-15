@@ -786,10 +786,7 @@ impl CliRunner {
                     ref_data.relationship,
                     ref_data.ref_type,
                     ref_data.target_id,
-                    ref_data
-                        .description
-                        .as_deref()
-                        .unwrap_or("no description")
+                    ref_data.description.as_deref().unwrap_or("no description")
                 ));
             }
             Ok(DisplayResult::success(output))

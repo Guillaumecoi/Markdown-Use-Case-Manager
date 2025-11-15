@@ -67,41 +67,53 @@ impl UseCaseApplicationService {
     }
 
     /// Find scenario ID by its title within a use case
-    pub fn find_scenario_id_by_title(&self, use_case_id: &str, scenario_title: &str) -> Result<String> {
+    pub fn find_scenario_id_by_title(
+        &self,
+        use_case_id: &str,
+        scenario_title: &str,
+    ) -> Result<String> {
         let index = self.find_use_case_index(use_case_id)?;
         let use_case = &self.use_cases[index];
-        
-        use_case.scenarios
+
+        use_case
+            .scenarios
             .iter()
             .find(|s| s.title == scenario_title)
             .map(|s| s.id.clone())
-            .ok_or_else(|| anyhow::anyhow!(
-                "Scenario with title '{}' not found in use case '{}'", 
-                scenario_title, 
-                use_case_id
-            ))
+            .ok_or_else(|| {
+                anyhow::anyhow!(
+                    "Scenario with title '{}' not found in use case '{}'",
+                    scenario_title,
+                    use_case_id
+                )
+            })
     }
 
     /// Get all use case info that uses a specific persona
     /// Returns a list of tuples (use_case_id, title, scenario_count) where at least one scenario uses the given persona
-    pub fn get_use_cases_for_persona(&self, persona_id: &str) -> Result<Vec<(String, String, usize)>> {
+    pub fn get_use_cases_for_persona(
+        &self,
+        persona_id: &str,
+    ) -> Result<Vec<(String, String, usize)>> {
         let mut matching_use_cases = Vec::new();
-        
+
         // Scan all loaded use cases for scenarios that use this persona
         for use_case in &self.use_cases {
-            let scenario_count = use_case.scenarios.iter()
+            let scenario_count = use_case
+                .scenarios
+                .iter()
                 .filter(|scenario| scenario.persona.as_deref() == Some(persona_id))
                 .count();
-            
+
             if scenario_count > 0 {
                 matching_use_cases.push((
                     use_case.id.clone(),
                     use_case.title.clone(),
-                    scenario_count
+                    scenario_count,
                 ));
             }
         }
-        
+
         Ok(matching_use_cases)
     }
 
@@ -460,7 +472,7 @@ impl UseCaseApplicationService {
         // Add the reference directly to the scenario
         use_case.scenarios[scenario_index].add_reference(reference);
         use_case.metadata.touch();
-        
+
         self.repository.save(&use_case)?;
         self.use_cases[index] = use_case;
 
@@ -642,11 +654,19 @@ mod tests {
         )?;
         assert_eq!(use_case_id, "UC-TES-001");
 
-        let use_case_ids: Vec<String> = coordinator.use_cases.iter().map(|uc| uc.id.clone()).collect();
+        let use_case_ids: Vec<String> = coordinator
+            .use_cases
+            .iter()
+            .map(|uc| uc.id.clone())
+            .collect();
         assert_eq!(use_case_ids.len(), 1);
         assert!(use_case_ids.contains(&"UC-TES-001".to_string()));
 
-        let final_use_case_ids: Vec<String> = coordinator.use_cases.iter().map(|uc| uc.id.clone()).collect();
+        let final_use_case_ids: Vec<String> = coordinator
+            .use_cases
+            .iter()
+            .map(|uc| uc.id.clone())
+            .collect();
         assert_eq!(final_use_case_ids.len(), 1);
 
         Ok(())
@@ -662,7 +682,11 @@ mod tests {
         let mut coordinator = UseCaseApplicationService::load()?;
         let default_methodology = coordinator.config.templates.default_methodology.clone();
 
-        let mut categories: Vec<String> = coordinator.use_cases.iter().map(|uc| uc.category.clone()).collect();
+        let mut categories: Vec<String> = coordinator
+            .use_cases
+            .iter()
+            .map(|uc| uc.category.clone())
+            .collect();
         categories.sort();
         categories.dedup();
         assert!(categories.is_empty());
@@ -688,14 +712,22 @@ mod tests {
             &default_methodology,
         )?;
 
-        let mut categories: Vec<String> = coordinator.use_cases.iter().map(|uc| uc.category.clone()).collect();
+        let mut categories: Vec<String> = coordinator
+            .use_cases
+            .iter()
+            .map(|uc| uc.category.clone())
+            .collect();
         categories.sort();
         categories.dedup();
         assert_eq!(categories.len(), 2);
         assert_eq!(categories[0], "api");
         assert_eq!(categories[1], "authentication");
 
-        let use_case_ids: Vec<String> = coordinator.use_cases.iter().map(|uc| uc.id.clone()).collect();
+        let use_case_ids: Vec<String> = coordinator
+            .use_cases
+            .iter()
+            .map(|uc| uc.id.clone())
+            .collect();
         assert_eq!(use_case_ids.len(), 3);
         assert!(use_case_ids.contains(&"UC-AUT-001".to_string()));
         assert!(use_case_ids.contains(&"UC-API-001".to_string()));
@@ -729,10 +761,18 @@ mod tests {
             &default_methodology,
         )?;
 
-        let all_use_cases: Vec<String> = coordinator.use_cases.iter().map(|uc| uc.id.clone()).collect();
+        let all_use_cases: Vec<String> = coordinator
+            .use_cases
+            .iter()
+            .map(|uc| uc.id.clone())
+            .collect();
         assert_eq!(all_use_cases.len(), 2);
 
-        let mut categories: Vec<String> = coordinator.use_cases.iter().map(|uc| uc.category.clone()).collect();
+        let mut categories: Vec<String> = coordinator
+            .use_cases
+            .iter()
+            .map(|uc| uc.category.clone())
+            .collect();
         categories.sort();
         categories.dedup();
         assert_eq!(categories.len(), 2);

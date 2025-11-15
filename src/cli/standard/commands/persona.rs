@@ -162,10 +162,10 @@ fn list_use_cases_for_persona(persona_id: &str) -> Result<()> {
     use crate::presentation::DisplayResultFormatter;
 
     let mut runner = CliRunner::new();
-    
+
     let result = runner.list_use_cases_for_persona(persona_id.to_string())?;
     DisplayResultFormatter::display(&result);
-    
+
     Ok(())
 }
 

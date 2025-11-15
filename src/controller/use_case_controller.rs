@@ -22,7 +22,9 @@
 
 use crate::config::Config;
 use crate::controller::dto::{DisplayResult, SelectionOptions};
-use crate::core::{ReferenceType, ScenarioReference, ScenarioType, Status, UseCaseApplicationService};
+use crate::core::{
+    ReferenceType, ScenarioReference, ScenarioType, Status, UseCaseApplicationService,
+};
 use crate::presentation::{StatusFormatter, UseCaseFormatter};
 use anyhow::Result;
 
@@ -770,22 +772,25 @@ impl UseCaseController {
         };
 
         // Find scenario ID by title
-        let scenario_id = match self.app_service.find_scenario_id_by_title(&use_case_id, &scenario_title) {
+        let scenario_id = match self
+            .app_service
+            .find_scenario_id_by_title(&use_case_id, &scenario_title)
+        {
             Ok(id) => id,
             Err(e) => return Ok(DisplayResult::error(e.to_string())),
         };
 
         // Create the reference object
-        let mut reference = ScenarioReference::new(reference_type, target_id.clone(), relationship.clone());
+        let mut reference =
+            ScenarioReference::new(reference_type, target_id.clone(), relationship.clone());
         if let Some(desc) = description {
             reference = reference.with_description(desc);
         }
 
-        match self.app_service.add_scenario_reference(
-            &use_case_id,
-            &scenario_id,
-            reference,
-        ) {
+        match self
+            .app_service
+            .add_scenario_reference(&use_case_id, &scenario_id, reference)
+        {
             Ok(_) => Ok(DisplayResult::success(format!(
                 "Added {} reference to '{}' in scenario '{}' of use case {}",
                 relationship, target_id, scenario_title, use_case_id
@@ -815,7 +820,10 @@ impl UseCaseController {
         relationship: String,
     ) -> Result<DisplayResult> {
         // Find scenario ID by title
-        let scenario_id = match self.app_service.find_scenario_id_by_title(&use_case_id, &scenario_title) {
+        let scenario_id = match self
+            .app_service
+            .find_scenario_id_by_title(&use_case_id, &scenario_title)
+        {
             Ok(id) => id,
             Err(e) => return Ok(DisplayResult::error(e.to_string())),
         };
@@ -851,8 +859,10 @@ impl UseCaseController {
         scenario_title: String,
     ) -> Result<Vec<ScenarioReference>> {
         // Find scenario ID by title
-        let scenario_id = self.app_service.find_scenario_id_by_title(&use_case_id, &scenario_title)?;
-        
+        let scenario_id = self
+            .app_service
+            .find_scenario_id_by_title(&use_case_id, &scenario_title)?;
+
         self.app_service
             .get_scenario_references(&use_case_id, &scenario_id)
     }
@@ -867,7 +877,10 @@ impl UseCaseController {
     ///
     /// # Errors
     /// Returns error if repository access fails
-    pub fn get_use_cases_for_persona(&self, persona_id: String) -> Result<Vec<(String, String, usize)>> {
+    pub fn get_use_cases_for_persona(
+        &self,
+        persona_id: String,
+    ) -> Result<Vec<(String, String, usize)>> {
         self.app_service.get_use_cases_for_persona(&persona_id)
     }
 }
