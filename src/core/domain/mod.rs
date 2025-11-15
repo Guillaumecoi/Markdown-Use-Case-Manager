@@ -10,4 +10,4 @@ pub use entities::{
     ScenarioType, Status, UseCase, UseCaseReference,
 };
 pub use repositories::{PersonaRepository, UseCaseRepository};
-pub use services::UseCaseService;
+pub use services::{ScenarioReferenceValidator, UseCaseService};

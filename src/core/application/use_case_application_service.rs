@@ -6,7 +6,8 @@ use crate::core::application::generators::{MarkdownGenerator, OverviewGenerator,
 use crate::core::utils::suggest_alternatives;
 use crate::core::{
     domain::{Scenario, ScenarioReference, ScenarioType, UseCaseReference},
-    RepositoryFactory, TemplateEngine, UseCase, UseCaseRepository,
+    ReferenceType, RepositoryFactory, ScenarioReferenceValidator, TemplateEngine, UseCase,
+    UseCaseRepository,
 };
 use anyhow::Result;
 
@@ -407,6 +408,15 @@ impl UseCaseApplicationService {
             .iter()
             .position(|s| s.id == scenario_id)
             .ok_or_else(|| anyhow::anyhow!("Scenario with ID '{}' not found", scenario_id))?;
+
+        // Validate no circular reference for scenario-to-scenario references
+        if matches!(reference.ref_type, ReferenceType::Scenario) {
+            ScenarioReferenceValidator::validate_no_circular_reference(
+                &use_case,
+                scenario_id,
+                &reference.target_id,
+            )?;
+        }
 
         // Add the reference directly to the scenario
         use_case.scenarios[scenario_index].add_reference(reference);

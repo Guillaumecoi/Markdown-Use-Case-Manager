@@ -13,7 +13,8 @@ pub use application::UseCaseApplicationService;
 // Re-export domain types (from domain's public interface)
 pub use domain::{
     Actor, Metadata, Persona, PersonaRepository, Priority, ReferenceType, Scenario,
-    ScenarioReference, ScenarioStep, ScenarioType, Status, UseCase, UseCaseReference,
+    ScenarioReference, ScenarioReferenceValidator, ScenarioStep, ScenarioType, Status, UseCase,
+    UseCaseReference,
 };
 
 // Re-export infrastructure types (from infrastructure's public interface)
