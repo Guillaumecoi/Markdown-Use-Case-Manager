@@ -40,12 +40,7 @@
 //! - Generation settings and metadata options
 
 use anyhow::Result;
-
-mod cli;
-mod config;
-mod controller;
-mod core;
-mod presentation;
+use markdown_use_case_manager::cli;
 
 /// Application entry point.
 ///

@@ -5,6 +5,8 @@ use anyhow::Result;
 /// Repository abstraction for use case persistence
 /// This trait defines the contract for storing and retrieving use cases
 /// Implementations can use different storage backends (TOML, database, etc.)
+/// Note: Methods appear unused to lib but are used by integration tests via trait objects
+#[allow(dead_code)]
 pub trait UseCaseRepository {
     /// Save only the TOML file (source of truth)
     /// Use this when you want to save the use case data without generating markdown yet
@@ -21,12 +23,8 @@ pub trait UseCaseRepository {
     fn load_by_id(&self, id: &str) -> Result<Option<UseCase>>;
 
     /// Delete a use case
-    /// TODO: Implement delete command: mucm delete UC-XXX-001
-    #[allow(dead_code)]
     fn delete(&self, id: &str) -> Result<()>;
 
     /// Check if a use case exists
-    /// TODO: Use this for validation before operations (update status, add scenario, etc.)
-    #[allow(dead_code)]
     fn exists(&self, id: &str) -> Result<bool>;
 }

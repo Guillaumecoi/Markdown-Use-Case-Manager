@@ -22,38 +22,6 @@ impl UseCaseCreator {
         }
     }
 
-    /// Create a basic use case without methodology-specific fields
-    pub fn create_use_case(
-        &self,
-        title: String,
-        category: String,
-        description: Option<String>,
-        existing_use_cases: &[UseCase],
-        repository: &dyn UseCaseRepository,
-    ) -> Result<UseCase> {
-        let use_case_id = self.use_case_service.generate_unique_use_case_id(
-            &category,
-            existing_use_cases,
-            &self.config.directories.use_case_dir,
-        );
-        let description = description.unwrap_or_default();
-
-        let use_case = self
-            .use_case_service
-            .create_use_case(use_case_id.clone(), title, category, description)
-            .map_err(|e: String| anyhow::anyhow!(e))?;
-
-        // Step 1: Save TOML first (source of truth)
-        repository.save(&use_case)?;
-
-        // Step 2: Load from TOML to ensure we're working with persisted data
-        let use_case_from_toml = repository
-            .load_by_id(&use_case.id)?
-            .ok_or_else(|| anyhow::anyhow!("Failed to load newly created use case from TOML"))?;
-
-        Ok(use_case_from_toml)
-    }
-
     /// Create a use case with methodology-specific custom fields
     pub fn create_use_case_with_methodology(
         &self,

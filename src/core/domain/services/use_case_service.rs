@@ -70,17 +70,6 @@ impl UseCaseService {
         }
     }
 
-    /// Create a new use case with the given parameters
-    pub fn create_use_case(
-        &self,
-        id: String,
-        title: String,
-        category: String,
-        description: String,
-    ) -> Result<UseCase, String> {
-        UseCase::new(id, title, category, description, "Medium".to_string())
-    }
-
     /// Create a new use case with custom fields from methodology
     pub fn create_use_case_with_extra(
         &self,
@@ -179,24 +168,5 @@ mod tests {
 
         let not_found = find_use_case_by_id(&use_cases, "UC-MISSING-001");
         assert!(not_found.is_none());
-    }
-
-    #[test]
-    fn test_create_use_case() {
-        let service = UseCaseService::new();
-        let use_case = service
-            .create_use_case(
-                "UC-TEST-001".to_string(),
-                "Test Use Case".to_string(),
-                "Test".to_string(),
-                "A test description".to_string(),
-            )
-            .unwrap();
-
-        assert_eq!(use_case.id, "UC-TEST-001");
-        assert_eq!(use_case.title, "Test Use Case");
-        assert_eq!(use_case.category, "Test");
-        assert_eq!(use_case.description, "A test description");
-        assert_eq!(use_case.priority.to_string(), "MEDIUM");
     }
 }

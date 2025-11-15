@@ -444,7 +444,7 @@ mod persona_workflow_tests {
     #[test]
     #[serial]
     fn test_list_personas_empty() {
-        let (_temp_dir, mut runner, _config) = setup_test_env();
+        let (_temp_dir, runner, _config) = setup_test_env();
 
         let result = runner.list_personas();
         assert!(result.is_ok());
@@ -556,7 +556,7 @@ mod persona_workflow_tests {
     #[test]
     #[serial]
     fn test_show_persona_not_found() {
-        let (_temp_dir, mut runner, _config) = setup_test_env();
+        let (_temp_dir, runner, _config) = setup_test_env();
 
         let result = runner.show_persona("nonexistent");
         // Should handle gracefully - either Ok with message or Err
@@ -640,7 +640,7 @@ mod persona_workflow_tests {
     #[test]
     #[serial]
     fn test_delete_persona_not_found() {
-        let (_temp_dir, mut runner, _config) = setup_test_env();
+        let (_temp_dir, runner, _config) = setup_test_env();
 
         let result = runner.delete_persona("nonexistent");
         // Should handle gracefully

@@ -1,4 +1,4 @@
-use handlebars::{Context, Handlebars, Helper, HelperResult, Output, RenderContext, RenderError};
+use handlebars::{Context, Handlebars, Helper, HelperResult, Output, RenderContext, RenderError, RenderErrorReason};
 use serde_json::Value;
 use std::collections::HashSet;
 
@@ -24,12 +24,12 @@ fn unique_actors_helper(
     // Get the scenarios parameter
     let scenarios = h
         .param(0)
-        .ok_or_else(|| RenderError::new("unique_actors requires scenarios parameter"))?;
+        .ok_or_else(|| RenderError::from(RenderErrorReason::Other("unique_actors requires scenarios parameter".to_string())))?;
 
     let scenarios_array = scenarios
         .value()
         .as_array()
-        .ok_or_else(|| RenderError::new("scenarios must be an array"))?;
+        .ok_or_else(|| RenderError::from(RenderErrorReason::Other("scenarios must be an array".to_string())))?;
 
     let mut actors = HashSet::new();
 
@@ -63,7 +63,7 @@ fn unique_actors_helper(
 
     // Write as JSON which Handlebars will parse
     let json_str =
-        serde_json::to_string(&actors_vec).map_err(|e| RenderError::new(e.to_string()))?;
+        serde_json::to_string(&actors_vec).map_err(|e| RenderError::from(RenderErrorReason::Other(e.to_string())))?;
     out.write(&json_str)?;
 
     Ok(())
@@ -81,12 +81,12 @@ fn has_personas_helper(
     // Get the scenarios parameter
     let scenarios = h
         .param(0)
-        .ok_or_else(|| RenderError::new("has_personas requires scenarios parameter"))?;
+        .ok_or_else(|| RenderError::from(RenderErrorReason::Other("has_personas requires scenarios parameter".to_string())))?;
 
     let scenarios_array = scenarios
         .value()
         .as_array()
-        .ok_or_else(|| RenderError::new("scenarios must be an array"))?;
+        .ok_or_else(|| RenderError::from(RenderErrorReason::Other("scenarios must be an array".to_string())))?;
 
     // Check if any scenario has a non-null, non-empty persona field
     for scenario in scenarios_array {
@@ -119,12 +119,12 @@ fn unique_personas_helper(
     // Get the scenarios parameter
     let scenarios = h
         .param(0)
-        .ok_or_else(|| RenderError::new("unique_personas requires scenarios parameter"))?;
+        .ok_or_else(|| RenderError::from(RenderErrorReason::Other("unique_personas requires scenarios parameter".to_string())))?;
 
     let scenarios_array = scenarios
         .value()
         .as_array()
-        .ok_or_else(|| RenderError::new("scenarios must be an array"))?;
+        .ok_or_else(|| RenderError::from(RenderErrorReason::Other("scenarios must be an array".to_string())))?;
 
     let mut personas = HashSet::new();
 
@@ -147,7 +147,7 @@ fn unique_personas_helper(
 
     // Write as JSON which Handlebars will parse
     let json_str =
-        serde_json::to_string(&personas_vec).map_err(|e| RenderError::new(e.to_string()))?;
+        serde_json::to_string(&personas_vec).map_err(|e| RenderError::from(RenderErrorReason::Other(e.to_string())))?;
     out.write(&json_str)?;
 
     Ok(())

@@ -1,14 +1,11 @@
-use crate::config::Config;
 use crate::core::domain::{Actor, Scenario, ScenarioStep, ScenarioType, UseCase};
 
 /// Handles scenario creation and management
-pub struct ScenarioCreator {
-    config: Config,
-}
+pub struct ScenarioCreator;
 
 impl ScenarioCreator {
-    pub fn new(config: Config) -> Self {
-        Self { config }
+    pub fn new() -> Self {
+        Self
     }
 
     /// Create a new scenario for a use case

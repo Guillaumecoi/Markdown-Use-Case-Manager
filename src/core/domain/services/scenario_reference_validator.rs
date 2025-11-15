@@ -1,4 +1,4 @@
-use crate::core::domain::entities::{ReferenceType, ScenarioReference, UseCase};
+use crate::core::domain::entities::{ReferenceType, UseCase};
 use anyhow::Result;
 use std::collections::{HashMap, HashSet};
 
@@ -78,63 +78,12 @@ impl ScenarioReferenceValidator {
 
         false
     }
-
-    /// Get all scenarios that would be affected by a change to a scenario
-    pub fn find_affected_scenarios(use_case: &UseCase, scenario_id: &str) -> Vec<String> {
-        use_case
-            .scenarios
-            .iter()
-            .filter(|s| s.references_scenario(scenario_id))
-            .map(|s| s.id.clone())
-            .collect()
-    }
-
-    /// Validate that a reference is valid (target exists, no self-reference, etc.)
-    pub fn validate_reference(
-        use_case: &UseCase,
-        from_scenario_id: &str,
-        reference: &ScenarioReference,
-    ) -> Result<()> {
-        // Check for self-reference
-        if matches!(reference.ref_type, ReferenceType::Scenario)
-            && reference.target_id == from_scenario_id
-        {
-            anyhow::bail!("Scenario cannot reference itself");
-        }
-
-        // Check that target exists
-        match reference.ref_type {
-            ReferenceType::Scenario => {
-                if !use_case
-                    .scenarios
-                    .iter()
-                    .any(|s| s.id == reference.target_id)
-                {
-                    anyhow::bail!(
-                        "Referenced scenario '{}' does not exist",
-                        reference.target_id
-                    );
-                }
-            }
-            ReferenceType::UseCase => {
-                // For now, we don't validate external use case references
-                // This could be enhanced to check against a use case registry
-            }
-        }
-
-        // Check for circular reference if it's a scenario reference
-        if matches!(reference.ref_type, ReferenceType::Scenario) {
-            Self::validate_no_circular_reference(use_case, from_scenario_id, &reference.target_id)?;
-        }
-
-        Ok(())
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::domain::entities::{Scenario, ScenarioType};
+    use crate::core::domain::entities::{Scenario, ScenarioType, ScenarioReference};
 
     fn create_test_use_case_with_scenarios() -> UseCase {
         let mut uc = UseCase::new(
@@ -239,83 +188,5 @@ mod tests {
         );
 
         assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_find_affected_scenarios() {
-        let mut uc = create_test_use_case_with_scenarios();
-
-        // S02 references S01
-        uc.scenarios[1].add_reference(ScenarioReference::new(
-            ReferenceType::Scenario,
-            "UC-TEST-001-S01".to_string(),
-            "extends".to_string(),
-        ));
-
-        // S03 also references S01
-        uc.scenarios[2].add_reference(ScenarioReference::new(
-            ReferenceType::Scenario,
-            "UC-TEST-001-S01".to_string(),
-            "depends_on".to_string(),
-        ));
-
-        let affected = ScenarioReferenceValidator::find_affected_scenarios(&uc, "UC-TEST-001-S01");
-
-        assert_eq!(affected.len(), 2);
-        assert!(affected.contains(&"UC-TEST-001-S02".to_string()));
-        assert!(affected.contains(&"UC-TEST-001-S03".to_string()));
-    }
-
-    #[test]
-    fn test_validate_reference_self_reference() {
-        let uc = create_test_use_case_with_scenarios();
-
-        let reference = ScenarioReference::new(
-            ReferenceType::Scenario,
-            "UC-TEST-001-S01".to_string(),
-            "extends".to_string(),
-        );
-
-        let result =
-            ScenarioReferenceValidator::validate_reference(&uc, "UC-TEST-001-S01", &reference);
-
-        assert!(result.is_err());
-        assert!(result
-            .unwrap_err()
-            .to_string()
-            .contains("cannot reference itself"));
-    }
-
-    #[test]
-    fn test_validate_reference_nonexistent_scenario() {
-        let uc = create_test_use_case_with_scenarios();
-
-        let reference = ScenarioReference::new(
-            ReferenceType::Scenario,
-            "UC-TEST-001-S99".to_string(),
-            "extends".to_string(),
-        );
-
-        let result =
-            ScenarioReferenceValidator::validate_reference(&uc, "UC-TEST-001-S01", &reference);
-
-        assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("does not exist"));
-    }
-
-    #[test]
-    fn test_validate_reference_use_case_allowed() {
-        let uc = create_test_use_case_with_scenarios();
-
-        let reference = ScenarioReference::new(
-            ReferenceType::UseCase,
-            "UC-AUTH-001".to_string(),
-            "depends_on".to_string(),
-        );
-
-        let result =
-            ScenarioReferenceValidator::validate_reference(&uc, "UC-TEST-001-S01", &reference);
-
-        assert!(result.is_ok());
     }
 }

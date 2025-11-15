@@ -34,7 +34,7 @@ impl UseCaseApplicationService {
 
         // Initialize creator and generators
         let use_case_creator = UseCaseCreator::new(config.clone());
-        let scenario_creator = ScenarioCreator::new(config.clone());
+        let scenario_creator = ScenarioCreator::new();
         let markdown_generator = MarkdownGenerator::new(config.clone());
         let test_generator = TestGenerator::new(config.clone());
         let overview_generator = OverviewGenerator::new(config.clone());

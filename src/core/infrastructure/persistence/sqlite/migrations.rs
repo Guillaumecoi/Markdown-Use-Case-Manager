@@ -23,6 +23,12 @@ impl Migrator {
     /// # Returns
     /// `Ok(())` on success, error if migration fails
     pub fn migrate(conn: &Connection) -> Result<()> {
+        // Check if migration is needed
+        if !Schema::needs_migration(conn)? {
+            // Already up to date
+            return Ok(());
+        }
+
         let current_version = Self::current_version(conn)?;
 
         if current_version == 0 {
@@ -30,11 +36,6 @@ impl Migrator {
             println!("🔨 Initializing database schema...");
             Schema::initialize(conn)?;
             println!("✅ Database schema initialized (v{})", SCHEMA_VERSION);
-            return Ok(());
-        }
-
-        if current_version >= SCHEMA_VERSION {
-            // Already up to date
             return Ok(());
         }
 
