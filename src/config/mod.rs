@@ -96,7 +96,6 @@ impl Config {
         let mut config = Self::default();
         if let Some(lang) = test_language {
             config.generation.test_language = lang.clone();
-            config.templates.test_language = lang;
         }
         if !methodologies.is_empty() {
             config.templates.methodologies = methodologies;
@@ -249,7 +248,6 @@ impl Config {
                         toml_dir: None,
                     },
                     templates: TemplateConfig {
-                        test_language: "python".to_string(),
                         methodologies: vec![
                             "business".to_string(),
                             "developer".to_string(),
@@ -303,7 +301,7 @@ impl Config {
 
         // Set default generation config that matches the template defaults
         config.generation = GenerationConfig {
-            test_language: config.templates.test_language.clone(),
+            test_language: config.generation.test_language.clone(),
             auto_generate_tests: false,
             overwrite_test_documentation: false,
         };
@@ -382,15 +380,12 @@ mod tests {
                 if let Some(lang_def) = registry.get(lang) {
                     let primary_name = lang_def.name().to_string();
                     config.generation.test_language = primary_name.clone();
-                    config.templates.test_language = primary_name.clone();
                 } else {
                     config.generation.test_language = lang.clone();
-                    config.templates.test_language = lang.clone();
                 }
             } else {
                 // No registry available, just set the language directly
                 config.generation.test_language = lang.clone();
-                config.templates.test_language = lang.clone();
             }
         }
 
@@ -679,13 +674,11 @@ mod tests {
         // Test with both language and methodology set
         let config = Config::for_template(Some("python".to_string()), Some("feature".to_string()));
         assert_eq!(config.generation.test_language, "python");
-        assert_eq!(config.templates.test_language, "python");
         assert_eq!(config.templates.default_methodology, "feature");
 
         // Test with language set but methodology None (should keep default methodology)
         let config_lang_only = Config::for_template(Some("rust".to_string()), None);
         assert_eq!(config_lang_only.generation.test_language, "rust");
-        assert_eq!(config_lang_only.templates.test_language, "rust");
         // Should use default methodology from Config::default()
         assert!(!config_lang_only.templates.default_methodology.is_empty());
 
@@ -697,10 +690,6 @@ mod tests {
             default_config.generation.test_language
         );
         assert_eq!(
-            config_methodology_only.templates.test_language,
-            default_config.templates.test_language
-        );
-        assert_eq!(
             config_methodology_only.templates.default_methodology,
             "business"
         );
@@ -710,10 +699,6 @@ mod tests {
         assert_eq!(
             config_both_none.generation.test_language,
             default_config.generation.test_language
-        );
-        assert_eq!(
-            config_both_none.templates.test_language,
-            default_config.templates.test_language
         );
         assert_eq!(
             config_both_none.templates.default_methodology,

@@ -248,9 +248,6 @@ pub struct TemplateConfig {
     /// If not specified, will be set to the first available methodology
     #[serde(default)]
     pub default_methodology: String,
-    /// Default programming language for test template generation
-    /// Must be one of the supported languages (rust, python, javascript)
-    pub test_language: String,
 }
 
 /// Configuration for code generation and test creation settings.

@@ -172,7 +172,7 @@ impl ProjectController {
              - Copy the used language templates\n\
              - You can use any methodology when creating use cases\n\
              - Directories will be created when you create your first use case",
-            config.templates.test_language,
+            config.generation.test_language,
             &config.templates.default_methodology,
             config
                 .directories
@@ -261,7 +261,7 @@ impl ProjectController {
              - Copy the selected language templates\n\
              - You can use any enabled methodology when creating use cases\n\
              - Directories will be created when you create your first use case",
-            config.templates.test_language,
+            config.generation.test_language,
             &config.templates.default_methodology,
             config.templates.methodologies.join(", "),
             config.storage.backend,
@@ -305,7 +305,7 @@ impl ProjectController {
 
         // Copy templates
         Config::copy_templates_to_config_with_language(Some(
-            config.templates.test_language.clone(),
+            config.generation.test_language.clone(),
         ))?;
 
         // Get available methodologies
@@ -330,7 +330,7 @@ impl ProjectController {
              - Run: mucm methodologies to see all available methodologies\n\
              - Run: mucm --help for all available commands\n\n\
              💡 Each methodology has its own settings (test generation, metadata, etc.)",
-            config.templates.test_language,
+            config.generation.test_language,
             &config.templates.default_methodology,
             methodologies_list
         );

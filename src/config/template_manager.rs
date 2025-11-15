@@ -30,7 +30,7 @@
 //!
 //! Templates are selected based on the project's configuration:
 //! - `config.templates.methodologies` determines which methodologies to copy
-//! - `config.templates.test_language` determines which language templates to copy
+//! - `config.generation.test_language` determines which language templates to copy
 
 use crate::config::types::Config;
 use anyhow::{Context, Result};
@@ -279,19 +279,19 @@ impl TemplateManager {
             return Ok(()); // Languages are optional
         }
 
-        let source_lang_dir = source_languages.join(&config.templates.test_language);
+        let source_lang_dir = source_languages.join(&config.generation.test_language);
         if source_lang_dir.exists() {
             let target_languages = config_templates_dir.join("languages");
-            let target_lang_dir = target_languages.join(&config.templates.test_language);
+            let target_lang_dir = target_languages.join(&config.generation.test_language);
             Self::copy_dir_recursive(&source_lang_dir, &target_lang_dir)?;
             println!(
                 "✓ Copied language templates: {}",
-                config.templates.test_language
+                config.generation.test_language
             );
         } else {
             println!(
                 "⚠ Language '{}' not found in source-templates/languages/, skipping",
-                config.templates.test_language
+                config.generation.test_language
             );
         }
 
@@ -599,7 +599,7 @@ mod tests {
         fs::create_dir(&dest_templates)?;
 
         let mut config = Config::default();
-        config.templates.test_language = "nonexistent_lang".to_string();
+        config.generation.test_language = "nonexistent_lang".to_string();
 
         // Should succeed but log a warning (language templates are optional)
         let result =

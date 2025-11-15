@@ -48,16 +48,13 @@ pub fn init_test_project(language: Option<String>) -> Result<Config> {
                 if let Some(lang_def) = language_registry.get(lang) {
                     let primary_name = lang_def.name().to_string();
                     config.generation.test_language = primary_name.clone();
-                    config.templates.test_language = primary_name.clone();
                 } else {
                     config.generation.test_language = lang.clone();
-                    config.templates.test_language = lang.clone();
                 }
             }
             Err(_) => {
                 // Source templates not available, just set language directly
                 config.generation.test_language = lang.clone();
-                config.templates.test_language = lang.clone();
             }
         }
     }
@@ -108,7 +105,7 @@ mod tests {
         let config = init_test_project(Some("python".to_string()))?;
 
         assert_eq!(config.generation.test_language, "python");
-        assert_eq!(config.templates.test_language, "python");
+        assert_eq!(config.generation.test_language, "python");
 
         Ok(())
     }
