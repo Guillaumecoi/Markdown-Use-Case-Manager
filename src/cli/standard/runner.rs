@@ -683,6 +683,118 @@ impl CliRunner {
             order,
         )
     }
+
+    // ========== Scenario Reference Operations (PR #7) ==========
+
+    /// Add a reference to a scenario
+    ///
+    /// # Arguments
+    /// * `use_case_id` - Use case containing the source scenario
+    /// * `scenario_title` - Title of the source scenario
+    /// * `target_id` - Target ID (scenario or use case)
+    /// * `ref_type` - Reference type ("scenario" or "usecase")
+    /// * `relationship` - Relationship type
+    /// * `description` - Optional description
+    ///
+    /// # Returns
+    /// DisplayResult with success or error message
+    ///
+    /// # Errors
+    /// Returns error if use case or scenario not found, or invalid reference type
+    pub fn add_scenario_reference(
+        &mut self,
+        use_case_id: String,
+        scenario_title: String,
+        target_id: String,
+        ref_type: String,
+        relationship: String,
+        description: Option<String>,
+    ) -> Result<DisplayResult> {
+        let controller = self.ensure_use_case_controller()?;
+        controller.add_scenario_reference(
+            Self::sanitize_required_string(use_case_id),
+            Self::sanitize_required_string(scenario_title),
+            Self::sanitize_required_string(target_id),
+            Self::sanitize_required_string(ref_type),
+            Self::sanitize_required_string(relationship),
+            Self::sanitize_optional_string(description),
+        )
+    }
+
+    /// Remove a reference from a scenario
+    ///
+    /// # Arguments
+    /// * `use_case_id` - Use case containing the scenario
+    /// * `scenario_title` - Title of the scenario
+    /// * `target_id` - Target ID to remove
+    /// * `relationship` - Relationship type
+    ///
+    /// # Returns
+    /// DisplayResult with success or error message
+    ///
+    /// # Errors
+    /// Returns error if use case, scenario, or reference not found
+    pub fn remove_scenario_reference(
+        &mut self,
+        use_case_id: String,
+        scenario_title: String,
+        target_id: String,
+        relationship: String,
+    ) -> Result<DisplayResult> {
+        let controller = self.ensure_use_case_controller()?;
+        controller.remove_scenario_reference(
+            Self::sanitize_required_string(use_case_id),
+            Self::sanitize_required_string(scenario_title),
+            Self::sanitize_required_string(target_id),
+            Self::sanitize_required_string(relationship),
+        )
+    }
+
+    /// List all references for a scenario
+    ///
+    /// # Arguments
+    /// * `use_case_id` - Use case containing the scenario
+    /// * `scenario_title` - Title of the scenario
+    ///
+    /// # Returns
+    /// DisplayResult with formatted list of references
+    ///
+    /// # Errors
+    /// Returns error if use case or scenario not found
+    pub fn list_scenario_references(
+        &mut self,
+        use_case_id: String,
+        scenario_title: String,
+    ) -> Result<DisplayResult> {
+        let controller = self.ensure_use_case_controller()?;
+        let references = controller.list_scenario_references(
+            Self::sanitize_required_string(use_case_id),
+            Self::sanitize_required_string(scenario_title),
+        )?;
+
+        // Format and display
+        if references.is_empty() {
+            Ok(DisplayResult::success(
+                "No references found for this scenario".to_string(),
+            ))
+        } else {
+            let mut output = String::new();
+            for (i, ref_data) in references.iter().enumerate() {
+                output.push_str(&format!(
+                    "{}. {} ({:?}) → {} [{}]\n",
+                    i + 1,
+                    ref_data.relationship,
+                    ref_data.ref_type,
+                    ref_data.target_id,
+                    ref_data
+                        .description
+                        .as_deref()
+                        .unwrap_or("no description")
+                ));
+            }
+            Ok(DisplayResult::success(output))
+        }
+    }
 }
 
 #[cfg(test)]

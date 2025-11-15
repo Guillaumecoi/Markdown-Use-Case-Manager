@@ -35,8 +35,10 @@ use standard::{
     handle_precondition_list_command, handle_precondition_remove_command,
     handle_reference_add_command, handle_reference_list_command, handle_reference_remove_command,
     handle_regenerate_command, handle_scenario_add_command, handle_scenario_add_step_command,
-    handle_scenario_list_command, handle_scenario_remove_step_command,
-    handle_scenario_update_status_command, handle_status_command, CliRunner,
+    handle_scenario_list_command, handle_scenario_reference_add_command,
+    handle_scenario_reference_list_command, handle_scenario_reference_remove_command,
+    handle_scenario_remove_step_command, handle_scenario_update_status_command,
+    handle_status_command, CliRunner,
 };
 
 use crate::config::Config;
@@ -282,6 +284,59 @@ pub fn run() -> Result<()> {
                 });
                 Ok(())
             }
+            args::ScenarioCommands::Reference(ref_cmd) => match ref_cmd {
+                args::ScenarioReferenceCommands::Add {
+                    use_case_id,
+                    scenario_title,
+                    target_id,
+                    ref_type,
+                    relationship,
+                    description,
+                } => {
+                    execute_command(|| {
+                        handle_scenario_reference_add_command(
+                            &mut runner,
+                            use_case_id,
+                            scenario_title,
+                            target_id,
+                            ref_type,
+                            relationship,
+                            description,
+                        )
+                    });
+                    Ok(())
+                }
+                args::ScenarioReferenceCommands::Remove {
+                    use_case_id,
+                    scenario_title,
+                    target_id,
+                    relationship,
+                } => {
+                    execute_command(|| {
+                        handle_scenario_reference_remove_command(
+                            &mut runner,
+                            use_case_id,
+                            scenario_title,
+                            target_id,
+                            relationship,
+                        )
+                    });
+                    Ok(())
+                }
+                args::ScenarioReferenceCommands::List {
+                    use_case_id,
+                    scenario_title,
+                } => {
+                    execute_command(|| {
+                        handle_scenario_reference_list_command(
+                            &mut runner,
+                            use_case_id,
+                            scenario_title,
+                        )
+                    });
+                    Ok(())
+                }
+            },
         },
         Commands::Persona { command } => {
             let config = Config::load()?;

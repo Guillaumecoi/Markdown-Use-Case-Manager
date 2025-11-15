@@ -164,3 +164,122 @@ pub fn handle_scenario_remove_step_command(
         std::process::exit(1);
     }
 }
+
+// ========== Scenario Reference Commands (PR #7) ==========
+
+/// Handles the 'scenario reference add' CLI command.
+///
+/// Adds a reference from one scenario to another scenario or use case.
+/// Valid reference types are 'scenario' and 'usecase'.
+/// Valid relationship types include 'includes', 'extends', 'depends-on', 'alternative-to'.
+///
+/// # Arguments
+/// * `runner` - A mutable reference to the CLI runner responsible for scenario operations.
+/// * `use_case_id` - The ID of the use case containing the source scenario.
+/// * `scenario_title` - The title of the source scenario.
+/// * `target_id` - The ID of the target scenario or use case.
+/// * `ref_type` - The type of reference ('scenario' or 'usecase').
+/// * `relationship` - The relationship type.
+/// * `description` - Optional description of the reference.
+///
+/// # Returns
+/// Returns `Ok(())` on successful addition, or an error if addition fails.
+pub fn handle_scenario_reference_add_command(
+    runner: &mut CliRunner,
+    use_case_id: String,
+    scenario_title: String,
+    target_id: String,
+    ref_type: String,
+    relationship: String,
+    description: Option<String>,
+) -> Result<()> {
+    let result = match runner.add_scenario_reference(
+        use_case_id,
+        scenario_title,
+        target_id,
+        ref_type,
+        relationship,
+        description,
+    ) {
+        Ok(display_result) => display_result,
+        Err(e) => DisplayResult::error(e.to_string()),
+    };
+
+    DisplayResultFormatter::display(&result);
+
+    if result.success {
+        Ok(())
+    } else {
+        std::process::exit(1);
+    }
+}
+
+/// Handles the 'scenario reference remove' CLI command.
+///
+/// Removes a reference from a scenario to a specific target with a given relationship.
+///
+/// # Arguments
+/// * `runner` - A mutable reference to the CLI runner responsible for scenario operations.
+/// * `use_case_id` - The ID of the use case containing the scenario.
+/// * `scenario_title` - The title of the scenario.
+/// * `target_id` - The ID of the target to remove.
+/// * `relationship` - The relationship type of the reference to remove.
+///
+/// # Returns
+/// Returns `Ok(())` on successful removal, or an error if removal fails.
+pub fn handle_scenario_reference_remove_command(
+    runner: &mut CliRunner,
+    use_case_id: String,
+    scenario_title: String,
+    target_id: String,
+    relationship: String,
+) -> Result<()> {
+    let result = match runner.remove_scenario_reference(
+        use_case_id,
+        scenario_title,
+        target_id,
+        relationship,
+    ) {
+        Ok(display_result) => display_result,
+        Err(e) => DisplayResult::error(e.to_string()),
+    };
+
+    DisplayResultFormatter::display(&result);
+
+    if result.success {
+        Ok(())
+    } else {
+        std::process::exit(1);
+    }
+}
+
+/// Handles the 'scenario reference list' CLI command.
+///
+/// Lists all references for a specific scenario, showing the relationship type,
+/// reference type, target ID, and description (if available).
+///
+/// # Arguments
+/// * `runner` - A mutable reference to the CLI runner responsible for scenario operations.
+/// * `use_case_id` - The ID of the use case containing the scenario.
+/// * `scenario_title` - The title of the scenario to list references for.
+///
+/// # Returns
+/// Returns `Ok(())` on successful display, or an error if retrieval fails.
+pub fn handle_scenario_reference_list_command(
+    runner: &mut CliRunner,
+    use_case_id: String,
+    scenario_title: String,
+) -> Result<()> {
+    let result = match runner.list_scenario_references(use_case_id, scenario_title) {
+        Ok(display_result) => display_result,
+        Err(e) => DisplayResult::error(e.to_string()),
+    };
+
+    DisplayResultFormatter::display(&result);
+
+    if result.success {
+        Ok(())
+    } else {
+        std::process::exit(1);
+    }
+}
