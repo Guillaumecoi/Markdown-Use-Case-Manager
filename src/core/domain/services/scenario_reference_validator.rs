@@ -83,7 +83,7 @@ impl ScenarioReferenceValidator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::domain::entities::{Scenario, ScenarioType, ScenarioReference};
+    use crate::core::domain::entities::{Scenario, ScenarioReference, ScenarioType};
 
     fn create_test_use_case_with_scenarios() -> UseCase {
         let mut uc = UseCase::new(
