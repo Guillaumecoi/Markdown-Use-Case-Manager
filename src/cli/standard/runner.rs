@@ -683,6 +683,155 @@ impl CliRunner {
             order,
         )
     }
+
+    // ========== Scenario Reference Operations (PR #7) ==========
+
+    /// Add a reference to a scenario
+    ///
+    /// # Arguments
+    /// * `use_case_id` - Use case containing the source scenario
+    /// * `scenario_title` - Title of the source scenario
+    /// * `target_id` - Target ID (scenario or use case)
+    /// * `ref_type` - Reference type ("scenario" or "usecase")
+    /// * `relationship` - Relationship type
+    /// * `description` - Optional description
+    ///
+    /// # Returns
+    /// DisplayResult with success or error message
+    ///
+    /// # Errors
+    /// Returns error if use case or scenario not found, or invalid reference type
+    pub fn add_scenario_reference(
+        &mut self,
+        use_case_id: String,
+        scenario_title: String,
+        target_id: String,
+        ref_type: String,
+        relationship: String,
+        description: Option<String>,
+    ) -> Result<DisplayResult> {
+        let controller = self.ensure_use_case_controller()?;
+        controller.add_scenario_reference(
+            Self::sanitize_required_string(use_case_id),
+            Self::sanitize_required_string(scenario_title),
+            Self::sanitize_required_string(target_id),
+            Self::sanitize_required_string(ref_type),
+            Self::sanitize_required_string(relationship),
+            Self::sanitize_optional_string(description),
+        )
+    }
+
+    /// Remove a reference from a scenario
+    ///
+    /// # Arguments
+    /// * `use_case_id` - Use case containing the scenario
+    /// * `scenario_title` - Title of the scenario
+    /// * `target_id` - Target ID to remove
+    /// * `relationship` - Relationship type
+    ///
+    /// # Returns
+    /// DisplayResult with success or error message
+    ///
+    /// # Errors
+    /// Returns error if use case, scenario, or reference not found
+    pub fn remove_scenario_reference(
+        &mut self,
+        use_case_id: String,
+        scenario_title: String,
+        target_id: String,
+        relationship: String,
+    ) -> Result<DisplayResult> {
+        let controller = self.ensure_use_case_controller()?;
+        controller.remove_scenario_reference(
+            Self::sanitize_required_string(use_case_id),
+            Self::sanitize_required_string(scenario_title),
+            Self::sanitize_required_string(target_id),
+            Self::sanitize_required_string(relationship),
+        )
+    }
+
+    /// List all references for a scenario
+    ///
+    /// # Arguments
+    /// * `use_case_id` - Use case containing the scenario
+    /// * `scenario_title` - Title of the scenario
+    ///
+    /// # Returns
+    /// DisplayResult with formatted list of references
+    ///
+    /// # Errors
+    /// Returns error if use case or scenario not found
+    pub fn list_scenario_references(
+        &mut self,
+        use_case_id: String,
+        scenario_title: String,
+    ) -> Result<DisplayResult> {
+        let controller = self.ensure_use_case_controller()?;
+        let references = controller.list_scenario_references(
+            Self::sanitize_required_string(use_case_id),
+            Self::sanitize_required_string(scenario_title),
+        )?;
+
+        // Format and display
+        if references.is_empty() {
+            Ok(DisplayResult::success(
+                "No references found for this scenario".to_string(),
+            ))
+        } else {
+            let mut output = String::new();
+            for (i, ref_data) in references.iter().enumerate() {
+                output.push_str(&format!(
+                    "{}. {} ({:?}) → {} [{}]\n",
+                    i + 1,
+                    ref_data.relationship,
+                    ref_data.ref_type,
+                    ref_data.target_id,
+                    ref_data.description.as_deref().unwrap_or("no description")
+                ));
+            }
+            Ok(DisplayResult::success(output))
+        }
+    }
+
+    /// List use cases that use a specific persona
+    ///
+    /// # Arguments
+    /// * `persona_id` - The persona identifier to search for
+    ///
+    /// # Returns
+    /// DisplayResult showing use cases using the persona, with scenario counts
+    ///
+    /// # Errors
+    /// Returns error if controller initialization or query fails
+    pub fn list_use_cases_for_persona(&mut self, persona_id: String) -> Result<DisplayResult> {
+        let controller = self.ensure_use_case_controller()?;
+
+        // Get use cases that use this persona (returns: Vec<(id, title, scenario_count)>)
+        let use_cases = controller.get_use_cases_for_persona(persona_id.clone())?;
+
+        if use_cases.is_empty() {
+            Ok(DisplayResult::success(format!(
+                "No use cases found using persona '{}'",
+                persona_id
+            )))
+        } else {
+            let mut output = format!("Use cases using persona '{}':\n\n", persona_id);
+
+            // Display each use case with its info
+            for (i, (uc_id, title, scenario_count)) in use_cases.iter().enumerate() {
+                output.push_str(&format!(
+                    "{}. {} - {} ({} scenario{})\n",
+                    i + 1,
+                    uc_id,
+                    title,
+                    scenario_count,
+                    if *scenario_count == 1 { "" } else { "s" }
+                ));
+            }
+
+            Ok(DisplayResult::success(output))
+        }
+    }
 }
 
 #[cfg(test)]

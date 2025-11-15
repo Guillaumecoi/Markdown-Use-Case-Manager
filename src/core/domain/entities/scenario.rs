@@ -1,4 +1,4 @@
-use super::{Actor, Metadata, ScenarioReference, ScenarioStep, ScenarioType, Status, UseCase};
+use super::{Metadata, ScenarioReference, ScenarioStep, ScenarioType, Status};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -60,30 +60,6 @@ impl Scenario {
             references: Vec::new(),
             extra: HashMap::new(),
         }
-    }
-
-    /// Get all effective preconditions (use case + scenario)
-    pub fn effective_preconditions(&self, use_case: &UseCase) -> Vec<String> {
-        let mut all = use_case.preconditions.clone();
-        all.extend(self.preconditions.clone());
-        all
-    }
-
-    /// Get all effective postconditions (use case + scenario)
-    pub fn effective_postconditions(&self, use_case: &UseCase) -> Vec<String> {
-        let mut all = use_case.postconditions.clone();
-        all.extend(self.postconditions.clone());
-        all
-    }
-
-    /// Get list of actors involved in this scenario
-    pub fn actors(&self) -> Vec<Actor> {
-        self.steps
-            .iter()
-            .map(|step| step.actor.clone())
-            .collect::<std::collections::HashSet<_>>()
-            .into_iter()
-            .collect()
     }
 
     /// Add a step to the scenario
@@ -150,15 +126,6 @@ impl Scenario {
         })
     }
 
-    /// Get all scenario IDs this scenario references
-    pub fn referenced_scenarios(&self) -> Vec<&str> {
-        self.references
-            .iter()
-            .filter(|r| matches!(r.ref_type, super::ReferenceType::UseCase))
-            .map(|r| r.target_id.as_str())
-            .collect()
-    }
-
     /// Remove a reference
     pub fn remove_reference(&mut self, target_id: &str, relationship: &str) {
         self.references
@@ -170,6 +137,7 @@ impl Scenario {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::domain::entities::Actor;
     use serde_json::json;
 
     #[test]
@@ -255,96 +223,6 @@ mod tests {
         scenario.add_postcondition("User is authenticated".to_string());
         assert_eq!(scenario.postconditions.len(), 1);
         assert_eq!(scenario.postconditions[0], "User is authenticated");
-    }
-
-    #[test]
-    fn test_scenario_actors() {
-        let mut scenario = Scenario::new(
-            "UC-AUTH-001-S01".to_string(),
-            "Successful login".to_string(),
-            "User successfully logs in".to_string(),
-            ScenarioType::HappyPath,
-        );
-
-        scenario.add_step(ScenarioStep::new(
-            1,
-            Actor::User,
-            "enters".to_string(),
-            "credentials".to_string(),
-        ));
-        scenario.add_step(ScenarioStep::new(
-            2,
-            Actor::System,
-            "verifies".to_string(),
-            "credentials".to_string(),
-        ));
-        scenario.add_step(ScenarioStep::new(
-            3,
-            Actor::User,
-            "sees".to_string(),
-            "dashboard".to_string(),
-        ));
-
-        let actors = scenario.actors();
-        assert_eq!(actors.len(), 2);
-        assert!(actors.contains(&Actor::User));
-        assert!(actors.contains(&Actor::System));
-    }
-
-    #[test]
-    fn test_scenario_effective_preconditions() {
-        let mut use_case = UseCase::new(
-            "UC-AUTH-001".to_string(),
-            "User Authentication".to_string(),
-            "Auth".to_string(),
-            "Handle user login".to_string(),
-            "high".to_string(),
-        )
-        .unwrap();
-
-        use_case.add_precondition("Application is running".to_string());
-
-        let mut scenario = Scenario::new(
-            "UC-AUTH-001-S01".to_string(),
-            "Successful login".to_string(),
-            "User successfully logs in".to_string(),
-            ScenarioType::HappyPath,
-        );
-
-        scenario.add_precondition("User has valid credentials".to_string());
-
-        let effective = scenario.effective_preconditions(&use_case);
-        assert_eq!(effective.len(), 2);
-        assert!(effective.contains(&"Application is running".to_string()));
-        assert!(effective.contains(&"User has valid credentials".to_string()));
-    }
-
-    #[test]
-    fn test_scenario_effective_postconditions() {
-        let mut use_case = UseCase::new(
-            "UC-AUTH-001".to_string(),
-            "User Authentication".to_string(),
-            "Auth".to_string(),
-            "Handle user login".to_string(),
-            "high".to_string(),
-        )
-        .unwrap();
-
-        use_case.add_postcondition("Audit log updated".to_string());
-
-        let mut scenario = Scenario::new(
-            "UC-AUTH-001-S01".to_string(),
-            "Successful login".to_string(),
-            "User successfully logs in".to_string(),
-            ScenarioType::HappyPath,
-        );
-
-        scenario.add_postcondition("User session created".to_string());
-
-        let effective = scenario.effective_postconditions(&use_case);
-        assert_eq!(effective.len(), 2);
-        assert!(effective.contains(&"Audit log updated".to_string()));
-        assert!(effective.contains(&"User session created".to_string()));
     }
 
     #[test]

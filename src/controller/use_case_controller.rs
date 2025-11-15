@@ -22,7 +22,9 @@
 
 use crate::config::Config;
 use crate::controller::dto::{DisplayResult, SelectionOptions};
-use crate::core::{ScenarioType, Status, UseCaseApplicationService};
+use crate::core::{
+    ReferenceType, ScenarioReference, ScenarioType, Status, UseCaseApplicationService,
+};
 use crate::presentation::{StatusFormatter, UseCaseFormatter};
 use anyhow::Result;
 
@@ -168,7 +170,15 @@ impl UseCaseController {
     /// # Errors
     /// Returns error if category retrieval fails
     pub fn get_categories(&mut self) -> Result<SelectionOptions> {
-        let categories = self.app_service.get_all_categories()?;
+        // Inline: get_all_categories (PR #13)
+        let mut categories: Vec<String> = self
+            .app_service
+            .get_all_use_cases()
+            .iter()
+            .map(|uc| uc.category.clone())
+            .collect();
+        categories.sort();
+        categories.dedup();
         Ok(SelectionOptions::new(categories))
     }
 
@@ -721,5 +731,156 @@ impl UseCaseController {
             ))),
             Err(e) => Ok(DisplayResult::error(e.to_string())),
         }
+    }
+
+    // ========== Scenario Reference Operations (PR #7) ==========
+
+    /// Add a reference to a scenario
+    ///
+    /// # Arguments
+    /// * `use_case_id` - Use case containing the source scenario
+    /// * `scenario_title` - Title of the source scenario
+    /// * `target_id` - Target ID (scenario or use case)
+    /// * `ref_type` - Reference type ("scenario" or "usecase")
+    /// * `relationship` - Relationship type ("includes", "extends", "depends-on", "alternative-to")
+    /// * `description` - Optional description
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case or scenario not found, or invalid reference type
+    pub fn add_scenario_reference(
+        &mut self,
+        use_case_id: String,
+        scenario_title: String,
+        target_id: String,
+        ref_type: String,
+        relationship: String,
+        description: Option<String>,
+    ) -> Result<DisplayResult> {
+        // Parse reference type
+        let reference_type = match ref_type.to_lowercase().as_str() {
+            "scenario" => ReferenceType::Scenario,
+            "usecase" => ReferenceType::UseCase,
+            _ => {
+                return Ok(DisplayResult::error(format!(
+                    "Invalid reference type '{}'. Use 'scenario' or 'usecase'",
+                    ref_type
+                )))
+            }
+        };
+
+        // Find scenario ID by title
+        let scenario_id = match self
+            .app_service
+            .find_scenario_id_by_title(&use_case_id, &scenario_title)
+        {
+            Ok(id) => id,
+            Err(e) => return Ok(DisplayResult::error(e.to_string())),
+        };
+
+        // Create the reference object
+        let mut reference =
+            ScenarioReference::new(reference_type, target_id.clone(), relationship.clone());
+        if let Some(desc) = description {
+            reference = reference.with_description(desc);
+        }
+
+        match self
+            .app_service
+            .add_scenario_reference(&use_case_id, &scenario_id, reference)
+        {
+            Ok(_) => Ok(DisplayResult::success(format!(
+                "Added {} reference to '{}' in scenario '{}' of use case {}",
+                relationship, target_id, scenario_title, use_case_id
+            ))),
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Remove a reference from a scenario
+    ///
+    /// # Arguments
+    /// * `use_case_id` - Use case containing the scenario
+    /// * `scenario_title` - Title of the scenario
+    /// * `target_id` - Target ID to remove
+    /// * `relationship` - Relationship type
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case, scenario, or reference not found
+    pub fn remove_scenario_reference(
+        &mut self,
+        use_case_id: String,
+        scenario_title: String,
+        target_id: String,
+        relationship: String,
+    ) -> Result<DisplayResult> {
+        // Find scenario ID by title
+        let scenario_id = match self
+            .app_service
+            .find_scenario_id_by_title(&use_case_id, &scenario_title)
+        {
+            Ok(id) => id,
+            Err(e) => return Ok(DisplayResult::error(e.to_string())),
+        };
+
+        match self.app_service.remove_scenario_reference(
+            &use_case_id,
+            &scenario_id,
+            &target_id,
+            &relationship,
+        ) {
+            Ok(_) => Ok(DisplayResult::success(format!(
+                "Removed {} reference to '{}' from scenario '{}' in use case {}",
+                relationship, target_id, scenario_title, use_case_id
+            ))),
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Get all references for a scenario
+    ///
+    /// # Arguments
+    /// * `use_case_id` - Use case containing the scenario
+    /// * `scenario_title` - Title of the scenario
+    ///
+    /// # Returns
+    /// Vector of ScenarioReference objects
+    ///
+    /// # Errors
+    /// Returns error if use case or scenario not found
+    pub fn list_scenario_references(
+        &self,
+        use_case_id: String,
+        scenario_title: String,
+    ) -> Result<Vec<ScenarioReference>> {
+        // Find scenario ID by title
+        let scenario_id = self
+            .app_service
+            .find_scenario_id_by_title(&use_case_id, &scenario_title)?;
+
+        self.app_service
+            .get_scenario_references(&use_case_id, &scenario_id)
+    }
+
+    /// Get all use cases that use a specific persona
+    ///
+    /// # Arguments
+    /// * `persona_id` - The persona identifier to search for
+    ///
+    /// # Returns
+    /// Vector of tuples (use_case_id, title, scenario_count) that have scenarios using this persona
+    ///
+    /// # Errors
+    /// Returns error if repository access fails
+    pub fn get_use_cases_for_persona(
+        &self,
+        persona_id: String,
+    ) -> Result<Vec<(String, String, usize)>> {
+        self.app_service.get_use_cases_for_persona(&persona_id)
     }
 }

@@ -12,7 +12,6 @@ pub use methodologies::{
 };
 pub use persistence::sqlite::SqliteUseCaseRepository;
 pub use persistence::{
-    file_operations, RepositoryFactory, TomlUseCaseRepository, TransactionalRepository,
-    UseCaseRepository,
+    file_operations, RepositoryFactory, TomlUseCaseRepository, UseCaseRepository,
 };
 pub use template_engine::TemplateEngine;

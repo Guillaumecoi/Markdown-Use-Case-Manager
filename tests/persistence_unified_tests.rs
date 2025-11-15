@@ -67,17 +67,8 @@ fn create_sqlite_repository() -> (TempDir, Box<dyn UseCaseRepository>) {
 
 /// Run all persistence tests against a repository
 fn run_all_tests(repo: &dyn UseCaseRepository) {
-    test_backend_name(repo);
-    test_health_check(repo);
     test_save_and_load(repo);
     test_save_with_extra_fields(repo);
-    test_delete(repo);
-    test_exists(repo);
-    test_find_by_category(repo);
-    test_find_by_priority(repo);
-    test_search_by_title(repo);
-    test_save_batch(repo);
-    test_delete_batch(repo);
     test_load_all(repo);
     test_save_markdown(repo);
 }
@@ -97,21 +88,6 @@ fn test_sqlite_backend() {
 }
 
 // ===== Individual Test Functions =====
-
-fn test_backend_name(repo: &dyn UseCaseRepository) {
-    // Test backend identification
-    let name = repo.backend_name();
-    assert!(
-        name == "toml" || name == "sqlite",
-        "Backend name should be 'toml' or 'sqlite', got: {}",
-        name
-    );
-}
-
-fn test_health_check(repo: &dyn UseCaseRepository) {
-    // Test health check
-    repo.health_check().expect("Health check should pass");
-}
 
 fn test_save_and_load(repo: &dyn UseCaseRepository) {
     let use_case = create_test_use_case();
@@ -158,258 +134,14 @@ fn test_save_with_extra_fields(repo: &dyn UseCaseRepository) {
     );
 }
 
-fn test_delete(repo: &dyn UseCaseRepository) {
-    let use_case = create_test_use_case();
-
-    // Save then delete
-    repo.save(&use_case).expect("Save should succeed");
-    assert!(
-        repo.exists(&use_case.id).unwrap(),
-        "Use case should exist before delete"
-    );
-
-    repo.delete(&use_case.id).expect("Delete should succeed");
-    assert!(
-        !repo.exists(&use_case.id).unwrap(),
-        "Use case should not exist after delete"
-    );
-}
-
-fn test_exists(repo: &dyn UseCaseRepository) {
-    let use_case = create_test_use_case();
-
-    assert!(
-        !repo.exists(&use_case.id).unwrap(),
-        "Use case should not exist initially"
-    );
-
-    repo.save(&use_case).expect("Save should succeed");
-    assert!(
-        repo.exists(&use_case.id).unwrap(),
-        "Use case should exist after save"
-    );
-}
-
-fn test_find_by_category(repo: &dyn UseCaseRepository) {
-    let use_case1 = UseCase::new(
-        "UC-CAT-001".to_string(),
-        "Category Test 1".to_string(),
-        "test_cat".to_string(),
-        "".to_string(),
-        "medium".to_string(),
-    )
-    .unwrap();
-    let use_case2 = UseCase::new(
-        "UC-CAT-002".to_string(),
-        "Category Test 2".to_string(),
-        "test_cat".to_string(),
-        "".to_string(),
-        "medium".to_string(),
-    )
-    .unwrap();
-    let use_case3 = UseCase::new(
-        "UC-CAT-003".to_string(),
-        "Category Test 3".to_string(),
-        "other_cat".to_string(),
-        "".to_string(),
-        "medium".to_string(),
-    )
-    .unwrap();
-
-    // Save all
-    repo.save(&use_case1).unwrap();
-    repo.save(&use_case2).unwrap();
-    repo.save(&use_case3).unwrap();
-
-    // Find by category
-    let found = repo.find_by_category("test_cat").unwrap();
-    assert_eq!(
-        found.len(),
-        2,
-        "Should find 2 use cases in test_cat category"
-    );
-
-    let ids: Vec<String> = found.iter().map(|uc| uc.id.clone()).collect();
-    assert!(ids.contains(&"UC-CAT-001".to_string()));
-    assert!(ids.contains(&"UC-CAT-002".to_string()));
-}
-
-fn test_find_by_priority(repo: &dyn UseCaseRepository) {
-    let use_case1 = UseCase::new(
-        "UC-PRI-001".to_string(),
-        "Priority Test 1".to_string(),
-        "test".to_string(),
-        "".to_string(),
-        "high".to_string(),
-    )
-    .unwrap();
-    let use_case2 = UseCase::new(
-        "UC-PRI-002".to_string(),
-        "Priority Test 2".to_string(),
-        "test".to_string(),
-        "".to_string(),
-        "high".to_string(),
-    )
-    .unwrap();
-    let use_case3 = UseCase::new(
-        "UC-PRI-003".to_string(),
-        "Priority Test 3".to_string(),
-        "test".to_string(),
-        "".to_string(),
-        "medium".to_string(),
-    )
-    .unwrap();
-
-    // Save all
-    repo.save(&use_case1).unwrap();
-    repo.save(&use_case2).unwrap();
-    repo.save(&use_case3).unwrap();
-
-    // Find by priority
-    let found = repo.find_by_priority("high").unwrap();
-    assert_eq!(found.len(), 2, "Should find 2 high priority use cases");
-
-    let ids: Vec<String> = found.iter().map(|uc| uc.id.clone()).collect();
-    assert!(ids.contains(&"UC-PRI-001".to_string()));
-    assert!(ids.contains(&"UC-PRI-002".to_string()));
-}
-
-fn test_search_by_title(repo: &dyn UseCaseRepository) {
-    let use_case1 = UseCase::new(
-        "UC-SEARCH-001".to_string(),
-        "User Authentication Flow".to_string(),
-        "auth".to_string(),
-        "".to_string(),
-        "medium".to_string(),
-    )
-    .unwrap();
-    let use_case2 = UseCase::new(
-        "UC-SEARCH-002".to_string(),
-        "Data Processing Pipeline".to_string(),
-        "data".to_string(),
-        "".to_string(),
-        "medium".to_string(),
-    )
-    .unwrap();
-    let use_case3 = UseCase::new(
-        "UC-SEARCH-003".to_string(),
-        "User Profile Management".to_string(),
-        "user".to_string(),
-        "".to_string(),
-        "medium".to_string(),
-    )
-    .unwrap();
-
-    // Save all
-    repo.save(&use_case1).unwrap();
-    repo.save(&use_case2).unwrap();
-    repo.save(&use_case3).unwrap();
-
-    // Search by title
-    let found = repo.search_by_title("user").unwrap();
-    assert_eq!(found.len(), 2, "Should find 2 use cases containing 'user'");
-
-    let ids: Vec<String> = found.iter().map(|uc| uc.id.clone()).collect();
-    assert!(ids.contains(&"UC-SEARCH-001".to_string()));
-    assert!(ids.contains(&"UC-SEARCH-003".to_string()));
-}
-
-fn test_save_batch(repo: &dyn UseCaseRepository) {
-    let use_cases = vec![
-        UseCase::new(
-            "UC-BATCH-001".to_string(),
-            "Batch Test 1".to_string(),
-            "batch".to_string(),
-            "".to_string(),
-            "medium".to_string(),
-        )
-        .unwrap(),
-        UseCase::new(
-            "UC-BATCH-002".to_string(),
-            "Batch Test 2".to_string(),
-            "batch".to_string(),
-            "".to_string(),
-            "medium".to_string(),
-        )
-        .unwrap(),
-        UseCase::new(
-            "UC-BATCH-003".to_string(),
-            "Batch Test 3".to_string(),
-            "batch".to_string(),
-            "".to_string(),
-            "medium".to_string(),
-        )
-        .unwrap(),
-    ];
-
-    // Save batch
-    repo.save_batch(&use_cases).unwrap();
-
-    // Verify all were saved
-    for use_case in &use_cases {
-        assert!(
-            repo.exists(&use_case.id).unwrap(),
-            "Use case {} should exist",
-            use_case.id
-        );
-    }
-
-    // Verify load_all includes them
-    let all = repo.load_all().unwrap();
-    assert!(all.len() >= 3, "Should have at least 3 use cases");
-}
-
-fn test_delete_batch(repo: &dyn UseCaseRepository) {
-    let use_cases = vec![
-        UseCase::new(
-            "UC-DEL-001".to_string(),
-            "Delete Test 1".to_string(),
-            "delete".to_string(),
-            "".to_string(),
-            "medium".to_string(),
-        )
-        .unwrap(),
-        UseCase::new(
-            "UC-DEL-002".to_string(),
-            "Delete Test 2".to_string(),
-            "delete".to_string(),
-            "".to_string(),
-            "medium".to_string(),
-        )
-        .unwrap(),
-        UseCase::new(
-            "UC-DEL-003".to_string(),
-            "Delete Test 3".to_string(),
-            "delete".to_string(),
-            "".to_string(),
-            "medium".to_string(),
-        )
-        .unwrap(),
-    ];
-
-    // Save all first
-    for use_case in &use_cases {
-        repo.save(use_case).unwrap();
-    }
-
-    // Verify they exist
-    for use_case in &use_cases {
-        assert!(repo.exists(&use_case.id).unwrap());
-    }
-
-    // Delete batch
-    let ids: Vec<&str> = use_cases.iter().map(|uc| uc.id.as_str()).collect();
-    repo.delete_batch(&ids).unwrap();
-
-    // Verify they're gone
-    for use_case in &use_cases {
-        assert!(
-            !repo.exists(&use_case.id).unwrap(),
-            "Use case {} should be deleted",
-            use_case.id
-        );
-    }
-}
+// Deleted tests (methods removed in PR #11):
+// - test_delete (delete method)
+// - test_exists (exists method)
+// - test_find_by_category (find_by_category method)
+// - test_find_by_priority (find_by_priority method)
+// - test_search_by_title (search_by_title method)
+// - test_save_batch (save_batch method)
+// - test_delete_batch (delete_batch method)
 
 fn test_load_all(repo: &dyn UseCaseRepository) {
     let use_cases = vec![
@@ -458,7 +190,5 @@ fn test_save_markdown(repo: &dyn UseCaseRepository) {
 
     // Note: We can't easily verify markdown content without backend-specific code
     // This test mainly ensures the method doesn't panic
-
-    // Clean up: delete the use case (which also removes markdown files for TOML backend)
-    repo.delete(&use_case.id).unwrap();
+    // Note: No cleanup since delete() was removed in PR #11
 }

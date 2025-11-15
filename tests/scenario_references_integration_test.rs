@@ -81,7 +81,7 @@ fn create_sqlite_repository() -> (TempDir, Box<dyn UseCaseRepository>) {
 #[test]
 #[serial]
 fn test_toml_save_and_load_scenario_with_references() {
-    let (_temp_dir, mut repo) = create_toml_repository();
+    let (_temp_dir, repo) = create_toml_repository();
 
     let mut use_case = create_test_use_case_with_scenarios();
 
@@ -117,7 +117,7 @@ fn test_toml_save_and_load_scenario_with_references() {
 #[test]
 #[serial]
 fn test_sqlite_save_and_load_scenario_with_references() {
-    let (_temp_dir, mut repo) = create_sqlite_repository();
+    let (_temp_dir, repo) = create_sqlite_repository();
 
     let mut use_case = create_test_use_case_with_scenarios();
 
@@ -153,7 +153,7 @@ fn test_sqlite_save_and_load_scenario_with_references() {
 #[test]
 #[serial]
 fn test_toml_multiple_references_per_scenario() {
-    let (_temp_dir, mut repo) = create_toml_repository();
+    let (_temp_dir, repo) = create_toml_repository();
 
     let mut use_case = create_test_use_case_with_scenarios();
 
@@ -189,7 +189,7 @@ fn test_toml_multiple_references_per_scenario() {
 #[test]
 #[serial]
 fn test_sqlite_multiple_references_per_scenario() {
-    let (_temp_dir, mut repo) = create_sqlite_repository();
+    let (_temp_dir, repo) = create_sqlite_repository();
 
     let mut use_case = create_test_use_case_with_scenarios();
 
@@ -261,7 +261,7 @@ fn test_sqlite_backward_compatibility_no_references() {
 #[test]
 #[serial]
 fn test_toml_reference_with_all_relationship_types() {
-    let (_temp_dir, mut repo) = create_toml_repository();
+    let (_temp_dir, repo) = create_toml_repository();
 
     let mut use_case = create_test_use_case_with_scenarios();
 
@@ -299,7 +299,7 @@ fn test_toml_reference_with_all_relationship_types() {
 #[test]
 #[serial]
 fn test_sqlite_reference_with_all_relationship_types() {
-    let (_temp_dir, mut repo) = create_sqlite_repository();
+    let (_temp_dir, repo) = create_sqlite_repository();
 
     let mut use_case = create_test_use_case_with_scenarios();
 

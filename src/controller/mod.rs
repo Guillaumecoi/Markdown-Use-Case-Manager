@@ -36,4 +36,4 @@ pub use project_controller::ProjectController;
 pub use use_case_controller::UseCaseController;
 
 // Re-export DTOs for use in CLI layer
-pub use dto::{DisplayResult, MethodologyInfo, SelectionOptions};
+pub use dto::{DisplayResult, MethodologyInfo};

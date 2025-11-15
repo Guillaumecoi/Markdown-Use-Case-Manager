@@ -29,6 +29,4 @@ mod registry;
 mod r#trait;
 
 // Re-export public types
-pub use definition::LanguageDefinition;
-pub use r#trait::Language;
 pub use registry::LanguageRegistry;

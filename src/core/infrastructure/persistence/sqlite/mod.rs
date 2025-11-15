@@ -11,4 +11,3 @@ pub mod schema;
 pub use migrations::Migrator;
 pub use persona_repository::SqlitePersonaRepository;
 pub use repository::SqliteUseCaseRepository;
-pub use schema::Schema;

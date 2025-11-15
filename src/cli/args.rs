@@ -225,6 +225,50 @@ pub enum ScenarioCommands {
         /// Step order to remove (1-based)
         order: u32,
     },
+    /// Manage scenario references
+    #[command(subcommand)]
+    Reference(ScenarioReferenceCommands),
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ScenarioReferenceCommands {
+    /// Add a reference from one scenario to another scenario or use case
+    Add {
+        /// Use case ID containing the source scenario
+        use_case_id: String,
+        /// Source scenario title
+        scenario_title: String,
+        /// Target ID (scenario or use case)
+        target_id: String,
+        /// Reference type: "scenario" or "usecase"
+        #[arg(short = 't', long)]
+        ref_type: String,
+        /// Relationship: "includes", "extends", "depends-on", "alternative-to"
+        #[arg(short, long)]
+        relationship: String,
+        /// Optional description
+        #[arg(short, long)]
+        description: Option<String>,
+    },
+    /// Remove a reference from a scenario
+    Remove {
+        /// Use case ID containing the scenario
+        use_case_id: String,
+        /// Scenario title
+        scenario_title: String,
+        /// Target ID to remove
+        target_id: String,
+        /// Relationship type
+        #[arg(short, long)]
+        relationship: String,
+    },
+    /// List all references for a scenario
+    List {
+        /// Use case ID containing the scenario
+        use_case_id: String,
+        /// Scenario title
+        scenario_title: String,
+    },
 }
 
 #[derive(Debug, Subcommand)]
@@ -253,6 +297,11 @@ pub enum PersonaCommands {
     List,
     /// Show persona details
     Show {
+        /// Persona ID
+        id: String,
+    },
+    /// List all use cases that use this persona
+    UseCases {
         /// Persona ID
         id: String,
     },

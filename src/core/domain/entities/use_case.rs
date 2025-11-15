@@ -1,4 +1,4 @@
-use super::{Metadata, Scenario, ScenarioType, Status, UseCaseReference};
+use super::{Metadata, Scenario, Status, UseCaseReference};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
@@ -131,20 +131,6 @@ impl UseCase {
         }
     }
 
-    /// Get all use case IDs this use case depends on
-    pub fn dependencies(&self) -> Vec<&str> {
-        self.use_case_references
-            .iter()
-            .filter(|r| r.is_dependency())
-            .map(|r| r.target_id.as_str())
-            .collect()
-    }
-
-    /// Check if this use case depends on another
-    pub fn depends_on(&self, use_case_id: &str) -> bool {
-        self.dependencies().contains(&use_case_id)
-    }
-
     /// Get next scenario ID for this use case
     pub fn next_scenario_id(&self) -> String {
         let next_num = self.scenarios.len() + 1;
@@ -155,14 +141,6 @@ impl UseCase {
     pub fn add_scenario(&mut self, scenario: Scenario) {
         self.scenarios.push(scenario);
         self.metadata.touch();
-    }
-
-    /// Get scenarios by type
-    pub fn scenarios_by_type(&self, scenario_type: ScenarioType) -> Vec<&Scenario> {
-        self.scenarios
-            .iter()
-            .filter(|s| s.scenario_type == scenario_type)
-            .collect()
     }
 
     /// Add a step to a specific scenario
@@ -217,49 +195,6 @@ impl UseCase {
                 scenario_id
             ))
         }
-    }
-
-    /// Add a reference to a specific scenario
-    pub fn add_reference_to_scenario(
-        &mut self,
-        scenario_id: &str,
-        reference: crate::core::domain::entities::ScenarioReference,
-    ) -> anyhow::Result<()> {
-        let scenario_index = self
-            .scenarios
-            .iter()
-            .position(|s| s.id == scenario_id)
-            .ok_or_else(|| anyhow::anyhow!("Scenario with ID '{}' not found", scenario_id))?;
-
-        // Validate the reference
-        crate::core::domain::services::ScenarioReferenceValidator::validate_reference(
-            self,
-            &self.scenarios[scenario_index].id,
-            &reference,
-        )?;
-
-        // Add the reference
-        self.scenarios[scenario_index].add_reference(reference);
-        self.metadata.touch();
-        Ok(())
-    }
-
-    /// Remove a reference from a specific scenario
-    pub fn remove_reference_from_scenario(
-        &mut self,
-        scenario_id: &str,
-        target_id: &str,
-        relationship: &str,
-    ) -> anyhow::Result<()> {
-        let scenario_index = self
-            .scenarios
-            .iter()
-            .position(|s| s.id == scenario_id)
-            .ok_or_else(|| anyhow::anyhow!("Scenario with ID '{}' not found", scenario_id))?;
-
-        self.scenarios[scenario_index].remove_reference(target_id, relationship);
-        self.metadata.touch();
-        Ok(())
     }
 }
 
@@ -422,6 +357,7 @@ mod priority_tests {
 #[cfg(test)]
 mod use_case_tests {
     use super::*;
+    use crate::core::domain::entities::{Scenario, ScenarioType};
     use serde_json::json;
 
     /// Test UseCase::new with valid priority strings
@@ -703,54 +639,6 @@ mod use_case_tests {
         assert_eq!(use_case.use_case_references.len(), 1);
     }
 
-    /// Test dependencies method
-    #[test]
-    fn test_dependencies() {
-        let mut use_case = UseCase::new(
-            "UC-TEST-001".to_string(),
-            "Test Use Case".to_string(),
-            "Test".to_string(),
-            "A test use case".to_string(),
-            "medium".to_string(),
-        )
-        .unwrap();
-
-        use_case.add_reference(UseCaseReference::new(
-            "UC-AUTH-001".to_string(),
-            "depends_on".to_string(),
-        ));
-
-        use_case.add_reference(UseCaseReference::new(
-            "UC-OTHER-001".to_string(),
-            "extends".to_string(),
-        ));
-
-        let deps = use_case.dependencies();
-        assert_eq!(deps.len(), 1);
-        assert_eq!(deps[0], "UC-AUTH-001");
-    }
-
-    /// Test depends_on method
-    #[test]
-    fn test_depends_on() {
-        let mut use_case = UseCase::new(
-            "UC-TEST-001".to_string(),
-            "Test Use Case".to_string(),
-            "Test".to_string(),
-            "A test use case".to_string(),
-            "medium".to_string(),
-        )
-        .unwrap();
-
-        use_case.add_reference(UseCaseReference::new(
-            "UC-AUTH-001".to_string(),
-            "depends_on".to_string(),
-        ));
-
-        assert!(use_case.depends_on("UC-AUTH-001"));
-        assert!(!use_case.depends_on("UC-OTHER-001"));
-    }
-
     /// Test backward compatibility - old use cases without new fields
     #[test]
     fn test_backward_compatibility() {
@@ -986,54 +874,5 @@ mod use_case_tests {
         assert_eq!(use_case.scenarios.len(), 1);
         assert_eq!(use_case.scenarios[0].id, "UC-TEST-001-S01");
         assert_eq!(use_case.scenarios[0].title, "Test Scenario");
-    }
-
-    /// Test scenarios_by_type method
-    #[test]
-    fn test_scenarios_by_type() {
-        let mut use_case = UseCase::new(
-            "UC-TEST-001".to_string(),
-            "Test Use Case".to_string(),
-            "Test".to_string(),
-            "A test use case".to_string(),
-            "medium".to_string(),
-        )
-        .unwrap();
-
-        use_case.add_scenario(Scenario::new(
-            "UC-TEST-001-S01".to_string(),
-            "Happy Path".to_string(),
-            "Success scenario".to_string(),
-            ScenarioType::HappyPath,
-        ));
-
-        use_case.add_scenario(Scenario::new(
-            "UC-TEST-001-S02".to_string(),
-            "Alternative Flow".to_string(),
-            "Alternative scenario".to_string(),
-            ScenarioType::AlternativeFlow,
-        ));
-
-        use_case.add_scenario(Scenario::new(
-            "UC-TEST-001-S03".to_string(),
-            "Exception Flow".to_string(),
-            "Error scenario".to_string(),
-            ScenarioType::ExceptionFlow,
-        ));
-
-        let happy_paths = use_case.scenarios_by_type(ScenarioType::HappyPath);
-        assert_eq!(happy_paths.len(), 1);
-        assert_eq!(happy_paths[0].title, "Happy Path");
-
-        let alt_flows = use_case.scenarios_by_type(ScenarioType::AlternativeFlow);
-        assert_eq!(alt_flows.len(), 1);
-        assert_eq!(alt_flows[0].title, "Alternative Flow");
-
-        let exc_flows = use_case.scenarios_by_type(ScenarioType::ExceptionFlow);
-        assert_eq!(exc_flows.len(), 1);
-        assert_eq!(exc_flows[0].title, "Exception Flow");
-
-        let extensions = use_case.scenarios_by_type(ScenarioType::Extension);
-        assert!(extensions.is_empty());
     }
 }

@@ -33,6 +33,8 @@ pub use commands::{
     handle_precondition_list_command, handle_precondition_remove_command,
     handle_reference_add_command, handle_reference_list_command, handle_reference_remove_command,
     handle_regenerate_command, handle_scenario_add_command, handle_scenario_add_step_command,
-    handle_scenario_list_command, handle_scenario_remove_step_command,
-    handle_scenario_update_status_command, handle_status_command,
+    handle_scenario_list_command, handle_scenario_reference_add_command,
+    handle_scenario_reference_list_command, handle_scenario_reference_remove_command,
+    handle_scenario_remove_step_command, handle_scenario_update_status_command,
+    handle_status_command,
 };

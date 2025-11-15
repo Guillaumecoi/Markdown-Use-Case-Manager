@@ -12,4 +12,4 @@ pub mod traits;
 // Re-export for convenience
 pub use repository_factory::RepositoryFactory;
 pub use toml::TomlUseCaseRepository;
-pub use traits::{TransactionalRepository, UseCaseRepository};
+pub use traits::UseCaseRepository;

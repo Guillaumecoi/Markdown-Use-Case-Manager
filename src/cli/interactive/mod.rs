@@ -38,4 +38,5 @@ mod tests;
 
 // Public exports
 pub use menus::menu::run_interactive_session;
-pub(crate) use runner::InteractiveRunner;
+#[cfg(test)]
+pub use runner::InteractiveRunner;
