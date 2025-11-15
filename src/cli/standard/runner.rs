@@ -56,6 +56,18 @@ impl CliRunner {
             .expect("controller was just initialized"))
     }
 
+    /// Sanitize a string input by trimming whitespace.
+    ///
+    /// Returns None if the input contains only whitespace, Some(trimmed_string) otherwise.
+    fn sanitize_string(input: String) -> Option<String> {
+        let trimmed = input.trim();
+        if trimmed.is_empty() {
+            None
+        } else {
+            Some(trimmed.to_string())
+        }
+    }
+
     /// Initialize a new use case manager project (configuration phase).
     ///
     /// Creates the initial project structure and configuration files.
@@ -64,21 +76,34 @@ impl CliRunner {
     ///
     /// # Arguments
     /// * `language` - Optional programming language for code templates
-    /// * `methodology` - Optional default methodology (defaults to "feature")
+    /// * `methodologies` - List of methodologies to enable (first one becomes default)
     ///
     /// # Returns
     /// Returns a DisplayResult with success message.
     pub fn init_project(
         &mut self,
         language: Option<String>,
-        methodology: Option<String>,
+        methodologies: Vec<String>,
     ) -> Result<DisplayResult> {
         // Sanitize inputs: trim whitespace and filter out empty strings
         let sanitized_language = Self::sanitize_optional_string(language);
-        let sanitized_methodology =
-            Self::sanitize_optional_string(methodology).unwrap_or_else(|| "feature".to_string());
+        let sanitized_methodologies: Vec<String> = methodologies
+            .into_iter()
+            .filter_map(Self::sanitize_string)
+            .collect();
 
-        let result = ProjectController::init_project(sanitized_language, sanitized_methodology)?;
+        // Use first methodology as default, or "feature" if none provided
+        let default_methodology = sanitized_methodologies
+            .first()
+            .cloned()
+            .unwrap_or_else(|| "feature".to_string());
+
+        let result = ProjectController::init_project_with_methodologies(
+            sanitized_language,
+            sanitized_methodologies,
+            "toml".to_string(),
+            default_methodology,
+        )?;
         Ok(result)
     }
 
@@ -90,7 +115,7 @@ impl CliRunner {
     ///
     /// # Arguments
     /// * `language` - Optional programming language for code templates
-    /// * `methodology` - Optional default methodology (defaults to "feature")
+    /// * `methodologies` - List of methodologies to enable
     /// * `storage` - Storage backend to use (toml or sqlite)
     ///
     /// # Returns
@@ -98,18 +123,27 @@ impl CliRunner {
     pub fn init_project_with_storage(
         &mut self,
         language: Option<String>,
-        methodology: Option<String>,
+        methodologies: Vec<String>,
         storage: String,
     ) -> Result<DisplayResult> {
         // Sanitize inputs: trim whitespace and filter out empty strings
         let sanitized_language = Self::sanitize_optional_string(language);
-        let sanitized_methodology =
-            Self::sanitize_optional_string(methodology).unwrap_or_else(|| "feature".to_string());
+        let sanitized_methodologies: Vec<String> = methodologies
+            .into_iter()
+            .filter_map(Self::sanitize_string)
+            .collect();
 
-        let result = ProjectController::init_project_with_storage(
+        // Use first methodology as default, or "feature" if none provided
+        let default_methodology = sanitized_methodologies
+            .first()
+            .cloned()
+            .unwrap_or_else(|| "feature".to_string());
+
+        let result = ProjectController::init_project_with_methodologies(
             sanitized_language,
-            sanitized_methodology,
+            sanitized_methodologies,
             storage,
+            default_methodology,
         )?;
         Ok(result)
     }

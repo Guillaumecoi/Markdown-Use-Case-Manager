@@ -60,13 +60,13 @@ impl InteractiveRunner {
     pub fn initialize_project(
         &mut self,
         language: Option<String>,
-        default_methodology: String,
+        methodologies: Vec<String>,
     ) -> Result<String> {
         // This delegates to CliRunner for consistency, but we could call controller directly
         // For now, we'll keep the existing pattern
         use crate::cli::standard::CliRunner;
         let mut runner = CliRunner::new();
-        let result = runner.init_project(language, Some(default_methodology))?;
+        let result = runner.init_project(language, methodologies)?;
         Ok(result.message)
     }
 

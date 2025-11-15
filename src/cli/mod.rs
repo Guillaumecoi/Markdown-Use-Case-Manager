@@ -95,8 +95,17 @@ pub fn run() -> Result<()> {
             storage,
             finalize,
         } => {
+            let methodologies: Vec<String> = methodology
+                .as_ref()
+                .map(|s| {
+                    s.split(',')
+                        .map(|s| s.trim().to_string())
+                        .filter(|s| !s.is_empty())
+                        .collect()
+                })
+                .unwrap_or_else(|| vec!["feature".to_string()]);
             execute_command(|| {
-                handle_init_command(&mut runner, language, methodology, storage, finalize)
+                handle_init_command(&mut runner, language, methodologies, storage, finalize)
             });
             Ok(())
         }

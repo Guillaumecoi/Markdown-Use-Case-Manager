@@ -126,8 +126,8 @@ fn bench_load_by_id(c: &mut Criterion, backend: StorageBackend, use_case_count: 
         |b| {
             b.iter(|| {
                 for use_case in &use_cases {
-                    let _result =
-                        std::hint::black_box(repository.load_by_id(&use_case.id)).expect("Load by ID failed");
+                    let _result = std::hint::black_box(repository.load_by_id(&use_case.id))
+                        .expect("Load by ID failed");
                 }
             })
         },
@@ -157,7 +157,8 @@ fn bench_find_by_category(c: &mut Criterion, backend: StorageBackend, use_case_c
         ),
         |b| {
             b.iter(|| {
-                let all_use_cases = std::hint::black_box(repository.load_all()).expect("Load all failed");
+                let all_use_cases =
+                    std::hint::black_box(repository.load_all()).expect("Load all failed");
                 let _filtered: Vec<_> = all_use_cases
                     .iter()
                     .filter(|uc| uc.category == "benchmark")

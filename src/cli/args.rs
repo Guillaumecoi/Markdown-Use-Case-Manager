@@ -19,7 +19,7 @@ pub enum Commands {
         /// Programming language for test templates (rust, python, javascript, etc.)
         #[arg(short, long)]
         language: Option<String>,
-        /// Documentation methodology (feature, business, developer, tester)
+        /// Documentation methodologies (feature, business, developer, tester) - can specify multiple
         #[arg(short, long)]
         methodology: Option<String>,
         /// Storage backend (toml or sqlite)

@@ -42,6 +42,7 @@ pub use types::{Config, StorageBackend, StorageConfig};
 use anyhow::{Context, Result};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 impl Config {
     // Constants
@@ -61,36 +62,54 @@ impl Config {
     /// # Returns
     /// A minimal Config instance suitable for template processing
     pub fn for_template(test_language: Option<String>, methodology: Option<String>) -> Self {
-        let mut config = Self::default();
-        if let Some(lang) = test_language {
-            config.generation.test_language = lang.clone();
-            config.templates.test_language = lang;
-        }
-        if let Some(method) = methodology {
-            config.templates.default_methodology = method;
-        }
-        config
+        let methodologies = if let Some(ref method) = methodology.clone() {
+            vec![method.clone()]
+        } else {
+            vec!["feature".to_string()]
+        };
+        Self::for_template_with_methodologies_and_storage(
+            test_language,
+            methodologies,
+            methodology,
+            "toml".to_string(),
+        )
     }
 
-    /// Create a minimal config for template processing with storage backend.
+    /// Create a minimal config for template processing with multiple methodologies.
     ///
     /// This creates a basic configuration used only for template variable substitution.
     /// It's not a complete project configuration and should not be saved directly.
     ///
     /// # Arguments
     /// * `test_language` - The programming language for test templates
-    /// * `methodology` - Optional default methodology override
-    /// * `storage_backend` - The storage backend to use
+    /// * `methodologies` - List of methodologies to enable
+    /// * `default_methodology` - Optional default methodology override
     ///
     /// # Returns
     /// A minimal Config instance suitable for template processing
-    pub fn for_template_with_storage(
+    pub fn for_template_with_methodologies_and_storage(
         test_language: Option<String>,
-        methodology: Option<String>,
-        storage_backend: StorageBackend,
+        methodologies: Vec<String>,
+        default_methodology: Option<String>,
+        storage: String,
     ) -> Self {
-        let mut config = Self::for_template(test_language, methodology);
-        config.storage.backend = storage_backend;
+        let mut config = Self::default();
+        if let Some(lang) = test_language {
+            config.generation.test_language = lang.clone();
+            config.templates.test_language = lang;
+        }
+        if !methodologies.is_empty() {
+            config.templates.methodologies = methodologies;
+        }
+        if let Some(method) = default_methodology {
+            config.templates.default_methodology = method;
+        }
+        // Set storage backend
+        use crate::config::types::StorageBackend;
+        if let Ok(backend) = StorageBackend::from_str(&storage) {
+            config.storage.backend = backend;
+        }
+        // If parsing fails, keep the default (Toml)
         config
     }
 

@@ -611,10 +611,11 @@ mod project_controller_tests {
     fn test_init_with_storage_backend() {
         let _temp_dir = setup_empty_dir();
 
-        let result = ProjectController::init_project_with_storage(
+        let result = ProjectController::init_project_with_methodologies(
             Some("rust".to_string()),
-            "business".to_string(),
+            vec!["business".to_string()],
             "sqlite".to_string(),
+            "business".to_string(),
         );
 
         assert!(result.is_ok());

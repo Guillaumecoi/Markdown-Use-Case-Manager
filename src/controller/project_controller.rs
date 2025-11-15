@@ -186,26 +186,28 @@ impl ProjectController {
         Ok(DisplayResult::success(message))
     }
 
-    /// Initialize a new project with storage backend choice (Step 1: Create config).
+    /// Initialize a new project with multiple methodologies (Step 1: Create config).
     ///
     /// Creates the initial project configuration file with user-specified
-    /// language, methodology, and storage backend preferences. This is the first step in
+    /// language, methodologies, storage backend, and default methodology preferences. This is the first step in
     /// project initialization.
     ///
     /// # Arguments
     /// * `language` - Optional programming language for test generation
-    /// * `default_methodology` - Default methodology for use case creation
+    /// * `methodologies` - List of methodologies to enable
     /// * `storage` - Storage backend to use (toml or sqlite)
+    /// * `default_methodology` - Default methodology for use case creation
     ///
     /// # Returns
     /// DisplayResult with success message and next steps guidance
     ///
     /// # Errors
     /// Returns error if project is already initialized or configuration creation fails
-    pub fn init_project_with_storage(
+    pub fn init_project_with_methodologies(
         language: Option<String>,
-        default_methodology: String,
+        methodologies: Vec<String>,
         storage: String,
+        default_methodology: String,
     ) -> Result<DisplayResult> {
         // Check if already initialized
         if Self::is_initialized() {
@@ -231,16 +233,12 @@ impl ProjectController {
             "rust".to_string()
         };
 
-        // Parse storage backend
-        let storage_backend = storage
-            .parse::<crate::config::StorageBackend>()
-            .map_err(anyhow::Error::msg)?;
-
-        // Create config with storage backend
-        let config = Config::for_template_with_storage(
+        // Create minimal config with specified methodologies and storage
+        let config = Config::for_template_with_methodologies_and_storage(
             Some(resolved_language),
+            methodologies,
             Some(default_methodology.clone()),
-            storage_backend,
+            storage,
         );
 
         // Save config file
@@ -251,6 +249,7 @@ impl ProjectController {
              📝 Please review and customize the configuration:\n\
              - Programming language: {}\n\
              - Default Methodology: {}\n\
+             - Enabled Methodologies: {}\n\
              - Storage Backend: {}\n\
              - TOML directory: {}\n\
              - Use case directory: {}\n\
@@ -258,12 +257,13 @@ impl ProjectController {
              ⚡ When ready, run: mucm init --finalize\n\n\
              \n\
              💡 The finalize step will:\n\
-             - Copy the used methodology templates\n\
-             - Copy the used language templates\n\
-             - You can use any methodology when creating use cases\n\
+             - Copy the selected methodology templates\n\
+             - Copy the selected language templates\n\
+             - You can use any enabled methodology when creating use cases\n\
              - Directories will be created when you create your first use case",
             config.templates.test_language,
             &config.templates.default_methodology,
+            config.templates.methodologies.join(", "),
             config.storage.backend,
             config
                 .directories

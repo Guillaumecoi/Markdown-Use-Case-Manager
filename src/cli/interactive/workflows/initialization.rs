@@ -139,7 +139,7 @@ impl Initialization {
         show_configuration_summary(&language, &selected_methodologies, &default_methodology)?;
 
         // Create config
-        create_config(&mut runner, language, default_methodology)?;
+        create_config(&mut runner, language, selected_methodologies)?;
 
         // Finalize
         finalize_initialization(&mut runner)?;
@@ -168,9 +168,9 @@ fn show_configuration_summary(
 fn create_config(
     runner: &mut InteractiveRunner,
     language: Option<String>,
-    default_methodology: String,
+    selected_methodologies: Vec<String>,
 ) -> Result<()> {
-    match runner.initialize_project(language, default_methodology) {
+    match runner.initialize_project(language, selected_methodologies) {
         Ok(message) => {
             UI::show_success(&message)?;
             Ok(())

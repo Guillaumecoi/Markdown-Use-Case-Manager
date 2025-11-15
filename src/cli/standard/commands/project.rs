@@ -7,14 +7,14 @@ use anyhow::Result;
 ///
 /// Initializes a new use case manager project in the current directory.
 /// When `finalize` is false, sets up the project structure, configuration files,
-/// and default settings based on the provided language and methodology.
+/// and default settings based on the provided language and methodologies.
 /// When `finalize` is true, completes the initialization process.
 /// Progress messages are printed to stdout.
 ///
 /// # Arguments
 /// * `runner` - A mutable reference to the CLI runner responsible for project initialization.
 /// * `language` - Optional programming language to configure for the project.
-/// * `methodology` - Optional methodology to set as default for the project.
+/// * `methodologies` - List of methodologies to enable for the project.
 /// * `storage` - Storage backend to use (toml or sqlite).
 /// * `finalize` - Whether to finalize the initialization (true) or perform initial setup (false).
 ///
@@ -23,7 +23,7 @@ use anyhow::Result;
 pub fn handle_init_command(
     runner: &mut CliRunner,
     language: Option<String>,
-    methodology: Option<String>,
+    methodologies: Vec<String>,
     storage: String,
     finalize: bool,
 ) -> Result<()> {
@@ -35,9 +35,7 @@ pub fn handle_init_command(
         }
     } else {
         println!("Initializing use case manager project...");
-        // Sanitize methodology input
-        let sanitized_methodology = methodology.unwrap_or_else(|| "feature".to_string());
-        match runner.init_project_with_storage(language, Some(sanitized_methodology), storage) {
+        match runner.init_project_with_storage(language, methodologies, storage) {
             Ok(result) => DisplayResultFormatter::display(&result),
             Err(e) => DisplayResultFormatter::display(&DisplayResult::error(e.to_string())),
         }
