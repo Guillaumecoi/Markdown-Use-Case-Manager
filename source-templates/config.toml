@@ -9,11 +9,16 @@ persona_dir = "docs/personas"
 toml_dir = "use-cases-data"
 
 [templates]
-# methodologies and default_methodology will be set dynamically based on available templates
-test_language = "python"
+# methodologies will be set dynamically based on available templates
+default_methodology = "feature"
 
-# Base fields that all use cases can have (beyond mandatory id/title/category)
+[generation]
+test_language = "none"
+auto_generate_tests = false
+overwrite_test_documentation = false
+
 [base_fields]
+# Base fields that all use cases can have (beyond mandatory id/title/category)
 description = { label = "Description", type = "string", required = true }
 status = { label = "Status", type = "string", required = false, default = "draft" }
 priority = { label = "Priority", type = "string", required = false, default = "medium" }

@@ -34,6 +34,11 @@ impl TestGenerator {
     ///
     /// Returns `Ok(())` if the file was generated or skipped (when file exists and overwrite is disabled).
     pub fn generate(&self, use_case: &UseCase) -> Result<()> {
+        // Skip test generation if test_language is "none"
+        if self.config.generation.test_language == "none" {
+            return Ok(());
+        }
+
         // Check if test file already exists and overwrite is disabled
         let file_extension = self.get_file_extension();
         if self
@@ -102,7 +107,8 @@ impl TestGenerator {
             "python" => "py".to_string(),
             "javascript" => "js".to_string(),
             "rust" => "rs".to_string(),
-            _ => "txt".to_string(), // fallback
+            "none" => "txt".to_string(), // fallback for none
+            _ => "txt".to_string(),      // fallback for unknown
         }
     }
 

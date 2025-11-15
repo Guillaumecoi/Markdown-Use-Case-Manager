@@ -257,7 +257,7 @@ impl Config {
                         default_methodology: "feature".to_string(),
                     },
                     generation: GenerationConfig {
-                        test_language: "python".to_string(),
+                        test_language: "none".to_string(),
                         auto_generate_tests: false,
                         overwrite_test_documentation: false,
                     },
@@ -292,12 +292,15 @@ impl Config {
                 ]
             });
 
-        // Set methodologies and default methodology dynamically
+        // Set methodologies dynamically
         config.templates.methodologies = methodologies.clone();
-        config.templates.default_methodology = methodologies
-            .first()
-            .cloned()
-            .unwrap_or_else(|| "feature".to_string()); // Fallback to "feature" if no methodologies found
+        // Keep the default_methodology from config.toml unless it's empty
+        if config.templates.default_methodology.is_empty() {
+            config.templates.default_methodology = methodologies
+                .first()
+                .cloned()
+                .unwrap_or_else(|| "feature".to_string()); // Fallback to "feature" if no methodologies found
+        }
 
         // Set default generation config that matches the template defaults
         config.generation = GenerationConfig {
@@ -483,13 +486,13 @@ mod tests {
             // If source templates not available, template won't exist but config should still work
         }
 
-        // Test with None (default language)
+        // Test with None (default language should be "none")
         {
             let temp_dir = TempDir::new()?;
             std::env::set_current_dir(&temp_dir)?;
 
             let config = init_project_with_language(None)?;
-            assert_eq!(config.generation.test_language, "python"); // Default from Config::default()
+            assert_eq!(config.generation.test_language, "none"); // Default from Config::default()
         }
 
         Ok(())

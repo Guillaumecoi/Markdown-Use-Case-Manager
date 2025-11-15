@@ -138,16 +138,21 @@ impl ProjectController {
         let resolved_language = if let Some(lang) = language {
             use crate::config::Config;
 
-            // Always load language metadata (info.toml) from source templates
-            let templates_dir = Config::get_metadata_load_dir()?;
-            let language_registry = LanguageRegistry::new_dynamic(&templates_dir)?;
-            if let Some(lang_def) = language_registry.get(&lang) {
-                lang_def.name().to_string()
+            // Handle special case for "none"
+            if lang == "none" {
+                "none".to_string()
             } else {
-                lang
+                // Always load language metadata (info.toml) from source templates
+                let templates_dir = Config::get_metadata_load_dir()?;
+                let language_registry = LanguageRegistry::new_dynamic(&templates_dir)?;
+                if let Some(lang_def) = language_registry.get(&lang) {
+                    lang_def.name().to_string()
+                } else {
+                    lang
+                }
             }
         } else {
-            "rust".to_string()
+            "none".to_string()
         };
 
         // Create minimal config
@@ -221,16 +226,21 @@ impl ProjectController {
         let resolved_language = if let Some(lang) = language {
             use crate::config::Config;
 
-            // Always load language metadata (info.toml) from source templates
-            let templates_dir = Config::get_metadata_load_dir()?;
-            let language_registry = LanguageRegistry::new_dynamic(&templates_dir)?;
-            if let Some(lang_def) = language_registry.get(&lang) {
-                lang_def.name().to_string()
+            // Handle special case for "none"
+            if lang == "none" {
+                "none".to_string()
             } else {
-                lang
+                // Always load language metadata (info.toml) from source templates
+                let templates_dir = Config::get_metadata_load_dir()?;
+                let language_registry = LanguageRegistry::new_dynamic(&templates_dir)?;
+                if let Some(lang_def) = language_registry.get(&lang) {
+                    lang_def.name().to_string()
+                } else {
+                    lang
+                }
             }
         } else {
-            "rust".to_string()
+            "none".to_string()
         };
 
         // Create minimal config with specified methodologies and storage

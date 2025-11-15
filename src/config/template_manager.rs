@@ -274,6 +274,12 @@ impl TemplateManager {
         config: &Config,
         config_templates_dir: &Path,
     ) -> Result<()> {
+        // Skip language template copying if test_language is "none"
+        if config.generation.test_language == "none" {
+            println!("⊘ Skipping language templates (test_language = none)");
+            return Ok(());
+        }
+
         let source_languages = source_templates_dir.join("languages");
         if !source_languages.exists() {
             return Ok(()); // Languages are optional
