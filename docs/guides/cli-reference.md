@@ -311,6 +311,197 @@ mucm reference remove <USE_CASE_ID> <TARGET_ID>
 mucm reference remove UC-SEC-001 UC-AUTH-001
 ```
 
+## Scenario Management Commands
+
+### `scenario add`
+
+Add a new scenario to a use case.
+
+```bash
+mucm scenario add [OPTIONS] <USE_CASE_ID> <TITLE> --scenario-type <TYPE>
+```
+
+**Arguments:**
+- `<USE_CASE_ID>`: Use case ID (e.g., UC-SEC-001)
+- `<TITLE>`: Scenario title
+
+**Options:**
+- `-t, --scenario-type <TYPE>`: Scenario type (main, alternative, exception)
+- `-d, --description <DESCRIPTION>`: Optional scenario description
+
+**Examples:**
+```bash
+mucm scenario add UC-SEC-001 "Happy Path Login" --scenario-type main
+mucm scenario add UC-SEC-001 "Login with 2FA" --scenario-type alternative
+mucm scenario add UC-SEC-001 "Invalid Password" --scenario-type exception
+```
+
+### `scenario add-step`
+
+Add a step to a scenario.
+
+```bash
+mucm scenario add-step [OPTIONS] <USE_CASE_ID> <SCENARIO_TITLE> <STEP>
+```
+
+**Arguments:**
+- `<USE_CASE_ID>`: Use case ID (e.g., UC-SEC-001)
+- `<SCENARIO_TITLE>`: Scenario title
+- `<STEP>`: Step description
+
+**Options:**
+- `-o, --order <ORDER>`: Step order (1-based, optional - appends if not specified)
+
+**Examples:**
+```bash
+mucm scenario add-step UC-SEC-001 "Happy Path Login" "User enters credentials"
+mucm scenario add-step UC-SEC-001 "Happy Path Login" "System validates credentials" --order 2
+```
+
+### `scenario update-status`
+
+Update the status of a scenario.
+
+```bash
+mucm scenario update-status <USE_CASE_ID> <SCENARIO_TITLE> <STATUS>
+```
+
+**Arguments:**
+- `<USE_CASE_ID>`: Use case ID (e.g., UC-SEC-001)
+- `<SCENARIO_TITLE>`: Scenario title
+- `<STATUS>`: New status (planned, in-progress, completed, deprecated)
+
+**Examples:**
+```bash
+mucm scenario update-status UC-SEC-001 "Happy Path Login" in-progress
+mucm scenario update-status UC-SEC-001 "Login with 2FA" completed
+```
+
+### `scenario list`
+
+List all scenarios for a use case.
+
+```bash
+mucm scenario list <USE_CASE_ID>
+```
+
+**Arguments:**
+- `<USE_CASE_ID>`: Use case ID (e.g., UC-SEC-001)
+
+**Examples:**
+```bash
+mucm scenario list UC-SEC-001
+```
+
+### `scenario remove-step`
+
+Remove a step from a scenario.
+
+```bash
+mucm scenario remove-step <USE_CASE_ID> <SCENARIO_TITLE> <ORDER>
+```
+
+**Arguments:**
+- `<USE_CASE_ID>`: Use case ID (e.g., UC-SEC-001)
+- `<SCENARIO_TITLE>`: Scenario title
+- `<ORDER>`: Step order to remove (1-based)
+
+**Examples:**
+```bash
+mucm scenario remove-step UC-SEC-001 "Happy Path Login" 3
+```
+
+### Scenario Reference Management
+
+#### `scenario reference add`
+
+Add a reference from one scenario to another scenario or use case.
+
+```bash
+mucm scenario reference add [OPTIONS] <USE_CASE_ID> <SCENARIO_TITLE> <TARGET_ID> \
+  --ref-type <TYPE> --relationship <RELATIONSHIP>
+```
+
+**Arguments:**
+- `<USE_CASE_ID>`: Use case ID containing the source scenario
+- `<SCENARIO_TITLE>`: Title of the source scenario
+- `<TARGET_ID>`: Target scenario or use case ID
+
+**Options:**
+- `-t, --ref-type <TYPE>`: Reference type (scenario, usecase)
+- `-r, --relationship <RELATIONSHIP>`: Relationship type (includes, extends, depends-on, alternative-to)
+- `-d, --description <DESCRIPTION>`: Optional description of the reference
+
+**Examples:**
+```bash
+# Reference another scenario
+mucm scenario reference add UC-SEC-001 "Happy Path Login" UC-SEC-001-S02 \
+  --ref-type scenario --relationship extends \
+  --description "Extends with 2FA verification"
+
+# Reference a use case
+mucm scenario reference add UC-API-001 "API Call Flow" UC-SEC-001 \
+  --ref-type usecase --relationship depends-on \
+  --description "Requires user authentication"
+
+# Include another scenario
+mucm scenario reference add UC-SEC-001 "Login Flow" UC-SEC-001-S03 \
+  --ref-type scenario --relationship includes
+```
+
+#### `scenario reference remove`
+
+Remove a reference from a scenario.
+
+```bash
+mucm scenario reference remove <USE_CASE_ID> <SCENARIO_TITLE> <TARGET_ID> \
+  --relationship <RELATIONSHIP>
+```
+
+**Arguments:**
+- `<USE_CASE_ID>`: Use case ID containing the scenario
+- `<SCENARIO_TITLE>`: Scenario title
+- `<TARGET_ID>`: Target ID to remove
+
+**Options:**
+- `-r, --relationship <RELATIONSHIP>`: Relationship type of the reference to remove
+
+**Examples:**
+```bash
+mucm scenario reference remove UC-SEC-001 "Happy Path Login" UC-SEC-001-S02 \
+  --relationship extends
+
+mucm scenario reference remove UC-API-001 "API Call Flow" UC-SEC-001 \
+  --relationship depends-on
+```
+
+#### `scenario reference list`
+
+List all references for a scenario.
+
+```bash
+mucm scenario reference list <USE_CASE_ID> <SCENARIO_TITLE>
+```
+
+**Arguments:**
+- `<USE_CASE_ID>`: Use case ID containing the scenario
+- `<SCENARIO_TITLE>`: Scenario title
+
+**Examples:**
+```bash
+mucm scenario reference list UC-SEC-001 "Happy Path Login"
+mucm scenario reference list UC-API-001 "API Call Flow"
+```
+
+### Scenario Reference Relationship Types
+
+When adding scenario references, use one of these relationship types:
+
+- `includes`: The scenario includes functionality from the target
+- `extends`: The scenario extends the target with additional functionality
+- `depends-on`: The scenario depends on the target being completed first
+- `alternative-to`: The scenario provides an alternative path to the target
+
 ### `persona`
 
 Manage personas (user archetypes for scenarios).
