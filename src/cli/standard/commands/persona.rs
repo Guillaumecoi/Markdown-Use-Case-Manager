@@ -2,7 +2,7 @@
 
 use crate::cli::args::PersonaCommands;
 use crate::config::Config;
-use crate::core::{Persona, PersonaRepository, RepositoryFactory};
+use crate::core::{Persona, RepositoryFactory};
 use anyhow::{Context, Result};
 
 /// Handle persona commands

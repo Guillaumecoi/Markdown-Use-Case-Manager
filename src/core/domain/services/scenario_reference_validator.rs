@@ -1,5 +1,5 @@
-use crate::core::domain::entities::{ReferenceType, Scenario, ScenarioReference, UseCase};
-use anyhow::{Context, Result};
+use crate::core::domain::entities::{ReferenceType, ScenarioReference, UseCase};
+use anyhow::Result;
 use std::collections::{HashMap, HashSet};
 
 /// Validates scenario references and prevents circular dependencies
@@ -134,7 +134,7 @@ impl ScenarioReferenceValidator {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::core::domain::entities::ScenarioType;
+    use crate::core::domain::entities::{Scenario, ScenarioType};
 
     fn create_test_use_case_with_scenarios() -> UseCase {
         let mut uc = UseCase::new(

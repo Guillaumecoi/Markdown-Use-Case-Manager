@@ -84,9 +84,7 @@ impl SqliteUseCaseRepository {
         conn: &Connection,
         use_case_id: &str,
     ) -> Result<Vec<crate::core::domain::Scenario>> {
-        use crate::core::domain::{
-            ReferenceType, Scenario, ScenarioReference, ScenarioStep, ScenarioType, Status,
-        };
+        use crate::core::domain::{Scenario, ScenarioReference, ScenarioStep};
 
         let mut scenarios = Vec::new();
 

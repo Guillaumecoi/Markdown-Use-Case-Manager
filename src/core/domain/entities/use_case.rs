@@ -1,4 +1,4 @@
-use super::{Metadata, Scenario, ScenarioType, Status, UseCaseReference};
+use super::{Metadata, Scenario, Status, UseCaseReference};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
@@ -357,6 +357,7 @@ mod priority_tests {
 #[cfg(test)]
 mod use_case_tests {
     use super::*;
+    use crate::core::domain::entities::{Scenario, ScenarioType};
     use serde_json::json;
 
     /// Test UseCase::new with valid priority strings

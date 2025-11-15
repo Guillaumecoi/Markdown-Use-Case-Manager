@@ -3,7 +3,7 @@
 //! Handles generation of markdown documentation from use cases using templates.
 
 use anyhow::Result;
-use serde_json::{json, Value};
+use serde_json::Value;
 use std::collections::HashMap;
 
 use crate::config::Config;

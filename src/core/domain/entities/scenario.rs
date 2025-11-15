@@ -1,4 +1,4 @@
-use super::{Actor, Metadata, ScenarioReference, ScenarioStep, ScenarioType, Status};
+use super::{Metadata, ScenarioReference, ScenarioStep, ScenarioType, Status};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -137,6 +137,7 @@ impl Scenario {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::domain::entities::Actor;
     use serde_json::json;
 
     #[test]
