@@ -300,6 +300,11 @@ pub enum PersonaCommands {
         /// Persona ID
         id: String,
     },
+    /// List all use cases that use this persona
+    UseCases {
+        /// Persona ID
+        id: String,
+    },
     /// Delete a persona
     Delete {
         /// Persona ID

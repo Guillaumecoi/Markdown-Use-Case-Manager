@@ -856,4 +856,18 @@ impl UseCaseController {
         self.app_service
             .get_scenario_references(&use_case_id, &scenario_id)
     }
+
+    /// Get all use cases that use a specific persona
+    ///
+    /// # Arguments
+    /// * `persona_id` - The persona identifier to search for
+    ///
+    /// # Returns
+    /// Vector of tuples (use_case_id, title, scenario_count) that have scenarios using this persona
+    ///
+    /// # Errors
+    /// Returns error if repository access fails
+    pub fn get_use_cases_for_persona(&self, persona_id: String) -> Result<Vec<(String, String, usize)>> {
+        self.app_service.get_use_cases_for_persona(&persona_id)
+    }
 }

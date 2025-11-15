@@ -795,6 +795,46 @@ impl CliRunner {
             Ok(DisplayResult::success(output))
         }
     }
+
+    /// List use cases that use a specific persona
+    ///
+    /// # Arguments
+    /// * `persona_id` - The persona identifier to search for
+    ///
+    /// # Returns
+    /// DisplayResult showing use cases using the persona, with scenario counts
+    ///
+    /// # Errors
+    /// Returns error if controller initialization or query fails
+    pub fn list_use_cases_for_persona(&mut self, persona_id: String) -> Result<DisplayResult> {
+        let controller = self.ensure_use_case_controller()?;
+
+        // Get use cases that use this persona (returns: Vec<(id, title, scenario_count)>)
+        let use_cases = controller.get_use_cases_for_persona(persona_id.clone())?;
+
+        if use_cases.is_empty() {
+            Ok(DisplayResult::success(format!(
+                "No use cases found using persona '{}'",
+                persona_id
+            )))
+        } else {
+            let mut output = format!("Use cases using persona '{}':\n\n", persona_id);
+
+            // Display each use case with its info
+            for (i, (uc_id, title, scenario_count)) in use_cases.iter().enumerate() {
+                output.push_str(&format!(
+                    "{}. {} - {} ({} scenario{})\n",
+                    i + 1,
+                    uc_id,
+                    title,
+                    scenario_count,
+                    if *scenario_count == 1 { "" } else { "s" }
+                ));
+            }
+
+            Ok(DisplayResult::success(output))
+        }
+    }
 }
 
 #[cfg(test)]

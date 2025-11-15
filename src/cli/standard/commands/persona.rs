@@ -28,6 +28,7 @@ pub fn handle_persona_command(command: PersonaCommands, config: &Config) -> Resu
         ),
         PersonaCommands::List => list_personas(config),
         PersonaCommands::Show { id } => show_persona(&id, config),
+        PersonaCommands::UseCases { id } => list_use_cases_for_persona(&id),
         PersonaCommands::Delete { id } => delete_persona(&id, config),
     }
 }
@@ -152,6 +153,19 @@ fn delete_persona(id: &str, config: &Config) -> Result<()> {
     repo.delete(id).context("Failed to delete persona")?;
 
     println!("✓ Deleted persona: {}", id);
+    Ok(())
+}
+
+/// List use cases that use a specific persona
+fn list_use_cases_for_persona(persona_id: &str) -> Result<()> {
+    use crate::cli::standard::CliRunner;
+    use crate::presentation::DisplayResultFormatter;
+
+    let mut runner = CliRunner::new();
+    
+    let result = runner.list_use_cases_for_persona(persona_id.to_string())?;
+    DisplayResultFormatter::display(&result);
+    
     Ok(())
 }
 

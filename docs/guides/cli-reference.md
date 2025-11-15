@@ -559,6 +559,40 @@ mucm persona show <PERSONA_ID>
 mucm persona show power-user-sarah
 ```
 
+#### `persona use-cases`
+
+List all use cases that use a specific persona in their scenarios.
+
+```bash
+mucm persona use-cases <PERSONA_ID>
+```
+
+**Arguments:**
+- `<PERSONA_ID>`: Persona ID to search for
+
+**Examples:**
+```bash
+# Find all use cases that use the 'admin' persona
+mucm persona use-cases admin
+
+# Example output:
+# Use cases using persona 'admin':
+#
+# 1. UC-AUTH-001 - User Authentication (2 scenarios)
+# 2. UC-ADMIN-001 - System Configuration (4 scenarios)
+# 3. UC-USER-003 - Account Management (1 scenario)
+
+# If no use cases use the persona:
+mucm persona use-cases developer
+# No use cases found using persona 'developer'
+```
+
+**Use Cases:**
+- See which use cases reference a specific persona
+- Understand persona usage across your project
+- Identify unused personas (no use cases listed)
+- Plan persona retirement by checking usage first
+
 #### `persona delete`
 
 Delete a persona.

@@ -82,6 +82,29 @@ impl UseCaseApplicationService {
             ))
     }
 
+    /// Get all use case info that uses a specific persona
+    /// Returns a list of tuples (use_case_id, title, scenario_count) where at least one scenario uses the given persona
+    pub fn get_use_cases_for_persona(&self, persona_id: &str) -> Result<Vec<(String, String, usize)>> {
+        let mut matching_use_cases = Vec::new();
+        
+        // Scan all loaded use cases for scenarios that use this persona
+        for use_case in &self.use_cases {
+            let scenario_count = use_case.scenarios.iter()
+                .filter(|scenario| scenario.persona.as_deref() == Some(persona_id))
+                .count();
+            
+            if scenario_count > 0 {
+                matching_use_cases.push((
+                    use_case.id.clone(),
+                    use_case.title.clone(),
+                    scenario_count
+                ));
+            }
+        }
+        
+        Ok(matching_use_cases)
+    }
+
     // Deleted: get_all_use_case_ids() - never used (PR #13)
     // Deleted: get_all_categories() - never used (PR #13)
 
