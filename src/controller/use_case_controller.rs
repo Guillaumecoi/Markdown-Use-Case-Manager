@@ -737,7 +737,7 @@ impl UseCaseController {
     ///
     /// # Arguments
     /// * `use_case_id` - Use case containing the source scenario
-    /// * `scenario_title` - Title of the source scenario (used as ID for now)
+    /// * `scenario_title` - Title of the source scenario
     /// * `target_id` - Target ID (scenario or use case)
     /// * `ref_type` - Reference type ("scenario" or "usecase")
     /// * `relationship` - Relationship type ("includes", "extends", "depends-on", "alternative-to")
@@ -769,16 +769,21 @@ impl UseCaseController {
             }
         };
 
+        // Find scenario ID by title
+        let scenario_id = match self.app_service.find_scenario_id_by_title(&use_case_id, &scenario_title) {
+            Ok(id) => id,
+            Err(e) => return Ok(DisplayResult::error(e.to_string())),
+        };
+
         // Create the reference object
         let mut reference = ScenarioReference::new(reference_type, target_id.clone(), relationship.clone());
         if let Some(desc) = description {
             reference = reference.with_description(desc);
         }
 
-        // Note: scenario_title is used as scenario_id (existing CLI pattern)
         match self.app_service.add_scenario_reference(
             &use_case_id,
-            &scenario_title,
+            &scenario_id,
             reference,
         ) {
             Ok(_) => Ok(DisplayResult::success(format!(
@@ -793,7 +798,7 @@ impl UseCaseController {
     ///
     /// # Arguments
     /// * `use_case_id` - Use case containing the scenario
-    /// * `scenario_title` - Title of the scenario (used as ID for now)
+    /// * `scenario_title` - Title of the scenario
     /// * `target_id` - Target ID to remove
     /// * `relationship` - Relationship type
     ///
@@ -809,10 +814,15 @@ impl UseCaseController {
         target_id: String,
         relationship: String,
     ) -> Result<DisplayResult> {
-        // Note: scenario_title is used as scenario_id (existing CLI pattern)
+        // Find scenario ID by title
+        let scenario_id = match self.app_service.find_scenario_id_by_title(&use_case_id, &scenario_title) {
+            Ok(id) => id,
+            Err(e) => return Ok(DisplayResult::error(e.to_string())),
+        };
+
         match self.app_service.remove_scenario_reference(
             &use_case_id,
-            &scenario_title,
+            &scenario_id,
             &target_id,
             &relationship,
         ) {
@@ -828,7 +838,7 @@ impl UseCaseController {
     ///
     /// # Arguments
     /// * `use_case_id` - Use case containing the scenario
-    /// * `scenario_title` - Title of the scenario (used as ID for now)
+    /// * `scenario_title` - Title of the scenario
     ///
     /// # Returns
     /// Vector of ScenarioReference objects
@@ -840,8 +850,10 @@ impl UseCaseController {
         use_case_id: String,
         scenario_title: String,
     ) -> Result<Vec<ScenarioReference>> {
-        // Note: scenario_title is used as scenario_id (existing CLI pattern)
+        // Find scenario ID by title
+        let scenario_id = self.app_service.find_scenario_id_by_title(&use_case_id, &scenario_title)?;
+        
         self.app_service
-            .get_scenario_references(&use_case_id, &scenario_title)
+            .get_scenario_references(&use_case_id, &scenario_id)
     }
 }

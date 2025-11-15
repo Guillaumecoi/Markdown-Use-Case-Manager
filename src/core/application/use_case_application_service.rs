@@ -66,6 +66,22 @@ impl UseCaseApplicationService {
         &self.use_cases
     }
 
+    /// Find scenario ID by its title within a use case
+    pub fn find_scenario_id_by_title(&self, use_case_id: &str, scenario_title: &str) -> Result<String> {
+        let index = self.find_use_case_index(use_case_id)?;
+        let use_case = &self.use_cases[index];
+        
+        use_case.scenarios
+            .iter()
+            .find(|s| s.title == scenario_title)
+            .map(|s| s.id.clone())
+            .ok_or_else(|| anyhow::anyhow!(
+                "Scenario with title '{}' not found in use case '{}'", 
+                scenario_title, 
+                use_case_id
+            ))
+    }
+
     // Deleted: get_all_use_case_ids() - never used (PR #13)
     // Deleted: get_all_categories() - never used (PR #13)
 
