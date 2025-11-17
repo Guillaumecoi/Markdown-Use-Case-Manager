@@ -273,25 +273,17 @@ pub enum ScenarioReferenceCommands {
 
 #[derive(Debug, Subcommand)]
 pub enum PersonaCommands {
-    /// Create a new persona
+    /// Create a new persona with fields from config
+    ///
+    /// Creates a persona with the required id and name fields.
+    /// Additional fields are determined by your persona configuration
+    /// in .config/.mucm/mucm.toml and can be filled in by editing the
+    /// generated TOML file or SQL record directly.
     Create {
         /// Persona ID (e.g., "admin", "customer")
         id: String,
         /// Persona name
         name: String,
-        /// Persona description
-        description: String,
-        /// Primary goal
-        goal: String,
-        /// Context/background information
-        #[arg(long)]
-        context: Option<String>,
-        /// Technical proficiency level (1-5)
-        #[arg(long)]
-        tech_level: Option<u8>,
-        /// Frequency of system use (e.g., "daily", "weekly", "occasional")
-        #[arg(long)]
-        usage_frequency: Option<String>,
     },
     /// List all personas
     List,

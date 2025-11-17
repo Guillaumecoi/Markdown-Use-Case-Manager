@@ -13,6 +13,9 @@ pub struct PersonaWorkflow;
 
 impl PersonaWorkflow {
     /// Interactive persona creation workflow
+    ///
+    /// Creates a minimal persona (id + name) with fields determined by config.
+    /// Users can fill in additional fields later by editing the TOML/SQL record.
     pub fn create_persona() -> Result<()> {
         UI::show_section_header("Create Persona", "👤")?;
 
@@ -24,49 +27,9 @@ impl PersonaWorkflow {
             .with_help_message("Display name (e.g., 'System Administrator', 'End User')")
             .prompt()?;
 
-        let description = Text::new("Description:")
-            .with_help_message("Brief description of this persona")
-            .prompt()?;
-
-        let goal = Text::new("Primary goal:")
-            .with_help_message("What is this persona trying to achieve?")
-            .prompt()?;
-
-        let context = Text::new("Context (optional):")
-            .with_help_message("Background information, work environment, etc.")
-            .prompt_skippable()?;
-
-        let tech_level_input = Text::new("Technical proficiency (1-5, optional):")
-            .with_help_message("1=Beginner, 2=Basic, 3=Intermediate, 4=Advanced, 5=Expert")
-            .prompt_skippable()?;
-
-        let tech_level = if let Some(level_str) = tech_level_input {
-            match level_str.trim().parse::<u8>() {
-                Ok(level) if level >= 1 && level <= 5 => Some(level),
-                _ => {
-                    UI::show_error("Invalid tech level. Must be between 1 and 5. Skipping.")?;
-                    None
-                }
-            }
-        } else {
-            None
-        };
-
-        let usage_frequency = Text::new("Usage frequency (optional):")
-            .with_help_message("e.g., 'daily', 'weekly', 'occasional'")
-            .prompt_skippable()?;
-
         // Create the persona
         let mut runner = InteractiveRunner::new();
-        let result = runner.create_persona_interactive(
-            id,
-            name,
-            description,
-            goal,
-            context,
-            tech_level,
-            usage_frequency,
-        )?;
+        let result = runner.create_persona_interactive(id, name)?;
 
         UI::show_success(&result)?;
         UI::pause_for_input()?;

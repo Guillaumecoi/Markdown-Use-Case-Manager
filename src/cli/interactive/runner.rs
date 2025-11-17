@@ -144,30 +144,13 @@ impl InteractiveRunner {
     }
 
     /// Create a persona interactively
-    pub fn create_persona_interactive(
-        &mut self,
-        id: String,
-        name: String,
-        description: String,
-        goal: String,
-        context: Option<String>,
-        tech_level: Option<u8>,
-        usage_frequency: Option<String>,
-    ) -> Result<String> {
+    pub fn create_persona_interactive(&mut self, id: String, name: String) -> Result<String> {
         use crate::cli::args::PersonaCommands;
         use crate::cli::standard::handle_persona_command;
         use crate::config::Config;
 
         let config = Config::load()?;
-        let command = PersonaCommands::Create {
-            id,
-            name,
-            description,
-            goal,
-            context,
-            tech_level,
-            usage_frequency,
-        };
+        let command = PersonaCommands::Create { id, name };
 
         handle_persona_command(command, &config)?;
         Ok("Persona created successfully!".to_string())

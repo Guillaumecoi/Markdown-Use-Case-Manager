@@ -224,12 +224,7 @@ mod tests {
 
         // Test basic operations
         use crate::core::domain::Persona;
-        let persona = Persona::new(
-            "test-persona".to_string(),
-            "Test User".to_string(),
-            "Test description".to_string(),
-            "Test goal".to_string(),
-        );
+        let persona = Persona::new("test-persona".to_string(), "Test User".to_string());
 
         repository.save(&persona)?;
         assert!(repository.exists("test-persona")?);
@@ -251,12 +246,7 @@ mod tests {
 
         // Test basic operations
         use crate::core::domain::Persona;
-        let persona = Persona::new(
-            "test-persona".to_string(),
-            "Test User".to_string(),
-            "Test description".to_string(),
-            "Test goal".to_string(),
-        );
+        let persona = Persona::new("test-persona".to_string(), "Test User".to_string());
 
         repository.save(&persona)?;
         assert!(repository.exists("test-persona")?);
@@ -280,12 +270,7 @@ mod tests {
 
         // Test basic operations
         use crate::core::domain::Persona;
-        let persona = Persona::new(
-            "test-persona".to_string(),
-            "Test User".to_string(),
-            "Test description".to_string(),
-            "Test goal".to_string(),
-        );
+        let persona = Persona::new("test-persona".to_string(), "Test User".to_string());
 
         repository.save(&persona)?;
         assert!(repository.exists("test-persona")?);

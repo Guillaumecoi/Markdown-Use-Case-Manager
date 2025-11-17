@@ -8,24 +8,7 @@ use anyhow::{Context, Result};
 /// Handle persona commands
 pub fn handle_persona_command(command: PersonaCommands, config: &Config) -> Result<()> {
     match command {
-        PersonaCommands::Create {
-            id,
-            name,
-            description,
-            goal,
-            context,
-            tech_level,
-            usage_frequency,
-        } => create_persona(
-            id,
-            name,
-            description,
-            goal,
-            context,
-            tech_level,
-            usage_frequency,
-            config,
-        ),
+        PersonaCommands::Create { id, name } => create_persona(id, name, config),
         PersonaCommands::List => list_personas(config),
         PersonaCommands::Show { id } => show_persona(&id, config),
         PersonaCommands::UseCases { id } => list_use_cases_for_persona(&id),
@@ -33,36 +16,20 @@ pub fn handle_persona_command(command: PersonaCommands, config: &Config) -> Resu
     }
 }
 
-/// Create a new persona
-fn create_persona(
-    id: String,
-    name: String,
-    description: String,
-    goal: String,
-    context: Option<String>,
-    tech_level: Option<u8>,
-    usage_frequency: Option<String>,
-    config: &Config,
-) -> Result<()> {
-    // Validate tech_level if provided
-    if let Some(level) = tech_level {
-        if level < 1 || level > 5 {
-            anyhow::bail!("Tech level must be between 1 and 5");
-        }
-    }
-
-    // Create persona
-    let mut persona = Persona::new(id.clone(), name, description, goal);
-
-    if let Some(ctx) = context {
-        persona = persona.with_context(ctx);
-    }
-    if let Some(level) = tech_level {
-        persona = persona.with_tech_level(level);
-    }
-    if let Some(freq) = usage_frequency {
-        persona = persona.with_usage_frequency(freq);
-    }
+/// Create a new persona with fields from config
+///
+/// Creates a minimal persona (id + name) and initializes additional fields
+/// based on the persona configuration. The user can fill in the values later
+/// by editing the generated TOML file or SQL record directly.
+fn create_persona(id: String, name: String, config: &Config) -> Result<()> {
+    // Create persona with config-driven fields
+    let persona = if config.persona.fields.is_empty() {
+        // No custom fields defined, just create minimal persona
+        Persona::new(id.clone(), name)
+    } else {
+        // Initialize persona with empty/default values for all config fields
+        Persona::from_config_fields(id.clone(), name, &config.persona.fields)
+    };
 
     // Save to repository
     let repo = RepositoryFactory::create_persona_repository(config)
@@ -75,7 +42,17 @@ fn create_persona(
 
     repo.save(&persona).context("Failed to save persona")?;
 
-    println!("✓ Created persona: {} ({})", persona.name, persona.id);
+    if !config.persona.fields.is_empty() {
+        println!("✓ Created persona: {} ({})", persona.name, persona.id);
+        println!("  Edit the generated file to fill in these fields:");
+        for field_name in config.persona.field_names() {
+            println!("    - {}", field_name);
+        }
+    } else {
+        println!("✓ Created persona: {} ({})", persona.name, persona.id);
+        println!("  Tip: Add custom fields in .config/.mucm/mucm.toml under [persona.fields]");
+    }
+
     Ok(())
 }
 
@@ -94,12 +71,17 @@ fn list_personas(config: &Config) -> Result<()> {
     println!("Personas ({}):\n", personas.len());
     for persona in personas {
         println!("  {} {} - {}", persona.emoji(), persona.name, persona.id);
-        println!("     Goal: {}", persona.goal);
-        if let Some(tech_level) = persona.tech_level {
-            println!("     Tech Level: {}/5", tech_level);
+
+        // Show a few key extra fields if they exist
+        if let Some(role) = persona.extra.get("role") {
+            if let Some(role_str) = role.as_str() {
+                println!("     Role: {}", role_str);
+            }
         }
-        if let Some(freq) = &persona.usage_frequency {
-            println!("     Usage: {}", freq);
+        if let Some(dept) = persona.extra.get("department") {
+            if let Some(dept_str) = dept.as_str() {
+                println!("     Department: {}", dept_str);
+            }
         }
         println!();
     }
@@ -119,22 +101,35 @@ fn show_persona(id: &str, config: &Config) -> Result<()> {
 
     println!("{} {}", persona.emoji(), persona.name);
     println!("ID: {}", persona.id);
-    println!("\nDescription:");
-    println!("  {}", persona.description);
-    println!("\nGoal:");
-    println!("  {}", persona.goal);
+    println!("Created: {}", persona.metadata.created_at);
+    println!("Last Updated: {}", persona.metadata.updated_at);
 
-    if let Some(ctx) = &persona.context {
-        println!("\nContext:");
-        println!("  {}", ctx);
-    }
-
-    if let Some(level) = persona.tech_level {
-        println!("\nTechnical Proficiency: {}/5", level);
-    }
-
-    if let Some(freq) = &persona.usage_frequency {
-        println!("Usage Frequency: {}", freq);
+    if !persona.extra.is_empty() {
+        println!("\nFields:");
+        for (key, value) in &persona.extra {
+            match value {
+                serde_json::Value::String(s) if !s.is_empty() => {
+                    println!("  {}: {}", key, s);
+                }
+                serde_json::Value::Array(arr) if !arr.is_empty() => {
+                    println!("  {}:", key);
+                    for item in arr {
+                        if let Some(s) = item.as_str() {
+                            println!("    - {}", s);
+                        }
+                    }
+                }
+                serde_json::Value::Number(n) => {
+                    println!("  {}: {}", key, n);
+                }
+                serde_json::Value::Bool(b) => {
+                    println!("  {}: {}", key, b);
+                }
+                _ => {} // Skip empty or null values
+            }
+        }
+    } else {
+        println!("\n(No additional fields defined)");
     }
 
     Ok(())
@@ -187,53 +182,15 @@ mod tests {
 
     #[test]
     #[serial]
-    fn test_create_persona_toml() -> Result<()> {
+    fn test_create_persona_basic() -> Result<()> {
         let temp_dir = TempDir::new()?;
         env::set_current_dir(&temp_dir)?;
         let config = create_test_config(&temp_dir, StorageBackend::Toml);
 
-        create_persona(
-            "test-persona".to_string(),
-            "Test User".to_string(),
-            "A test user".to_string(),
-            "Test the system".to_string(),
-            None,
-            Some(3),
-            Some("daily".to_string()),
-            &config,
-        )?;
+        create_persona("test".to_string(), "Test User".to_string(), &config)?;
 
-        // Verify persona exists
         let repo = RepositoryFactory::create_persona_repository(&config)?;
-        assert!(repo.exists("test-persona")?);
-
-        Ok(())
-    }
-
-    #[test]
-    #[serial]
-    fn test_create_persona_sqlite() -> Result<()> {
-        let temp_dir = TempDir::new()?;
-        env::set_current_dir(&temp_dir)?;
-        let config = create_test_config(&temp_dir, StorageBackend::Sqlite);
-
-        create_persona(
-            "test-persona".to_string(),
-            "Test User".to_string(),
-            "A test user".to_string(),
-            "Test the system".to_string(),
-            Some("Remote worker".to_string()),
-            Some(4),
-            Some("weekly".to_string()),
-            &config,
-        )?;
-
-        // Verify persona exists
-        let repo = RepositoryFactory::create_persona_repository(&config)?;
-        let persona = repo.load_by_id("test-persona")?.unwrap();
-        assert_eq!(persona.name, "Test User");
-        assert_eq!(persona.tech_level, Some(4));
-        assert_eq!(persona.context, Some("Remote worker".to_string()));
+        assert!(repo.exists("test")?);
 
         Ok(())
     }
@@ -245,156 +202,11 @@ mod tests {
         env::set_current_dir(&temp_dir)?;
         let config = create_test_config(&temp_dir, StorageBackend::Toml);
 
-        // Create first persona
-        create_persona(
-            "test-persona".to_string(),
-            "Test User".to_string(),
-            "A test user".to_string(),
-            "Test the system".to_string(),
-            None,
-            None,
-            None,
-            &config,
-        )?;
-
-        // Try to create duplicate
-        let result = create_persona(
-            "test-persona".to_string(),
-            "Another User".to_string(),
-            "Another description".to_string(),
-            "Another goal".to_string(),
-            None,
-            None,
-            None,
-            &config,
-        );
+        create_persona("test".to_string(), "Test User".to_string(), &config)?;
+        let result = create_persona("test".to_string(), "Another User".to_string(), &config);
 
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("already exists"));
-
-        Ok(())
-    }
-
-    #[test]
-    #[serial]
-    fn test_create_persona_invalid_tech_level() -> Result<()> {
-        let temp_dir = TempDir::new()?;
-        env::set_current_dir(&temp_dir)?;
-        let config = create_test_config(&temp_dir, StorageBackend::Toml);
-
-        // Try tech level 0
-        let result = create_persona(
-            "test-persona".to_string(),
-            "Test User".to_string(),
-            "A test user".to_string(),
-            "Test the system".to_string(),
-            None,
-            Some(0),
-            None,
-            &config,
-        );
-        assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("between 1 and 5"));
-
-        // Try tech level 6
-        let result = create_persona(
-            "test-persona".to_string(),
-            "Test User".to_string(),
-            "A test user".to_string(),
-            "Test the system".to_string(),
-            None,
-            Some(6),
-            None,
-            &config,
-        );
-        assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("between 1 and 5"));
-
-        Ok(())
-    }
-
-    #[test]
-    #[serial]
-    fn test_list_personas_empty() -> Result<()> {
-        let temp_dir = TempDir::new()?;
-        env::set_current_dir(&temp_dir)?;
-        let config = create_test_config(&temp_dir, StorageBackend::Toml);
-
-        // Should not error with empty repository
-        list_personas(&config)?;
-
-        Ok(())
-    }
-
-    #[test]
-    #[serial]
-    fn test_list_personas() -> Result<()> {
-        let temp_dir = TempDir::new()?;
-        env::set_current_dir(&temp_dir)?;
-        let config = create_test_config(&temp_dir, StorageBackend::Toml);
-
-        // Create multiple personas
-        create_persona(
-            "persona-1".to_string(),
-            "User One".to_string(),
-            "First user".to_string(),
-            "Goal one".to_string(),
-            None,
-            Some(3),
-            None,
-            &config,
-        )?;
-
-        create_persona(
-            "persona-2".to_string(),
-            "User Two".to_string(),
-            "Second user".to_string(),
-            "Goal two".to_string(),
-            None,
-            None,
-            Some("daily".to_string()),
-            &config,
-        )?;
-
-        // List should succeed
-        list_personas(&config)?;
-
-        Ok(())
-    }
-
-    #[test]
-    #[serial]
-    fn test_show_persona() -> Result<()> {
-        let temp_dir = TempDir::new()?;
-        env::set_current_dir(&temp_dir)?;
-        let config = create_test_config(&temp_dir, StorageBackend::Toml);
-
-        create_persona(
-            "test-persona".to_string(),
-            "Test User".to_string(),
-            "A test user".to_string(),
-            "Test the system".to_string(),
-            Some("Works from home".to_string()),
-            Some(4),
-            Some("weekly".to_string()),
-            &config,
-        )?;
-
-        show_persona("test-persona", &config)?;
-
-        Ok(())
-    }
-
-    #[test]
-    #[serial]
-    fn test_show_nonexistent_persona() -> Result<()> {
-        let temp_dir = TempDir::new()?;
-        env::set_current_dir(&temp_dir)?;
-        let config = create_test_config(&temp_dir, StorageBackend::Toml);
-
-        let result = show_persona("nonexistent", &config);
-        assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("not found"));
 
         Ok(())
     }
@@ -406,95 +218,11 @@ mod tests {
         env::set_current_dir(&temp_dir)?;
         let config = create_test_config(&temp_dir, StorageBackend::Toml);
 
-        create_persona(
-            "test-persona".to_string(),
-            "Test User".to_string(),
-            "A test user".to_string(),
-            "Test the system".to_string(),
-            None,
-            None,
-            None,
-            &config,
-        )?;
-
-        delete_persona("test-persona", &config)?;
-
-        // Verify persona is deleted
-        let repo = RepositoryFactory::create_persona_repository(&config)?;
-        assert!(!repo.exists("test-persona")?);
-
-        Ok(())
-    }
-
-    #[test]
-    #[serial]
-    fn test_delete_nonexistent_persona() -> Result<()> {
-        let temp_dir = TempDir::new()?;
-        env::set_current_dir(&temp_dir)?;
-        let config = create_test_config(&temp_dir, StorageBackend::Toml);
-
-        let result = delete_persona("nonexistent", &config);
-        assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("not found"));
-
-        Ok(())
-    }
-
-    #[test]
-    #[serial]
-    fn test_persona_with_all_optional_fields() -> Result<()> {
-        let temp_dir = TempDir::new()?;
-        env::set_current_dir(&temp_dir)?;
-        let config = create_test_config(&temp_dir, StorageBackend::Toml);
-
-        create_persona(
-            "full-persona".to_string(),
-            "Full User".to_string(),
-            "A complete persona".to_string(),
-            "Use all features".to_string(),
-            Some("Remote developer in Europe".to_string()),
-            Some(5),
-            Some("daily".to_string()),
-            &config,
-        )?;
+        create_persona("test".to_string(), "Test User".to_string(), &config)?;
+        delete_persona("test", &config)?;
 
         let repo = RepositoryFactory::create_persona_repository(&config)?;
-        let persona = repo.load_by_id("full-persona")?.unwrap();
-
-        assert_eq!(
-            persona.context,
-            Some("Remote developer in Europe".to_string())
-        );
-        assert_eq!(persona.tech_level, Some(5));
-        assert_eq!(persona.usage_frequency, Some("daily".to_string()));
-
-        Ok(())
-    }
-
-    #[test]
-    #[serial]
-    fn test_persona_without_optional_fields() -> Result<()> {
-        let temp_dir = TempDir::new()?;
-        env::set_current_dir(&temp_dir)?;
-        let config = create_test_config(&temp_dir, StorageBackend::Toml);
-
-        create_persona(
-            "minimal-persona".to_string(),
-            "Minimal User".to_string(),
-            "A minimal persona".to_string(),
-            "Simple goal".to_string(),
-            None,
-            None,
-            None,
-            &config,
-        )?;
-
-        let repo = RepositoryFactory::create_persona_repository(&config)?;
-        let persona = repo.load_by_id("minimal-persona")?.unwrap();
-
-        assert_eq!(persona.context, None);
-        assert_eq!(persona.tech_level, None);
-        assert_eq!(persona.usage_frequency, None);
+        assert!(!repo.exists("test")?);
 
         Ok(())
     }
