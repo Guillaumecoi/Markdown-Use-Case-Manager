@@ -45,6 +45,11 @@ impl ConfigWorkflow {
             .with_help_message("Where to generate test scaffolding")
             .prompt()?;
 
+        config.directories.persona_dir = Text::new("Persona directory:")
+            .with_default(&config.directories.persona_dir)
+            .with_help_message("Where to store persona markdown files")
+            .prompt()?;
+
         Ok(())
     }
 
@@ -153,6 +158,7 @@ impl ConfigWorkflow {
         );
         println!("Use Case Dir: {}", config.directories.use_case_dir);
         println!("Test Dir: {}", config.directories.test_dir);
+        println!("Persona Dir: {}", config.directories.persona_dir);
         println!("Test Language: {}", config.generation.test_language);
         println!(
             "Auto Generate Tests: {}",

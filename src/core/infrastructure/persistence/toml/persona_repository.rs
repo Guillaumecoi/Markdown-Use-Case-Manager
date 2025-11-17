@@ -27,19 +27,9 @@ impl TomlPersonaRepository {
     }
 
     /// Get the directory for persona markdown files
-    /// Stores in docs/personas alongside use case docs
+    /// Stores in docs/personas (configured via persona_dir)
     fn get_markdown_dir(&self) -> String {
-        let base = &self.config.directories.use_case_dir;
-        // Extract the base path and replace use-cases with personas
-        // E.g., "/tmp/xyz/docs/use-cases" -> "/tmp/xyz/docs/personas"
-        if let Some(idx) = base.rfind("/use-cases") {
-            format!("{}/personas", &base[..idx])
-        } else if let Some(idx) = base.rfind("\\use-cases") {
-            format!("{}\\personas", &base[..idx])
-        } else {
-            // Fallback: just append personas
-            format!("{}/personas", base)
-        }
+        self.config.directories.persona_dir.clone()
     }
 }
 

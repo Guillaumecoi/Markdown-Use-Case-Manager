@@ -212,11 +212,19 @@ pub struct DirectoryConfig {
     /// Directory where generated test files are stored
     /// Default: "tests/use-cases"
     pub test_dir: String,
+    /// Directory where persona markdown files are stored
+    /// Default: "docs/personas"
+    #[serde(default = "default_persona_dir")]
+    pub persona_dir: String,
     /// Optional custom template directory (uses built-in if not specified)
     pub template_dir: Option<String>,
     /// Directory for TOML source files (defaults to same as use_case_dir if not specified)
     /// This is where the raw use case data is stored before markdown generation
     pub toml_dir: Option<String>,
+}
+
+fn default_persona_dir() -> String {
+    "docs/personas".to_string()
 }
 
 impl DirectoryConfig {

@@ -245,6 +245,7 @@ impl Config {
                     directories: DirectoryConfig {
                         use_case_dir: "use-cases".to_string(),
                         test_dir: "tests".to_string(),
+                        persona_dir: "docs/personas".to_string(),
                         template_dir: None,
                         toml_dir: None,
                     },
