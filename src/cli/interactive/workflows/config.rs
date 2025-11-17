@@ -98,39 +98,6 @@ impl ConfigWorkflow {
         Ok(())
     }
 
-    /// Configure storage backend settings
-    pub fn configure_storage(config: &mut Config) -> Result<()> {
-        println!("\n💾 Storage Backend Configuration");
-        println!("─────────────────────────────────");
-
-        let storage_options = vec![
-            "toml - Simple file-based storage (recommended for most projects)",
-            "sqlite - Database storage (better for complex queries)",
-        ];
-
-        let selection = Select::new("Choose storage backend:", storage_options)
-            .with_help_message("TOML is simpler and git-friendly, SQLite offers better querying")
-            .prompt()?;
-
-        config.storage.backend = match selection {
-            s if s.starts_with("toml") => crate::config::StorageBackend::Toml,
-            s if s.starts_with("sqlite") => crate::config::StorageBackend::Sqlite,
-            _ => crate::config::StorageBackend::Toml, // fallback
-        };
-
-        let backend_name = match config.storage.backend {
-            crate::config::StorageBackend::Toml => "TOML",
-            crate::config::StorageBackend::Sqlite => "SQLite",
-        };
-
-        println!("\n✅ Storage backend set to: {}", backend_name);
-        println!("💡 This setting affects how use case data is stored and retrieved.");
-        println!("   TOML: Human-readable files, great for version control");
-        println!("   SQLite: Database queries, better for large/complex projects\n");
-
-        Ok(())
-    }
-
     /// Change programming language setting
     pub fn change_programming_language() -> Result<()> {
         UI::show_section_header("Change Programming Language", "🔧")?;

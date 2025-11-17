@@ -56,10 +56,6 @@ impl Settings {
                 ConfigWorkflow::configure_metadata(config)?;
                 Ok(false) // Continue menu
             }),
-            MenuOption::new("Storage Backend", |config| {
-                ConfigWorkflow::configure_storage(config)?;
-                Ok(false) // Continue menu
-            }),
             MenuOption::new("Change Programming Language", |_| {
                 ConfigWorkflow::change_programming_language()?;
                 Ok(false) // Continue menu
