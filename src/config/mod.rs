@@ -36,7 +36,7 @@ mod types;
 // Explicit public exports
 pub use file_manager::ConfigFileManager;
 pub use template_manager::TemplateManager;
-pub use types::{Config, StorageBackend, StorageConfig};
+pub use types::{Config, PersonaConfig, StorageBackend, StorageConfig};
 
 // Re-export from other modules
 use anyhow::{Context, Result};
@@ -236,6 +236,7 @@ impl Config {
             Ok(dir) => dir,
             Err(_) => {
                 // Fallback: create a minimal default config when source-templates is not available
+                #[allow(deprecated)]
                 return Ok(Config {
                     project: ProjectConfig {
                         name: "Default Project".to_string(),
@@ -268,7 +269,7 @@ impl Config {
                         created: true,
                         last_updated: true,
                     },
-                    persona_fields: std::collections::HashMap::new(),
+                    persona: PersonaConfig::default(),
                 });
             }
         };

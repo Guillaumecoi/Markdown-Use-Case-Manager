@@ -1,42 +1,50 @@
+# Project identification and description
 [project]
 name = "My Project"
 description = "A project managed with use case manager"
 
+# File organization - where your use cases, tests, and personas are stored
 [directories]
-use_case_dir = "docs/use-cases"
-test_dir = "tests/use-cases"
-persona_dir = "docs/personas"
-toml_dir = "use-cases-data"
+use_case_dir = "docs/use-cases"      # Generated markdown use case documentation
+test_dir = "tests/use-cases"         # Generated test files
+persona_dir = "docs/personas"        # Persona markdown files
+toml_dir = "use-cases-data"          # Source TOML files (editable use case data)
 
+# Template configuration - which methodologies to use and default choice
 [templates]
-# methodologies will be set dynamically based on available templates
+methodologies = ["feature"]           # Available: business, developer, feature, tester
 default_methodology = "feature"
 
+# Code generation settings
 [generation]
-test_language = "none"
-auto_generate_tests = false
-overwrite_test_documentation = false
+test_language = "none"                # Programming language for tests (rust, python, javascript, or "none")
+auto_generate_tests = false           # Auto-create test files when creating use cases
+overwrite_test_documentation = false  # Allow overwriting existing test docs
 
-[base_fields]
-# Base fields that all use cases can have (beyond mandatory id/title/category)
-description = { label = "Description", type = "string", required = true }
-status = { label = "Status", type = "string", required = false, default = "draft" }
-priority = { label = "Priority", type = "string", required = false, default = "medium" }
-author = { label = "Author", type = "string", required = false }
-reviewer = { label = "Reviewer", type = "string", required = false }
+# Storage backend - how use case data is persisted
+[storage]
+backend = "toml"                      # Options: "toml" or "sqlite"
 
-# Automatically managed metadata fields
+# Additional fields available for all use cases (beyond mandatory id/title/category)
+[extra_fields]
+description = { type = "string", required = true }
+status = { type = "string", required = false, default = "draft" }
+priority = { type = "string", required = false, default = "medium" }
+author = { type = "string", required = false }
+reviewer = { type = "string", required = false }
+
+# Timestamp management - automatically track when use cases are created/modified
 [metadata]
-created = true      # Auto-set when use case is created
-last_updated = true # Auto-updated when use case is modified
+created = true                        # Auto-set creation timestamp
+last_updated = true                   # Auto-update modification timestamp
 
-# Global custom fields for personas (optional)
-# These fields will be available when creating personas and will be stored in the persona's extra fields
-[persona_fields]
-department = { label = "Department", type = "string", required = false }
-experience_level = { label = "Experience Level", type = "string", required = false }
-pain_points = { label = "Pain Points", type = "array", required = false }
-motivations = { label = "Motivations", type = "array", required = false }
-technical_skills = { label = "Technical Skills", type = "array", required = false }
-tools_used = { label = "Tools Used", type = "array", required = false }
+# Persona custom fields - extend personas with project-specific attributes
+# These are in addition to the built-in fields (name, description, goal, etc.)
+[persona.fields]
+department = { type = "string", required = false }
+experience_level = { type = "string", required = false }
+pain_points = { type = "array", required = false }
+motivations = { type = "array", required = false }
+technical_skills = { type = "array", required = false }
+tools_used = { type = "array", required = false }
 

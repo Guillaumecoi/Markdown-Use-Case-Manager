@@ -27,7 +27,9 @@
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct CustomFieldConfig {
     /// Human-readable label displayed in prompts and documentation
-    pub label: String,
+    /// If not provided, the field name will be used (converted to title case)
+    #[serde(default)]
+    pub label: Option<String>,
     /// Data type of the field: "string", "array", "number", "boolean"
     #[serde(rename = "type")]
     pub field_type: String,

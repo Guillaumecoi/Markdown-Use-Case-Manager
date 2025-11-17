@@ -352,20 +352,20 @@ default = "3"
 
         // Check user_story field
         let user_story = custom_fields.get("user_story").unwrap();
-        assert_eq!(user_story.label, "User Story");
+        assert_eq!(user_story.label, Some("User Story".to_string()));
         assert_eq!(user_story.field_type, "string");
         assert_eq!(user_story.required, true);
         assert_eq!(user_story.default, None);
 
         // Check acceptance_criteria field
         let acceptance_criteria = custom_fields.get("acceptance_criteria").unwrap();
-        assert_eq!(acceptance_criteria.label, "Acceptance Criteria");
+        assert_eq!(acceptance_criteria.label, Some("Acceptance Criteria".to_string()));
         assert_eq!(acceptance_criteria.field_type, "text");
         assert_eq!(acceptance_criteria.required, true);
 
         // Check story_points field (with default)
         let story_points = custom_fields.get("story_points").unwrap();
-        assert_eq!(story_points.label, "Story Points");
+        assert_eq!(story_points.label, Some("Story Points".to_string()));
         assert_eq!(story_points.field_type, "number");
         assert_eq!(story_points.required, false);
         assert_eq!(story_points.default, Some("3".to_string()));

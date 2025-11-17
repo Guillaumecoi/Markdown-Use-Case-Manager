@@ -10,7 +10,7 @@
 //! - `project`: Basic project information and metadata
 //! - `directories`: File system paths for use cases, tests, and templates
 //! - `templates`: Methodology and language template settings
-//! - `base_fields`: Standard fields available to all use cases
+//! - `extra_fields`: Standard fields available to all use cases
 //! - `metadata`: Auto-generated metadata settings
 //! - `generation`: Code generation preferences and settings
 //!
@@ -126,7 +126,7 @@ mod storage_backend_tests {
 /// - `project`: Basic project information (name, description)
 /// - `directories`: Paths for use cases, tests, templates, and TOML files
 /// - `templates`: Methodology and language template settings
-/// - `base_fields`: Standard fields available to all use cases
+/// - `extra_fields`: Standard fields available to all use cases
 /// - `metadata`: Auto-generated metadata settings (creation/update timestamps)
 /// - `generation`: Code generation preferences (test language, auto-generation flags)
 /// - `storage`: Storage backend configuration (TOML or SQLite)
@@ -161,10 +161,10 @@ mod storage_backend_tests {
 /// created = true
 /// last_updated = true
 ///
-/// [persona_fields]
-/// department = { label = "Department", type = "string", required = false }
-/// experience_level = { label = "Experience Level", type = "string", required = false }
-/// pain_points = { label = "Pain Points", type = "array", required = false }
+/// [persona]
+/// fields.department = { type = "string", required = false }
+/// fields.experience_level = { type = "string", required = false }
+/// fields.pain_points = { type = "array", required = false }
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -182,9 +182,9 @@ pub struct Config {
     /// Storage backend configuration
     #[serde(default)]
     pub storage: StorageConfig,
-    /// Global custom fields for personas (optional)
+    /// Persona configuration with custom fields
     #[serde(default)]
-    pub persona_fields: std::collections::HashMap<String, crate::core::CustomFieldConfig>,
+    pub persona: PersonaConfig,
 }
 
 /// Project-level configuration settings.
@@ -316,5 +316,36 @@ impl Default for StorageConfig {
         Self {
             backend: StorageBackend::default(),
         }
+    }
+}
+
+/// Persona configuration settings.
+///
+/// Defines custom fields that can be used when creating personas.
+/// These fields extend the base persona fields with project-specific
+/// attributes for better persona modeling.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct PersonaConfig {
+    /// Custom fields available for personas
+    /// Key is the field name, value is the field configuration
+    /// Serialized inline as: fields.fieldname = { ... }
+    #[serde(default, rename = "fields")]
+    pub fields: std::collections::HashMap<String, crate::core::CustomFieldConfig>,
+}
+
+impl PersonaConfig {
+    /// Get a custom field by name
+    pub fn get_field(&self, name: &str) -> Option<&crate::core::CustomFieldConfig> {
+        self.fields.get(name)
+    }
+
+    /// Check if a custom field exists
+    pub fn has_field(&self, name: &str) -> bool {
+        self.fields.contains_key(name)
+    }
+
+    /// Get all custom field names
+    pub fn field_names(&self) -> Vec<&String> {
+        self.fields.keys().collect()
     }
 }

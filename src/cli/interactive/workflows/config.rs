@@ -83,7 +83,7 @@ impl ConfigWorkflow {
             .prompt()?;
 
         println!("\n💡 To configure additional fields (author, reviewer, status, priority, etc.),");
-        println!("   edit [base_fields] section in .config/.mucm/mucm.toml after saving.\n");
+        println!("   edit [extra_fields] section in .config/.mucm/mucm.toml after saving.\n");
 
         Ok(())
     }

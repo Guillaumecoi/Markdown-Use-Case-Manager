@@ -53,14 +53,60 @@ impl TemplateManager {
     /// * The configuration cannot be serialized to TOML
     /// * The configuration file cannot be written
     pub fn create_config_from_template(config: &Config) -> Result<()> {
-        // Serialize the config to TOML instead of copying the template
-        // This ensures the user's chosen language and methodology are saved
-        let config_content =
-            toml::to_string_pretty(config).context("Failed to serialize config to TOML")?;
+        // Load the template file to preserve comments and formatting
+        let source_templates_dir = Self::find_source_templates_dir()?;
+        let template_path = source_templates_dir.join("config.toml");
+        
+        let mut template_content = fs::read_to_string(&template_path)
+            .context("Failed to read config template")?;
+
+        // Update only the specific values that differ from defaults
+        // Project name and description
+        template_content = template_content.replace(
+            r#"name = "My Project""#,
+            &format!(r#"name = "{}""#, config.project.name)
+        );
+        template_content = template_content.replace(
+            r#"description = "A project managed with use case manager""#,
+            &format!(r#"description = "{}""#, config.project.description)
+        );
+
+        // Methodologies - replace the entire line to preserve formatting
+        let methodologies_str = config.templates.methodologies
+            .iter()
+            .map(|m| format!(r#""{}""#, m))
+            .collect::<Vec<_>>()
+            .join(", ");
+        template_content = template_content.replace(
+            r#"methodologies = ["feature"]"#,
+            &format!("methodologies = [{}]", methodologies_str)
+        );
+        
+        // Default methodology
+        template_content = template_content.replace(
+            r#"default_methodology = "feature""#,
+            &format!(r#"default_methodology = "{}""#, config.templates.default_methodology)
+        );
+
+        // Test language
+        template_content = template_content.replace(
+            r#"test_language = "none""#,
+            &format!(r#"test_language = "{}""#, config.generation.test_language)
+        );
+
+        // Storage backend
+        let backend_str = match config.storage.backend {
+            crate::config::StorageBackend::Toml => "toml",
+            crate::config::StorageBackend::Sqlite => "sqlite",
+        };
+        template_content = template_content.replace(
+            r#"backend = "toml""#,
+            &format!(r#"backend = "{}""#, backend_str)
+        );
 
         // Write the config
         let config_path = Config::config_path();
-        fs::write(&config_path, config_content).context("Failed to write config file")?;
+        fs::write(&config_path, template_content).context("Failed to write config file")?;
 
         Ok(())
     }
