@@ -243,12 +243,20 @@ impl ProjectController {
             "none".to_string()
         };
 
+        // Default to "toml" if storage is empty or "none"
+        let resolved_storage =
+            if storage.trim().is_empty() || storage.trim().to_lowercase() == "none" {
+                "toml".to_string()
+            } else {
+                storage
+            };
+
         // Create minimal config with specified methodologies and storage
         let config = Config::for_template_with_methodologies_and_storage(
             Some(resolved_language),
             methodologies,
             Some(default_methodology.clone()),
-            storage,
+            resolved_storage.clone(),
         );
 
         // Save config file
@@ -274,7 +282,7 @@ impl ProjectController {
             config.generation.test_language,
             &config.templates.default_methodology,
             config.templates.methodologies.join(", "),
-            config.storage.backend,
+            resolved_storage,
             config
                 .directories
                 .toml_dir

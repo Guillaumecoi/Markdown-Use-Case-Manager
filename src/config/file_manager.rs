@@ -78,52 +78,125 @@ impl ConfigFileManager {
     ///
     /// This reads the existing config file and updates only the values that have changed,
     /// preserving all comments, blank lines, and formatting.
-    fn update_config_preserving_comments(config_path: &Path, new_config: &Config) -> Result<String> {
-        let mut content = fs::read_to_string(config_path)
-            .context("Failed to read existing config")?;
+    fn update_config_preserving_comments(
+        config_path: &Path,
+        new_config: &Config,
+    ) -> Result<String> {
+        let mut content =
+            fs::read_to_string(config_path).context("Failed to read existing config")?;
 
         // Update project values
-        content = Self::update_toml_value(&content, "project", "name", &format!(r#""{}""#, new_config.project.name));
-        content = Self::update_toml_value(&content, "project", "description", &format!(r#""{}""#, new_config.project.description));
+        content = Self::update_toml_value(
+            &content,
+            "project",
+            "name",
+            &format!(r#""{}""#, new_config.project.name),
+        );
+        content = Self::update_toml_value(
+            &content,
+            "project",
+            "description",
+            &format!(r#""{}""#, new_config.project.description),
+        );
 
         // Update directory settings
-        content = Self::update_toml_value(&content, "directories", "use_case_dir", &format!(r#""{}""#, new_config.directories.use_case_dir));
-        content = Self::update_toml_value(&content, "directories", "test_dir", &format!(r#""{}""#, new_config.directories.test_dir));
+        content = Self::update_toml_value(
+            &content,
+            "directories",
+            "use_case_dir",
+            &format!(r#""{}""#, new_config.directories.use_case_dir),
+        );
+        content = Self::update_toml_value(
+            &content,
+            "directories",
+            "test_dir",
+            &format!(r#""{}""#, new_config.directories.test_dir),
+        );
         if let Some(toml_dir) = &new_config.directories.toml_dir {
-            content = Self::update_toml_value(&content, "directories", "toml_dir", &format!(r#""{}""#, toml_dir));
+            content = Self::update_toml_value(
+                &content,
+                "directories",
+                "toml_dir",
+                &format!(r#""{}""#, toml_dir),
+            );
         }
 
         // Update template settings
-        let methodologies_str = new_config.templates.methodologies
+        let methodologies_str = new_config
+            .templates
+            .methodologies
             .iter()
             .map(|m| format!(r#""{}""#, m))
             .collect::<Vec<_>>()
             .join(", ");
-        content = Self::update_toml_value(&content, "templates", "methodologies", &format!("[{}]", methodologies_str));
-        content = Self::update_toml_value(&content, "templates", "default_methodology", &format!(r#""{}""#, new_config.templates.default_methodology));
+        content = Self::update_toml_value(
+            &content,
+            "templates",
+            "methodologies",
+            &format!("[{}]", methodologies_str),
+        );
+        content = Self::update_toml_value(
+            &content,
+            "templates",
+            "default_methodology",
+            &format!(r#""{}""#, new_config.templates.default_methodology),
+        );
 
         // Update generation settings
-        content = Self::update_toml_value(&content, "generation", "test_language", &format!(r#""{}""#, new_config.generation.test_language));
-        content = Self::update_toml_value(&content, "generation", "auto_generate_tests", &new_config.generation.auto_generate_tests.to_string());
-        content = Self::update_toml_value(&content, "generation", "overwrite_test_documentation", &new_config.generation.overwrite_test_documentation.to_string());
+        content = Self::update_toml_value(
+            &content,
+            "generation",
+            "test_language",
+            &format!(r#""{}""#, new_config.generation.test_language),
+        );
+        content = Self::update_toml_value(
+            &content,
+            "generation",
+            "auto_generate_tests",
+            &new_config.generation.auto_generate_tests.to_string(),
+        );
+        content = Self::update_toml_value(
+            &content,
+            "generation",
+            "overwrite_test_documentation",
+            &new_config
+                .generation
+                .overwrite_test_documentation
+                .to_string(),
+        );
 
         // Update metadata settings
-        content = Self::update_toml_value(&content, "metadata", "created", &new_config.metadata.created.to_string());
-        content = Self::update_toml_value(&content, "metadata", "last_updated", &new_config.metadata.last_updated.to_string());
+        content = Self::update_toml_value(
+            &content,
+            "metadata",
+            "created",
+            &new_config.metadata.created.to_string(),
+        );
+        content = Self::update_toml_value(
+            &content,
+            "metadata",
+            "last_updated",
+            &new_config.metadata.last_updated.to_string(),
+        );
 
         // Update storage backend
         let backend_str = match new_config.storage.backend {
             crate::config::StorageBackend::Toml => "toml",
             crate::config::StorageBackend::Sqlite => "sqlite",
         };
-        content = Self::update_toml_value(&content, "storage", "backend", &format!(r#""{}""#, backend_str));
+        content = Self::update_toml_value(
+            &content,
+            "storage",
+            "backend",
+            &format!(r#""{}""#, backend_str),
+        );
 
         Ok(content)
     }
 
     /// Update a single TOML value while preserving everything else.
     ///
-    /// Finds lines like `key = old_value` within the specified section and replaces 
+    /// Finds lines like `key = old_value` within the specified section and replaces
     /// with `key = new_value`, preserving any inline comments. Only updates the first
     /// occurrence within the target section.
     ///
@@ -133,54 +206,86 @@ impl ConfigFileManager {
     /// * `key` - The key to update within that section
     /// * `new_value` - The new value to set
     fn update_toml_value(content: &str, section: &str, key: &str, new_value: &str) -> String {
+        let lines: Vec<&str> = content.lines().collect();
         let mut result = String::new();
-        let mut in_target_section = false;
-        let mut value_updated = false;
+        let mut i = 0;
         let section_header = format!("[{}]", section);
-        
-        for line in content.lines() {
+        let mut in_target_section = false;
+
+        while i < lines.len() {
+            let line = lines[i];
             let trimmed = line.trim_start();
-            
+
             // Track which section we're in
             if trimmed.starts_with('[') && trimmed.contains(']') {
                 // Entering a new section
-                in_target_section = trimmed == section_header || trimmed.starts_with(&format!("[{}.", section));
+                in_target_section =
+                    trimmed == section_header || trimmed.starts_with(&format!("[{}.", section));
             }
-            
-            // Only update if we're in the target section and haven't updated yet
-            if in_target_section && !value_updated {
-                // Check if this line sets our key (not in a comment)
-                if trimmed.starts_with(key) && 
-                   (trimmed.chars().nth(key.len()) == Some(' ') || 
-                    trimmed.chars().nth(key.len()) == Some('=')) {
-                    // Find the = sign
-                    if let Some(eq_pos) = line.find('=') {
-                        // Find inline comment if any
-                        let after_eq = &line[eq_pos + 1..];
-                        let comment_pos = after_eq.find('#');
-                        
-                        // Preserve indentation
+
+            // Check if this line starts our key
+            if in_target_section
+                && trimmed.starts_with(key)
+                && (trimmed.chars().nth(key.len()) == Some(' ')
+                    || trimmed.chars().nth(key.len()) == Some('='))
+            {
+                // Find the = sign
+                if let Some(eq_pos) = line.find('=') {
+                    let after_eq = &line[eq_pos + 1..].trim_start();
+
+                    // Check if this is a multi-line array (starts with [)
+                    if after_eq.starts_with('[') && !after_eq.contains(']') {
+                        // Multi-line array - find the closing bracket
+                        let mut array_end = i;
+                        let mut bracket_count = 0;
+
+                        for j in i..lines.len() {
+                            let array_line = lines[j].trim();
+                            bracket_count += array_line.chars().filter(|&c| c == '[').count();
+                            bracket_count -= array_line.chars().filter(|&c| c == ']').count();
+
+                            if bracket_count == 0 && array_line.contains(']') {
+                                array_end = j;
+                                break;
+                            }
+                        }
+
+                        // Replace the entire array block
                         let indent = line.len() - trimmed.len();
                         let indent_str = " ".repeat(indent);
-                        
-                        // Rebuild line with new value
+                        result.push_str(&format!("{}{} = {}\n", indent_str, key, new_value));
+
+                        // Skip the old array lines
+                        i = array_end + 1;
+                        continue;
+                    } else {
+                        // Single-line value - handle normally
+                        let comment_pos = after_eq.find('#');
+
+                        let indent = line.len() - trimmed.len();
+                        let indent_str = " ".repeat(indent);
+
                         if let Some(comment_start) = comment_pos {
                             let comment = &after_eq[comment_start..];
-                            result.push_str(&format!("{}{} = {} {}\n", indent_str, key, new_value, comment));
+                            result.push_str(&format!(
+                                "{}{} = {} {}\n",
+                                indent_str, key, new_value, comment
+                            ));
                         } else {
                             result.push_str(&format!("{}{} = {}\n", indent_str, key, new_value));
                         }
-                        value_updated = true;
+                        i += 1;
                         continue;
                     }
                 }
             }
-            
+
             // Keep line as-is
             result.push_str(line);
             result.push('\n');
+            i += 1;
         }
-        
+
         result
     }
 

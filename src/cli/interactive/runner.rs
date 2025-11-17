@@ -34,6 +34,28 @@ impl InteractiveRunner {
         }
     }
 
+    /// Sanitize an optional string input by trimming whitespace and filtering empty strings.
+    ///
+    /// Returns None if the input is None or contains only whitespace.
+    /// Returns Some(trimmed_string) if the input contains non-whitespace characters.
+    fn sanitize_optional_string(input: Option<String>) -> Option<String> {
+        input
+            .filter(|s| !s.trim().is_empty())
+            .map(|s| s.trim().to_string())
+    }
+
+    /// Sanitize a string input by trimming whitespace.
+    ///
+    /// Returns None if the input contains only whitespace, Some(trimmed_string) otherwise.
+    fn sanitize_string(input: String) -> Option<String> {
+        let trimmed = input.trim();
+        if trimmed.is_empty() {
+            None
+        } else {
+            Some(trimmed.to_string())
+        }
+    }
+
     /// Ensure the use case controller is loaded
     fn ensure_use_case_controller(&mut self) -> Result<&mut UseCaseController> {
         if self.use_case_controller.is_none() {
@@ -57,24 +79,38 @@ impl InteractiveRunner {
     }
 
     /// Initialize project with selected options
+    /// Initialize a new project (configuration phase)
     pub fn initialize_project(
         &mut self,
         language: Option<String>,
         methodologies: Vec<String>,
+        storage: String,
     ) -> Result<String> {
-        // This delegates to CliRunner for consistency, but we could call controller directly
-        // For now, we'll keep the existing pattern
-        use crate::cli::standard::CliRunner;
-        let mut runner = CliRunner::new();
-        let result = runner.init_project(language, methodologies)?;
+        // Sanitize inputs: trim whitespace and filter out empty strings
+        let sanitized_language = Self::sanitize_optional_string(language);
+        let sanitized_methodologies: Vec<String> = methodologies
+            .into_iter()
+            .filter_map(Self::sanitize_string)
+            .collect();
+
+        // Use first methodology as default, or "feature" if none provided
+        let default_methodology = sanitized_methodologies
+            .first()
+            .cloned()
+            .unwrap_or_else(|| "feature".to_string());
+
+        let result = crate::controller::ProjectController::init_project_with_methodologies(
+            sanitized_language,
+            sanitized_methodologies,
+            storage,
+            default_methodology,
+        )?;
         Ok(result.message)
     }
 
     /// Finalize project initialization
     pub fn finalize_initialization(&mut self) -> Result<String> {
-        use crate::cli::standard::CliRunner;
-        let mut runner = CliRunner::new();
-        let result = runner.finalize_init()?;
+        let result = crate::controller::ProjectController::finalize_init()?;
         Ok(result.message)
     }
 

@@ -359,7 +359,10 @@ default = "3"
 
         // Check acceptance_criteria field
         let acceptance_criteria = custom_fields.get("acceptance_criteria").unwrap();
-        assert_eq!(acceptance_criteria.label, Some("Acceptance Criteria".to_string()));
+        assert_eq!(
+            acceptance_criteria.label,
+            Some("Acceptance Criteria".to_string())
+        );
         assert_eq!(acceptance_criteria.field_type, "text");
         assert_eq!(acceptance_criteria.required, true);
 

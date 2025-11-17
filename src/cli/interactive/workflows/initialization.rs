@@ -135,11 +135,45 @@ impl Initialization {
                 .to_lowercase()
         };
 
+        // Step 4: Select storage backend
+        UI::show_step(
+            4,
+            "Storage Backend",
+            "Choose how use case data will be stored.\n\
+            TOML: Simple file-based storage, great for version control\n\
+            SQLite: Database storage, better for complex queries and large projects",
+        )?;
+
+        let storage_options = vec![
+            "toml - Simple file-based storage (recommended for most projects)",
+            "sqlite - Database storage (better for complex queries)",
+        ];
+
+        let storage_selection = Select::new("Storage backend:", storage_options)
+            .with_help_message("TOML is simpler and git-friendly, SQLite offers better querying")
+            .prompt()?;
+
+        let storage_backend = if storage_selection.starts_with("toml") {
+            "toml"
+        } else {
+            "sqlite"
+        };
+
         // Show summary
-        show_configuration_summary(&language, &selected_methodologies, &default_methodology)?;
+        show_configuration_summary(
+            &language,
+            &selected_methodologies,
+            &default_methodology,
+            storage_backend,
+        )?;
 
         // Create config
-        create_config(&mut runner, language, selected_methodologies)?;
+        create_config(
+            &mut runner,
+            language,
+            selected_methodologies,
+            storage_backend,
+        )?;
 
         // Finalize
         finalize_initialization(&mut runner)?;
@@ -153,6 +187,7 @@ fn show_configuration_summary(
     language: &Option<String>,
     selected_methodologies: &[String],
     default_methodology: &str,
+    storage_backend: &str,
 ) -> Result<()> {
     println!("\n✨ Configuration Summary:");
     println!(
@@ -160,7 +195,8 @@ fn show_configuration_summary(
         language.as_ref().unwrap_or(&"none".to_string())
     );
     println!("   Methodologies: {}", selected_methodologies.join(", "));
-    println!("   Default: {}\n", default_methodology);
+    println!("   Default: {}", default_methodology);
+    println!("   Storage: {}\n", storage_backend);
     Ok(())
 }
 
@@ -169,8 +205,13 @@ fn create_config(
     runner: &mut InteractiveRunner,
     language: Option<String>,
     selected_methodologies: Vec<String>,
+    storage_backend: &str,
 ) -> Result<()> {
-    match runner.initialize_project(language, selected_methodologies) {
+    match runner.initialize_project(
+        language,
+        selected_methodologies,
+        storage_backend.to_string(),
+    ) {
         Ok(message) => {
             UI::show_success(&message)?;
             Ok(())

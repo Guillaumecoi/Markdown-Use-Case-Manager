@@ -68,45 +68,6 @@ impl CliRunner {
         }
     }
 
-    /// Initialize a new use case manager project (configuration phase).
-    ///
-    /// Creates the initial project structure and configuration files.
-    /// This is the first step of initialization - templates are copied later
-    /// in `finalize_init()` to allow config review.
-    ///
-    /// # Arguments
-    /// * `language` - Optional programming language for code templates
-    /// * `methodologies` - List of methodologies to enable (first one becomes default)
-    ///
-    /// # Returns
-    /// Returns a DisplayResult with success message.
-    pub fn init_project(
-        &mut self,
-        language: Option<String>,
-        methodologies: Vec<String>,
-    ) -> Result<DisplayResult> {
-        // Sanitize inputs: trim whitespace and filter out empty strings
-        let sanitized_language = Self::sanitize_optional_string(language);
-        let sanitized_methodologies: Vec<String> = methodologies
-            .into_iter()
-            .filter_map(Self::sanitize_string)
-            .collect();
-
-        // Use first methodology as default, or "feature" if none provided
-        let default_methodology = sanitized_methodologies
-            .first()
-            .cloned()
-            .unwrap_or_else(|| "feature".to_string());
-
-        let result = ProjectController::init_project_with_methodologies(
-            sanitized_language,
-            sanitized_methodologies,
-            "toml".to_string(),
-            default_methodology,
-        )?;
-        Ok(result)
-    }
-
     /// Initialize a new use case manager project with storage backend choice (configuration phase).
     ///
     /// Creates the initial project structure and configuration files with the specified storage backend.
@@ -120,7 +81,7 @@ impl CliRunner {
     ///
     /// # Returns
     /// Returns a DisplayResult with success message.
-    pub fn init_project_with_storage(
+    pub fn init_project(
         &mut self,
         language: Option<String>,
         methodologies: Vec<String>,

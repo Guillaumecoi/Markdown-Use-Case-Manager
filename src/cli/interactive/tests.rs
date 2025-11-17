@@ -194,8 +194,11 @@ mod workflow_tests {
         let mut runner = InteractiveRunner::new();
 
         // Step 1: Initialize project
-        let result =
-            runner.initialize_project(Some("rust".to_string()), vec!["business".to_string()]);
+        let result = runner.initialize_project(
+            Some("rust".to_string()),
+            vec!["business".to_string()],
+            "toml".to_string(),
+        );
         assert!(result.is_ok());
         let message = result.unwrap();
         assert!(message.contains("Configuration file created"));

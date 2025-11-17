@@ -35,7 +35,7 @@ pub fn handle_init_command(
         }
     } else {
         println!("Initializing use case manager project...");
-        match runner.init_project_with_storage(language, methodologies, storage) {
+        match runner.init_project(language, methodologies, storage) {
             Ok(result) => DisplayResultFormatter::display(&result),
             Err(e) => DisplayResultFormatter::display(&DisplayResult::error(e.to_string())),
         }
