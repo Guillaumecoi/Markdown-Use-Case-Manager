@@ -43,7 +43,7 @@ fn setup_backend(
         .join("use-cases")
         .to_string_lossy()
         .to_string();
-    config.directories.data_dir = Some(temp_dir.path().join("data").to_string_lossy().to_string());
+    config.directories.data_dir = temp_dir.path().join("data").to_string_lossy().to_string();
 
     let repository = if backend == StorageBackend::Sqlite {
         let db_path = temp_dir.path().join("benchmark.db");

@@ -66,12 +66,7 @@ impl UseCaseCreator {
 
     /// Load custom fields for a methodology with default values
     fn load_methodology_fields(&self, methodology: &str) -> Result<HashMap<String, Value>> {
-        let templates_dir = self
-            .config
-            .directories
-            .template_dir
-            .clone()
-            .unwrap_or_else(|| format!(".config/.mucm/{}", crate::config::Config::TEMPLATES_DIR));
+        let templates_dir = format!(".config/.mucm/{}", crate::config::Config::TEMPLATES_DIR);
 
         // MethodologyRegistry expects the parent directory containing "methodologies/"
         // But during template copying, methodologies are placed directly in template-assets/

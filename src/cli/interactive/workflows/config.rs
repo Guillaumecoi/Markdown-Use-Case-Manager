@@ -37,7 +37,7 @@ impl ConfigWorkflow {
 
         config.directories.use_case_dir = Text::new("Use case directory:")
             .with_default(&config.directories.use_case_dir)
-            .with_help_message("Where to store use case markdown files")
+            .with_help_message("Where to store generated use case markdown files")
             .prompt()?;
 
         config.directories.test_dir = Text::new("Test directory:")
@@ -47,7 +47,12 @@ impl ConfigWorkflow {
 
         config.directories.persona_dir = Text::new("Persona directory:")
             .with_default(&config.directories.persona_dir)
-            .with_help_message("Where to store persona markdown files")
+            .with_help_message("Where to store generated persona markdown files")
+            .prompt()?;
+
+        config.directories.data_dir = Text::new("Data directory:")
+            .with_default(&config.directories.data_dir)
+            .with_help_message("Source of truth: TOML files and SQLite database")
             .prompt()?;
 
         Ok(())
@@ -156,9 +161,19 @@ impl ConfigWorkflow {
             "Project: {} - {}",
             config.project.name, config.project.description
         );
-        println!("Use Case Dir: {}", config.directories.use_case_dir);
+        println!(
+            "Use Case Dir: {} (generated)",
+            config.directories.use_case_dir
+        );
         println!("Test Dir: {}", config.directories.test_dir);
-        println!("Persona Dir: {}", config.directories.persona_dir);
+        println!(
+            "Persona Dir: {} (generated)",
+            config.directories.persona_dir
+        );
+        println!(
+            "Data Dir: {} (source of truth)",
+            config.directories.data_dir
+        );
         println!("Test Language: {}", config.generation.test_language);
         println!(
             "Auto Generate Tests: {}",

@@ -207,38 +207,13 @@ pub struct ProjectConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DirectoryConfig {
     /// Directory where generated markdown use case files are stored
-    /// Default: "docs/use-cases"
     pub use_case_dir: String,
     /// Directory where generated test files are stored
-    /// Default: "tests/use-cases"
     pub test_dir: String,
     /// Directory where persona markdown files are stored
-    /// Default: "docs/personas"
-    #[serde(default = "default_persona_dir")]
     pub persona_dir: String,
-    /// Optional custom template directory (uses built-in if not specified)
-    pub template_dir: Option<String>,
-    /// Directory for source data files (TOML, SQLite database)
-    /// This is the source of truth - where editable data is stored
-    /// Defaults to use_case_dir if not specified
-    pub data_dir: Option<String>,
-}
-
-fn default_persona_dir() -> String {
-    "docs/personas".to_string()
-}
-
-impl DirectoryConfig {
-    /// Get the effective data directory path.
-    ///
-    /// Returns the configured data directory if specified, otherwise falls back
-    /// to the use case directory.
-    ///
-    /// # Returns
-    /// The directory path as a string slice where source data files (TOML, SQLite) should be stored
-    pub fn get_data_dir(&self) -> &str {
-        self.data_dir.as_deref().unwrap_or(&self.use_case_dir)
-    }
+    /// Directory for the source of truth files (TOML, SQLite database)
+    pub data_dir: String,
 }
 
 /// Template configuration settings.

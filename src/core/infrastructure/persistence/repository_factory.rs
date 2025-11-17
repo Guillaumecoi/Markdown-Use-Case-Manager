@@ -36,8 +36,8 @@ impl RepositoryFactory {
             }
             StorageBackend::Sqlite => {
                 // For SQLite, use the data directory (source of truth) for database storage
-                let db_path = std::path::Path::new(config.directories.get_data_dir())
-                    .join("usecases.db");
+                let db_path =
+                    std::path::Path::new(&config.directories.data_dir).join("usecases.db");
 
                 // Create parent directories if they don't exist
                 if let Some(parent) = db_path.parent() {
@@ -93,8 +93,8 @@ impl RepositoryFactory {
             }
             StorageBackend::Sqlite => {
                 // For SQLite, use the data directory (source of truth) for database storage
-                let db_path = std::path::Path::new(config.directories.get_data_dir())
-                    .join("usecases.db");
+                let db_path =
+                    std::path::Path::new(&config.directories.data_dir).join("usecases.db");
 
                 // Create parent directories if they don't exist
                 if let Some(parent) = db_path.parent() {

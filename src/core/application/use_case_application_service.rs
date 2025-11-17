@@ -852,7 +852,7 @@ mod tests {
         // Optional fields will only appear in the loaded use case if they have actual values
 
         // Verify TOML file exists in data directory and contains custom fields
-        let data_dir = Path::new(coordinator.config.directories.get_data_dir()).join("testing");
+        let data_dir = Path::new(&coordinator.config.directories.data_dir).join("testing");
         let toml_path = data_dir.join("UC-TES-001.toml");
         assert!(
             toml_path.exists(),

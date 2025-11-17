@@ -22,8 +22,7 @@ impl TomlPersonaRepository {
     /// Get the directory for persona data files (TOML)
     /// Stores in data_dir/personas alongside use case data
     fn get_data_dir(&self) -> String {
-        let base = self.config.directories.get_data_dir();
-        format!("{}/personas", base)
+        format!("{}/personas", &self.config.directories.data_dir)
     }
 
     /// Get the directory for persona markdown files
@@ -145,7 +144,7 @@ mod tests {
         // so that get_markdown_dir() can extract "{base}/docs/personas"
         let mut config = Config::default();
         config.directories.use_case_dir = format!("{}/docs/use-cases", temp_path);
-        config.directories.data_dir = Some(format!("{}/.mucm", temp_path));
+        config.directories.data_dir = format!("{}/.mucm", temp_path);
 
         let repo = TomlPersonaRepository::new(config);
         (repo, temp_dir)

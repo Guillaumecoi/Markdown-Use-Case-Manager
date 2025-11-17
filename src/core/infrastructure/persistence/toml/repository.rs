@@ -31,7 +31,7 @@ impl UseCaseRepository for TomlUseCaseRepository {
     }
 
     fn load_all(&self) -> Result<Vec<UseCase>> {
-        let toml_dir = Path::new(self.config.directories.get_data_dir());
+        let toml_dir = Path::new(&self.config.directories.data_dir);
         let mut use_cases = Vec::new();
 
         if !toml_dir.exists() {
@@ -73,7 +73,7 @@ impl TomlUseCaseRepository {
         let category_snake = to_snake_case(&use_case.category);
 
         // Create TOML directory structure (source files)
-        let toml_dir = Path::new(self.config.directories.get_data_dir()).join(&category_snake);
+        let toml_dir = Path::new(&self.config.directories.data_dir).join(&category_snake);
         fs::create_dir_all(&toml_dir)?;
 
         // Filter out Null values from extra fields before serialization

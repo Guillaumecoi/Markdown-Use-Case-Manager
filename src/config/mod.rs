@@ -246,8 +246,7 @@ impl Config {
                         use_case_dir: "use-cases".to_string(),
                         test_dir: "tests".to_string(),
                         persona_dir: "docs/personas".to_string(),
-                        template_dir: None,
-                        data_dir: None,
+                        data_dir: "use-cases-data".to_string(),
                     },
                     templates: TemplateConfig {
                         methodologies: vec![

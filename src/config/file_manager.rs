@@ -112,14 +112,12 @@ impl ConfigFileManager {
             "test_dir",
             &format!(r#""{}""#, new_config.directories.test_dir),
         );
-        if let Some(data_dir) = &new_config.directories.data_dir {
-            content = Self::update_toml_value(
-                &content,
-                "directories",
-                "data_dir",
-                &format!(r#""{}""#, data_dir),
-            );
-        }
+        content = Self::update_toml_value(
+            &content,
+            "directories",
+            "data_dir",
+            &format!(r#""{}""#, new_config.directories.data_dir),
+        );
 
         // Update template settings
         let methodologies_str = new_config

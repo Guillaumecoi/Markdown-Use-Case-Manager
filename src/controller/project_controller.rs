@@ -179,11 +179,7 @@ impl ProjectController {
              - Directories will be created when you create your first use case",
             config.generation.test_language,
             &config.templates.default_methodology,
-            config
-                .directories
-                .data_dir
-                .as_deref()
-                .unwrap_or("docs/use-cases"),
+            &config.directories.data_dir,
             config.directories.use_case_dir,
             config.directories.test_dir,
         );
@@ -283,11 +279,7 @@ impl ProjectController {
             &config.templates.default_methodology,
             config.templates.methodologies.join(", "),
             resolved_storage,
-            config
-                .directories
-                .data_dir
-                .as_deref()
-                .unwrap_or("docs/use-cases"),
+            &config.directories.data_dir,
             config.directories.use_case_dir,
             config.directories.test_dir,
         );
