@@ -112,6 +112,48 @@ impl Config {
         config
     }
 
+    /// Create a minimal config with methodologies, storage, and directories.
+    ///
+    /// This creates a basic configuration with directory customization.
+    ///
+    /// # Arguments
+    /// * `test_language` - The programming language for test templates
+    /// * `methodologies` - List of methodologies to enable
+    /// * `default_methodology` - Optional default methodology override
+    /// * `storage` - Storage backend (toml or sqlite)
+    /// * `use_case_dir` - Directory for use case files
+    /// * `test_dir` - Directory for test files
+    /// * `persona_dir` - Directory for persona files
+    /// * `data_dir` - Directory for data files
+    ///
+    /// # Returns
+    /// A Config instance with custom directories
+    pub fn for_template_with_methodologies_storage_and_directories(
+        test_language: Option<String>,
+        methodologies: Vec<String>,
+        default_methodology: Option<String>,
+        storage: String,
+        use_case_dir: String,
+        test_dir: String,
+        persona_dir: String,
+        data_dir: String,
+    ) -> Self {
+        let mut config = Self::for_template_with_methodologies_and_storage(
+            test_language,
+            methodologies,
+            default_methodology,
+            storage,
+        );
+
+        // Update directories
+        config.directories.use_case_dir = use_case_dir;
+        config.directories.test_dir = test_dir;
+        config.directories.persona_dir = persona_dir;
+        config.directories.data_dir = data_dir;
+
+        config
+    }
+
     /// Get the path to the configuration file.
     ///
     /// Returns the full path to `.config/.mucm/mucm.toml` relative to the current directory.
@@ -219,6 +261,28 @@ impl Config {
         _language: Option<String>, // Not currently used - we copy all languages now
     ) -> Result<()> {
         TemplateManager::copy_templates_to_config(base_dir)
+    }
+
+    /// Create all project directories as specified in the configuration.
+    ///
+    /// Creates use case, test, persona, and data directories if they don't exist.
+    /// This is typically called after initialization to set up the project structure.
+    ///
+    /// # Returns
+    /// `Ok(())` on success, or an error if directory creation fails
+    pub fn create_project_directories() -> Result<()> {
+        let config = Self::load()?;
+
+        fs::create_dir_all(&config.directories.use_case_dir)
+            .context("Failed to create use case directory")?;
+        fs::create_dir_all(&config.directories.test_dir)
+            .context("Failed to create test directory")?;
+        fs::create_dir_all(&config.directories.persona_dir)
+            .context("Failed to create persona directory")?;
+        fs::create_dir_all(&config.directories.data_dir)
+            .context("Failed to create data directory")?;
+
+        Ok(())
     }
 
     /// Load default configuration from source-templates/config.toml

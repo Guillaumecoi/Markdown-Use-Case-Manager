@@ -109,6 +109,24 @@ impl TemplateManager {
             &format!(r#"backend = "{}""#, backend_str),
         );
 
+        // Directories
+        template_content = template_content.replace(
+            r#"use_case_dir = "docs/use-cases""#,
+            &format!(r#"use_case_dir = "{}""#, config.directories.use_case_dir),
+        );
+        template_content = template_content.replace(
+            r#"test_dir = "tests/use-cases""#,
+            &format!(r#"test_dir = "{}""#, config.directories.test_dir),
+        );
+        template_content = template_content.replace(
+            r#"persona_dir = "docs/personas""#,
+            &format!(r#"persona_dir = "{}""#, config.directories.persona_dir),
+        );
+        template_content = template_content.replace(
+            r#"data_dir = "use-cases-data""#,
+            &format!(r#"data_dir = "{}""#, config.directories.data_dir),
+        );
+
         // Write the config
         let config_path = Config::config_path();
         fs::write(&config_path, template_content).context("Failed to write config file")?;

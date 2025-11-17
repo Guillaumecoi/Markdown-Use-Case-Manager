@@ -193,18 +193,35 @@ mod workflow_tests {
         let _temp_dir = setup_empty_dir();
         let mut runner = InteractiveRunner::new();
 
-        // Step 1: Initialize project
+        // Step 1: Initialize project with custom directories
         let result = runner.initialize_project(
             Some("rust".to_string()),
             vec!["business".to_string()],
             "toml".to_string(),
+            "docs/my-use-cases".to_string(),
+            "tests/my-tests".to_string(),
+            "docs/my-personas".to_string(),
+            "my-data".to_string(),
         );
         assert!(result.is_ok());
         let message = result.unwrap();
-        assert!(message.contains("Configuration file created"));
+        assert!(message.contains("Project setup complete"));
 
         // Verify project is now initialized
         assert!(ProjectController::is_initialized());
+
+        // Verify config has correct directories
+        let config = crate::config::Config::load().unwrap();
+        assert_eq!(config.directories.use_case_dir, "docs/my-use-cases");
+        assert_eq!(config.directories.test_dir, "tests/my-tests");
+        assert_eq!(config.directories.persona_dir, "docs/my-personas");
+        assert_eq!(config.directories.data_dir, "my-data");
+
+        // Verify directories were created
+        assert!(std::path::Path::new("docs/my-use-cases").exists());
+        assert!(std::path::Path::new("tests/my-tests").exists());
+        assert!(std::path::Path::new("docs/my-personas").exists());
+        assert!(std::path::Path::new("my-data").exists());
     }
 
     #[test]

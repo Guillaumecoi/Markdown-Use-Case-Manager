@@ -187,6 +187,111 @@ impl ProjectController {
         Ok(DisplayResult::success(message))
     }
 
+    /// Initialize a new project with multiple methodologies and directories (Step 1: Create config).
+    ///
+    /// Creates the initial project configuration file with user-specified
+    /// language, methodologies, storage backend, default methodology, and directory preferences.
+    /// This is the first step in project initialization.
+    ///
+    /// # Arguments
+    /// * `language` - Optional programming language for test generation
+    /// * `methodologies` - List of methodologies to enable
+    /// * `storage` - Storage backend to use (toml or sqlite)
+    /// * `default_methodology` - Default methodology for use case creation
+    /// * `use_case_dir` - Directory for use case files
+    /// * `test_dir` - Directory for test files
+    /// * `persona_dir` - Directory for persona files
+    /// * `data_dir` - Directory for data files (TOML/SQLite)
+    ///
+    /// # Returns
+    /// DisplayResult with success message and next steps guidance
+    ///
+    /// # Errors
+    /// Returns error if project is already initialized or configuration creation fails
+    pub fn init_project_with_methodologies_and_directories(
+        language: Option<String>,
+        methodologies: Vec<String>,
+        storage: String,
+        default_methodology: String,
+        use_case_dir: String,
+        test_dir: String,
+        persona_dir: String,
+        data_dir: String,
+    ) -> Result<DisplayResult> {
+        // Check if already initialized
+        if Self::is_initialized() {
+            return Ok(DisplayResult::error(
+                "A use case manager project already exists in this directory or a parent directory"
+                    .to_string(),
+            ));
+        }
+
+        // Resolve language aliases to primary names
+        let resolved_language = if let Some(lang) = language {
+            use crate::config::Config;
+
+            // Handle special case for "none"
+            if lang == "none" {
+                "none".to_string()
+            } else {
+                // Always load language metadata (info.toml) from source templates
+                let templates_dir = Config::get_metadata_load_dir()?;
+                let language_registry = LanguageRegistry::new_dynamic(&templates_dir)?;
+                if let Some(lang_def) = language_registry.get(&lang) {
+                    lang_def.name().to_string()
+                } else {
+                    lang
+                }
+            }
+        } else {
+            "none".to_string()
+        };
+
+        // Default to "toml" if storage is empty or "none"
+        let resolved_storage =
+            if storage.trim().is_empty() || storage.trim().to_lowercase() == "none" {
+                "toml".to_string()
+            } else {
+                storage
+            };
+
+        // Create config with specified methodologies, storage, and directories
+        let config = Config::for_template_with_methodologies_storage_and_directories(
+            Some(resolved_language),
+            methodologies,
+            Some(default_methodology.clone()),
+            resolved_storage.clone(),
+            use_case_dir,
+            test_dir,
+            persona_dir,
+            data_dir,
+        );
+
+        // Save config file
+        Config::save_config_only(&config)?;
+
+        let message = format!(
+            "✅ Configuration file created at .config/.mucm/mucm.toml\n\n\
+             📝 Configuration:\n\
+             - Programming language: {}\n\
+             - Default Methodology: {}\n\
+             - Enabled Methodologies: {}\n\
+             - Storage Backend: {}\n\
+             - Data directory: {}\n\
+             - Use case directory: {}\n\
+             - Test directory: {}",
+            config.generation.test_language,
+            &config.templates.default_methodology,
+            config.templates.methodologies.join(", "),
+            resolved_storage,
+            &config.directories.data_dir,
+            config.directories.use_case_dir,
+            config.directories.test_dir,
+        );
+
+        Ok(DisplayResult::success(message))
+    }
+
     /// Initialize a new project with multiple methodologies (Step 1: Create config).
     ///
     /// Creates the initial project configuration file with user-specified
