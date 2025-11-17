@@ -142,7 +142,7 @@ mod storage_backend_tests {
 /// [directories]
 /// use_case_dir = "docs/use-cases"
 /// test_dir = "tests/use-cases"
-/// toml_dir = "use-cases-data"
+/// data_dir = "use-cases-data"
 ///
 /// [templates]
 /// methodologies = ["developer", "feature", "business", "tester"]
@@ -218,9 +218,10 @@ pub struct DirectoryConfig {
     pub persona_dir: String,
     /// Optional custom template directory (uses built-in if not specified)
     pub template_dir: Option<String>,
-    /// Directory for TOML source files (defaults to same as use_case_dir if not specified)
-    /// This is where the raw use case data is stored before markdown generation
-    pub toml_dir: Option<String>,
+    /// Directory for source data files (TOML, SQLite database)
+    /// This is the source of truth - where editable data is stored
+    /// Defaults to use_case_dir if not specified
+    pub data_dir: Option<String>,
 }
 
 fn default_persona_dir() -> String {
@@ -228,15 +229,15 @@ fn default_persona_dir() -> String {
 }
 
 impl DirectoryConfig {
-    /// Get the effective TOML directory path.
+    /// Get the effective data directory path.
     ///
-    /// Returns the configured TOML directory if specified, otherwise falls back
-    /// to the use case directory for backward compatibility.
+    /// Returns the configured data directory if specified, otherwise falls back
+    /// to the use case directory.
     ///
     /// # Returns
-    /// The directory path as a string slice where TOML files should be stored
-    pub fn get_toml_dir(&self) -> &str {
-        self.toml_dir.as_deref().unwrap_or(&self.use_case_dir)
+    /// The directory path as a string slice where source data files (TOML, SQLite) should be stored
+    pub fn get_data_dir(&self) -> &str {
+        self.data_dir.as_deref().unwrap_or(&self.use_case_dir)
     }
 }
 

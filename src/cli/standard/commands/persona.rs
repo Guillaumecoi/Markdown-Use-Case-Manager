@@ -176,7 +176,7 @@ mod tests {
         let mut config = Config::default();
         config.storage.backend = backend;
         config.directories.use_case_dir = format!("{}/docs/use-cases", temp_dir.path().display());
-        config.directories.toml_dir = Some(format!("{}/.mucm", temp_dir.path().display()));
+        config.directories.data_dir = Some(format!("{}/.mucm", temp_dir.path().display()));
         config
     }
 

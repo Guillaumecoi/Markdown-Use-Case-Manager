@@ -19,11 +19,11 @@ impl TomlPersonaRepository {
         Self { config }
     }
 
-    /// Get the directory for persona TOML files
-    /// Stores in .mucm/personas alongside use case TOMLs
-    fn get_toml_dir(&self) -> String {
-        let base = self.config.directories.get_toml_dir();
-        format!("{}/../personas", base)
+    /// Get the directory for persona data files (TOML)
+    /// Stores in data_dir/personas alongside use case data
+    fn get_data_dir(&self) -> String {
+        let base = self.config.directories.get_data_dir();
+        format!("{}/personas", base)
     }
 
     /// Get the directory for persona markdown files
@@ -35,18 +35,18 @@ impl TomlPersonaRepository {
 
 impl PersonaRepository for TomlPersonaRepository {
     fn save(&self, persona: &Persona) -> Result<()> {
-        // Create TOML directory structure
-        let toml_dir_str = self.get_toml_dir();
-        let toml_dir = Path::new(&toml_dir_str);
-        fs::create_dir_all(toml_dir)?;
+        // Create data directory structure
+        let data_dir_str = self.get_data_dir();
+        let data_dir = Path::new(&data_dir_str);
+        fs::create_dir_all(data_dir)?;
 
         // Filter out Null values from extra fields before serialization
         // TOML doesn't support null values like JSON does
         let mut persona_for_toml = persona.clone();
         persona_for_toml.extra.retain(|_, v| !v.is_null());
 
-        // Save TOML file (source of truth)
-        let toml_path = toml_dir.join(format!("{}.toml", persona.id));
+        // Save TOML file (source of truth in data directory)
+        let toml_path = data_dir.join(format!("{}.toml", persona.id));
         let toml_content = toml::to_string_pretty(&persona_for_toml)?;
         fs::write(&toml_path, toml_content)?;
 
@@ -54,15 +54,15 @@ impl PersonaRepository for TomlPersonaRepository {
     }
 
     fn load_all(&self) -> Result<Vec<Persona>> {
-        let toml_dir_str = self.get_toml_dir();
-        let toml_dir = Path::new(&toml_dir_str);
+        let data_dir_str = self.get_data_dir();
+        let data_dir = Path::new(&data_dir_str);
         let mut personas = Vec::new();
 
-        if !toml_dir.exists() {
+        if !data_dir.exists() {
             return Ok(personas); // No personas yet
         }
 
-        for entry in fs::read_dir(toml_dir)? {
+        for entry in fs::read_dir(data_dir)? {
             let entry = entry?;
             let path = entry.path();
 
@@ -82,7 +82,7 @@ impl PersonaRepository for TomlPersonaRepository {
     }
 
     fn load_by_id(&self, id: &str) -> Result<Option<Persona>> {
-        let toml_path = Path::new(&self.get_toml_dir()).join(format!("{}.toml", id));
+        let toml_path = Path::new(&self.get_data_dir()).join(format!("{}.toml", id));
 
         if !toml_path.exists() {
             return Ok(None);
@@ -97,8 +97,8 @@ impl PersonaRepository for TomlPersonaRepository {
     }
 
     fn delete(&self, id: &str) -> Result<()> {
-        // Delete TOML file
-        let toml_path = Path::new(&self.get_toml_dir()).join(format!("{}.toml", id));
+        // Delete TOML file from data directory
+        let toml_path = Path::new(&self.get_data_dir()).join(format!("{}.toml", id));
         if toml_path.exists() {
             fs::remove_file(&toml_path)?;
         }
@@ -113,7 +113,7 @@ impl PersonaRepository for TomlPersonaRepository {
     }
 
     fn exists(&self, id: &str) -> Result<bool> {
-        let toml_path = Path::new(&self.get_toml_dir()).join(format!("{}.toml", id));
+        let toml_path = Path::new(&self.get_data_dir()).join(format!("{}.toml", id));
         Ok(toml_path.exists())
     }
 
@@ -145,7 +145,7 @@ mod tests {
         // so that get_markdown_dir() can extract "{base}/docs/personas"
         let mut config = Config::default();
         config.directories.use_case_dir = format!("{}/docs/use-cases", temp_path);
-        config.directories.toml_dir = Some(format!("{}/.mucm", temp_path));
+        config.directories.data_dir = Some(format!("{}/.mucm", temp_path));
 
         let repo = TomlPersonaRepository::new(config);
         (repo, temp_dir)

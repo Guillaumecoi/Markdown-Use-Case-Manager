@@ -181,7 +181,7 @@ impl ProjectController {
             &config.templates.default_methodology,
             config
                 .directories
-                .toml_dir
+                .data_dir
                 .as_deref()
                 .unwrap_or("docs/use-cases"),
             config.directories.use_case_dir,
@@ -285,7 +285,7 @@ impl ProjectController {
             resolved_storage,
             config
                 .directories
-                .toml_dir
+                .data_dir
                 .as_deref()
                 .unwrap_or("docs/use-cases"),
             config.directories.use_case_dir,

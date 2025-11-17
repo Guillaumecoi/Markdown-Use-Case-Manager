@@ -112,12 +112,12 @@ impl ConfigFileManager {
             "test_dir",
             &format!(r#""{}""#, new_config.directories.test_dir),
         );
-        if let Some(toml_dir) = &new_config.directories.toml_dir {
+        if let Some(data_dir) = &new_config.directories.data_dir {
             content = Self::update_toml_value(
                 &content,
                 "directories",
-                "toml_dir",
-                &format!(r#""{}""#, toml_dir),
+                "data_dir",
+                &format!(r#""{}""#, data_dir),
             );
         }
 

@@ -8,7 +8,7 @@ description = "A project managed with use case manager"
 use_case_dir = "docs/use-cases"      # Generated markdown use case documentation
 test_dir = "tests/use-cases"         # Generated test files
 persona_dir = "docs/personas"        # Persona markdown files
-toml_dir = "use-cases-data"          # Source TOML files (editable use case data)
+data_dir = "use-cases-data"          # Source of truth (TOML files and SQLite database)
 
 # Template configuration - which methodologies to use and default choice
 [templates]

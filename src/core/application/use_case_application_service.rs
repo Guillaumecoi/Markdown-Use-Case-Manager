@@ -851,9 +851,9 @@ mod tests {
         // This is intentional - TOML doesn't support null values like JSON does
         // Optional fields will only appear in the loaded use case if they have actual values
 
-        // Verify TOML file exists and contains custom fields
-        let toml_dir = Path::new(coordinator.config.directories.get_toml_dir()).join("testing");
-        let toml_path = toml_dir.join("UC-TES-001.toml");
+        // Verify TOML file exists in data directory and contains custom fields
+        let data_dir = Path::new(coordinator.config.directories.get_data_dir()).join("testing");
+        let toml_path = data_dir.join("UC-TES-001.toml");
         assert!(
             toml_path.exists(),
             "TOML file should exist at {:?}",

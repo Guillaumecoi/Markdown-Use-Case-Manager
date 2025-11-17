@@ -247,7 +247,7 @@ impl Config {
                         test_dir: "tests".to_string(),
                         persona_dir: "docs/personas".to_string(),
                         template_dir: None,
-                        toml_dir: None,
+                        data_dir: None,
                     },
                     templates: TemplateConfig {
                         methodologies: vec![
