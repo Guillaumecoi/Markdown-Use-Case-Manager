@@ -29,6 +29,6 @@ mod types;
 
 // Re-export public types
 pub use definition::MethodologyDefinition;
-pub use r#trait::Methodology;
+pub use r#trait::{DocumentationLevel, Methodology};
 pub use registry::MethodologyRegistry;
 pub use types::CustomFieldConfig;

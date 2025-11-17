@@ -157,6 +157,43 @@ impl UseCaseApplicationService {
         Ok(use_case_id)
     }
 
+    /// Create use case with custom fields
+    pub fn create_use_case_with_fields(
+        &mut self,
+        title: String,
+        category: String,
+        description: Option<String>,
+        methodology: &str,
+        extra_fields: std::collections::HashMap<String, String>,
+    ) -> Result<String> {
+        // Validate methodology exists
+        let available_methodologies = self.template_engine.available_methodologies();
+        if !available_methodologies.contains(&methodology.to_string()) {
+            return Err(anyhow::anyhow!(
+                "Unknown methodology '{}'. Available: {:?}",
+                methodology,
+                available_methodologies
+            ));
+        }
+
+        // Create use case with custom fields
+        let use_case = self.create_use_case_with_fields_internal(
+            title,
+            category,
+            description,
+            methodology,
+            extra_fields,
+        )?;
+        let use_case_id = use_case.id.clone();
+
+        // Save and generate markdown
+        self.save_use_case_with_methodology(&use_case, methodology)?;
+        self.use_cases.push(use_case);
+        self.generate_overview()?;
+
+        Ok(use_case_id)
+    }
+
     // ========== Regeneration Operations ==========
 
     /// Regenerate use case with different methodology
@@ -562,6 +599,32 @@ impl UseCaseApplicationService {
             category,
             description,
             methodology,
+            &self.use_cases,
+            self.repository.as_ref(),
+        )?;
+
+        // Generate markdown from TOML data
+        let markdown_content = self.generate_use_case_markdown(&use_case)?;
+        self.repository
+            .save_markdown(&use_case.id, &markdown_content)?;
+
+        Ok(use_case)
+    }
+
+    fn create_use_case_with_fields_internal(
+        &self,
+        title: String,
+        category: String,
+        description: Option<String>,
+        methodology: &str,
+        extra_fields: std::collections::HashMap<String, String>,
+    ) -> Result<UseCase> {
+        let use_case = self.use_case_creator.create_use_case_with_custom_fields(
+            title,
+            category,
+            description,
+            methodology,
+            extra_fields,
             &self.use_cases,
             self.repository.as_ref(),
         )?;

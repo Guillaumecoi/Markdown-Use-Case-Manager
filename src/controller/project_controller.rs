@@ -24,7 +24,7 @@ use anyhow::Result;
 
 use super::dto::{DisplayResult, MethodologyInfo, SelectionOptions};
 use crate::config::Config;
-use crate::core::{LanguageRegistry, Methodology, MethodologyRegistry};
+use crate::core::{DocumentationLevel, LanguageRegistry, Methodology, MethodologyRegistry};
 
 /// Controller for project initialization and management operations.
 ///
@@ -105,6 +105,21 @@ impl ProjectController {
             .collect();
 
         Ok(methodology_infos)
+    }
+
+    /// Get available levels for a specific methodology
+    pub fn get_methodology_levels(methodology_name: &str) -> Result<Vec<DocumentationLevel>> {
+        use crate::config::Config;
+
+        // Load methodology metadata from source templates
+        let templates_dir = Config::get_metadata_load_dir()?;
+        let registry = MethodologyRegistry::new_dynamic(&templates_dir)?;
+
+        let methodology_def = registry
+            .get(methodology_name)
+            .ok_or_else(|| anyhow::anyhow!("Methodology '{}' not found", methodology_name))?;
+
+        Ok(methodology_def.levels().to_vec())
     }
 
     /// Initialize a new project (Step 1: Create config).

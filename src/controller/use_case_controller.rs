@@ -127,6 +127,51 @@ impl UseCaseController {
         }
     }
 
+    /// Create a new use case with a specific methodology and additional fields.
+    ///
+    /// Creates a use case with custom field values provided by the user,
+    /// merged with methodology defaults.
+    ///
+    /// # Arguments
+    /// * `title` - The title of the use case
+    /// * `category` - The category under which to organize the use case
+    /// * `description` - Optional detailed description of the use case
+    /// * `methodology` - The methodology to use for this use case
+    /// * `extra_fields` - Additional field values (priority, status, author, etc.)
+    ///
+    /// # Returns
+    /// DisplayResult with success message and use case information
+    ///
+    /// # Errors
+    /// Returns error if use case creation fails or methodology is invalid
+    pub fn create_use_case_with_fields(
+        &mut self,
+        title: String,
+        category: String,
+        description: Option<String>,
+        methodology: String,
+        extra_fields: std::collections::HashMap<String, String>,
+    ) -> Result<DisplayResult> {
+        match self.app_service.create_use_case_with_fields(
+            title,
+            category,
+            description,
+            &methodology,
+            extra_fields,
+        ) {
+            Ok(use_case_id) => {
+                // Display using formatter
+                UseCaseFormatter::display_created(&use_case_id, &methodology);
+
+                Ok(DisplayResult::success(format!(
+                    "Created use case: {} with {} methodology",
+                    use_case_id, methodology
+                )))
+            }
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
     /// List all use cases in the project.
     ///
     /// Retrieves and displays a formatted list of all existing use cases

@@ -8,7 +8,7 @@ mod template_engine;
 // Re-exports
 pub use languages::LanguageRegistry;
 pub use methodologies::{
-    CustomFieldConfig, Methodology, MethodologyDefinition, MethodologyRegistry,
+    CustomFieldConfig, DocumentationLevel, Methodology, MethodologyDefinition, MethodologyRegistry,
 };
 pub use persistence::sqlite::SqliteUseCaseRepository;
 pub use persistence::{

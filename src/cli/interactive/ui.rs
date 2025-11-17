@@ -137,4 +137,16 @@ impl UI {
         )?;
         Ok(())
     }
+
+    /// Show an info message
+    pub fn show_info(message: &str) -> Result<()> {
+        execute!(
+            stdout(),
+            SetForegroundColor(Color::Blue),
+            Print(message),
+            ResetColor,
+            Print("\n")
+        )?;
+        Ok(())
+    }
 }

@@ -78,6 +78,14 @@ impl InteractiveRunner {
         ProjectController::get_available_methodologies()
     }
 
+    /// Get available levels for a specific methodology
+    pub fn get_methodology_levels(
+        &self,
+        methodology_name: &str,
+    ) -> Result<Vec<crate::core::DocumentationLevel>> {
+        crate::controller::ProjectController::get_methodology_levels(methodology_name)
+    }
+
     /// Initialize project for interactive mode.
     pub fn initialize_project(
         &mut self,
@@ -134,6 +142,30 @@ impl InteractiveRunner {
         let controller = self.ensure_use_case_controller()?;
         let result = if let Some(method) = methodology {
             controller.create_use_case_with_methodology(title, category, description, method)?
+        } else {
+            controller.create_use_case(title, category, description)?
+        };
+        Ok(result.message)
+    }
+
+    /// Create a use case with additional fields
+    pub fn create_use_case_with_fields(
+        &mut self,
+        title: String,
+        category: String,
+        description: Option<String>,
+        methodology: Option<String>,
+        extra_fields: std::collections::HashMap<String, String>,
+    ) -> Result<String> {
+        let controller = self.ensure_use_case_controller()?;
+        let result = if let Some(method) = methodology {
+            controller.create_use_case_with_fields(
+                title,
+                category,
+                description,
+                method,
+                extra_fields,
+            )?
         } else {
             controller.create_use_case(title, category, description)?
         };

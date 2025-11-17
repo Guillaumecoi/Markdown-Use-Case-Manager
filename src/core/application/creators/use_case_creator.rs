@@ -64,6 +64,53 @@ impl UseCaseCreator {
         Ok(use_case_from_toml)
     }
 
+    pub fn create_use_case_with_custom_fields(
+        &self,
+        title: String,
+        category: String,
+        description: Option<String>,
+        methodology: &str,
+        user_fields: std::collections::HashMap<String, String>,
+        existing_use_cases: &[UseCase],
+        repository: &dyn UseCaseRepository,
+    ) -> Result<UseCase> {
+        let use_case_id = self.use_case_service.generate_unique_use_case_id(
+            &category,
+            existing_use_cases,
+            &self.config.directories.use_case_dir,
+        );
+        let description = description.unwrap_or_default();
+
+        // Load methodology default fields
+        let mut extra_fields = self.load_methodology_fields(methodology)?;
+
+        // Override with user-provided fields
+        for (key, value) in user_fields {
+            extra_fields.insert(key, serde_json::Value::String(value));
+        }
+
+        let use_case = self
+            .use_case_service
+            .create_use_case_with_extra(
+                use_case_id.clone(),
+                title,
+                category,
+                description,
+                extra_fields,
+            )
+            .map_err(|e: String| anyhow::anyhow!(e))?;
+
+        // Step 1: Save TOML first (source of truth) - this will include custom fields
+        repository.save(&use_case)?;
+
+        // Step 2: Load from TOML to ensure we're working with persisted data
+        let use_case_from_toml = repository
+            .load_by_id(&use_case.id)?
+            .ok_or_else(|| anyhow::anyhow!("Failed to load newly created use case from TOML"))?;
+
+        Ok(use_case_from_toml)
+    }
+
     /// Load custom fields for a methodology with default values
     fn load_methodology_fields(&self, methodology: &str) -> Result<HashMap<String, Value>> {
         let templates_dir = format!(".config/.mucm/{}", crate::config::Config::TEMPLATES_DIR);
