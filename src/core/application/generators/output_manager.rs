@@ -10,33 +10,6 @@ use crate::core::{MethodologyView, UseCase};
 pub struct OutputManager;
 
 impl OutputManager {
-    /// Generates the markdown filename for a use case.
-    ///
-    /// **Single View** (views is empty): Returns `{use_case_id}.md`
-    /// - Example: `UC-001.md`
-    ///
-    /// **Multiple Views**: Returns `{use_case_id}-{methodology_abbr}-{level_abbr}.md`
-    /// - Example: `UC-001-feat-s.md`, `UC-001-bus-n.md`
-    ///
-    /// # Arguments
-    /// * `use_case` - The use case entity
-    /// * `view` - Optional view for multi-view scenarios. If None, generates single-view filename.
-    pub fn generate_filename(use_case: &UseCase, view: Option<&MethodologyView>) -> String {
-        // Single view: no suffix
-        if !use_case.is_multi_view() {
-            return format!("{}.md", use_case.id);
-        }
-
-        // Multi-view: add suffix
-        if let Some(view) = view {
-            format!("{}-{}.md", use_case.id, view.key())
-        } else {
-            // Fallback for when view is None but use case has views
-            // This shouldn't happen in normal usage
-            format!("{}.md", use_case.id)
-        }
-    }
-
     /// Generates all filenames for a use case based on its enabled views.
     ///
     /// Returns a vector of (filename, view) tuples for each enabled view.
@@ -62,58 +35,6 @@ impl OutputManager {
 mod tests {
     use super::*;
     use crate::core::{MethodologyView, UseCase};
-
-    #[test]
-    fn test_single_view_filename() {
-        let use_case = UseCase::new(
-            "UC-001".to_string(),
-            "Test Use Case".to_string(),
-            "testing".to_string(),
-            "Description".to_string(),
-            "medium".to_string(),
-        )
-        .unwrap();
-
-        let filename = OutputManager::generate_filename(&use_case, None);
-        assert_eq!(filename, "UC-001.md");
-    }
-
-    #[test]
-    fn test_multi_view_filename_with_view() {
-        let mut use_case = UseCase::new(
-            "UC-001".to_string(),
-            "Test Use Case".to_string(),
-            "testing".to_string(),
-            "Description".to_string(),
-            "medium".to_string(),
-        )
-        .unwrap();
-
-        let view = MethodologyView::new("feature".to_string(), "simple".to_string());
-        use_case.add_view(view.clone());
-
-        let filename = OutputManager::generate_filename(&use_case, Some(&view));
-        assert_eq!(filename, "UC-001-feature-simple.md");
-    }
-
-    #[test]
-    fn test_multi_view_filename_without_view_specified() {
-        let mut use_case = UseCase::new(
-            "UC-001".to_string(),
-            "Test Use Case".to_string(),
-            "testing".to_string(),
-            "Description".to_string(),
-            "medium".to_string(),
-        )
-        .unwrap();
-
-        let view = MethodologyView::new("feature".to_string(), "simple".to_string());
-        use_case.add_view(view);
-
-        // When view is None but use case has views, fallback to no suffix
-        let filename = OutputManager::generate_filename(&use_case, None);
-        assert_eq!(filename, "UC-001.md");
-    }
 
     #[test]
     fn test_generate_all_filenames_single_view() {

@@ -221,10 +221,6 @@ impl Initialization {
             test_dir.clone(),
             persona_dir.clone(),
             data_dir.clone(),
-            &use_case_dir,
-            &test_dir,
-            &persona_dir,
-            &data_dir,
         )?;
 
         Ok(())
@@ -267,10 +263,6 @@ fn create_config_with_directories(
     test_dir: String,
     persona_dir: String,
     data_dir: String,
-    use_case_dir_display: &str,
-    test_dir_display: &str,
-    persona_dir_display: &str,
-    data_dir_display: &str,
 ) -> Result<()> {
     match runner.initialize_project(
         language,
@@ -283,15 +275,6 @@ fn create_config_with_directories(
     ) {
         Ok(message) => {
             UI::show_success(&message)?;
-            println!("\n📁 Project directories created:");
-            println!("   ✓ {} (use cases)", use_case_dir_display);
-            println!("   ✓ {} (tests)", test_dir_display);
-            println!("   ✓ {} (personas)", persona_dir_display);
-            println!("   ✓ {} (data)", data_dir_display);
-            println!("\n� Project initialized and ready to use!");
-            println!("   You can now create use cases with: mucm create \"<title>\" --category <category>");
-            println!("   Run 'mucm --help' for all available commands\n");
-            UI::pause_for_input()?;
             Ok(())
         }
         Err(e) => {

@@ -100,11 +100,15 @@ impl CliRunner {
             .cloned()
             .unwrap_or_else(|| "feature".to_string());
 
-        let result = ProjectController::init_project_with_methodologies(
+        let result = ProjectController::init_project(
             sanitized_language,
-            sanitized_methodologies,
-            storage,
-            default_methodology,
+            Some(sanitized_methodologies),
+            Some(storage),
+            Some(default_methodology),
+            None,
+            None,
+            None,
+            None,
         )?;
         Ok(result)
     }

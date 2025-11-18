@@ -116,23 +116,17 @@ impl InteractiveRunner {
             .cloned()
             .unwrap_or_else(|| "feature".to_string());
 
-        // Create the config with directories
-        crate::controller::ProjectController::init_project_with_methodologies_and_directories(
+        // Call the complete initialization method
+        let result = crate::controller::ProjectController::init_project(
             sanitized_language,
-            sanitized_methodologies,
-            storage,
-            default_methodology,
-            use_case_dir,
-            test_dir,
-            persona_dir,
-            data_dir,
+            Some(sanitized_methodologies),
+            Some(storage),
+            Some(default_methodology),
+            Some(use_case_dir),
+            Some(test_dir),
+            Some(persona_dir),
+            Some(data_dir),
         )?;
-
-        // Immediately finalize (copy templates) for interactive mode
-        let result = crate::controller::ProjectController::finalize_init()?;
-
-        // Create all project directories
-        crate::config::Config::create_project_directories()?;
 
         Ok(result.message)
     }

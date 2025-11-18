@@ -71,7 +71,7 @@ impl TemplateManager {
             &format!(r#"description = "{}""#, config.project.description),
         );
 
-        // Methodologies - replace the entire line to preserve formatting
+        // Methodologies - use regex to replace any array content
         let methodologies_str = config
             .templates
             .methodologies
@@ -79,10 +79,16 @@ impl TemplateManager {
             .map(|m| format!(r#""{}""#, m))
             .collect::<Vec<_>>()
             .join(", ");
-        template_content = template_content.replace(
-            r#"methodologies = ["feature"]"#,
-            &format!("methodologies = [{}]", methodologies_str),
-        );
+
+        // Use a more flexible replacement that handles any array content
+        // This regex matches: methodologies = [anything]
+        let re = regex::Regex::new(r#"methodologies = \[([^\]]*)\]"#).unwrap();
+        template_content = re
+            .replace(
+                &template_content,
+                format!("methodologies = [{}]", methodologies_str),
+            )
+            .to_string();
 
         // Default methodology
         template_content = template_content.replace(

@@ -718,27 +718,23 @@ impl UseCaseApplicationService {
             .ok_or_else(|| anyhow::anyhow!("Failed to load use case from TOML"))?;
 
         // Step 3: Generate markdown files based on views
-        if use_case_from_toml.is_multi_view() {
-            // Multi-view: generate one file per enabled view
-            let all_outputs = OutputManager::generate_all_filenames(&use_case_from_toml);
-            for (filename, view_opt) in all_outputs {
-                if let Some(view) = view_opt {
-                    let content = self
-                        .markdown_generator
-                        .generate_with_view(&use_case_from_toml, &view)?;
-                    self.repository.save_markdown_with_filename(
-                        &use_case_from_toml,
-                        &filename,
-                        &content,
-                    )?;
-                }
-            }
-        } else {
-            // Single view: use methodology parameter (backward compatible)
-            let markdown_content =
-                self.generate_use_case_markdown_with_methodology(&use_case_from_toml, methodology)?;
-            self.repository
-                .save_markdown(&use_case.id, &markdown_content)?;
+        // Always use OutputManager for consistent filename generation
+        let all_outputs = OutputManager::generate_all_filenames(&use_case_from_toml);
+        for (filename, view_opt) in all_outputs {
+            let content = if let Some(view) = view_opt {
+                // Multi-view: generate with specific view
+                self.markdown_generator
+                    .generate_with_view(&use_case_from_toml, &view)?
+            } else {
+                // Single view: use methodology parameter (backward compatible)
+                self.generate_use_case_markdown_with_methodology(&use_case_from_toml, methodology)?
+            };
+
+            self.repository.save_markdown_with_filename(
+                &use_case_from_toml,
+                &filename,
+                &content,
+            )?;
         }
 
         // Generate test file if enabled
