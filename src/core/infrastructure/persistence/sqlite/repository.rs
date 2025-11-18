@@ -539,7 +539,7 @@ impl UseCaseRepository for SqliteUseCaseRepository {
 
     fn save_markdown_with_filename(
         &self,
-        use_case: &UseCase,
+        _use_case: &UseCase,
         filename: &str,
         content: &str,
     ) -> Result<()> {

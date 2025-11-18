@@ -190,16 +190,6 @@ impl InteractiveRunner {
         controller.show_status()
     }
 
-    /// Get available persona fields from project configuration
-    pub fn get_persona_fields(
-        &self,
-    ) -> Result<std::collections::HashMap<String, crate::core::CustomFieldConfig>> {
-        use crate::config::Config;
-
-        let config = Config::load()?;
-        Ok(config.persona.fields.clone())
-    }
-
     /// Create a persona interactively
     pub fn create_persona_interactive(&mut self, id: String, name: String) -> Result<String> {
         use crate::cli::args::PersonaCommands;

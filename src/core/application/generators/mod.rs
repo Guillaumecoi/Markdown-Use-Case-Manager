@@ -16,6 +16,7 @@ pub mod overview_generator;
 pub mod test_generator;
 
 pub use markdown_generator::MarkdownGenerator;
-pub use output_manager::OutputManager;
+// OutputManager will be exported when used by application service
+// pub use output_manager::OutputManager;
 pub use overview_generator::OverviewGenerator;
 pub use test_generator::TestGenerator;

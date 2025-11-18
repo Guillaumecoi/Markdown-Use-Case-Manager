@@ -7,8 +7,10 @@
 use crate::core::{MethodologyView, UseCase};
 
 /// Manages output filenames for use case documentation.
+#[allow(dead_code)]
 pub struct OutputManager;
 
+#[allow(dead_code)]
 impl OutputManager {
     /// Generates the markdown filename for a use case.
     ///

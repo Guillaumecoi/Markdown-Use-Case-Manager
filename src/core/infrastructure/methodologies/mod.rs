@@ -30,7 +30,8 @@ mod types;
 
 // Re-export public types
 pub use definition::MethodologyDefinition;
-pub use field_resolver::FieldResolver;
+// FieldResolver will be exported when used by application service
+// pub use field_resolver::FieldResolver;
 pub use r#trait::{DocumentationLevel, Methodology};
 pub use registry::MethodologyRegistry;
 pub use types::CustomFieldConfig;
