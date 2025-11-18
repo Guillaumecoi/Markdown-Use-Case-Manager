@@ -13,6 +13,152 @@ use crate::cli::interactive::{runner::InteractiveRunner, ui::UI};
 pub struct UseCaseWorkflow;
 
 impl UseCaseWorkflow {
+    /// Interactive multi-view use case creation workflow
+    pub fn create_multi_view_use_case() -> Result<()> {
+        UI::show_section_header("Create Multi-View Use Case", "🔄")?;
+
+        let mut runner = InteractiveRunner::new();
+        let methodologies = runner.get_installed_methodologies()?;
+
+        if methodologies.is_empty() {
+            UI::show_error(
+                "No methodologies available. Please configure methodologies in your project.",
+            )?;
+            UI::pause_for_input()?;
+            return Ok(());
+        }
+
+        // Step 1: Prompt for title and category first
+        UI::show_info("\n📋 Required Fields")?;
+
+        let title = Text::new("Title:")
+            .with_help_message("A clear, descriptive title for the use case")
+            .prompt()?;
+
+        let category = Text::new("Category:")
+            .with_help_message("Group this use case (e.g., 'authentication', 'data-processing')")
+            .prompt()?;
+
+        let description = Text::new("Description:")
+            .with_help_message("Brief description of what this use case accomplishes")
+            .prompt_skippable()?;
+
+        // Step 2: Collect multiple views
+        UI::show_section_header("Select Views", "👁️")?;
+        UI::show_info("Add multiple methodology views. Each view will generate a separate markdown file.")?;
+
+        let mut views: Vec<(String, String)> = Vec::new();
+        
+        loop {
+            // Display methodologies with their descriptions
+            let methodology_options: Vec<String> = methodologies
+                .iter()
+                .map(|m| format!("{} - {}", m.display_name, m.description))
+                .collect();
+
+            let selected_idx = Select::new(
+                &format!("Select methodology (view #{}):", views.len() + 1),
+                methodology_options.clone()
+            )
+            .with_help_message("Choose how you want to structure this view")
+            .prompt()?;
+
+            // Find the selected methodology
+            let selected_methodology = &methodologies[methodologies
+                .iter()
+                .position(|m| format!("{} - {}", m.display_name, m.description) == selected_idx)
+                .context("Selected methodology not found")?];
+
+            let methodology_name = selected_methodology.name.clone();
+
+            // Get available levels for this methodology
+            let available_levels = runner.get_methodology_levels(&methodology_name)?;
+
+            if available_levels.is_empty() {
+                UI::show_error(&format!(
+                    "No levels available for methodology '{}'",
+                    methodology_name
+                ))?;
+                continue;
+            }
+
+            // Display levels with their descriptions
+            let level_options: Vec<String> = available_levels
+                .iter()
+                .map(|level| {
+                    let display_name = level
+                        .name
+                        .chars()
+                        .enumerate()
+                        .map(|(i, c)| {
+                            if i == 0 {
+                                c.to_uppercase().next().unwrap()
+                            } else {
+                                c
+                            }
+                        })
+                        .collect::<String>();
+                    format!("{} - {}", display_name, level.description)
+                })
+                .collect();
+
+            let selected_level_display = Select::new("Select level:", level_options)
+                .with_help_message("Choose the detail level for this view")
+                .prompt()?;
+
+            // Extract just the level name and convert to lowercase
+            let level = selected_level_display
+                .split(" - ")
+                .next()
+                .context("Failed to parse level name")?
+                .to_lowercase();
+
+            views.push((methodology_name.clone(), level.clone()));
+            
+            UI::show_success(&format!(
+                "✓ Added view: {}:{}",
+                methodology_name, level
+            ))?;
+
+            // Ask if user wants to add another view
+            let add_another = Confirm::new("Add another view?")
+                .with_default(false)
+                .with_help_message("Each view will generate a separate markdown file")
+                .prompt()?;
+
+            if !add_another {
+                break;
+            }
+        }
+
+        if views.is_empty() {
+            UI::show_error("No views selected. Use case creation cancelled.")?;
+            UI::pause_for_input()?;
+            return Ok(());
+        }
+
+        // Step 3: Create the multi-view use case
+        UI::show_info(&format!("\n📝 Creating use case with {} views...", views.len()))?;
+        
+        let result = runner.create_use_case_with_views(
+            title,
+            category,
+            description,
+            views.clone(),
+        )?;
+
+        UI::show_success(&result)?;
+        
+        // Show summary of created views
+        UI::show_info("\n📄 Generated files:")?;
+        for (methodology, level) in &views {
+            println!("   • {}-{}.md", methodology, level);
+        }
+
+        UI::pause_for_input()?;
+        Ok(())
+    }
+
     /// Interactive use case creation workflow
     pub fn create_use_case() -> Result<()> {
         UI::show_section_header("Create Use Case", "📝")?;
@@ -237,6 +383,7 @@ impl UseCaseWorkflow {
         loop {
             let options = vec![
                 "Create New Use Case",
+                "Create Multi-View Use Case",
                 "List All Use Cases",
                 "Show Project Status",
                 "Back to Main Menu",
@@ -246,6 +393,7 @@ impl UseCaseWorkflow {
 
             match choice {
                 "Create New Use Case" => Self::create_use_case()?,
+                "Create Multi-View Use Case" => Self::create_multi_view_use_case()?,
                 "List All Use Cases" => Self::list_use_cases()?,
                 "Show Project Status" => Self::show_status()?,
                 "Back to Main Menu" => break,

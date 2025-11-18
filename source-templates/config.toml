@@ -12,7 +12,7 @@ data_dir = "use-cases-data"          # Source of truth (TOML files and SQLite da
 
 # Template configuration - which methodologies to use and default choice
 [templates]
-methodologies = ["feature"]           # Available: business, developer, feature, tester
+methodologies = ["business", "developer", "feature", "tester"]  # All available methodologies
 default_methodology = "feature"
 
 # Code generation settings

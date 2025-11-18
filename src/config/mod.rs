@@ -62,15 +62,19 @@ impl Config {
     /// # Returns
     /// A minimal Config instance suitable for template processing
     pub fn for_template(test_language: Option<String>, methodology: Option<String>) -> Self {
+        // Load default config to get the methodologies from source-templates/config.toml
+        let default_config = Self::default();
+        
         let methodologies = if let Some(ref method) = methodology.clone() {
             vec![method.clone()]
         } else {
-            vec!["feature".to_string()]
+            // Use methodologies from default config (loaded from source-templates/config.toml)
+            default_config.templates.methodologies.clone()
         };
         Self::for_template_with_methodologies_and_storage(
             test_language,
             methodologies,
-            methodology,
+            methodology.or(Some(default_config.templates.default_methodology)),
             "toml".to_string(),
         )
     }
