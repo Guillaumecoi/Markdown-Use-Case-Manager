@@ -40,9 +40,9 @@ pub fn run_interactive_session() -> Result<()> {
 /// Create the main menu options
 fn create_main_menu_options() -> Vec<MenuOption<CliRunner>> {
     vec![
-        MenuOption::new("📝 Create a new use case", |_| {
-            if let Err(e) = UseCaseWorkflow::create_use_case() {
-                UI::show_error(&format!("Error creating use case: {}", e))?;
+        MenuOption::new("📝 Manage use cases", |_| {
+            if let Err(e) = UseCaseWorkflow::manage_use_cases() {
+                UI::show_error(&format!("Error managing use cases: {}", e))?;
             }
             Ok(false) // Don't exit
         }),

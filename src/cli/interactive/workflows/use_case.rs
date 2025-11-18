@@ -45,10 +45,12 @@ impl UseCaseWorkflow {
 
         // Step 2: Collect multiple views
         UI::show_section_header("Select Views", "👁️")?;
-        UI::show_info("Add multiple methodology views. Each view will generate a separate markdown file.")?;
+        UI::show_info(
+            "Add multiple methodology views. Each view will generate a separate markdown file.",
+        )?;
 
         let mut views: Vec<(String, String)> = Vec::new();
-        
+
         loop {
             // Display methodologies with their descriptions
             let methodology_options: Vec<String> = methodologies
@@ -58,7 +60,7 @@ impl UseCaseWorkflow {
 
             let selected_idx = Select::new(
                 &format!("Select methodology (view #{}):", views.len() + 1),
-                methodology_options.clone()
+                methodology_options.clone(),
             )
             .with_help_message("Choose how you want to structure this view")
             .prompt()?;
@@ -114,11 +116,8 @@ impl UseCaseWorkflow {
                 .to_lowercase();
 
             views.push((methodology_name.clone(), level.clone()));
-            
-            UI::show_success(&format!(
-                "✓ Added view: {}:{}",
-                methodology_name, level
-            ))?;
+
+            UI::show_success(&format!("✓ Added view: {}:{}", methodology_name, level))?;
 
             // Ask if user wants to add another view
             let add_another = Confirm::new("Add another view?")
@@ -138,17 +137,16 @@ impl UseCaseWorkflow {
         }
 
         // Step 3: Create the multi-view use case
-        UI::show_info(&format!("\n📝 Creating use case with {} views...", views.len()))?;
-        
-        let result = runner.create_use_case_with_views(
-            title,
-            category,
-            description,
-            views.clone(),
-        )?;
+        UI::show_info(&format!(
+            "\n📝 Creating use case with {} views...",
+            views.len()
+        ))?;
+
+        let result =
+            runner.create_use_case_with_views(title, category, description, views.clone())?;
 
         UI::show_success(&result)?;
-        
+
         // Show summary of created views
         UI::show_info("\n📄 Generated files:")?;
         for (methodology, level) in &views {
@@ -163,7 +161,21 @@ impl UseCaseWorkflow {
     pub fn create_use_case() -> Result<()> {
         UI::show_section_header("Create Use Case", "📝")?;
 
-        // Step 1: Select methodology from installed/configured ones in the project
+        // Step 0: Ask if they want single or multi-view
+        let view_type_options = vec![
+            "Single-View - One methodology/level (standard use case)",
+            "Multi-View - Multiple methodologies/levels (generates separate files per view)",
+        ];
+
+        let view_type = Select::new("Select use case type:", view_type_options)
+            .with_help_message("Single-view creates one markdown file, multi-view creates multiple")
+            .prompt()?;
+
+        if view_type.starts_with("Multi-View") {
+            return Self::create_multi_view_use_case();
+        }
+
+        // Continue with single-view creation
         let mut runner = InteractiveRunner::new();
         let methodologies = runner.get_installed_methodologies()?;
 
@@ -383,7 +395,6 @@ impl UseCaseWorkflow {
         loop {
             let options = vec![
                 "Create New Use Case",
-                "Create Multi-View Use Case",
                 "List All Use Cases",
                 "Show Project Status",
                 "Back to Main Menu",
@@ -393,7 +404,6 @@ impl UseCaseWorkflow {
 
             match choice {
                 "Create New Use Case" => Self::create_use_case()?,
-                "Create Multi-View Use Case" => Self::create_multi_view_use_case()?,
                 "List All Use Cases" => Self::list_use_cases()?,
                 "Show Project Status" => Self::show_status()?,
                 "Back to Main Menu" => break,

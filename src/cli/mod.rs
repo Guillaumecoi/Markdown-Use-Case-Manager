@@ -117,7 +117,14 @@ pub fn run() -> Result<()> {
             views,
         } => {
             execute_command(|| {
-                handle_create_command(&mut runner, title, category, description, methodology, views)
+                handle_create_command(
+                    &mut runner,
+                    title,
+                    category,
+                    description,
+                    methodology,
+                    views,
+                )
             });
             Ok(())
         }

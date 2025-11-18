@@ -64,7 +64,7 @@ impl Config {
     pub fn for_template(test_language: Option<String>, methodology: Option<String>) -> Self {
         // Load default config to get the methodologies from source-templates/config.toml
         let default_config = Self::default();
-        
+
         let methodologies = if let Some(ref method) = methodology.clone() {
             vec![method.clone()]
         } else {

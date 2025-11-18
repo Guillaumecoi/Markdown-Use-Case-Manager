@@ -726,14 +726,17 @@ impl UseCaseApplicationService {
                     let content = self
                         .markdown_generator
                         .generate_with_view(&use_case_from_toml, &view)?;
-                    self.repository
-                        .save_markdown_with_filename(&use_case_from_toml, &filename, &content)?;
+                    self.repository.save_markdown_with_filename(
+                        &use_case_from_toml,
+                        &filename,
+                        &content,
+                    )?;
                 }
             }
         } else {
             // Single view: use methodology parameter (backward compatible)
-            let markdown_content = self
-                .generate_use_case_markdown_with_methodology(&use_case_from_toml, methodology)?;
+            let markdown_content =
+                self.generate_use_case_markdown_with_methodology(&use_case_from_toml, methodology)?;
             self.repository
                 .save_markdown(&use_case.id, &markdown_content)?;
         }

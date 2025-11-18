@@ -187,20 +187,16 @@ impl InteractiveRunner {
         views: Vec<(String, String)>, // Vec of (methodology, level) pairs
     ) -> Result<String> {
         let controller = self.ensure_use_case_controller()?;
-        
+
         // Format views as "methodology:level,methodology:level"
         let views_string = views
             .iter()
             .map(|(methodology, level)| format!("{}:{}", methodology, level))
             .collect::<Vec<_>>()
             .join(",");
-        
-        let result = controller.create_use_case_with_views(
-            title,
-            category,
-            description,
-            views_string,
-        )?;
+
+        let result =
+            controller.create_use_case_with_views(title, category, description, views_string)?;
         Ok(result.message)
     }
 
