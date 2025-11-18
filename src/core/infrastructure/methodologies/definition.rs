@@ -35,8 +35,18 @@ pub struct MethodologyDefinition {
     levels: Vec<DocumentationLevel>,
     /// Preferred documentation style
     preferred_style: String,
-    /// Custom fields specific to this methodology
+    /// Custom fields specific to this methodology (flattened from all levels for backward compatibility)
     custom_fields: HashMap<String, CustomFieldConfig>,
+    /// Per-level configuration (for field resolution with inheritance)
+    pub(crate) level_configs: HashMap<String, LevelConfig>,
+}
+
+/// Configuration for a specific documentation level
+#[derive(Debug, Clone, serde::Deserialize)]
+pub(crate) struct LevelConfig {
+    /// Custom fields specific to this level
+    #[serde(default)]
+    pub(crate) custom_fields: HashMap<String, CustomFieldConfig>,
 }
 
 impl MethodologyDefinition {
@@ -108,13 +118,7 @@ impl MethodologyDefinition {
             #[serde(default)]
             custom_fields: HashMap<String, CustomFieldConfig>, // Legacy flat format (deprecated)
             #[serde(default)]
-            levels: HashMap<String, LevelConfig>, // New: nested levels with custom_fields
-        }
-
-        #[derive(serde::Deserialize)]
-        struct LevelConfig {
-            #[serde(default)]
-            custom_fields: HashMap<String, CustomFieldConfig>,
+            levels: HashMap<String, LevelConfig>, // Use the module LevelConfig type
         }
 
         #[derive(serde::Deserialize)]
@@ -132,8 +136,8 @@ impl MethodologyDefinition {
         // For now, flatten custom_fields from all levels for backward compatibility
         // TODO: In Sprint 2, implement proper level-based field resolution
         let mut all_custom_fields = config_data.custom_fields; // Start with legacy flat fields
-        for (_level_name, level_config) in config_data.levels {
-            all_custom_fields.extend(level_config.custom_fields);
+        for (_level_name, level_config) in &config_data.levels {
+            all_custom_fields.extend(level_config.custom_fields.clone());
         }
 
         let methodology_name = config_data.template.name;
@@ -154,6 +158,7 @@ impl MethodologyDefinition {
             levels,
             preferred_style: config_data.template.preferred_style,
             custom_fields: all_custom_fields,
+            level_configs: config_data.levels,
         })
     }
 }

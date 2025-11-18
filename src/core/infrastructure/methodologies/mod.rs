@@ -23,12 +23,14 @@
 //! The methodology directory also contains Handlebars templates for different documentation styles.
 
 mod definition;
+mod field_resolver;
 mod registry;
 mod r#trait;
 mod types;
 
 // Re-export public types
 pub use definition::MethodologyDefinition;
+pub use field_resolver::FieldResolver;
 pub use r#trait::{DocumentationLevel, Methodology};
 pub use registry::MethodologyRegistry;
 pub use types::CustomFieldConfig;
