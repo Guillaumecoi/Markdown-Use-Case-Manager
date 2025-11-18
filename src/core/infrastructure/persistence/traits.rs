@@ -68,4 +68,23 @@ pub trait UseCaseRepository {
     /// # Returns
     /// `Ok(())` on success, error if write fails
     fn save_markdown(&self, use_case_id: &str, content: &str) -> Result<()>;
+
+    /// Save markdown file with a specific filename.
+    ///
+    /// Used for multi-view use cases where each view needs its own file
+    /// (e.g., UC-001-feat-s.md, UC-001-bus-n.md).
+    ///
+    /// # Arguments
+    /// * `use_case` - The use case (for category/path resolution)
+    /// * `filename` - The full filename (e.g., "UC-001-feat-s.md")
+    /// * `content` - The markdown content to save
+    ///
+    /// # Returns
+    /// `Ok(())` on success, error if write fails
+    fn save_markdown_with_filename(
+        &self,
+        use_case: &UseCase,
+        filename: &str,
+        content: &str,
+    ) -> Result<()>;
 }

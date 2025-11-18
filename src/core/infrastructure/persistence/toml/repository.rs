@@ -30,6 +30,20 @@ impl UseCaseRepository for TomlUseCaseRepository {
         self.save_markdown_only(use_case_id, markdown_content)
     }
 
+    fn save_markdown_with_filename(
+        &self,
+        use_case: &UseCase,
+        filename: &str,
+        content: &str,
+    ) -> Result<()> {
+        let category_snake = to_snake_case(&use_case.category);
+        let md_dir = Path::new(&self.config.directories.use_case_dir).join(&category_snake);
+        fs::create_dir_all(&md_dir)?;
+        let md_path = md_dir.join(filename);
+        fs::write(&md_path, content)?;
+        Ok(())
+    }
+
     fn load_all(&self) -> Result<Vec<UseCase>> {
         let toml_dir = Path::new(&self.config.directories.data_dir);
         let mut use_cases = Vec::new();

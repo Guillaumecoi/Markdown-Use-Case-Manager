@@ -536,4 +536,22 @@ impl UseCaseRepository for SqliteUseCaseRepository {
 
         Ok(())
     }
+
+    fn save_markdown_with_filename(
+        &self,
+        use_case: &UseCase,
+        filename: &str,
+        content: &str,
+    ) -> Result<()> {
+        let db_dir = self.db_path.parent().unwrap_or(std::path::Path::new("."));
+        let markdown_dir = db_dir.join("markdown");
+        std::fs::create_dir_all(&markdown_dir)
+            .with_context(|| format!("Failed to create markdown directory {:?}", markdown_dir))?;
+
+        let filepath = markdown_dir.join(filename);
+        std::fs::write(&filepath, content)
+            .with_context(|| format!("Failed to write markdown file {:?}", filepath))?;
+
+        Ok(())
+    }
 }
