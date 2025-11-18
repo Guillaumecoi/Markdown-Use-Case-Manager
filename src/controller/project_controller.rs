@@ -113,17 +113,45 @@ impl ProjectController {
     /// This is used when creating use cases to show only what's configured.
     pub fn get_installed_methodologies() -> Result<Vec<MethodologyInfo>> {
         use crate::config::Config;
+        use std::fs;
 
-        // Load project config to get configured methodologies
-        let config = Config::load()?;
-        let configured_methodologies = &config.templates.methodologies;
+        // Check what's actually installed in project templates directory
+        let project_templates_dir = Config::get_project_templates_dir()?;
+        let methodologies_dir = project_templates_dir.join("methodologies");
 
-        // Load methodology metadata (info.toml) from source templates
-        let templates_dir = Config::get_metadata_load_dir()?;
-        let registry = MethodologyRegistry::new_dynamic(&templates_dir)?;
+        if !methodologies_dir.exists() {
+            anyhow::bail!(
+                "Project methodologies directory not found. Run 'mucm init --finalize' first."
+            );
+        }
 
-        // Filter to only show methodologies configured in the project
-        let methodology_infos: Vec<MethodologyInfo> = configured_methodologies
+        // Read directory to find installed methodologies
+        let installed: Vec<String> = fs::read_dir(&methodologies_dir)?
+            .filter_map(|entry| {
+                entry.ok().and_then(|e| {
+                    let path = e.path();
+                    if path.is_dir() {
+                        path.file_name()
+                            .and_then(|n| n.to_str())
+                            .map(|s| s.to_string())
+                    } else {
+                        None
+                    }
+                })
+            })
+            .collect();
+
+        if installed.is_empty() {
+            anyhow::bail!(
+                "No methodologies installed. Run 'mucm init --finalize' to copy methodology templates."
+            );
+        }
+
+        // Load methodology metadata (info.toml) from project templates
+        let registry = MethodologyRegistry::new_dynamic(&project_templates_dir)?;
+
+        // Build info for installed methodologies
+        let methodology_infos: Vec<MethodologyInfo> = installed
             .iter()
             .filter_map(|name| {
                 registry.get(name).map(|methodology_def| {
