@@ -74,8 +74,14 @@ impl InteractiveRunner {
     }
 
     /// Get available methodologies with descriptions
+    /// Get all available methodologies from source templates (for initialization)
     pub fn get_available_methodologies(&self) -> Result<Vec<MethodologyInfo>> {
         ProjectController::get_available_methodologies()
+    }
+
+    /// Get installed/configured methodologies in the project (for creating use cases)
+    pub fn get_installed_methodologies(&self) -> Result<Vec<MethodologyInfo>> {
+        ProjectController::get_installed_methodologies()
     }
 
     /// Get available levels for a specific methodology
@@ -184,6 +190,14 @@ impl InteractiveRunner {
         controller.show_status()
     }
 
+    /// Get available persona fields from project configuration
+    pub fn get_persona_fields(&self) -> Result<std::collections::HashMap<String, crate::core::CustomFieldConfig>> {
+        use crate::config::Config;
+
+        let config = Config::load()?;
+        Ok(config.persona.fields.clone())
+    }
+
     /// Create a persona interactively
     pub fn create_persona_interactive(&mut self, id: String, name: String) -> Result<String> {
         use crate::cli::args::PersonaCommands;
@@ -196,6 +210,21 @@ impl InteractiveRunner {
         handle_persona_command(command, &config)?;
         Ok("Persona created successfully!".to_string())
     }
+
+    /// Create a persona with additional fields
+    // pub fn create_persona_with_fields(
+    //     &mut self,
+    //     id: String,
+    //     name: String,
+    //     extra_fields: std::collections::HashMap<String, String>,
+    // ) -> Result<String> {
+    //     use crate::cli::standard::create_persona_with_fields;
+    //     use crate::config::Config;
+
+    //     let config = Config::load()?;
+    //     create_persona_with_fields(&config, id.clone(), name.clone(), extra_fields)?;
+    //     Ok(format!("Created persona with custom fields: {} ({})", name, id))
+    // }
 
     /// List all personas
     pub fn list_personas(&self) -> Result<()> {

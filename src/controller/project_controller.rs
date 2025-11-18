@@ -71,10 +71,12 @@ impl ProjectController {
     ///
     /// # Returns
     /// Vector of MethodologyInfo containing name, display name, and description
+    /// Get all available methodologies from source templates.
+    /// This is used during initialization to show what can be installed.
     pub fn get_available_methodologies() -> Result<Vec<MethodologyInfo>> {
         use crate::config::Config;
 
-        // Always load methodology metadata (info.toml) from source templates
+        // Load methodology metadata (info.toml) from source templates
         let templates_dir = Config::get_metadata_load_dir()?;
         let registry = MethodologyRegistry::new_dynamic(&templates_dir)?;
 
@@ -107,12 +109,55 @@ impl ProjectController {
         Ok(methodology_infos)
     }
 
+    /// Get installed/configured methodologies in the current project.
+    /// This is used when creating use cases to show only what's configured.
+    pub fn get_installed_methodologies() -> Result<Vec<MethodologyInfo>> {
+        use crate::config::Config;
+
+        // Load project config to get configured methodologies
+        let config = Config::load()?;
+        let configured_methodologies = &config.templates.methodologies;
+
+        // Load methodology metadata (info.toml) from source templates
+        let templates_dir = Config::get_metadata_load_dir()?;
+        let registry = MethodologyRegistry::new_dynamic(&templates_dir)?;
+
+        // Filter to only show methodologies configured in the project
+        let methodology_infos: Vec<MethodologyInfo> = configured_methodologies
+            .iter()
+            .filter_map(|name| {
+                registry.get(name).map(|methodology_def| {
+                    let display_name = name
+                        .chars()
+                        .enumerate()
+                        .map(|(i, c)| {
+                            if i == 0 {
+                                c.to_uppercase().next().unwrap()
+                            } else {
+                                c
+                            }
+                        })
+                        .collect::<String>();
+
+                    MethodologyInfo {
+                        name: name.clone(),
+                        display_name,
+                        description: methodology_def.description().to_string(),
+                    }
+                })
+            })
+            .collect();
+
+        Ok(methodology_infos)
+    }
+
     /// Get available levels for a specific methodology
     pub fn get_methodology_levels(methodology_name: &str) -> Result<Vec<DocumentationLevel>> {
         use crate::config::Config;
 
-        // Load methodology metadata from source templates
-        let templates_dir = Config::get_metadata_load_dir()?;
+        // Load methodology metadata from project-installed templates
+        // This allows users to customize levels and templates per project
+        let templates_dir = Config::get_project_templates_dir()?;
         let registry = MethodologyRegistry::new_dynamic(&templates_dir)?;
 
         let methodology_def = registry

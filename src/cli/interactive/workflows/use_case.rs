@@ -17,9 +17,9 @@ impl UseCaseWorkflow {
     pub fn create_use_case() -> Result<()> {
         UI::show_section_header("Create Use Case", "📝")?;
 
-        // Step 1: Select methodology from available ones in the project
+        // Step 1: Select methodology from installed/configured ones in the project
         let mut runner = InteractiveRunner::new();
-        let methodologies = runner.get_available_methodologies()?;
+        let methodologies = runner.get_installed_methodologies()?;
 
         if methodologies.is_empty() {
             UI::show_error("No methodologies available. Please configure methodologies in your project.")?;

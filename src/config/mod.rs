@@ -177,6 +177,29 @@ impl Config {
         TemplateManager::find_source_templates_dir()
     }
 
+    /// Get the directory for project-installed templates.
+    ///
+    /// Returns the path to .config/.mucm/template-assets/ where project-specific
+    /// customized templates are stored. This allows each project to have their own
+    /// custom templates and levels.
+    ///
+    /// # Returns
+    /// Result with PathBuf pointing to project template assets directory, or error if not initialized
+    pub fn get_project_templates_dir() -> Result<PathBuf> {
+        let base_path = Path::new(".");
+        let templates_dir = base_path
+            .join(Self::CONFIG_DIR)
+            .join(Self::TEMPLATES_DIR);
+
+        if !templates_dir.exists() {
+            anyhow::bail!(
+                "Project templates directory not found. Run 'mucm init' first or 'mucm finalize-init' to complete initialization."
+            );
+        }
+
+        Ok(templates_dir)
+    }
+
     /// Save configuration file only (without copying templates or creating directories).
     ///
     /// This is the first step of two-step initialization. It creates the config file
