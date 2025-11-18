@@ -45,7 +45,7 @@ impl MethodologyDefinition {
     /// This method reads the `info.toml` and `config.toml` files from the specified
     /// methodology directory and deserializes them into a MethodologyDefinition.
     /// The `info.toml` provides user-facing information for methodology selection,
-    /// while `config.toml` contains the technical configuration.
+    /// while `config.toml` contains the technical configuration with nested level definitions.
     ///
     /// # Arguments
     /// * `methodology_dir` - Path to the methodology directory containing info.toml and config.toml
@@ -64,15 +64,26 @@ impl MethodologyDefinition {
         // Load info.toml for user-facing information
         #[derive(serde::Deserialize)]
         struct InfoData {
+            #[serde(default)]
+            methodology: Option<MethodologyMeta>,
             overview: OverviewConfig,
             usage: UsageConfig,
-            levels: Vec<DocumentationLevel>,
+            #[serde(default)]
+            levels: HashMap<String, DocumentationLevel>, // New: nested levels format
+        }
+
+        #[derive(serde::Deserialize)]
+        struct MethodologyMeta {
+            name: String,
+            abbreviation: String,
+            description: String,
         }
 
         #[derive(serde::Deserialize)]
         struct OverviewConfig {
             title: String,
-            description: String,
+            #[serde(default)]
+            description: Option<String>, // Optional - can come from [methodology] section
         }
 
         #[derive(serde::Deserialize)]
@@ -87,10 +98,21 @@ impl MethodologyDefinition {
         let info_data: InfoData =
             toml::from_str(&info_content).context("Failed to parse methodology info TOML")?;
 
+        // Convert HashMap<String, DocumentationLevel> to Vec<DocumentationLevel>
+        let levels: Vec<DocumentationLevel> = info_data.levels.into_values().collect();
+
         // Load config.toml for technical configuration
         #[derive(serde::Deserialize)]
         struct ConfigData {
             template: TemplateConfig,
+            #[serde(default)]
+            custom_fields: HashMap<String, CustomFieldConfig>, // Legacy flat format (deprecated)
+            #[serde(default)]
+            levels: HashMap<String, LevelConfig>, // New: nested levels with custom_fields
+        }
+
+        #[derive(serde::Deserialize)]
+        struct LevelConfig {
             #[serde(default)]
             custom_fields: HashMap<String, CustomFieldConfig>,
         }
@@ -107,15 +129,31 @@ impl MethodologyDefinition {
         let config_data: ConfigData =
             toml::from_str(&config_content).context("Failed to parse methodology config TOML")?;
 
+        // For now, flatten custom_fields from all levels for backward compatibility
+        // TODO: In Sprint 2, implement proper level-based field resolution
+        let mut all_custom_fields = config_data.custom_fields; // Start with legacy flat fields
+        for (_level_name, level_config) in config_data.levels {
+            all_custom_fields.extend(level_config.custom_fields);
+        }
+
+        let methodology_name = config_data.template.name;
+
+        // Use description from [methodology] section if available, otherwise fall back to [overview]
+        let description = if let Some(ref meta) = info_data.methodology {
+            meta.description.clone()
+        } else {
+            info_data.overview.description.unwrap_or_default()
+        };
+
         Ok(Self {
-            name: config_data.template.name,
+            name: methodology_name,
             title: info_data.overview.title,
-            description: info_data.overview.description,
+            description,
             when_to_use: info_data.usage.when_to_use,
             key_features: info_data.usage.key_features,
-            levels: info_data.levels,
+            levels,
             preferred_style: config_data.template.preferred_style,
-            custom_fields: config_data.custom_fields,
+            custom_fields: all_custom_fields,
         })
     }
 }
@@ -172,10 +210,15 @@ mod tests {
         let methodology_dir = dir.join(name);
         fs::create_dir(&methodology_dir).unwrap();
 
+        // New format with nested levels
         let info_content = format!(
-            r#"[overview]
-title = "{}"
+            r#"[methodology]
+name = "{}"
+abbreviation = "test"
 description = "{}"
+
+[overview]
+title = "{}"
 
 [usage]
 when_to_use = [
@@ -187,17 +230,21 @@ key_features = [
     "Feature 2"
 ]
 
-[[levels]]
-name = "simple"
+[levels.simple]
+name = "Simple"
+abbreviation = "s"
 filename = "uc_simple.hbs"
 description = "Basic level"
+inherits = []
 
-[[levels]]
-name = "detailed"
+[levels.detailed]
+name = "Detailed"
+abbreviation = "d"
 filename = "uc_detailed.hbs"
 description = "Detailed level"
+inherits = ["simple"]
 "#,
-            title, description
+            name, description, title
         );
         fs::write(methodology_dir.join("info.toml"), info_content).unwrap();
 
@@ -237,10 +284,21 @@ overwrite_test_documentation = false"#,
         assert_eq!(methodology.when_to_use(), &["Use case 1", "Use case 2"]);
         assert_eq!(methodology.key_features(), &["Feature 1", "Feature 2"]);
         assert_eq!(methodology.levels().len(), 2);
-        assert_eq!(methodology.levels()[0].name, "simple");
-        assert_eq!(methodology.levels()[0].filename, "uc_simple.hbs");
-        assert_eq!(methodology.levels()[1].name, "detailed");
-        assert_eq!(methodology.levels()[1].filename, "uc_detailed.hbs");
+        
+        // Find levels by name (order not guaranteed from HashMap)
+        let simple_level = methodology.levels().iter().find(|l| l.name == "Simple").expect("simple level");
+        let detailed_level = methodology.levels().iter().find(|l| l.name == "Detailed").expect("detailed level");
+        
+        assert_eq!(simple_level.name, "Simple");
+        assert_eq!(simple_level.abbreviation, "s");
+        assert_eq!(simple_level.filename, "uc_simple.hbs");
+        assert_eq!(simple_level.inherits, Vec::<String>::new());
+        
+        assert_eq!(detailed_level.name, "Detailed");
+        assert_eq!(detailed_level.abbreviation, "d");
+        assert_eq!(detailed_level.filename, "uc_detailed.hbs");
+        assert_eq!(detailed_level.inherits, vec!["simple"]);
+        
         assert_eq!(methodology.preferred_style(), "detailed");
     }
 
@@ -286,22 +344,28 @@ overwrite_test_documentation = false
         let methodology_dir = temp_dir.path().join("feature");
         fs::create_dir(&methodology_dir).unwrap();
 
-        // Create info.toml
+        // Create info.toml with new format
         fs::write(
             methodology_dir.join("info.toml"),
             r#"
+[methodology]
+name = "feature"
+abbreviation = "feat"
+description = "Feature-focused development methodology"
+
 [overview]
 title = "Feature Methodology"
-description = "Feature-focused development methodology"
 
 [usage]
 when_to_use = ["Feature development", "User story tracking"]
 key_features = ["User stories", "Acceptance criteria", "Story points"]
 
-[[levels]]
-name = "simple"
+[levels.simple]
+name = "Simple"
+abbreviation = "s"
 filename = "uc_simple.hbs"
 description = "Simple feature specification"
+inherits = []
 "#,
         )
         .unwrap();
@@ -380,22 +444,28 @@ default = "3"
         let methodology_dir = temp_dir.path().join("simple");
         fs::create_dir(&methodology_dir).unwrap();
 
-        // Create info.toml
+        // Create info.toml with new format
         fs::write(
             methodology_dir.join("info.toml"),
             r#"
+[methodology]
+name = "simple"
+abbreviation = "simp"
+description = "Simple methodology without custom fields"
+
 [overview]
 title = "Simple Methodology"
-description = "Simple methodology without custom fields"
 
 [usage]
 when_to_use = ["Simple use cases"]
 key_features = ["Basic documentation"]
 
-[[levels]]
-name = "simple"
+[levels.simple]
+name = "Simple"
+abbreviation = "s"
 filename = "uc_simple.hbs"
 description = "Simple use case"
+inherits = []
 "#,
         )
         .unwrap();
