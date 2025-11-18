@@ -1,4 +1,4 @@
-use super::{Metadata, Scenario, Status, UseCaseReference};
+use super::{Metadata, MethodologyView, Scenario, Status, UseCaseReference};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
@@ -44,6 +44,12 @@ pub struct UseCase {
     pub priority: Priority,
     pub metadata: Metadata,
 
+    // NEW: Multi-view support - defines which methodology/level combinations are active
+    // Each view generates a separate markdown file (e.g., UC-001-feat-s.md, UC-001-bus-n.md)
+    // Empty vec means single-view mode (backward compatible)
+    #[serde(default)]
+    pub views: Vec<MethodologyView>,
+
     // NEW: Preconditions - what must be true before executing
     #[serde(default)]
     pub preconditions: Vec<String>,
@@ -82,6 +88,7 @@ impl UseCase {
             description,
             priority,
             metadata: Metadata::new(),
+            views: Vec::new(),
             preconditions: Vec::new(),
             postconditions: Vec::new(),
             use_case_references: Vec::new(),
@@ -195,6 +202,54 @@ impl UseCase {
                 scenario_id
             ))
         }
+    }
+
+    /// Add a methodology view (methodology/level combination)
+    pub fn add_view(&mut self, view: MethodologyView) {
+        // Prevent duplicate views
+        if !self.views.iter().any(|v| v.key() == view.key()) {
+            self.views.push(view);
+            self.metadata.touch();
+        }
+    }
+
+    /// Remove a methodology view by key (methodology-level)
+    pub fn remove_view(&mut self, methodology: &str, level: &str) -> bool {
+        let initial_len = self.views.len();
+        self.views
+            .retain(|v| v.methodology != methodology || v.level != level);
+        let removed = self.views.len() != initial_len;
+        if removed {
+            self.metadata.touch();
+        }
+        removed
+    }
+
+    /// Enable or disable a specific view
+    pub fn set_view_enabled(&mut self, methodology: &str, level: &str, enabled: bool) -> bool {
+        if let Some(view) = self
+            .views
+            .iter_mut()
+            .find(|v| v.methodology == methodology && v.level == level)
+        {
+            if view.enabled != enabled {
+                view.enabled = enabled;
+                self.metadata.touch();
+            }
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Get all enabled views
+    pub fn enabled_views(&self) -> impl Iterator<Item = &MethodologyView> {
+        self.views.iter().filter(|v| v.enabled)
+    }
+
+    /// Check if use case is in multi-view mode
+    pub fn is_multi_view(&self) -> bool {
+        !self.views.is_empty()
     }
 }
 
@@ -874,5 +929,187 @@ mod use_case_tests {
         assert_eq!(use_case.scenarios.len(), 1);
         assert_eq!(use_case.scenarios[0].id, "UC-TEST-001-S01");
         assert_eq!(use_case.scenarios[0].title, "Test Scenario");
+    }
+
+    /// Test add_view method
+    #[test]
+    fn test_add_view() {
+        let mut use_case = UseCase::new(
+            "UC-TEST-001".to_string(),
+            "Test Use Case".to_string(),
+            "Test".to_string(),
+            "A test use case".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap();
+
+        let view = MethodologyView::new("feature", "simple");
+        use_case.add_view(view);
+
+        assert_eq!(use_case.views.len(), 1);
+        assert_eq!(use_case.views[0].methodology, "feature");
+        assert_eq!(use_case.views[0].level, "simple");
+        assert!(use_case.views[0].enabled);
+    }
+
+    /// Test add_view prevents duplicates
+    #[test]
+    fn test_add_view_no_duplicates() {
+        let mut use_case = UseCase::new(
+            "UC-TEST-001".to_string(),
+            "Test Use Case".to_string(),
+            "Test".to_string(),
+            "A test use case".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap();
+
+        let view1 = MethodologyView::new("feature", "simple");
+        let view2 = MethodologyView::new("feature", "simple");
+
+        use_case.add_view(view1);
+        use_case.add_view(view2); // Should be ignored
+
+        assert_eq!(use_case.views.len(), 1);
+    }
+
+    /// Test remove_view method
+    #[test]
+    fn test_remove_view() {
+        let mut use_case = UseCase::new(
+            "UC-TEST-001".to_string(),
+            "Test Use Case".to_string(),
+            "Test".to_string(),
+            "A test use case".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap();
+
+        use_case.add_view(MethodologyView::new("feature", "simple"));
+        use_case.add_view(MethodologyView::new("business", "normal"));
+
+        let removed = use_case.remove_view("feature", "simple");
+        assert!(removed);
+        assert_eq!(use_case.views.len(), 1);
+        assert_eq!(use_case.views[0].methodology, "business");
+    }
+
+    /// Test remove_view returns false for non-existent view
+    #[test]
+    fn test_remove_view_nonexistent() {
+        let mut use_case = UseCase::new(
+            "UC-TEST-001".to_string(),
+            "Test Use Case".to_string(),
+            "Test".to_string(),
+            "A test use case".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap();
+
+        use_case.add_view(MethodologyView::new("feature", "simple"));
+
+        let removed = use_case.remove_view("business", "normal");
+        assert!(!removed);
+        assert_eq!(use_case.views.len(), 1);
+    }
+
+    /// Test set_view_enabled method
+    #[test]
+    fn test_set_view_enabled() {
+        let mut use_case = UseCase::new(
+            "UC-TEST-001".to_string(),
+            "Test Use Case".to_string(),
+            "Test".to_string(),
+            "A test use case".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap();
+
+        use_case.add_view(MethodologyView::new("feature", "simple"));
+
+        let success = use_case.set_view_enabled("feature", "simple", false);
+        assert!(success);
+        assert!(!use_case.views[0].enabled);
+
+        let success = use_case.set_view_enabled("feature", "simple", true);
+        assert!(success);
+        assert!(use_case.views[0].enabled);
+    }
+
+    /// Test set_view_enabled returns false for non-existent view
+    #[test]
+    fn test_set_view_enabled_nonexistent() {
+        let mut use_case = UseCase::new(
+            "UC-TEST-001".to_string(),
+            "Test Use Case".to_string(),
+            "Test".to_string(),
+            "A test use case".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap();
+
+        let success = use_case.set_view_enabled("feature", "simple", false);
+        assert!(!success);
+    }
+
+    /// Test enabled_views method
+    #[test]
+    fn test_enabled_views() {
+        let mut use_case = UseCase::new(
+            "UC-TEST-001".to_string(),
+            "Test Use Case".to_string(),
+            "Test".to_string(),
+            "A test use case".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap();
+
+        use_case.add_view(MethodologyView::new("feature", "simple"));
+        use_case.add_view(MethodologyView::new_disabled("business", "normal"));
+        use_case.add_view(MethodologyView::new("tester", "detailed"));
+
+        let enabled: Vec<_> = use_case.enabled_views().collect();
+        assert_eq!(enabled.len(), 2);
+        assert_eq!(enabled[0].methodology, "feature");
+        assert_eq!(enabled[1].methodology, "tester");
+    }
+
+    /// Test is_multi_view method
+    #[test]
+    fn test_is_multi_view() {
+        let mut use_case = UseCase::new(
+            "UC-TEST-001".to_string(),
+            "Test Use Case".to_string(),
+            "Test".to_string(),
+            "A test use case".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap();
+
+        assert!(!use_case.is_multi_view());
+
+        use_case.add_view(MethodologyView::new("feature", "simple"));
+        assert!(use_case.is_multi_view());
+    }
+
+    /// Test views field serialization
+    #[test]
+    fn test_views_serialization() {
+        let mut use_case = UseCase::new(
+            "UC-TEST-001".to_string(),
+            "Test Use Case".to_string(),
+            "Test".to_string(),
+            "A test use case".to_string(),
+            "medium".to_string(),
+        )
+        .unwrap();
+
+        use_case.add_view(MethodologyView::new("feature", "simple"));
+        use_case.add_view(MethodologyView::new("business", "normal"));
+
+        let toml = toml::to_string(&use_case).unwrap();
+        assert!(toml.contains("[[views]]"));
+        assert!(toml.contains("methodology = \"feature\""));
+        assert!(toml.contains("level = \"simple\""));
     }
 }
