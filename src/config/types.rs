@@ -10,9 +10,10 @@
 //! - `project`: Basic project information and metadata
 //! - `directories`: File system paths for use cases, tests, and templates
 //! - `templates`: Methodology and language template settings
-//! - `extra_fields`: Standard fields available to all use cases
 //! - `metadata`: Auto-generated metadata settings
 //! - `generation`: Code generation preferences and settings
+//! - `storage`: Storage backend configuration (TOML or SQLite)
+//! - `persona`: Persona configuration with custom fields
 //!
 //! ## Configuration File
 //!
@@ -126,11 +127,10 @@ mod storage_backend_tests {
 /// - `project`: Basic project information (name, description)
 /// - `directories`: Paths for use cases, tests, templates, and TOML files
 /// - `templates`: Methodology and language template settings
-/// - `extra_fields`: Standard fields available to all use cases
 /// - `metadata`: Auto-generated metadata settings (creation/update timestamps)
 /// - `generation`: Code generation preferences (test language, auto-generation flags)
 /// - `storage`: Storage backend configuration (TOML or SQLite)
-/// - `persona_fields`: Global custom fields for personas (optional)
+/// - `persona`: Global custom fields for personas (optional)
 ///
 /// # Example Configuration
 ///
@@ -161,10 +161,10 @@ mod storage_backend_tests {
 /// created = true
 /// last_updated = true
 ///
-/// [persona]
-/// fields.department = { type = "string", required = false }
-/// fields.experience_level = { type = "string", required = false }
-/// fields.pain_points = { type = "array", required = false }
+/// [persona.fields]
+/// department = { type = "string", required = false }
+/// experience_level = { type = "string", required = false }
+/// pain_points = { type = "array", required = false }
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {

@@ -39,10 +39,6 @@ impl UseCaseWorkflow {
             .with_help_message("Group this use case (e.g., 'authentication', 'data-processing')")
             .prompt()?;
 
-        let description = Text::new("Description:")
-            .with_help_message("Brief description of what this use case accomplishes")
-            .prompt_skippable()?;
-
         // Step 2: Collect multiple views
         UI::show_section_header("Select Views", "👁️")?;
         UI::show_info(
@@ -137,7 +133,7 @@ impl UseCaseWorkflow {
         }
 
         // Always use interactive form for additional fields
-        Self::fill_use_case_form(&mut runner, title, category, description, views)?;
+        Self::fill_use_case_form(&mut runner, title, category, None, views)?;
 
         UI::pause_for_input()?;
         Ok(())
@@ -151,6 +147,34 @@ impl UseCaseWorkflow {
         description: Option<String>,
         views: Vec<(String, String)>,
     ) -> Result<()> {
+        // Ask if user wants to fill additional fields
+        let fill_additional = Confirm::new("Fill in additional fields now?")
+            .with_default(false)
+            .with_help_message("You can add description, author, reviewer, and other custom fields")
+            .prompt()?;
+
+        if !fill_additional {
+            // Create use case with just the basic fields
+            let result = runner.create_use_case_with_views_and_fields(
+                title,
+                category,
+                description,
+                views.clone(),
+                HashMap::new(),
+            )?;
+
+            UI::show_success(&result)?;
+
+            // Show summary of created views
+            UI::show_info("\n📄 Generated files:")?;
+            for (methodology, level) in &views {
+                println!("   • {}-{}.md", methodology, level);
+            }
+
+            UI::show_info("\n💡 You can edit the TOML files directly to add additional fields like author, reviewer, and custom methodology fields.")?;
+            return Ok(());
+        }
+
         UI::show_section_header("Additional Fields", "📝")?;
 
         // Description (if not already provided)
@@ -162,18 +186,6 @@ impl UseCaseWorkflow {
                 .prompt_skippable()?
         };
 
-        // Priority
-        let priority_options = vec!["Low", "Medium", "High", "Critical"];
-        let priority = Select::new("Priority:", priority_options)
-            .with_help_message("Priority level for this use case")
-            .prompt()?;
-
-        // Status
-        let status_options = vec!["Draft", "In Review", "Approved", "Implemented"];
-        let status = Select::new("Status:", status_options)
-            .with_help_message("Current status of this use case")
-            .prompt()?;
-
         // Author (optional)
         let author = Text::new("Author (optional):")
             .with_help_message("Person who created this use case")
@@ -184,13 +196,8 @@ impl UseCaseWorkflow {
             .with_help_message("Person responsible for reviewing this use case")
             .prompt_skippable()?;
 
-        // Create the use case with additional fields
+        // Create the use case with additional fields (only truly extra fields)
         let mut extra_fields = HashMap::new();
-        extra_fields.insert("priority".to_string(), priority.to_lowercase());
-        extra_fields.insert(
-            "status".to_string(),
-            status.to_lowercase().replace(" ", "_"),
-        );
 
         if let Some(auth) = author {
             if !auth.is_empty() {

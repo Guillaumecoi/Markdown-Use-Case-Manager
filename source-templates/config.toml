@@ -26,10 +26,12 @@ overwrite_test_documentation = false  # Allow overwriting existing test docs
 backend = "toml"                      # Options: "toml" or "sqlite"
 
 # Additional fields available for all use cases (beyond mandatory id/title/category)
+# NOTE: Standard fields like priority are part of the UseCase structure and set automatically.
+# Status is computed from scenarios and should not be set manually.
+# These extra fields can be added by editing TOML files directly or through the interactive CLI.
+# Methodology-specific custom fields are defined in each methodology's config.toml file.
 [extra_fields]
 description = { type = "string", required = true }
-status = { type = "string", required = false, default = "draft" }
-priority = { type = "string", required = false, default = "medium" }
 author = { type = "string", required = false }
 reviewer = { type = "string", required = false }
 
