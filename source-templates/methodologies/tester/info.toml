@@ -1,10 +1,12 @@
 # Tester Methodology Documentation
 
+[methodology]
+name = "tester"
+abbreviation = "test"
+description = "The Tester methodology focuses on quality assurance and testing requirements."
+
 [overview]
 title = "Tester Methodology"
-description = """
-The Tester methodology focuses on quality assurance and testing requirements. It documents use cases from a QA perspective, emphasizing test cases, test automation, defect prevention, and quality metrics.
-"""
 
 [usage]
 when_to_use = [
@@ -21,20 +23,26 @@ key_features = [
     "Coverage-oriented: Includes test coverage and regression testing requirements"
 ]
 
-[[levels]]
-name = "simple"
+[levels.simple]
+name = "Simple"
+abbreviation = "s"
 filename = "uc_simple.hbs"
 description = "Basic test documentation with test type, priority, and expected results"
+inherits = []
 
-[[levels]]
-name = "normal"
+[levels.normal]
+name = "Normal"
+abbreviation = "n"
 filename = "uc_normal.hbs"
 description = "Standard QA documentation including automation status, test data requirements, and test execution details"
+inherits = ["Simple"]
 
-[[levels]]
-name = "detailed"
+[levels.detailed]
+name = "Detailed"
+abbreviation = "d"
 filename = "uc_detailed.hbs"
 description = "Comprehensive testing specification with environment requirements, regression suites, performance baselines, and quality metrics"
+inherits = ["Normal"]
 
 [custom_fields]
 

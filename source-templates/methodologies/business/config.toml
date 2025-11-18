@@ -7,9 +7,16 @@ preferred_style = "detailed"
 auto_generate_tests = false
 overwrite_test_documentation = false
 
-# Custom data fields specific to business methodology
-[custom_fields]
+# Level-specific custom fields (inheritance: detailed -> normal -> simple)
+# Simple level: Basic business fields
+[levels.simple.custom_fields]
 business_value = { label = "Business Value", type = "string", required = false }
+
+# Normal level: Adds stakeholder and ROI analysis
+[levels.normal.custom_fields]
 roi_estimate = { label = "ROI Estimate", type = "string", required = false }
 stakeholders = { label = "Key Stakeholders", type = "array", required = false }
+
+# Detailed level: Adds cost estimation
+[levels.detailed.custom_fields]
 cost_estimate = { label = "Cost Estimate", type = "string", required = false }

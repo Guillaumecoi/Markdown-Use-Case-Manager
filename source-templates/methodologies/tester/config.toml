@@ -7,18 +7,20 @@ preferred_style = "simple"
 auto_generate_tests = true
 overwrite_test_documentation = true
 
-[custom_fields]
-
-# --- Simple level: Essential test identifiers ---
+# Level-specific custom fields (inheritance: detailed -> normal -> simple)
+# Simple level: Essential test identifiers
+[levels.simple.custom_fields]
 test_type = { label = "Test Type", type = "string", required = true }
 test_priority = { label = "Test Priority", type = "string", required = true }
 
-# --- Normal level: Test execution and automation ---
+# Normal level: Test execution and automation
+[levels.normal.custom_fields]
 automation_status = { label = "Automation Status", type = "string", required = false }
 test_data_requirements = { label = "Test Data Requirements", type = "string", required = false }
 expected_result = { label = "Expected Result", type = "string", required = true }
 
-# --- Detailed level: Advanced test specifications ---
+# Detailed level: Advanced test specifications
+[levels.detailed.custom_fields]
 test_environment = { label = "Test Environment", type = "string", required = false }
 regression_suite = { label = "Regression Suite", type = "string", required = false }
 performance_baseline = { label = "Performance Baseline", type = "string", required = false }

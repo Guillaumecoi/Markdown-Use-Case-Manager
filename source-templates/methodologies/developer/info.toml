@@ -1,10 +1,12 @@
 # Developer Methodology Documentation
 
+[methodology]
+name = "developer"
+abbreviation = "dev"
+description = "The Developer methodology focuses on technical implementation details and developer-centric documentation."
+
 [overview]
 title = "Developer Methodology"
-description = """
-The Developer methodology focuses on technical implementation details and developer-centric documentation. It emphasizes code structure, API design, database interactions, and technical requirements that developers need to implement features.
-"""
 
 [usage]
 when_to_use = [
@@ -21,20 +23,26 @@ key_features = [
     "Security-conscious: Includes security considerations and requirements"
 ]
 
-[[levels]]
-name = "simple"
+[levels.simple]
+name = "Simple"
+abbreviation = "s"
 filename = "uc_simple.hbs"
 description = "Basic technical documentation with essential implementation details and standard fields"
+inherits = []
 
-[[levels]]
-name = "normal"
+[levels.normal]
+name = "Normal"
+abbreviation = "n"
 filename = "uc_normal.hbs"
 description = "Standard developer documentation including API endpoints, database tables, and system integration details"
+inherits = ["Simple"]
 
-[[levels]]
-name = "detailed"
+[levels.detailed]
+name = "Detailed"
+abbreviation = "d"
 filename = "uc_detailed.hbs"
 description = "Comprehensive technical specification with performance requirements, security considerations, error handling strategies, and technical dependencies"
+inherits = ["Normal"]
 
 [custom_fields]
 

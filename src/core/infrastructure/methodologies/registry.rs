@@ -152,7 +152,12 @@ mod tests {
         fs::create_dir(&methodology_dir).unwrap();
 
         let info_content = format!(
-            r#"[overview]
+            r#"[methodology]
+name = "{}"
+abbreviation = "{}"
+description = "{}"
+
+[overview]
 title = "{}"
 description = "{}"
 
@@ -166,17 +171,25 @@ key_features = [
     "Feature 2"
 ]
 
-[[levels]]
-name = "simple"
+[levels.simple]
+name = "Simple"
+abbreviation = "s"
 filename = "uc_simple.hbs"
 description = "Basic level"
+inherits = []
 
-[[levels]]
-name = "detailed"
+[levels.detailed]
+name = "Detailed"
+abbreviation = "d"
 filename = "uc_detailed.hbs"
 description = "Detailed level"
+inherits = ["Simple"]
 "#,
-            title, description
+            name,
+            &name[..3.min(name.len())], // abbreviation = first 3 chars
+            description,
+            title,
+            description
         );
         fs::write(methodology_dir.join("info.toml"), info_content).unwrap();
 

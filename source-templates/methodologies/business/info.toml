@@ -1,10 +1,12 @@
 # Business Methodology Documentation
 
+[methodology]
+name = "business"
+abbreviation = "bus"
+description = "The Business methodology focuses on documenting use cases from a business stakeholder perspective."
+
 [overview]
 title = "Business Methodology"
-description = """
-The Business methodology focuses on documenting use cases from a business stakeholder perspective. It emphasizes business value, stakeholder engagement, and organizational impact rather than technical implementation details.
-"""
 
 [usage]
 when_to_use = [
@@ -21,20 +23,26 @@ key_features = [
     "Non-technical: Avoids implementation details in favor of business requirements"
 ]
 
-[[levels]]
-name = "simple"
+[levels.simple]
+name = "Simple"
+abbreviation = "s"
 filename = "uc_simple.hbs"
 description = "Basic use case structure with actors and goals, essential business information, minimal technical details"
+inherits = []
 
-[[levels]]
-name = "normal"
+[levels.normal]
+name = "Normal"
+abbreviation = "n"
 filename = "uc_normal.hbs"
 description = "Standard business documentation, stakeholder analysis, business value assessment, cost and ROI considerations"
+inherits = ["Simple"]
 
-[[levels]]
-name = "detailed"
+[levels.detailed]
+name = "Detailed"
+abbreviation = "d"
 filename = "uc_detailed.hbs"
 description = "Comprehensive business case documentation, detailed stakeholder mapping, financial analysis and ROI projections, risk assessment and mitigation strategies, business process integration"
+inherits = ["Normal"]
 
 [custom_fields]
 

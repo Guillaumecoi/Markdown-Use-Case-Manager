@@ -7,13 +7,17 @@ preferred_style = "simple"
 auto_generate_tests = true
 overwrite_test_documentation = true
 
-[custom_fields]
+# Level-specific custom fields (inheritance: detailed -> normal -> simple)
+# Simple level: No extra fields (inherits base use case structure)
+[levels.simple.custom_fields]
 
-# --- Normal level: API and system integration ---
+# Normal level: API and system integration
+[levels.normal.custom_fields]
 api_endpoint = { label = "API Endpoint", type = "string", required = false }
 database_tables = { label = "Database Tables", type = "array", required = false }
 
-# --- Detailed level: Performance and security ---
+# Detailed level: Performance and security
+[levels.detailed.custom_fields]
 performance_requirements = { label = "Performance Requirements", type = "string", required = false }
 security_considerations = { label = "Security Considerations", type = "string", required = false }
 technical_dependencies = { label = "Technical Dependencies", type = "array", required = false }
