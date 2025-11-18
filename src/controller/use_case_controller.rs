@@ -127,6 +127,45 @@ impl UseCaseController {
         }
     }
 
+    /// Create a new use case with multiple views.
+    ///
+    /// Creates a use case that can be rendered in multiple methodology/level combinations.
+    /// The views parameter should be a comma-separated list of methodology:level pairs.
+    ///
+    /// # Arguments
+    /// * `title` - The title of the use case
+    /// * `category` - The category under which to organize the use case
+    /// * `description` - Optional detailed description of the use case
+    /// * `views` - Comma-separated methodology:level pairs (e.g., "feature:simple,business:normal")
+    ///
+    /// # Returns
+    /// DisplayResult with success message and use case information
+    ///
+    /// # Errors
+    /// Returns error if use case creation fails or views are invalid
+    pub fn create_use_case_with_views(
+        &mut self,
+        title: String,
+        category: String,
+        description: Option<String>,
+        views: String,
+    ) -> Result<DisplayResult> {
+        match self
+            .app_service
+            .create_use_case_with_views(title, category, description, &views)
+        {
+            Ok(use_case_id) => {
+                UseCaseFormatter::display_created(&use_case_id, "multi-view");
+
+                Ok(DisplayResult::success(format!(
+                    "Created multi-view use case: {} with views: {}",
+                    use_case_id, views
+                )))
+            }
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
     /// Create a new use case with a specific methodology and additional fields.
     ///
     /// Creates a use case with custom field values provided by the user,

@@ -40,8 +40,13 @@ pub enum Commands {
         #[arg(short, long)]
         description: Option<String>,
         /// Documentation methodology (feature, business, developer, tester)
+        /// Deprecated: Use --views for multi-view support
         #[arg(long)]
         methodology: Option<String>,
+        /// Multiple views as comma-separated methodology:level pairs
+        /// Example: --views feature:simple,business:normal
+        #[arg(long)]
+        views: Option<String>,
     },
     /// List all use cases
     List,

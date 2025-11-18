@@ -2,12 +2,14 @@
 // This orchestrates domain services and infrastructure
 use crate::config::Config;
 use crate::core::application::creators::{ScenarioCreator, UseCaseCreator};
-use crate::core::application::generators::{MarkdownGenerator, OverviewGenerator, TestGenerator};
+use crate::core::application::generators::{
+    MarkdownGenerator, OutputManager, OverviewGenerator, TestGenerator,
+};
 use crate::core::utils::suggest_alternatives;
 use crate::core::{
     domain::{Scenario, ScenarioReference, ScenarioType, UseCaseReference},
-    ReferenceType, RepositoryFactory, ScenarioReferenceValidator, TemplateEngine, UseCase,
-    UseCaseRepository,
+    MethodologyView, ReferenceType, RepositoryFactory, ScenarioReferenceValidator, TemplateEngine,
+    UseCase, UseCaseRepository,
 };
 use anyhow::Result;
 
@@ -151,6 +153,73 @@ impl UseCaseApplicationService {
 
         // Save and generate markdown
         self.save_use_case_with_methodology(&use_case, methodology)?;
+        self.use_cases.push(use_case);
+        self.generate_overview()?;
+
+        Ok(use_case_id)
+    }
+
+    /// Create a use case with multiple views
+    ///
+    /// Parses the views string (comma-separated methodology:level pairs) and creates
+    /// a multi-view use case that can be rendered in multiple ways.
+    ///
+    /// # Arguments
+    /// * `views` - Comma-separated methodology:level pairs (e.g., "feature:simple,business:normal")
+    ///
+    /// # Returns
+    /// The ID of the created use case
+    pub fn create_use_case_with_views(
+        &mut self,
+        title: String,
+        category: String,
+        description: Option<String>,
+        views: &str,
+    ) -> Result<String> {
+        // Parse views string into MethodologyView objects
+        let view_list: Vec<MethodologyView> = views
+            .split(',')
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .map(|view_str| {
+                let parts: Vec<&str> = view_str.split(':').collect();
+                if parts.len() != 2 {
+                    anyhow::bail!(
+                        "Invalid view format '{}'. Expected 'methodology:level'",
+                        view_str
+                    );
+                }
+                Ok(MethodologyView::new(
+                    parts[0].to_string(),
+                    parts[1].to_string(),
+                ))
+            })
+            .collect::<Result<Vec<_>>>()?;
+
+        if view_list.is_empty() {
+            return Err(anyhow::anyhow!("At least one view must be specified"));
+        }
+
+        // Get first view's methodology for initial creation
+        let first_methodology = view_list[0].methodology.clone();
+
+        // Create use case with first methodology
+        let mut use_case = self.create_use_case_with_methodology_internal(
+            title,
+            category,
+            description,
+            &first_methodology,
+        )?;
+
+        // Add all views to the use case
+        for view in view_list {
+            use_case.add_view(view);
+        }
+
+        let use_case_id = use_case.id.clone();
+
+        // Save and generate markdown for all views
+        self.save_use_case_with_methodology(&use_case, &first_methodology)?;
         self.use_cases.push(use_case);
         self.generate_overview()?;
 
@@ -648,11 +717,26 @@ impl UseCaseApplicationService {
             .load_by_id(&use_case.id)?
             .ok_or_else(|| anyhow::anyhow!("Failed to load use case from TOML"))?;
 
-        // Step 3: Generate methodology-specific markdown from TOML data
-        let markdown_content =
-            self.generate_use_case_markdown_with_methodology(&use_case_from_toml, methodology)?;
-        self.repository
-            .save_markdown(&use_case.id, &markdown_content)?;
+        // Step 3: Generate markdown files based on views
+        if use_case_from_toml.is_multi_view() {
+            // Multi-view: generate one file per enabled view
+            let all_outputs = OutputManager::generate_all_filenames(&use_case_from_toml);
+            for (filename, view_opt) in all_outputs {
+                if let Some(view) = view_opt {
+                    let content = self
+                        .markdown_generator
+                        .generate_with_view(&use_case_from_toml, &view)?;
+                    self.repository
+                        .save_markdown_with_filename(&use_case_from_toml, &filename, &content)?;
+                }
+            }
+        } else {
+            // Single view: use methodology parameter (backward compatible)
+            let markdown_content = self
+                .generate_use_case_markdown_with_methodology(&use_case_from_toml, methodology)?;
+            self.repository
+                .save_markdown(&use_case.id, &markdown_content)?;
+        }
 
         // Generate test file if enabled
         if self.config.generation.auto_generate_tests {

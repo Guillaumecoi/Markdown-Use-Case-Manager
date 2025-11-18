@@ -68,7 +68,6 @@ impl MarkdownGenerator {
     ///
     /// # Returns
     /// The generated markdown content for this specific view
-    #[allow(dead_code)]
     pub fn generate_with_view(&self, use_case: &UseCase, view: &MethodologyView) -> Result<String> {
         // For now, just use the methodology
         // TODO: In next phase, use FieldResolver to get level-specific fields

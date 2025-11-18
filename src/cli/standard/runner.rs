@@ -177,6 +177,35 @@ impl CliRunner {
         )
     }
 
+    /// Create a new use case with multiple views.
+    ///
+    /// Creates a use case that can be rendered in multiple methodology/level combinations.
+    /// The views parameter should be a comma-separated list of methodology:level pairs.
+    ///
+    /// # Arguments
+    /// * `title` - The use case title
+    /// * `category` - The category to organize under
+    /// * `description` - Optional description
+    /// * `views` - Comma-separated methodology:level pairs (e.g., "feature:simple,business:normal")
+    ///
+    /// # Returns
+    /// Returns a DisplayResult with success message.
+    pub fn create_use_case_with_views(
+        &mut self,
+        title: String,
+        category: String,
+        description: Option<String>,
+        views: String,
+    ) -> Result<DisplayResult> {
+        let controller = self.ensure_use_case_controller()?;
+        controller.create_use_case_with_views(
+            Self::sanitize_required_string(title),
+            Self::sanitize_required_string(category),
+            Self::sanitize_optional_string(description),
+            Self::sanitize_required_string(views),
+        )
+    }
+
     /// List all use cases in the project.
     ///
     /// Displays information about all existing use cases, including their

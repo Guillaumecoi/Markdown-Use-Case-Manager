@@ -6,16 +6,18 @@ use anyhow::Result;
 /// Handles the 'create' CLI command.
 ///
 /// Creates a new use case with the specified title, category, and optional details.
-/// If a methodology is provided, uses that methodology's templates and structure
-/// for generating documentation. Otherwise, uses the project's default methodology.
-/// The creation result is printed to stdout.
+/// Supports both single-view (legacy) and multi-view creation:
+/// - If `views` is provided, creates a multi-view use case
+/// - If `methodology` is provided, creates a single-view use case (legacy)
+/// - Otherwise, uses the project's default methodology
 ///
 /// # Arguments
 /// * `runner` - A mutable reference to the CLI runner responsible for use case creation.
 /// * `title` - The title of the use case to create.
 /// * `category` - The category under which the use case should be organized.
 /// * `description` - Optional detailed description of the use case.
-/// * `methodology` - Optional methodology to use for documentation generation.
+/// * `methodology` - Optional methodology to use for documentation generation (legacy).
+/// * `views` - Optional comma-separated list of methodology:level pairs (e.g., "feature:simple,business:normal").
 ///
 /// # Returns
 /// Returns `Ok(())` on successful creation, or an error if creation fails.
@@ -25,19 +27,26 @@ pub fn handle_create_command(
     category: String,
     description: Option<String>,
     methodology: Option<String>,
+    views: Option<String>,
 ) -> Result<()> {
-    let result = match methodology {
-        Some(methodology) => {
-            match runner.create_use_case_with_methodology(title, category, description, methodology)
-            {
-                Ok(display_result) => display_result,
-                Err(e) => DisplayResult::error(e.to_string()),
-            }
-        }
-        None => match runner.create_use_case(title, category, description) {
+    let result = if let Some(views_str) = views {
+        // Multi-view creation
+        match runner.create_use_case_with_views(title, category, description, views_str) {
             Ok(display_result) => display_result,
             Err(e) => DisplayResult::error(e.to_string()),
-        },
+        }
+    } else if let Some(methodology) = methodology {
+        // Single-view with specific methodology (legacy)
+        match runner.create_use_case_with_methodology(title, category, description, methodology) {
+            Ok(display_result) => display_result,
+            Err(e) => DisplayResult::error(e.to_string()),
+        }
+    } else {
+        // Single-view with default methodology
+        match runner.create_use_case(title, category, description) {
+            Ok(display_result) => display_result,
+            Err(e) => DisplayResult::error(e.to_string()),
+        }
     };
 
     DisplayResultFormatter::display(&result);
