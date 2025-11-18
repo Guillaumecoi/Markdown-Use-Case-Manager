@@ -166,6 +166,50 @@ impl UseCaseController {
         }
     }
 
+    /// Create a new use case with multiple views and additional fields.
+    ///
+    /// Creates a use case with custom field values provided by the user,
+    /// merged with methodology defaults.
+    ///
+    /// # Arguments
+    /// * `title` - The title of the use case
+    /// * `category` - The category under which to organize the use case
+    /// * `description` - Optional detailed description of the use case
+    /// * `views` - Comma-separated methodology:level pairs (e.g., "feature:simple,business:normal")
+    /// * `extra_fields` - Additional field values (priority, status, author, etc.)
+    ///
+    /// # Returns
+    /// DisplayResult with success message and use case information
+    ///
+    /// # Errors
+    /// Returns error if use case creation fails or views format is invalid
+    pub fn create_use_case_with_views_and_fields(
+        &mut self,
+        title: String,
+        category: String,
+        description: Option<String>,
+        views: String,
+        extra_fields: std::collections::HashMap<String, String>,
+    ) -> Result<DisplayResult> {
+        match self.app_service.create_use_case_with_views_and_fields(
+            title,
+            category,
+            description,
+            &views,
+            extra_fields,
+        ) {
+            Ok(use_case_id) => {
+                UseCaseFormatter::display_created(&use_case_id, "multi-view");
+
+                Ok(DisplayResult::success(format!(
+                    "Created multi-view use case: {} with views: {}",
+                    use_case_id, views
+                )))
+            }
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
     /// Create a new use case with a specific methodology and additional fields.
     ///
     /// Creates a use case with custom field values provided by the user,

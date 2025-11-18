@@ -13,8 +13,8 @@ use crate::cli::interactive::{runner::InteractiveRunner, ui::UI};
 pub struct UseCaseWorkflow;
 
 impl UseCaseWorkflow {
-    /// Interactive multi-view use case creation workflow
-    pub fn create_multi_view_use_case() -> Result<()> {
+    /// Interactive use case creation workflow
+    pub fn create_use_case() -> Result<()> {
         UI::show_section_header("Create Multi-View Use Case", "🔄")?;
 
         let mut runner = InteractiveRunner::new();
@@ -136,161 +136,8 @@ impl UseCaseWorkflow {
             return Ok(());
         }
 
-        // Step 3: Create the multi-view use case
-        UI::show_info(&format!(
-            "\n📝 Creating use case with {} views...",
-            views.len()
-        ))?;
-
-        let result =
-            runner.create_use_case_with_views(title, category, description, views.clone())?;
-
-        UI::show_success(&result)?;
-
-        // Show summary of created views
-        UI::show_info("\n📄 Generated files:")?;
-        for (methodology, level) in &views {
-            println!("   • {}-{}.md", methodology, level);
-        }
-
-        UI::pause_for_input()?;
-        Ok(())
-    }
-
-    /// Interactive use case creation workflow
-    pub fn create_use_case() -> Result<()> {
-        UI::show_section_header("Create Use Case", "📝")?;
-
-        // Step 0: Ask if they want single or multi-view
-        let view_type_options = vec![
-            "Single-View - One methodology/level (standard use case)",
-            "Multi-View - Multiple methodologies/levels (generates separate files per view)",
-        ];
-
-        let view_type = Select::new("Select use case type:", view_type_options)
-            .with_help_message("Single-view creates one markdown file, multi-view creates multiple")
-            .prompt()?;
-
-        if view_type.starts_with("Multi-View") {
-            return Self::create_multi_view_use_case();
-        }
-
-        // Continue with single-view creation
-        let mut runner = InteractiveRunner::new();
-        let methodologies = runner.get_installed_methodologies()?;
-
-        if methodologies.is_empty() {
-            UI::show_error(
-                "No methodologies available. Please configure methodologies in your project.",
-            )?;
-            UI::pause_for_input()?;
-            return Ok(());
-        }
-
-        // Display methodologies with their descriptions
-        let methodology_options: Vec<String> = methodologies
-            .iter()
-            .map(|m| format!("{} - {}", m.display_name, m.description))
-            .collect();
-
-        let selected_idx = Select::new("Select methodology:", methodology_options)
-            .with_help_message("Choose how you want to structure this use case")
-            .prompt()?;
-
-        // Find the selected methodology
-        let selected_methodology = &methodologies[methodologies
-            .iter()
-            .position(|m| format!("{} - {}", m.display_name, m.description) == selected_idx)
-            .context("Selected methodology not found")?];
-
-        let methodology_name = selected_methodology.name.clone();
-
-        // Step 2: Get available levels for this methodology
-        let available_levels = runner.get_methodology_levels(&methodology_name)?;
-
-        if available_levels.is_empty() {
-            UI::show_error(&format!(
-                "No levels available for methodology '{}'",
-                methodology_name
-            ))?;
-            UI::pause_for_input()?;
-            return Ok(());
-        }
-
-        // Show info about available levels
-        UI::show_info(&format!(
-            "\n💡 Methodology '{}' has {} level(s) available",
-            methodology_name,
-            available_levels.len()
-        ))?;
-
-        // Display levels with their descriptions
-        let level_options: Vec<String> = available_levels
-            .iter()
-            .map(|level| {
-                // Capitalize level name for display
-                let display_name = level
-                    .name
-                    .chars()
-                    .enumerate()
-                    .map(|(i, c)| {
-                        if i == 0 {
-                            c.to_uppercase().next().unwrap()
-                        } else {
-                            c
-                        }
-                    })
-                    .collect::<String>();
-                format!("{} - {}", display_name, level.description)
-            })
-            .collect();
-
-        let selected_level_display = Select::new("Select level:", level_options)
-            .with_help_message("Choose the detail level for your use case documentation")
-            .prompt()?;
-
-        // Extract just the level name (before " - ") and convert to lowercase
-        let level = selected_level_display
-            .split(" - ")
-            .next()
-            .context("Failed to parse level name")?
-            .to_lowercase();
-
-        // Step 3: Prompt for required fields
-        UI::show_info("\n📋 Required Fields")?;
-
-        let title = Text::new("Title:")
-            .with_help_message("A clear, descriptive title for the use case")
-            .prompt()?;
-
-        let category = Text::new("Category:")
-            .with_help_message("Group this use case (e.g., 'authentication', 'data-processing')")
-            .prompt()?;
-
-        // Step 4: Ask if user wants to fill in form or edit file directly
-        let use_form = Confirm::new("Fill in additional fields using interactive form?")
-            .with_default(true)
-            .with_help_message("No = create use case and edit TOML/SQL file directly")
-            .prompt()?;
-
-        if use_form {
-            // Step 5: Interactive form for additional fields
-            Self::fill_use_case_form(&mut runner, title, category, methodology_name, level)?;
-        } else {
-            // Create with minimal info and let user edit file
-            let result = runner.create_use_case_interactive(
-                title.clone(),
-                category,
-                None,
-                Some(methodology_name.clone()),
-            )?;
-
-            UI::show_success(&result)?;
-            UI::show_info(&format!(
-                "\n💡 Edit the TOML file in the data directory to add more fields.\n   Level: {}",
-                level
-            ))?;
-        }
+        // Always use interactive form for additional fields
+        Self::fill_use_case_form(&mut runner, title, category, description, views)?;
 
         UI::pause_for_input()?;
         Ok(())
@@ -301,15 +148,19 @@ impl UseCaseWorkflow {
         runner: &mut InteractiveRunner,
         title: String,
         category: String,
-        methodology: String,
-        _level: String,
+        description: Option<String>,
+        views: Vec<(String, String)>,
     ) -> Result<()> {
         UI::show_section_header("Additional Fields", "📝")?;
 
-        // Description
-        let description = Text::new("Description:")
-            .with_help_message("Brief description of what this use case accomplishes")
-            .prompt_skippable()?;
+        // Description (if not already provided)
+        let final_description = if description.is_some() {
+            description
+        } else {
+            Text::new("Description:")
+                .with_help_message("Brief description of what this use case accomplishes")
+                .prompt_skippable()?
+        };
 
         // Priority
         let priority_options = vec!["Low", "Medium", "High", "Critical"];
@@ -353,15 +204,22 @@ impl UseCaseWorkflow {
             }
         }
 
-        let result = runner.create_use_case_with_fields(
+        let result = runner.create_use_case_with_views_and_fields(
             title,
             category,
-            description,
-            Some(methodology),
+            final_description,
+            views.clone(),
             extra_fields,
         )?;
 
         UI::show_success(&result)?;
+
+        // Show summary of created views
+        UI::show_info("\n📄 Generated files:")?;
+        for (methodology, level) in &views {
+            println!("   • {}-{}.md", methodology, level);
+        }
+
         Ok(())
     }
 

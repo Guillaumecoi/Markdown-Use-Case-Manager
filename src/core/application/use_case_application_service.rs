@@ -203,24 +203,100 @@ impl UseCaseApplicationService {
         // Get first view's methodology for initial creation
         let first_methodology = view_list[0].methodology.clone();
 
-        // Create use case with first methodology
-        let mut use_case = self.create_use_case_with_methodology_internal(
+        // Create use case with first methodology (but don't generate markdown yet)
+        let use_case = self.use_case_creator.create_use_case_with_methodology(
             title,
             category,
             description,
             &first_methodology,
+            &self.use_cases,
+            self.repository.as_ref(),
         )?;
 
         // Add all views to the use case
+        let mut use_case_with_views = use_case;
         for view in view_list {
-            use_case.add_view(view);
+            use_case_with_views.add_view(view);
         }
 
-        let use_case_id = use_case.id.clone();
+        let use_case_id = use_case_with_views.id.clone();
 
-        // Save and generate markdown for all views
-        self.save_use_case_with_methodology(&use_case, &first_methodology)?;
-        self.use_cases.push(use_case);
+        // Save and generate markdown for all views (multi-view mode)
+        self.save_use_case_with_methodology(&use_case_with_views, &first_methodology)?;
+        self.use_cases.push(use_case_with_views);
+        self.generate_overview()?;
+
+        Ok(use_case_id)
+    }
+
+    /// Create a use case with multiple views and custom fields
+    ///
+    /// Parses the views string (comma-separated methodology:level pairs) and creates
+    /// a multi-view use case with additional custom fields that can be rendered in multiple ways.
+    ///
+    /// # Arguments
+    /// * `views` - Comma-separated methodology:level pairs (e.g., "feature:simple,business:normal")
+    /// * `extra_fields` - Additional field values (priority, status, author, etc.)
+    ///
+    /// # Returns
+    /// The ID of the created use case
+    pub fn create_use_case_with_views_and_fields(
+        &mut self,
+        title: String,
+        category: String,
+        description: Option<String>,
+        views: &str,
+        extra_fields: std::collections::HashMap<String, String>,
+    ) -> Result<String> {
+        // Parse views string into MethodologyView objects
+        let view_list: Vec<MethodologyView> = views
+            .split(',')
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .map(|view_str| {
+                let parts: Vec<&str> = view_str.split(':').collect();
+                if parts.len() != 2 {
+                    anyhow::bail!(
+                        "Invalid view format '{}'. Expected 'methodology:level'",
+                        view_str
+                    );
+                }
+                Ok(MethodologyView::new(
+                    parts[0].to_string(),
+                    parts[1].to_string(),
+                ))
+            })
+            .collect::<Result<Vec<_>>>()?;
+
+        if view_list.is_empty() {
+            return Err(anyhow::anyhow!("At least one view must be specified"));
+        }
+
+        // Get first view's methodology for initial creation
+        let first_methodology = view_list[0].methodology.clone();
+
+        // Create use case with first methodology and custom fields
+        let use_case = self.use_case_creator.create_use_case_with_custom_fields(
+            title,
+            category,
+            description,
+            &first_methodology,
+            extra_fields,
+            &self.use_cases,
+            self.repository.as_ref(),
+        )?;
+
+        // Add all views to the use case
+        let mut use_case_with_views = use_case;
+        for view in view_list {
+            use_case_with_views.add_view(view);
+        }
+
+        let use_case_id = use_case_with_views.id.clone();
+
+        // Save and generate markdown for all views (multi-view mode)
+        self.save_use_case_with_methodology(&use_case_with_views, &first_methodology)?;
+        self.use_cases.push(use_case_with_views);
         self.generate_overview()?;
 
         Ok(use_case_id)

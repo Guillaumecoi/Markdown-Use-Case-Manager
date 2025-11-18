@@ -131,48 +131,10 @@ impl InteractiveRunner {
         Ok(result.message)
     }
 
-    /// Create a use case interactively
-    pub fn create_use_case_interactive(
-        &mut self,
-        title: String,
-        category: String,
-        description: Option<String>,
-        methodology: Option<String>,
-    ) -> Result<String> {
-        let controller = self.ensure_use_case_controller()?;
-        let result = if let Some(method) = methodology {
-            controller.create_use_case_with_methodology(title, category, description, method)?
-        } else {
-            controller.create_use_case(title, category, description)?
-        };
-        Ok(result.message)
-    }
 
-    /// Create a use case with additional fields
-    pub fn create_use_case_with_fields(
-        &mut self,
-        title: String,
-        category: String,
-        description: Option<String>,
-        methodology: Option<String>,
-        extra_fields: std::collections::HashMap<String, String>,
-    ) -> Result<String> {
-        let controller = self.ensure_use_case_controller()?;
-        let result = if let Some(method) = methodology {
-            controller.create_use_case_with_fields(
-                title,
-                category,
-                description,
-                method,
-                extra_fields,
-            )?
-        } else {
-            controller.create_use_case(title, category, description)?
-        };
-        Ok(result.message)
-    }
 
     /// Create a multi-view use case
+    #[allow(dead_code)]
     pub fn create_use_case_with_views(
         &mut self,
         title: String,
@@ -191,6 +153,34 @@ impl InteractiveRunner {
 
         let result =
             controller.create_use_case_with_views(title, category, description, views_string)?;
+        Ok(result.message)
+    }
+
+    /// Create use case with multiple views and additional fields
+    pub fn create_use_case_with_views_and_fields(
+        &mut self,
+        title: String,
+        category: String,
+        description: Option<String>,
+        views: Vec<(String, String)>, // Vec of (methodology, level) pairs
+        extra_fields: std::collections::HashMap<String, String>,
+    ) -> Result<String> {
+        let controller = self.ensure_use_case_controller()?;
+
+        // Format views as "methodology:level,methodology:level"
+        let views_string = views
+            .iter()
+            .map(|(methodology, level)| format!("{}:{}", methodology, level))
+            .collect::<Vec<_>>()
+            .join(",");
+
+        let result = controller.create_use_case_with_views_and_fields(
+            title,
+            category,
+            description,
+            views_string,
+            extra_fields,
+        )?;
         Ok(result.message)
     }
 

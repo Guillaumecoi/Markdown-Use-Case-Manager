@@ -811,6 +811,16 @@ mod tests {
         let temp_dir = TempDir::new()?;
         std::env::set_current_dir(&temp_dir)?;
 
+        // Set CARGO_MANIFEST_DIR to the project root so source templates can be found
+        let exe_path = std::env::current_exe()?;
+        let project_root = exe_path
+            .parent() // deps
+            .and_then(|p| p.parent()) // debug
+            .and_then(|p| p.parent()) // target
+            .and_then(|p| p.parent()) // project root
+            .ok_or_else(|| anyhow::anyhow!("Could not determine project root"))?;
+        std::env::set_var("CARGO_MANIFEST_DIR", project_root);
+
         let mut config = Config::default();
         config.project.name = "Test Project".to_string();
         config.generation.test_language = "javascript".to_string();
@@ -829,6 +839,9 @@ mod tests {
         let loaded_config = Config::load()?;
         assert_eq!(loaded_config.project.name, "Test Project");
         assert_eq!(loaded_config.generation.test_language, "javascript");
+
+        // Clean up
+        std::env::remove_var("CARGO_MANIFEST_DIR");
 
         Ok(())
     }

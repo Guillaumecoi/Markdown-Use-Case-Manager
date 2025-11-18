@@ -69,16 +69,16 @@ mod interactive_runner_tests {
     fn test_create_use_case_interactive() {
         let (_temp_dir, mut runner) = setup_test_env();
 
-        let result = runner.create_use_case_interactive(
+        let result = runner.create_use_case_with_views(
             "Test Use Case".to_string(),
             "test".to_string(),
             Some("Test description".to_string()),
-            Some("business".to_string()),
+            vec![("business".to_string(), "normal".to_string())],
         );
 
         assert!(result.is_ok());
         let message = result.unwrap();
-        assert!(message.contains("Created use case"));
+        assert!(message.contains("Created multi-view use case"));
     }
 
     #[test]
@@ -87,11 +87,11 @@ mod interactive_runner_tests {
         let (_temp_dir, mut runner) = setup_test_env();
 
         // Should use default methodology from config
-        let result = runner.create_use_case_interactive(
+        let result = runner.create_use_case_with_views(
             "Test Use Case".to_string(),
             "test".to_string(),
             None,
-            None,
+            vec![("feature".to_string(), "simple".to_string())], // Use default methodology
         );
 
         assert!(result.is_ok());
@@ -104,11 +104,11 @@ mod interactive_runner_tests {
 
         // Create a use case first
         runner
-            .create_use_case_interactive(
+            .create_use_case_with_views(
                 "Test UC".to_string(),
                 "test".to_string(),
                 None,
-                Some("business".to_string()),
+                vec![("business".to_string(), "normal".to_string())],
             )
             .unwrap();
 
@@ -124,19 +124,19 @@ mod interactive_runner_tests {
 
         // Create some use cases
         runner
-            .create_use_case_interactive(
+            .create_use_case_with_views(
                 "Test UC 1".to_string(),
                 "test".to_string(),
                 None,
-                Some("business".to_string()),
+                vec![("business".to_string(), "normal".to_string())],
             )
             .unwrap();
         runner
-            .create_use_case_interactive(
+            .create_use_case_with_views(
                 "Test UC 2".to_string(),
                 "test".to_string(),
                 None,
-                Some("developer".to_string()),
+                vec![("developer".to_string(), "detailed".to_string())],
             )
             .unwrap();
 
@@ -152,11 +152,11 @@ mod interactive_runner_tests {
 
         // Create multiple use cases
         for i in 1..=3 {
-            let result = runner.create_use_case_interactive(
+            let result = runner.create_use_case_with_views(
                 format!("Test UC {}", i),
                 "test".to_string(),
                 Some(format!("Description {}", i)),
-                Some("business".to_string()),
+                vec![("business".to_string(), "normal".to_string())],
             );
             assert!(result.is_ok());
         }
@@ -236,11 +236,11 @@ mod workflow_tests {
         let mut runner = InteractiveRunner::new();
 
         // Create a use case
-        let result = runner.create_use_case_interactive(
+        let result = runner.create_use_case_with_views(
             "Login".to_string(),
             "authentication".to_string(),
             Some("User login workflow".to_string()),
-            Some("business".to_string()),
+            vec![("business".to_string(), "normal".to_string())],
         );
         assert!(result.is_ok());
 
@@ -267,11 +267,11 @@ mod workflow_tests {
         let methodologies = vec!["business", "developer", "feature", "tester"];
 
         for (i, methodology) in methodologies.iter().enumerate() {
-            let result = runner.create_use_case_interactive(
+            let result = runner.create_use_case_with_views(
                 format!("UC {}", i + 1),
                 "test".to_string(),
                 None,
-                Some(methodology.to_string()),
+                vec![(methodology.to_string(), "simple".to_string())],
             );
             assert!(result.is_ok(), "Failed for methodology: {}", methodology);
         }
