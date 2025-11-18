@@ -22,7 +22,9 @@ impl UseCaseWorkflow {
         let methodologies = runner.get_installed_methodologies()?;
 
         if methodologies.is_empty() {
-            UI::show_error("No methodologies available. Please configure methodologies in your project.")?;
+            UI::show_error(
+                "No methodologies available. Please configure methodologies in your project.",
+            )?;
             UI::pause_for_input()?;
             return Ok(());
         }
@@ -47,9 +49,12 @@ impl UseCaseWorkflow {
 
         // Step 2: Get available levels for this methodology
         let available_levels = runner.get_methodology_levels(&methodology_name)?;
-        
+
         if available_levels.is_empty() {
-            UI::show_error(&format!("No levels available for methodology '{}'", methodology_name))?;
+            UI::show_error(&format!(
+                "No levels available for methodology '{}'",
+                methodology_name
+            ))?;
             UI::pause_for_input()?;
             return Ok(());
         }
@@ -66,10 +71,17 @@ impl UseCaseWorkflow {
             .iter()
             .map(|level| {
                 // Capitalize level name for display
-                let display_name = level.name
+                let display_name = level
+                    .name
                     .chars()
                     .enumerate()
-                    .map(|(i, c)| if i == 0 { c.to_uppercase().next().unwrap() } else { c })
+                    .map(|(i, c)| {
+                        if i == 0 {
+                            c.to_uppercase().next().unwrap()
+                        } else {
+                            c
+                        }
+                    })
                     .collect::<String>();
                 format!("{} - {}", display_name, level.description)
             })
@@ -166,14 +178,17 @@ impl UseCaseWorkflow {
         // Create the use case with additional fields
         let mut extra_fields = HashMap::new();
         extra_fields.insert("priority".to_string(), priority.to_lowercase());
-        extra_fields.insert("status".to_string(), status.to_lowercase().replace(" ", "_"));
-        
+        extra_fields.insert(
+            "status".to_string(),
+            status.to_lowercase().replace(" ", "_"),
+        );
+
         if let Some(auth) = author {
             if !auth.is_empty() {
                 extra_fields.insert("author".to_string(), auth);
             }
         }
-        
+
         if let Some(rev) = reviewer {
             if !rev.is_empty() {
                 extra_fields.insert("reviewer".to_string(), rev);

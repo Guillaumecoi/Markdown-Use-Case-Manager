@@ -289,21 +289,29 @@ overwrite_test_documentation = false"#,
         assert_eq!(methodology.when_to_use(), &["Use case 1", "Use case 2"]);
         assert_eq!(methodology.key_features(), &["Feature 1", "Feature 2"]);
         assert_eq!(methodology.levels().len(), 2);
-        
+
         // Find levels by name (order not guaranteed from HashMap)
-        let simple_level = methodology.levels().iter().find(|l| l.name == "Simple").expect("simple level");
-        let detailed_level = methodology.levels().iter().find(|l| l.name == "Detailed").expect("detailed level");
-        
+        let simple_level = methodology
+            .levels()
+            .iter()
+            .find(|l| l.name == "Simple")
+            .expect("simple level");
+        let detailed_level = methodology
+            .levels()
+            .iter()
+            .find(|l| l.name == "Detailed")
+            .expect("detailed level");
+
         assert_eq!(simple_level.name, "Simple");
         assert_eq!(simple_level.abbreviation, "s");
         assert_eq!(simple_level.filename, "uc_simple.hbs");
         assert_eq!(simple_level.inherits, Vec::<String>::new());
-        
+
         assert_eq!(detailed_level.name, "Detailed");
         assert_eq!(detailed_level.abbreviation, "d");
         assert_eq!(detailed_level.filename, "uc_detailed.hbs");
         assert_eq!(detailed_level.inherits, vec!["simple"]);
-        
+
         assert_eq!(methodology.preferred_style(), "detailed");
     }
 

@@ -415,11 +415,11 @@ impl SqliteUseCaseRepository {
                             )
                         })?,
                     },
-                    views: Vec::new(),          // Will be populated below (multi-view support)
-                    preconditions: Vec::new(),  // Will be populated below
+                    views: Vec::new(), // Will be populated below (multi-view support)
+                    preconditions: Vec::new(), // Will be populated below
                     postconditions: Vec::new(), // Will be populated below
                     use_case_references: Vec::new(), // Will be populated below
-                    scenarios: Vec::new(),      // Will be loaded from relational tables
+                    scenarios: Vec::new(), // Will be loaded from relational tables
                     extra,
                 })
             })

@@ -80,7 +80,10 @@ impl MarkdownGenerator {
     /// For multi-view use cases, generates one markdown per enabled view.
     ///
     /// Returns a vector of (content, view) tuples where view is None for single-view use cases.
-    pub fn generate_all(&self, use_case: &UseCase) -> Result<Vec<(String, Option<MethodologyView>)>> {
+    pub fn generate_all(
+        &self,
+        use_case: &UseCase,
+    ) -> Result<Vec<(String, Option<MethodologyView>)>> {
         if !use_case.is_multi_view() {
             // Single view: use default methodology
             let content = self.generate(use_case)?;
@@ -97,4 +100,3 @@ impl MarkdownGenerator {
         }
     }
 }
-

@@ -191,7 +191,9 @@ impl InteractiveRunner {
     }
 
     /// Get available persona fields from project configuration
-    pub fn get_persona_fields(&self) -> Result<std::collections::HashMap<String, crate::core::CustomFieldConfig>> {
+    pub fn get_persona_fields(
+        &self,
+    ) -> Result<std::collections::HashMap<String, crate::core::CustomFieldConfig>> {
         use crate::config::Config;
 
         let config = Config::load()?;

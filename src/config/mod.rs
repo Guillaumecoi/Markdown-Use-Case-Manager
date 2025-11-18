@@ -187,9 +187,7 @@ impl Config {
     /// Result with PathBuf pointing to project template assets directory, or error if not initialized
     pub fn get_project_templates_dir() -> Result<PathBuf> {
         let base_path = Path::new(".");
-        let templates_dir = base_path
-            .join(Self::CONFIG_DIR)
-            .join(Self::TEMPLATES_DIR);
+        let templates_dir = base_path.join(Self::CONFIG_DIR).join(Self::TEMPLATES_DIR);
 
         if !templates_dir.exists() {
             anyhow::bail!(
@@ -538,8 +536,12 @@ mod tests {
         if source_templates_available {
             // Only check for templates if source templates were available
             assert!(templates_dir.exists(), "Templates directory should exist");
-            assert!(templates_dir.join("methodologies/developer/uc_simple.hbs").exists());
-            assert!(templates_dir.join("methodologies/developer/uc_detailed.hbs").exists());
+            assert!(templates_dir
+                .join("methodologies/developer/uc_simple.hbs")
+                .exists());
+            assert!(templates_dir
+                .join("methodologies/developer/uc_detailed.hbs")
+                .exists());
             assert!(templates_dir.join("languages/rust/test.hbs").exists());
         }
         // If source templates not available, templates won't exist but that's okay for testing

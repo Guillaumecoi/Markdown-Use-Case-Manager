@@ -48,9 +48,11 @@ impl TemplateEngine {
                         for template_entry in fs::read_dir(&path)? {
                             let template_entry = template_entry?;
                             let template_path = template_entry.path();
-                            
+
                             if template_path.is_file() {
-                                if let Some(filename) = template_path.file_name().and_then(|n| n.to_str()) {
+                                if let Some(filename) =
+                                    template_path.file_name().and_then(|n| n.to_str())
+                                {
                                     // Only register uc_*.hbs files
                                     if filename.starts_with("uc_") && filename.ends_with(".hbs") {
                                         // Extract level name from filename (e.g., "uc_simple.hbs" -> "simple")
@@ -58,7 +60,7 @@ impl TemplateEngine {
                                             .strip_prefix("uc_")
                                             .and_then(|s| s.strip_suffix(".hbs"))
                                             .unwrap_or(filename);
-                                        
+
                                         let template = fs::read_to_string(&template_path)?;
                                         handlebars.register_template_string(
                                             &format!("{}-{}", methodology_name, level_name),
@@ -77,7 +79,9 @@ impl TemplateEngine {
 
         // Register general overview template (not methodology-specific)
         // Overview.hbs is at the root of template-assets, not in methodologies subdirectory
-        let overview_path = if user_templates_path.parent().is_some() && user_templates_path.parent().unwrap().exists() {
+        let overview_path = if user_templates_path.parent().is_some()
+            && user_templates_path.parent().unwrap().exists()
+        {
             user_templates_path.parent().unwrap().join("overview.hbs") // .config/.mucm/{TEMPLATES_DIR}/overview.hbs
         } else {
             Path::new("source-templates/overview.hbs").to_path_buf()
