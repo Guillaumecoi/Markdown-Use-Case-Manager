@@ -46,6 +46,13 @@ filename = "uc_detailed.hbs"
 description = "Comprehensive feature specification with dependencies, mockups, and detailed requirements"
 inherits = ["normal"]
 
+[levels.custom]
+name = "Custom"
+abbreviation = "c"
+filename = "uc_custom.hbs"
+description = "Customizable feature template with user-defined fields"
+inherits = ["detailed"]
+
 [custom_fields]
 
 [custom_fields.user_story]

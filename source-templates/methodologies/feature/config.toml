@@ -7,17 +7,24 @@ preferred_style = "simple"
 auto_generate_tests = false
 overwrite_test_documentation = false
 
-[custom_fields]
+# Level-based custom field definitions
+# Fields are inherited: normal includes simple, detailed includes simple+normal, custom includes all
 
-# --- Simple level: Essential feature identifiers ---
-user_story = { label = "User Story", type = "string", required = true }
-acceptance_criteria = { label = "Acceptance Criteria", type = "array", required = true }
+[levels.simple.custom_fields]
+user_story = { label = "User Story", type = "string", required = true, description = "A short description from the user's perspective" }
+acceptance_criteria = { label = "Acceptance Criteria", type = "array", required = true, description = "List of conditions that must be met" }
 
-# --- Normal level: Sprint and epic tracking ---
-epic_link = { label = "Epic Link", type = "string", required = false }
-sprint = { label = "Sprint", type = "string", required = false }
-story_points = { label = "Story Points", type = "number", required = false }
+[levels.normal.custom_fields]
+# Inherits: user_story, acceptance_criteria (from simple)
+epic_link = { label = "Epic Link", type = "string", required = false, description = "Link to parent epic" }
+sprint = { label = "Sprint", type = "string", required = false, description = "Sprint identifier" }
+story_points = { label = "Story Points", type = "number", required = false, description = "Estimation in story points" }
 
-# --- Detailed level: Extended feature details ---
-dependencies = { label = "Feature Dependencies", type = "array", required = false }
-mockups = { label = "Mockup Links", type = "array", required = false }
+[levels.detailed.custom_fields]
+# Inherits: user_story, acceptance_criteria (from simple), epic_link, sprint, story_points (from normal)
+dependencies = { label = "Feature Dependencies", type = "array", required = false, description = "Other features this depends on" }
+mockups = { label = "Mockup Links", type = "array", required = false, description = "Links to design mockups" }
+
+[levels.custom.custom_fields]
+# Inherits all fields from detailed
+# Users can add their own custom fields here
