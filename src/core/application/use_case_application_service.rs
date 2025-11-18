@@ -873,7 +873,7 @@ mod tests {
             );
         }
 
-        let feature_dir = templates_dir.join("feature");
+        let feature_dir = templates_dir.join("methodologies/feature");
         if !feature_dir.exists() {
             anyhow::bail!("Feature methodology not found at {:?}", feature_dir);
         }

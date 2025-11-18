@@ -538,8 +538,8 @@ mod tests {
         if source_templates_available {
             // Only check for templates if source templates were available
             assert!(templates_dir.exists(), "Templates directory should exist");
-            assert!(templates_dir.join("developer/uc_simple.hbs").exists());
-            assert!(templates_dir.join("developer/uc_detailed.hbs").exists());
+            assert!(templates_dir.join("methodologies/developer/uc_simple.hbs").exists());
+            assert!(templates_dir.join("methodologies/developer/uc_detailed.hbs").exists());
             assert!(templates_dir.join("languages/rust/test.hbs").exists());
         }
         // If source templates not available, templates won't exist but that's okay for testing

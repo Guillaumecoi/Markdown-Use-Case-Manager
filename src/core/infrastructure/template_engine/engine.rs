@@ -23,8 +23,9 @@ impl TemplateEngine {
 
         // First try to load templates from user's config directory
         // Then fall back to source-templates if not found
-        let user_templates_path =
-            Path::new(".config/.mucm").join(crate::config::Config::TEMPLATES_DIR);
+        let user_templates_path = Path::new(".config/.mucm")
+            .join(crate::config::Config::TEMPLATES_DIR)
+            .join("methodologies");
         let source_templates_path = Path::new("source-templates/methodologies").to_path_buf();
 
         let methodologies_path = if user_templates_path.exists() {
@@ -42,33 +43,30 @@ impl TemplateEngine {
 
                 if path.is_dir() {
                     if let Some(methodology_name) = path.file_name().and_then(|n| n.to_str()) {
-                        // Register templates for this methodology: uc_simple.hbs, uc_normal.hbs, uc_detailed.hbs
-                        let simple_path = path.join("uc_simple.hbs");
-                        let normal_path = path.join("uc_normal.hbs");
-                        let detailed_path = path.join("uc_detailed.hbs");
-
-                        if simple_path.exists() {
-                            let template = fs::read_to_string(&simple_path)?;
-                            handlebars.register_template_string(
-                                &format!("{}-simple", methodology_name),
-                                template,
-                            )?;
-                        }
-
-                        if normal_path.exists() {
-                            let template = fs::read_to_string(&normal_path)?;
-                            handlebars.register_template_string(
-                                &format!("{}-normal", methodology_name),
-                                template,
-                            )?;
-                        }
-
-                        if detailed_path.exists() {
-                            let template = fs::read_to_string(&detailed_path)?;
-                            handlebars.register_template_string(
-                                &format!("{}-detailed", methodology_name),
-                                template,
-                            )?;
+                        // Register all uc_*.hbs templates for this methodology
+                        // This allows users to add custom levels beyond simple/normal/detailed
+                        for template_entry in fs::read_dir(&path)? {
+                            let template_entry = template_entry?;
+                            let template_path = template_entry.path();
+                            
+                            if template_path.is_file() {
+                                if let Some(filename) = template_path.file_name().and_then(|n| n.to_str()) {
+                                    // Only register uc_*.hbs files
+                                    if filename.starts_with("uc_") && filename.ends_with(".hbs") {
+                                        // Extract level name from filename (e.g., "uc_simple.hbs" -> "simple")
+                                        let level_name = filename
+                                            .strip_prefix("uc_")
+                                            .and_then(|s| s.strip_suffix(".hbs"))
+                                            .unwrap_or(filename);
+                                        
+                                        let template = fs::read_to_string(&template_path)?;
+                                        handlebars.register_template_string(
+                                            &format!("{}-{}", methodology_name, level_name),
+                                            template,
+                                        )?;
+                                    }
+                                }
+                            }
                         }
 
                         methodologies.push(methodology_name.to_string());
@@ -78,8 +76,9 @@ impl TemplateEngine {
         }
 
         // Register general overview template (not methodology-specific)
-        let overview_path = if user_templates_path.exists() {
-            user_templates_path.join("overview.hbs") // .config/.mucm/{TEMPLATES_DIR}/overview.hbs
+        // Overview.hbs is at the root of template-assets, not in methodologies subdirectory
+        let overview_path = if user_templates_path.parent().is_some() && user_templates_path.parent().unwrap().exists() {
+            user_templates_path.parent().unwrap().join("overview.hbs") // .config/.mucm/{TEMPLATES_DIR}/overview.hbs
         } else {
             Path::new("source-templates/overview.hbs").to_path_buf()
         };

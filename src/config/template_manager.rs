@@ -315,8 +315,10 @@ impl TemplateManager {
                 );
             }
 
-            // Copy methodology templates to template-assets/{methodology}/
-            let target_method_templates = config_templates_dir.join(methodology);
+            // Copy methodology templates to template-assets/methodologies/{methodology}/
+            let methodologies_dir = config_templates_dir.join("methodologies");
+            fs::create_dir_all(&methodologies_dir)?;
+            let target_method_templates = methodologies_dir.join(methodology);
             Self::copy_dir_recursive(&source_method_dir, &target_method_templates)?;
 
             println!("✓ Copied methodology: {}", methodology);
