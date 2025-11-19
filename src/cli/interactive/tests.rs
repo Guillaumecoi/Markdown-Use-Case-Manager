@@ -79,7 +79,11 @@ mod interactive_runner_tests {
         assert!(result.is_ok(), "Failed to create use case: {:?}", result);
         let message = result.unwrap();
         eprintln!("Actual message: {}", message);
-        assert!(message.contains("Created multi-view use case"), "Message was: {}", message);
+        assert!(
+            message.contains("Created multi-view use case"),
+            "Message was: {}",
+            message
+        );
     }
 
     #[test]

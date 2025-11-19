@@ -6,7 +6,6 @@
 /// - Collision detection between methodologies
 /// - Conflict warnings for standard field overlaps
 /// - Validation of duplicate fields within same methodology inheritance chain
-
 use anyhow::{Context, Result};
 use std::collections::HashMap;
 use std::path::Path;
@@ -68,10 +67,7 @@ impl MethodologyFieldCollector {
     /// - If methodology not found
     /// - If field collision detected between different methodologies
     /// - If duplicate field within same methodology inheritance chain
-    pub fn collect_fields_for_views(
-        &self,
-        views: &[(String, String)],
-    ) -> Result<FieldCollection> {
+    pub fn collect_fields_for_views(&self, views: &[(String, String)]) -> Result<FieldCollection> {
         let mut collection = FieldCollection::default();
 
         // Standard extra field names (these have priority over methodology fields)
@@ -154,7 +150,7 @@ impl MethodologyFieldCollector {
     ) -> Result<HashMap<String, CustomFieldConfig>> {
         let methodology_dir = Path::new(&self.templates_dir).join(methodology);
 
-        if !methodology_dir.exists() || !methodology_dir.join("config.toml").exists() {
+        if !methodology_dir.exists() || !methodology_dir.join("methodology.toml").exists() {
             return Err(anyhow::anyhow!(
                 "Methodology '{}' not found in {}",
                 methodology,
@@ -169,13 +165,14 @@ impl MethodologyFieldCollector {
         let mut all_fields = HashMap::new();
 
         // Determine which levels to include based on inheritance
-        // simple: just simple
-        // normal: simple + normal
-        // detailed: simple + normal + detailed
+        // normal: just normal
+        // advanced: normal + advanced
+        // Backward compatibility: simple -> normal, detailed -> advanced
         let levels_to_include = match level.to_lowercase().as_str() {
-            "simple" | "s" => vec!["simple"],
-            "normal" | "n" => vec!["simple", "normal"],
-            "detailed" | "d" => vec!["simple", "normal", "detailed"],
+            "simple" | "s" => vec!["normal"], // Backward compatibility
+            "normal" | "n" => vec!["normal"],
+            "detailed" | "d" => vec!["normal", "advanced"], // Backward compatibility
+            "advanced" | "a" => vec!["normal", "advanced"],
             _ => vec![level], // Fallback: just use the provided level
         };
 
@@ -190,7 +187,8 @@ impl MethodologyFieldCollector {
                             "Duplicate field '{}' found in methodology '{}' inheritance chain. \
                              Field is defined in multiple levels (simple/normal/detailed). \
                              Each field should only be defined once per methodology.",
-                            field_name, methodology
+                            field_name,
+                            methodology
                         ));
                     }
                     all_fields.insert(field_name.clone(), field_config.clone());
@@ -256,12 +254,7 @@ impl MethodologyFieldCollector {
                     .map(|s| s.trim().to_string())
                     .filter(|s| !s.is_empty())
                     .collect();
-                serde_json::Value::Array(
-                    items
-                        .into_iter()
-                        .map(serde_json::Value::String)
-                        .collect(),
-                )
+                serde_json::Value::Array(items.into_iter().map(serde_json::Value::String).collect())
             }
             "number" => {
                 // Try to parse as number
@@ -306,17 +299,17 @@ mod tests {
     fn test_convert_to_json_type_array() {
         let collector = MethodologyFieldCollector::default();
         let value = collector.convert_to_json_type("item1, item2, item3", "array");
-        assert_eq!(
-            value,
-            serde_json::json!(["item1", "item2", "item3"])
-        );
+        assert_eq!(value, serde_json::json!(["item1", "item2", "item3"]));
     }
 
     #[test]
     fn test_convert_to_json_type_number() {
         let collector = MethodologyFieldCollector::default();
         let value = collector.convert_to_json_type("42", "number");
-        assert_eq!(value, serde_json::Value::Number(serde_json::Number::from(42)));
+        assert_eq!(
+            value,
+            serde_json::Value::Number(serde_json::Number::from(42))
+        );
     }
 
     #[test]

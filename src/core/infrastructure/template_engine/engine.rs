@@ -272,11 +272,11 @@ Generated at: {{generated_at}}
         methodology: &str,
     ) -> Result<String> {
         // Check if methodology template exists
-        let template_name = format!("{}-simple", methodology);
+        let template_name = format!("{}-normal", methodology);
         if self.handlebars.get_template(&template_name).is_none() {
             anyhow::bail!(
-                "Invalid source-templates: Methodology '{}' does not have a valid uc_simple.hbs template. \
-                Check source-templates/methodologies/{}/uc_simple.hbs exists and is valid.",
+                "Invalid source-templates: Methodology '{}' does not have a valid uc_normal.hbs template. \
+                Check source-templates/methodologies/{}/uc_normal.hbs exists and is valid.",
                 methodology, methodology
             );
         }

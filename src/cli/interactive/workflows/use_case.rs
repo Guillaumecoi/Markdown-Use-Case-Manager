@@ -173,7 +173,8 @@ impl UseCaseWorkflow {
         let mut field_values = HashMap::new();
 
         // Group fields by methodology for better UX
-        let mut fields_by_methodology: HashMap<String, Vec<&crate::core::CollectedField>> = HashMap::new();
+        let mut fields_by_methodology: HashMap<String, Vec<&crate::core::CollectedField>> =
+            HashMap::new();
         for field in field_collection.fields.values() {
             for methodology in &field.methodologies {
                 fields_by_methodology
@@ -195,10 +196,7 @@ impl UseCaseWorkflow {
 
                 for field in fields {
                     let default_help = format!("{} ({})", field.label, field.field_type);
-                    let help_msg = field
-                        .description
-                        .as_deref()
-                        .unwrap_or(&default_help);
+                    let help_msg = field.description.as_deref().unwrap_or(&default_help);
 
                     let prompt_text = if field.required {
                         format!("{} (required):", field.label)
@@ -215,27 +213,27 @@ impl UseCaseWorkflow {
                                 .as_ref()
                                 .and_then(|d| d.parse::<bool>().ok())
                                 .unwrap_or(false);
-                            
+
                             let result = Confirm::new(&prompt_text)
                                 .with_default(default)
                                 .with_help_message(help_msg)
                                 .prompt()?;
-                            
+
                             Some(result.to_string())
                         }
                         "array" => {
                             // For array fields, collect items one by one
                             UI::show_info("  💡 Enter items one at a time. Press Enter on empty line when done.")?;
-                            
+
                             let mut items = Vec::new();
                             let mut item_num = 1;
-                            
+
                             loop {
                                 let item_prompt = format!("  Item {}: ", item_num);
                                 let result = Text::new(&item_prompt)
                                     .with_help_message(help_msg)
                                     .prompt_skippable()?;
-                                
+
                                 match result {
                                     Some(item) if !item.trim().is_empty() => {
                                         items.push(item.trim().to_string());
@@ -244,7 +242,7 @@ impl UseCaseWorkflow {
                                     _ => break,
                                 }
                             }
-                            
+
                             if items.is_empty() && field.required {
                                 None // Will be handled by required field logic below
                             } else if items.is_empty() {
@@ -261,7 +259,7 @@ impl UseCaseWorkflow {
                                     .with_help_message(help_msg)
                                     .with_default(field.default.as_deref().unwrap_or(""))
                                     .prompt_skippable()?;
-                                
+
                                 match result {
                                     Some(ref s) if !s.trim().is_empty() => {
                                         // Try to parse as number
@@ -282,7 +280,7 @@ impl UseCaseWorkflow {
                                 .with_help_message(help_msg)
                                 .with_default(field.default.as_deref().unwrap_or(""))
                                 .prompt_skippable()?;
-                            
+
                             result.filter(|s| !s.trim().is_empty())
                         }
                     };

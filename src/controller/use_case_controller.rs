@@ -1032,40 +1032,51 @@ impl UseCaseController {
         use_case_id: Option<String>,
         dry_run: bool,
     ) -> Result<DisplayResult> {
-        match self.app_service.cleanup_methodology_fields(use_case_id.clone(), dry_run) {
+        match self
+            .app_service
+            .cleanup_methodology_fields(use_case_id.clone(), dry_run)
+        {
             Ok((cleaned_count, total_checked, details)) => {
                 if dry_run {
                     let mut message = format!(
                         "🔍 Dry run: Would clean {} of {} use case(s)\n",
                         cleaned_count, total_checked
                     );
-                    
+
                     if !details.is_empty() {
                         message.push_str("\nOrphaned methodology fields found:\n");
                         for (uc_id, methodologies) in details {
-                            message.push_str(&format!("  • {}: {}\n", uc_id, methodologies.join(", ")));
+                            message.push_str(&format!(
+                                "  • {}: {}\n",
+                                uc_id,
+                                methodologies.join(", ")
+                            ));
                         }
                         message.push_str("\nRun without --dry-run to remove these fields.");
                     } else {
                         message.push_str("\nNo orphaned methodology fields found.");
                     }
-                    
+
                     Ok(DisplayResult::success(message))
                 } else {
                     let mut message = format!(
                         "✨ Cleaned {} of {} use case(s)\n",
                         cleaned_count, total_checked
                     );
-                    
+
                     if !details.is_empty() {
                         message.push_str("\nRemoved methodology fields:\n");
                         for (uc_id, methodologies) in details {
-                            message.push_str(&format!("  • {}: {}\n", uc_id, methodologies.join(", ")));
+                            message.push_str(&format!(
+                                "  • {}: {}\n",
+                                uc_id,
+                                methodologies.join(", ")
+                            ));
                         }
                     } else {
                         message.push_str("\nNo orphaned methodology fields found.");
                     }
-                    
+
                     Ok(DisplayResult::success(message))
                 }
             }

@@ -1,7 +1,6 @@
 /// Integration tests for methodology-specific custom fields system
 ///
 /// Tests the complete methodology field workflow from collection to cleanup.
-
 use anyhow::Result;
 use markdown_use_case_manager::config::{Config, ConfigFileManager};
 use markdown_use_case_manager::core::{MethodologyFieldCollector, UseCaseApplicationService};
@@ -18,10 +17,10 @@ fn init_test_environment(methodologies: Vec<String>) -> Result<Config> {
         config.templates.default_methodology = first.clone();
     }
     ConfigFileManager::save_in_dir(&config, ".")?;
-    
+
     // Copy templates to config directory
     Config::copy_templates_to_config_with_language(None)?;
-    
+
     Ok(config)
 }
 
@@ -40,7 +39,7 @@ fn test_methodology_fields_storage() -> Result<()> {
         "Test Business Use Case".to_string(),
         "testing".to_string(),
         Some("Testing methodology fields".to_string()),
-        "business:detailed",
+        "business:advanced",
     )?;
 
     assert!(result.contains("UC-TES-001"));
@@ -81,16 +80,18 @@ fn test_cleanup_orphaned_fields() -> Result<()> {
         "Test Cleanup".to_string(),
         "testing".to_string(),
         None,
-        "business:simple,feature:simple",
+        "business:normal,feature:normal",
     )?;
 
     // Manually add orphaned field
     let use_cases = service.get_all_use_cases();
     let mut use_case = use_cases[0].clone();
-    
+
     let mut orphaned_fields = HashMap::new();
     orphaned_fields.insert("orphaned_field".to_string(), serde_json::json!("test"));
-    use_case.methodology_fields.insert("developer".to_string(), orphaned_fields);
+    use_case
+        .methodology_fields
+        .insert("developer".to_string(), orphaned_fields);
 
     // Save modified use case
     let config = markdown_use_case_manager::config::Config::load()?;
@@ -99,7 +100,7 @@ fn test_cleanup_orphaned_fields() -> Result<()> {
 
     // Reload and run cleanup
     let mut service = UseCaseApplicationService::load()?;
-    let (cleaned_count, _total, details) = 
+    let (cleaned_count, _total, details) =
         service.cleanup_methodology_fields(Some("UC-TES-001".to_string()), false)?;
 
     assert_eq!(cleaned_count, 1);
@@ -108,7 +109,7 @@ fn test_cleanup_orphaned_fields() -> Result<()> {
     // Verify cleanup
     let service = UseCaseApplicationService::load()?;
     let use_case = service.get_all_use_cases().first().unwrap();
-    
+
     assert!(!use_case.methodology_fields.contains_key("developer"));
     assert!(use_case.methodology_fields.contains_key("business"));
     assert!(use_case.methodology_fields.contains_key("feature"));
@@ -131,16 +132,18 @@ fn test_cleanup_dry_run() -> Result<()> {
         "Test Dry Run".to_string(),
         "testing".to_string(),
         None,
-        "business:simple",
+        "business:normal",
     )?;
 
     // Add orphaned field
     let use_cases = service.get_all_use_cases();
     let mut use_case = use_cases[0].clone();
-    
+
     let mut orphaned_fields = HashMap::new();
     orphaned_fields.insert("orphaned".to_string(), serde_json::json!("value"));
-    use_case.methodology_fields.insert("feature".to_string(), orphaned_fields);
+    use_case
+        .methodology_fields
+        .insert("feature".to_string(), orphaned_fields);
 
     let config = markdown_use_case_manager::config::Config::load()?;
     let repository = markdown_use_case_manager::core::RepositoryFactory::create(&config)?;
@@ -148,8 +151,7 @@ fn test_cleanup_dry_run() -> Result<()> {
 
     // Reload and run dry-run
     let mut service = UseCaseApplicationService::load()?;
-    let (cleaned_count, _, details) = 
-        service.cleanup_methodology_fields(None, true)?;
+    let (cleaned_count, _, details) = service.cleanup_methodology_fields(None, true)?;
 
     assert_eq!(cleaned_count, 1);
     assert_eq!(details[0].1, vec!["feature".to_string()]);
@@ -157,7 +159,7 @@ fn test_cleanup_dry_run() -> Result<()> {
     // Verify nothing removed
     let service = UseCaseApplicationService::load()?;
     let use_case = service.get_all_use_cases().first().unwrap();
-    
+
     assert!(
         use_case.methodology_fields.contains_key("feature"),
         "Dry run should not remove fields"
@@ -176,30 +178,20 @@ fn test_field_inheritance() -> Result<()> {
     init_test_environment(vec!["business".to_string()])?;
     let collector = MethodologyFieldCollector::new()?;
 
-    // Simple level
-    let simple_fields = collector.collect_fields_for_views(&[(
-        "business".to_string(),
-        "simple".to_string(),
-    )])?;
-    let simple_count = simple_fields.fields.len();
-
-    // Normal level (inherits from simple)
-    let normal_fields = collector.collect_fields_for_views(&[(
-        "business".to_string(),
-        "normal".to_string(),
-    )])?;
+    // Normal level
+    let normal_fields =
+        collector.collect_fields_for_views(&[("business".to_string(), "normal".to_string())])?;
     let normal_count = normal_fields.fields.len();
-    
-    assert!(normal_count > simple_count, "Normal should have more fields than simple");
 
-    // Detailed level (inherits from normal and simple)
-    let detailed_fields = collector.collect_fields_for_views(&[(
-        "business".to_string(),
-        "detailed".to_string(),
-    )])?;
-    let detailed_count = detailed_fields.fields.len();
-    
-    assert!(detailed_count > normal_count, "Detailed should have more fields than normal");
+    // Advanced level (inherits from normal)
+    let advanced_fields =
+        collector.collect_fields_for_views(&[("business".to_string(), "advanced".to_string())])?;
+    let advanced_count = advanced_fields.fields.len();
+
+    assert!(
+        advanced_count > normal_count,
+        "Advanced should have more fields than normal"
+    );
 
     Ok(())
 }
@@ -219,7 +211,7 @@ fn test_multi_methodology_storage() -> Result<()> {
         "Multi-View".to_string(),
         "testing".to_string(),
         None,
-        "business:simple,feature:normal",
+        "business:normal,feature:normal",
     )?;
 
     let use_case = service.get_all_use_cases().first().unwrap();
@@ -227,7 +219,7 @@ fn test_multi_methodology_storage() -> Result<()> {
     // Both methodologies present in the HashMap
     assert!(use_case.methodology_fields.contains_key("business"));
     assert!(use_case.methodology_fields.contains_key("feature"));
-    
+
     // Verify structure exists (even if empty when no field values provided)
     assert!(use_case.methodology_fields.get("business").is_some());
     assert!(use_case.methodology_fields.get("feature").is_some());

@@ -60,7 +60,8 @@ impl MarkdownGenerator {
                 if let Value::Object(field_map) = fields {
                     for (field_name, field_value) in field_map {
                         // Only insert if not already present (standard fields take priority)
-                        data.entry(field_name.clone()).or_insert(field_value.clone());
+                        data.entry(field_name.clone())
+                            .or_insert(field_value.clone());
                     }
                 }
             }
@@ -98,7 +99,8 @@ impl MarkdownGenerator {
             if let Some(fields) = methodology_fields_map.get(&view.methodology) {
                 if let Value::Object(field_map) = fields {
                     for (field_name, field_value) in field_map {
-                        data.entry(field_name.clone()).or_insert(field_value.clone());
+                        data.entry(field_name.clone())
+                            .or_insert(field_value.clone());
                     }
                 }
             }

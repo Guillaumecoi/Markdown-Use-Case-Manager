@@ -52,51 +52,47 @@ pub(crate) struct LevelConfig {
 }
 
 impl MethodologyDefinition {
-    /// Creates a methodology definition by loading from TOML configuration files.
+    /// Creates a methodology definition by loading from a single TOML configuration file.
     ///
-    /// This method reads the `info.toml` and `config.toml` files from the specified
-    /// methodology directory and deserializes them into a MethodologyDefinition.
-    /// The `info.toml` provides user-facing information for methodology selection,
-    /// while `config.toml` contains the technical configuration with nested level definitions.
+    /// This method reads the `methodology.toml` file from the specified methodology directory
+    /// and deserializes it into a MethodologyDefinition. The file contains all methodology
+    /// information including metadata, template settings, levels, and usage guidance.
     ///
     /// # Arguments
-    /// * `methodology_dir` - Path to the methodology directory containing info.toml and config.toml
+    /// * `methodology_dir` - Path to the methodology directory containing methodology.toml
     ///
     /// # Returns
     /// A `Result` containing the loaded `MethodologyDefinition` or an error
     ///
     /// # Errors
     /// This function will return an error if:
-    /// - The TOML files cannot be read or parsed
+    /// - The TOML file cannot be read or parsed
     /// - Required fields are missing from the TOML
     /// - The `methodology_dir` is not a valid path
     pub fn from_toml<P: AsRef<Path>>(methodology_dir: P) -> anyhow::Result<Self> {
         let methodology_dir = methodology_dir.as_ref();
 
-        // Load info.toml for user-facing information
+        // Single unified structure for methodology.toml
         #[derive(serde::Deserialize)]
-        struct InfoData {
-            #[serde(default)]
-            methodology: Option<MethodologyMeta>,
-            overview: OverviewConfig,
+        struct MethodologyData {
+            methodology: MethodologyMeta,
+            template: TemplateConfig,
             usage: UsageConfig,
             #[serde(default)]
-            levels: HashMap<String, DocumentationLevel>, // New: nested levels format
+            levels: HashMap<String, LevelWithCustomFields>,
         }
 
         #[derive(serde::Deserialize)]
-        #[allow(dead_code)]
         struct MethodologyMeta {
             name: String,
+            #[allow(dead_code)]
             abbreviation: String,
             description: String,
         }
 
         #[derive(serde::Deserialize)]
-        struct OverviewConfig {
-            title: String,
-            #[serde(default)]
-            description: Option<String>, // Optional - can come from [methodology] section
+        struct TemplateConfig {
+            preferred_style: String,
         }
 
         #[derive(serde::Deserialize)]
@@ -105,63 +101,67 @@ impl MethodologyDefinition {
             key_features: Vec<String>,
         }
 
-        let info_path = methodology_dir.join("info.toml");
-        let info_content =
-            fs::read_to_string(&info_path).context("Failed to read methodology info file")?;
-        let info_data: InfoData =
-            toml::from_str(&info_content).context("Failed to parse methodology info TOML")?;
-
-        // Convert HashMap<String, DocumentationLevel> to Vec<DocumentationLevel>
-        let levels: Vec<DocumentationLevel> = info_data.levels.into_values().collect();
-
-        // Load config.toml for technical configuration
         #[derive(serde::Deserialize)]
-        struct ConfigData {
-            template: TemplateConfig,
-            #[serde(default)]
-            custom_fields: HashMap<String, CustomFieldConfig>, // Legacy flat format (deprecated)
-            #[serde(default)]
-            levels: HashMap<String, LevelConfig>, // Use the module LevelConfig type
-        }
-
-        #[derive(serde::Deserialize)]
-        struct TemplateConfig {
+        struct LevelWithCustomFields {
             name: String,
-            preferred_style: String,
+            abbreviation: String,
+            filename: String,
+            description: String,
+            #[serde(default)]
+            inherits: Vec<String>,
+            #[serde(default)]
+            custom_fields: HashMap<String, CustomFieldConfig>,
         }
 
-        let config_path = methodology_dir.join("config.toml");
-        let config_content =
-            fs::read_to_string(&config_path).context("Failed to read methodology config file")?;
-        let config_data: ConfigData =
-            toml::from_str(&config_content).context("Failed to parse methodology config TOML")?;
+        let methodology_path = methodology_dir.join("methodology.toml");
+        let content = fs::read_to_string(&methodology_path)
+            .context("Failed to read methodology.toml file")?;
+        let data: MethodologyData =
+            toml::from_str(&content).context("Failed to parse methodology.toml")?;
 
-        // For now, flatten custom_fields from all levels for backward compatibility
-        // TODO: In Sprint 2, implement proper level-based field resolution
-        let mut all_custom_fields = config_data.custom_fields; // Start with legacy flat fields
-        for (_level_name, level_config) in &config_data.levels {
-            all_custom_fields.extend(level_config.custom_fields.clone());
+        // Convert levels to the expected format
+        let levels: Vec<DocumentationLevel> = data
+            .levels
+            .iter()
+            .map(|(_level_name, level_data)| DocumentationLevel {
+                name: level_data.name.clone(),
+                abbreviation: level_data.abbreviation.clone(),
+                filename: level_data.filename.clone(),
+                description: level_data.description.clone(),
+                inherits: level_data.inherits.clone(),
+            })
+            .collect();
+
+        // Convert levels to LevelConfig format for level_configs field
+        let level_configs: HashMap<String, LevelConfig> = data
+            .levels
+            .iter()
+            .map(|(level_name, level_data)| {
+                (
+                    level_name.clone(),
+                    LevelConfig {
+                        custom_fields: level_data.custom_fields.clone(),
+                    },
+                )
+            })
+            .collect();
+
+        // Flatten all custom fields from all levels for backward compatibility
+        let mut all_custom_fields = HashMap::new();
+        for (_level_name, level_data) in &data.levels {
+            all_custom_fields.extend(level_data.custom_fields.clone());
         }
-
-        let methodology_name = config_data.template.name;
-
-        // Use description from [methodology] section if available, otherwise fall back to [overview]
-        let description = if let Some(ref meta) = info_data.methodology {
-            meta.description.clone()
-        } else {
-            info_data.overview.description.unwrap_or_default()
-        };
 
         Ok(Self {
-            name: methodology_name,
-            title: info_data.overview.title,
-            description,
-            when_to_use: info_data.usage.when_to_use,
-            key_features: info_data.usage.key_features,
+            name: data.methodology.name.clone(),
+            title: format!("{} Methodology", data.methodology.name),
+            description: data.methodology.description,
+            when_to_use: data.usage.when_to_use,
+            key_features: data.usage.key_features,
             levels,
-            preferred_style: config_data.template.preferred_style,
+            preferred_style: data.template.preferred_style,
             custom_fields: all_custom_fields,
-            level_configs: config_data.levels,
+            level_configs,
         })
     }
 }
@@ -207,26 +207,29 @@ mod tests {
     use std::fs;
     use tempfile::TempDir;
 
-    /// Helper function to create a temporary methodology directory with config.toml and info.toml
+    /// Helper function to create a temporary methodology directory with methodology.toml
     fn create_test_methodology(
         dir: &std::path::Path,
         name: &str,
-        title: &str,
+        _title: &str,
         description: &str,
         preferred_style: &str,
     ) -> std::path::PathBuf {
         let methodology_dir = dir.join(name);
         fs::create_dir(&methodology_dir).unwrap();
 
-        // New format with nested levels
-        let info_content = format!(
+        let methodology_content = format!(
             r#"[methodology]
 name = "{}"
 abbreviation = "test"
 description = "{}"
 
-[overview]
-title = "{}"
+[template]
+preferred_style = "{}"
+
+[generation]
+auto_generate_tests = false
+overwrite_test_documentation = false
 
 [usage]
 when_to_use = [
@@ -238,35 +241,31 @@ key_features = [
     "Feature 2"
 ]
 
-[levels.simple]
-name = "Simple"
-abbreviation = "s"
-filename = "uc_simple.hbs"
-description = "Basic level"
+[levels.normal]
+name = "Normal"
+abbreviation = "n"
+filename = "uc_normal.hbs"
+description = "Standard level"
 inherits = []
 
-[levels.detailed]
-name = "Detailed"
-abbreviation = "d"
-filename = "uc_detailed.hbs"
-description = "Detailed level"
-inherits = ["simple"]
+[levels.normal.custom_fields]
+
+[levels.advanced]
+name = "Advanced"
+abbreviation = "a"
+filename = "uc_advanced.hbs"
+description = "Advanced level"
+inherits = ["Normal"]
+
+[levels.advanced.custom_fields]
 "#,
-            name, description, title
+            name, description, preferred_style
         );
-        fs::write(methodology_dir.join("info.toml"), info_content).unwrap();
-
-        let config_content = format!(
-            r#"[template]
-name = "{}"
-preferred_style = "{}"
-
-[generation]
-auto_generate_tests = false
-overwrite_test_documentation = false"#,
-            name, preferred_style
-        );
-        fs::write(methodology_dir.join("config.toml"), config_content).unwrap();
+        fs::write(
+            methodology_dir.join("methodology.toml"),
+            methodology_content,
+        )
+        .unwrap();
 
         methodology_dir
     }
@@ -279,7 +278,7 @@ overwrite_test_documentation = false"#,
             "testmethod",
             "Test Methodology",
             "Test description",
-            "detailed",
+            "normal",
         );
 
         let result = MethodologyDefinition::from_toml(&methodology_dir);
@@ -287,35 +286,35 @@ overwrite_test_documentation = false"#,
 
         let methodology = result.unwrap();
         assert_eq!(methodology.name(), "testmethod");
-        assert_eq!(methodology.title(), "Test Methodology");
+        assert_eq!(methodology.title(), "testmethod Methodology");
         assert_eq!(methodology.description(), "Test description");
         assert_eq!(methodology.when_to_use(), &["Use case 1", "Use case 2"]);
         assert_eq!(methodology.key_features(), &["Feature 1", "Feature 2"]);
         assert_eq!(methodology.levels().len(), 2);
 
         // Find levels by name (order not guaranteed from HashMap)
-        let simple_level = methodology
+        let normal_level = methodology
             .levels()
             .iter()
-            .find(|l| l.name == "Simple")
-            .expect("simple level");
-        let detailed_level = methodology
+            .find(|l| l.name == "Normal")
+            .expect("normal level");
+        let advanced_level = methodology
             .levels()
             .iter()
-            .find(|l| l.name == "Detailed")
-            .expect("detailed level");
+            .find(|l| l.name == "Advanced")
+            .expect("advanced level");
 
-        assert_eq!(simple_level.name, "Simple");
-        assert_eq!(simple_level.abbreviation, "s");
-        assert_eq!(simple_level.filename, "uc_simple.hbs");
-        assert_eq!(simple_level.inherits, Vec::<String>::new());
+        assert_eq!(normal_level.name, "Normal");
+        assert_eq!(normal_level.abbreviation, "n");
+        assert_eq!(normal_level.filename, "uc_normal.hbs");
+        assert_eq!(normal_level.inherits, Vec::<String>::new());
 
-        assert_eq!(detailed_level.name, "Detailed");
-        assert_eq!(detailed_level.abbreviation, "d");
-        assert_eq!(detailed_level.filename, "uc_detailed.hbs");
-        assert_eq!(detailed_level.inherits, vec!["simple"]);
+        assert_eq!(advanced_level.name, "Advanced");
+        assert_eq!(advanced_level.abbreviation, "a");
+        assert_eq!(advanced_level.filename, "uc_advanced.hbs");
+        assert_eq!(advanced_level.inherits, vec!["Normal"]);
 
-        assert_eq!(methodology.preferred_style(), "detailed");
+        assert_eq!(methodology.preferred_style(), "normal");
     }
 
     #[test]
@@ -332,21 +331,10 @@ overwrite_test_documentation = false"#,
         let methodology_dir = temp_dir.path().join("testmethod");
         fs::create_dir(&methodology_dir).unwrap();
 
-        // Create invalid info.toml
-        fs::write(methodology_dir.join("info.toml"), "invalid toml content").unwrap();
-
-        // Create valid config.toml
+        // Create invalid methodology.toml
         fs::write(
-            methodology_dir.join("config.toml"),
-            r#"
-[template]
-name = "testmethod"
-preferred_style = "detailed"
-
-[generation]
-auto_generate_tests = false
-overwrite_test_documentation = false
-"#,
+            methodology_dir.join("methodology.toml"),
+            "invalid toml content",
         )
         .unwrap();
 
@@ -360,60 +348,37 @@ overwrite_test_documentation = false
         let methodology_dir = temp_dir.path().join("feature");
         fs::create_dir(&methodology_dir).unwrap();
 
-        // Create info.toml with new format
+        // Create methodology.toml with custom fields
         fs::write(
-            methodology_dir.join("info.toml"),
+            methodology_dir.join("methodology.toml"),
             r#"
 [methodology]
 name = "feature"
 abbreviation = "feat"
 description = "Feature-focused development methodology"
 
-[overview]
-title = "Feature Methodology"
-
-[usage]
-when_to_use = ["Feature development", "User story tracking"]
-key_features = ["User stories", "Acceptance criteria", "Story points"]
-
-[levels.simple]
-name = "Simple"
-abbreviation = "s"
-filename = "uc_simple.hbs"
-description = "Simple feature specification"
-inherits = []
-"#,
-        )
-        .unwrap();
-
-        // Create config.toml with custom fields
-        fs::write(
-            methodology_dir.join("config.toml"),
-            r#"
 [template]
-name = "feature"
-preferred_style = "detailed"
+preferred_style = "normal"
 
 [generation]
 auto_generate_tests = true
 overwrite_test_documentation = false
 
-# Custom fields for feature methodology
-[custom_fields.user_story]
-label = "User Story"
-type = "string"
-required = true
+[usage]
+when_to_use = ["Feature development", "User story tracking"]
+key_features = ["User stories", "Acceptance criteria", "Story points"]
 
-[custom_fields.acceptance_criteria]
-label = "Acceptance Criteria"
-type = "text"
-required = true
+[levels.normal]
+name = "Normal"
+abbreviation = "n"
+filename = "uc_normal.hbs"
+description = "Simple feature specification"
+inherits = []
 
-[custom_fields.story_points]
-label = "Story Points"
-type = "number"
-required = false
-default = "3"
+[levels.normal.custom_fields]
+user_story = { label = "User Story", type = "string", required = true }
+acceptance_criteria = { label = "Acceptance Criteria", type = "text", required = true }
+story_points = { label = "Story Points", type = "number", required = false, default = "3" }
 "#,
         )
         .unwrap();
@@ -460,28 +425,34 @@ default = "3"
         let methodology_dir = temp_dir.path().join("simple");
         fs::create_dir(&methodology_dir).unwrap();
 
-        // Create info.toml with new format
+        // Create methodology.toml without custom fields
         fs::write(
-            methodology_dir.join("info.toml"),
+            methodology_dir.join("methodology.toml"),
             r#"
 [methodology]
 name = "simple"
 abbreviation = "simp"
 description = "Simple methodology without custom fields"
 
-[overview]
-title = "Simple Methodology"
+[template]
+preferred_style = "simple"
+
+[generation]
+auto_generate_tests = false
+overwrite_test_documentation = false
 
 [usage]
 when_to_use = ["Simple use cases"]
 key_features = ["Basic documentation"]
 
-[levels.simple]
-name = "Simple"
-abbreviation = "s"
-filename = "uc_simple.hbs"
+[levels.normal]
+name = "Normal"
+abbreviation = "n"
+filename = "uc_normal.hbs"
 description = "Simple use case"
 inherits = []
+
+[levels.normal.custom_fields]
 "#,
         )
         .unwrap();

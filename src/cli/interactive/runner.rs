@@ -20,7 +20,7 @@
 use anyhow::Result;
 
 use crate::controller::{ProjectController, UseCaseController};
-use crate::core::{MethodologyFieldCollector, FieldCollection};
+use crate::core::{FieldCollection, MethodologyFieldCollector};
 
 /// Interactive runner that coordinates interactive CLI workflows
 pub struct InteractiveRunner {
@@ -81,7 +81,10 @@ impl InteractiveRunner {
     }
 
     /// Collect methodology-specific field definitions for the given views
-    pub fn collect_methodology_fields(&self, views: &[(String, String)]) -> Result<FieldCollection> {
+    pub fn collect_methodology_fields(
+        &self,
+        views: &[(String, String)],
+    ) -> Result<FieldCollection> {
         let collector = MethodologyFieldCollector::new()?;
         collector.collect_fields_for_views(views)
     }
@@ -137,8 +140,6 @@ impl InteractiveRunner {
 
         Ok(result.message)
     }
-
-
 
     /// Create a multi-view use case
     #[allow(dead_code)]

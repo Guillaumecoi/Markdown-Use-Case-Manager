@@ -69,10 +69,8 @@ pub struct UseCase {
     // Methodology-specific custom fields, grouped by methodology name
     // Example: { "business": { "business_value": "...", "stakeholders": [...] } }
     // This allows clean separation and easy add/remove of methodology fields
-    pub methodology_fields: std::collections::HashMap<
-        String,
-        std::collections::HashMap<String, serde_json::Value>,
-    >,
+    pub methodology_fields:
+        std::collections::HashMap<String, std::collections::HashMap<String, serde_json::Value>>,
 
     // Catch-all for standard extra fields (author, reviewer, etc.)
     // Note: methodology-specific fields go in methodology_fields above

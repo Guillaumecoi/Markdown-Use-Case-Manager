@@ -128,61 +128,48 @@ mod tests {
         let methodology_dir = temp_dir.path().join("test");
         fs::create_dir(&methodology_dir).unwrap();
 
-        let info_toml = r#"
+        let methodology_toml = r#"
 [methodology]
 name = "test"
 abbreviation = "tst"
 description = "Test methodology"
 
-[overview]
-title = "Test Methodology"
-description = "Test overview"
+[template]
+preferred_style = "structured"
+
+[generation]
+auto_generate_tests = false
+overwrite_test_documentation = false
 
 [usage]
 when_to_use = ["Testing"]
 key_features = ["Test feature"]
-
-[levels.simple]
-name = "Simple"
-abbreviation = "s"
-filename = "uc_simple.hbs"
-description = "Simple level"
-inherits = []
 
 [levels.normal]
 name = "Normal"
 abbreviation = "n"
 filename = "uc_normal.hbs"
 description = "Normal level"
-inherits = ["Simple"]
-
-[levels.detailed]
-name = "Detailed"
-abbreviation = "d"
-filename = "uc_detailed.hbs"
-description = "Detailed level"
-inherits = ["Normal"]
-        "#;
-
-        let config_toml = r#"
-[template]
-name = "test"
-preferred_style = "structured"
-
-[levels.simple.custom_fields]
-basic_field = { type = "string", required = true }
-simple_only = { type = "string", required = false }
+inherits = []
 
 [levels.normal.custom_fields]
-basic_field = { type = "text", required = true, description = "Override from normal" }
-normal_field = { type = "array", required = true }
+basic_field = { type = "string", required = true }
+normal_field = { type = "string", required = false }
 
-[levels.detailed.custom_fields]
+[levels.advanced]
+name = "Advanced"
+abbreviation = "a"
+filename = "uc_advanced.hbs"
+description = "Advanced level"
+inherits = ["Normal"]
+
+[levels.advanced.custom_fields]
+basic_field = { type = "text", required = true, description = "Override from advanced" }
+advanced_field = { type = "array", required = true }
 detailed_field = { type = "string", required = true }
         "#;
 
-        fs::write(methodology_dir.join("info.toml"), info_toml).unwrap();
-        fs::write(methodology_dir.join("config.toml"), config_toml).unwrap();
+        fs::write(methodology_dir.join("methodology.toml"), methodology_toml).unwrap();
 
         let methodology = MethodologyDefinition::from_toml(&methodology_dir).unwrap();
         (methodology, temp_dir)
@@ -193,11 +180,11 @@ detailed_field = { type = "string", required = true }
         let (methodology, _temp) = create_test_methodology();
         let resolver = FieldResolver::new(&methodology);
 
-        let fields = resolver.resolve_fields_for_level("Simple").unwrap();
+        let fields = resolver.resolve_fields_for_level("Normal").unwrap();
 
         assert_eq!(fields.len(), 2);
         assert!(fields.contains_key("basic_field"));
-        assert!(fields.contains_key("simple_only"));
+        assert!(fields.contains_key("normal_field"));
         assert_eq!(fields["basic_field"].field_type, "string");
     }
 
@@ -206,18 +193,19 @@ detailed_field = { type = "string", required = true }
         let (methodology, _temp) = create_test_methodology();
         let resolver = FieldResolver::new(&methodology);
 
-        let fields = resolver.resolve_fields_for_level("Normal").unwrap();
+        let fields = resolver.resolve_fields_for_level("Advanced").unwrap();
 
-        assert_eq!(fields.len(), 3);
+        assert_eq!(fields.len(), 4);
         assert!(fields.contains_key("basic_field"));
-        assert!(fields.contains_key("simple_only"));
         assert!(fields.contains_key("normal_field"));
+        assert!(fields.contains_key("advanced_field"));
+        assert!(fields.contains_key("detailed_field"));
 
-        // basic_field should be overridden by normal level
+        // basic_field should be overridden by advanced level
         assert_eq!(fields["basic_field"].field_type, "text");
         assert_eq!(
             fields["basic_field"].description,
-            Some("Override from normal".to_string())
+            Some("Override from advanced".to_string())
         );
     }
 
@@ -226,13 +214,13 @@ detailed_field = { type = "string", required = true }
         let (methodology, _temp) = create_test_methodology();
         let resolver = FieldResolver::new(&methodology);
 
-        let fields = resolver.resolve_fields_for_level("Detailed").unwrap();
+        let fields = resolver.resolve_fields_for_level("Advanced").unwrap();
 
         assert_eq!(fields.len(), 4);
-        assert!(fields.contains_key("basic_field")); // From simple, overridden by normal
-        assert!(fields.contains_key("simple_only")); // From simple
+        assert!(fields.contains_key("basic_field")); // From normal, overridden by advanced
         assert!(fields.contains_key("normal_field")); // From normal
-        assert!(fields.contains_key("detailed_field")); // From detailed
+        assert!(fields.contains_key("advanced_field")); // From advanced
+        assert!(fields.contains_key("detailed_field")); // From advanced
 
         // Verify override chain worked
         assert_eq!(fields["basic_field"].field_type, "text");
@@ -243,18 +231,17 @@ detailed_field = { type = "string", required = true }
         let (methodology, _temp) = create_test_methodology();
         let resolver = FieldResolver::new(&methodology);
 
-        let detailed_level = methodology
+        let advanced_level = methodology
             .levels()
             .iter()
-            .find(|l| l.name == "Detailed")
+            .find(|l| l.name == "Advanced")
             .unwrap();
 
-        let chain = resolver.get_inheritance_chain(detailed_level).unwrap();
+        let chain = resolver.get_inheritance_chain(advanced_level).unwrap();
 
-        assert_eq!(chain.len(), 3);
-        assert_eq!(chain[0].name, "Simple");
-        assert_eq!(chain[1].name, "Normal");
-        assert_eq!(chain[2].name, "Detailed");
+        assert_eq!(chain.len(), 2);
+        assert_eq!(chain[0].name, "Normal");
+        assert_eq!(chain[1].name, "Advanced");
     }
 
     #[test]
@@ -277,14 +264,18 @@ detailed_field = { type = "string", required = true }
         let methodology_dir = temp_dir.path().join("test");
         fs::create_dir(&methodology_dir).unwrap();
 
-        let info_toml = r#"
+        let methodology_toml = r#"
 [methodology]
 name = "test"
 abbreviation = "tst"
 description = "Test"
 
-[overview]
-title = "Test"
+[template]
+preferred_style = "structured"
+
+[generation]
+auto_generate_tests = false
+overwrite_test_documentation = false
 
 [usage]
 when_to_use = ["Test"]
@@ -297,28 +288,21 @@ filename = "a.hbs"
 description = "Level A"
 inherits = ["B"]
 
+[levels.a.custom_fields]
+field_a = { type = "string", required = true }
+
 [levels.b]
 name = "B"
 abbreviation = "b"
 filename = "b.hbs"
 description = "Level B"
 inherits = ["A"]
-        "#;
-
-        let config_toml = r#"
-[template]
-name = "test"
-preferred_style = "structured"
-
-[levels.a.custom_fields]
-field_a = { type = "string", required = true }
 
 [levels.b.custom_fields]
 field_b = { type = "string", required = true }
         "#;
 
-        fs::write(methodology_dir.join("info.toml"), info_toml).unwrap();
-        fs::write(methodology_dir.join("config.toml"), config_toml).unwrap();
+        fs::write(methodology_dir.join("methodology.toml"), methodology_toml).unwrap();
 
         let methodology = MethodologyDefinition::from_toml(&methodology_dir).unwrap();
         let resolver = FieldResolver::new(&methodology);
@@ -337,12 +321,11 @@ field_b = { type = "string", required = true }
         let resolver = FieldResolver::new(&methodology);
 
         let levels = resolver.available_levels();
-        assert_eq!(levels.len(), 3);
+        assert_eq!(levels.len(), 2);
 
         let level_names: HashSet<&str> = levels.iter().map(|l| l.name.as_str()).collect();
-        assert!(level_names.contains("Simple"));
         assert!(level_names.contains("Normal"));
-        assert!(level_names.contains("Detailed"));
+        assert!(level_names.contains("Advanced"));
     }
 
     #[test]
@@ -351,15 +334,18 @@ field_b = { type = "string", required = true }
         let methodology_dir = temp_dir.path().join("test");
         fs::create_dir(&methodology_dir).unwrap();
 
-        let info_toml = r#"
+        let methodology_toml = r#"
 [methodology]
 name = "test"
 abbreviation = "tst"
 description = "Test"
 
-[overview]
-title = "Test"
-description = "Test"
+[template]
+preferred_style = "structured"
+
+[generation]
+auto_generate_tests = false
+overwrite_test_documentation = false
 
 [usage]
 when_to_use = ["Test"]
@@ -371,19 +357,12 @@ abbreviation = "c"
 filename = "child.hbs"
 description = "Child level"
 inherits = ["MissingParent"]
-        "#;
-
-        let config_toml = r#"
-[template]
-name = "test"
-preferred_style = "structured"
 
 [levels.child.custom_fields]
 field = { type = "string", required = true }
         "#;
 
-        fs::write(methodology_dir.join("info.toml"), info_toml).unwrap();
-        fs::write(methodology_dir.join("config.toml"), config_toml).unwrap();
+        fs::write(methodology_dir.join("methodology.toml"), methodology_toml).unwrap();
 
         let methodology = MethodologyDefinition::from_toml(&methodology_dir).unwrap();
         let resolver = FieldResolver::new(&methodology);

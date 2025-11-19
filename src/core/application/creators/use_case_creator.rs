@@ -150,7 +150,10 @@ impl UseCaseCreator {
         let field_collection = match collector.collect_fields_for_views(&view_pairs) {
             Ok(collection) => collection,
             Err(e) => {
-                eprintln!("Warning: Could not collect methodology fields: {}. Using empty fields.", e);
+                eprintln!(
+                    "Warning: Could not collect methodology fields: {}. Using empty fields.",
+                    e
+                );
                 Default::default()
             }
         };
@@ -165,14 +168,14 @@ impl UseCaseCreator {
 
         // Group fields by methodology for storage in methodology_fields
         let mut methodology_fields: HashMap<String, HashMap<String, Value>> = HashMap::new();
-        
+
         // Initialize empty HashMap for each methodology in views
         for view in &views {
             methodology_fields
                 .entry(view.methodology.clone())
                 .or_insert_with(HashMap::new);
         }
-        
+
         // Populate with actual field values
         for (field_name, field_value) in methodology_field_values {
             // Find which methodology this field belongs to
@@ -187,14 +190,9 @@ impl UseCaseCreator {
         }
 
         // Create the use case with empty extra fields (methodology fields go in methodology_fields)
-        let mut use_case = UseCase::new(
-            use_case_id.clone(),
-            title,
-            category,
-            description,
-            priority,
-        )
-        .map_err(|e| anyhow::anyhow!(e))?;
+        let mut use_case =
+            UseCase::new(use_case_id.clone(), title, category, description, priority)
+                .map_err(|e| anyhow::anyhow!(e))?;
 
         // Set methodology fields
         use_case.methodology_fields = methodology_fields;

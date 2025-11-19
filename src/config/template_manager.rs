@@ -302,20 +302,11 @@ impl TemplateManager {
                 );
             }
 
-            // Validate that required files exist
-            let config_file = source_method_dir.join("config.toml");
-            if !config_file.exists() {
+            // Validate that required methodology.toml file exists
+            let methodology_file = source_method_dir.join("methodology.toml");
+            if !methodology_file.exists() {
                 anyhow::bail!(
-                    "Methodology '{}' is missing config.toml file in {:?}",
-                    methodology,
-                    source_method_dir
-                );
-            }
-
-            let info_file = source_method_dir.join("info.toml");
-            if !info_file.exists() {
-                anyhow::bail!(
-                    "Methodology '{}' is missing info.toml file in {:?}",
+                    "Methodology '{}' is missing methodology.toml file in {:?}",
                     methodology,
                     source_method_dir
                 );
@@ -634,7 +625,7 @@ mod tests {
         fs::create_dir_all(&method_dir)?;
         fs::create_dir(&dest_templates)?;
 
-        // Create a template file but no config.toml
+        // Create a template file but no methodology.toml
         fs::write(method_dir.join("template.hbs"), "template content")?;
 
         let mut config = Config::default();
@@ -645,7 +636,7 @@ mod tests {
         assert!(result
             .unwrap_err()
             .to_string()
-            .contains("missing config.toml file"));
+            .contains("missing methodology.toml file"));
 
         Ok(())
     }
