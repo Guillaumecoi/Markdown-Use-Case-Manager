@@ -7,61 +7,31 @@
 
 ---
 
-{{#if core.summary}}
+{{#if description}}
 ## Executive Summary
-{{summary}}
-
-{{/if}}
-## Stakeholder Analysis
-
-{{#if stakeholders.decision_makers}}
-### Decision Makers
-{{#each stakeholders.decision_makers}}
-- **{{this}}** - _Role and decision authority_
-{{/each}}
-
-{{/if}}
-{{#if stakeholders.primary_users}}
-### Primary Stakeholders
-{{#each stakeholders.primary_users}}
-- **{{this}}** - _Impact and involvement level_
-{{/each}}
-
-{{/if}}
-{{#if stakeholders.secondary_users}}
-### Secondary Stakeholders
-{{#each stakeholders.secondary_users}}
-- **{{this}}** - _Indirect impact and considerations_
-{{/each}}
+{{description}}
 
 {{/if}}
 ## Business Case
 
-{{#if business.value_proposition}}
-### Value Proposition
-{{value_proposition}}
+{{#if business_value}}
+### Business Value
+{{business_value}}
 
 {{/if}}
-{{#if business.roi_analysis}}
-### Return on Investment Analysis
-{{roi_analysis}}
+{{#if roi_estimate}}
+### ROI Estimate
+{{roi_estimate}}
 
 {{/if}}
-## Business Requirements
-
-{{#if core.objectives}}
-### Business Objectives
-{{#each core.objectives}}
-- {{this}}
-{{/each}}
+{{#if strategic_priority}}
+### Strategic Priority
+{{strategic_priority}}
 
 {{/if}}
-
-{{#if business.success_criteria}}
-### Success Criteria
-{{#each business.success_criteria}}
-- {{this}}
-{{/each}}
+{{#if cost_estimate}}
+### Cost Estimate
+{{cost_estimate}}
 
 {{/if}}
 {{#if preconditions}}
@@ -84,46 +54,6 @@
 {{#each use_case_references}}
 - **{{relationship}}:** {{target_id}}{{#if description}} - {{description}}{{/if}}
 {{/each}}
-
-{{/if}}
-{{#if business.process_changes}}
-## Process Impact Analysis
-### Process Changes Required
-{{process_changes}}
-
-{{/if}}
-{{#if business.timeline}}
-## Implementation Strategy
-### Business Timeline
-{{timeline}}
-
-{{/if}}
-{{#if business.resource_requirements}}
-### Resource Requirements
-{{resource_requirements}}
-
-{{/if}}
-{{#if business.risk_factors}}
-## Risk Assessment
-### Business Risks
-{{#each business.risk_factors}}
-- **Risk:** {{this}}
-  - **Impact:** _High/Medium/Low_
-  - **Probability:** _High/Medium/Low_
-  - **Mitigation:** _Strategy to address_
-{{/each}}
-
-{{/if}}
-{{#if business.compliance_requirements}}
-## Compliance and Governance
-### Compliance Requirements
-{{compliance_requirements}}
-
-{{/if}}
-{{#if stakeholders.communication_plan}}
-## Communication Plan
-### Stakeholder Communication
-{{communication_plan}}
 
 {{/if}}
 {{#if last_updated}}

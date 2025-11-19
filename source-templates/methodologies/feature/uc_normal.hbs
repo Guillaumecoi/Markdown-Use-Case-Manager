@@ -7,6 +7,23 @@
 {{description}}
 
 {{/if}}
+{{#if user_segment}}
+## Target User Segment
+{{user_segment}}
+
+{{/if}}
+{{#if hypothesis}}
+## Product Hypothesis
+{{hypothesis}}
+
+{{/if}}
+{{#if success_metrics}}
+## Success Metrics
+{{#each success_metrics}}
+- {{this}}
+{{/each}}
+
+{{/if}}
 {{#if preconditions}}
 ## Preconditions
 {{#each preconditions}}
@@ -22,67 +39,6 @@
 
 {{/if}}
 {{> scenario}}
-{{#if value_proposition}}
-## Business Value
-{{value_proposition}}
-
-{{/if}}
-{{#if success_criteria}}
-### Success Criteria
-{{#each success_criteria}}
-- {{this}}
-{{/each}}
-
-{{/if}}
-{{#if primary_users}}
-## Target Audience
-
-### Primary Users
-{{#each primary_users}}
-- {{this}}
-{{/each}}
-
-{{/if}}
-{{#if secondary_users}}
-### Secondary Users
-{{#each secondary_users}}
-- {{this}}
-{{/each}}
-
-{{/if}}
-{{#if objectives}}
-## Requirements Overview
-
-### Key Objectives
-{{#each objectives}}
-- {{this}}
-{{/each}}
-
-{{/if}}
-{{#if solution_overview}}
-## Implementation Approach
-{{solution_overview}}
-
-{{/if}}
-{{#if timeline}}
-## Timeline & Resources
-
-### Estimated Timeline
-{{timeline}}
-
-{{/if}}
-{{#if resource_requirements}}
-### Resource Requirements
-{{resource_requirements}}
-
-{{/if}}
-{{#if risk_factors}}
-## Risk Considerations
-{{#each risk_factors}}
-- {{this}}
-{{/each}}
-
-{{/if}}
 {{#if use_case_references}}
 ## Related Use Cases
 {{#each use_case_references}}

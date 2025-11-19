@@ -27,9 +27,9 @@ description = "Standard business documentation covering essential stakeholder ne
 inherits = []
 
 [levels.normal.custom_fields]
-business_value = { label = "Business Value", type = "string", required = false, description = "Qualitative or quantitative assessment of business value" }
-roi_estimate = { label = "ROI Estimate", type = "string", required = false, description = "Expected return on investment" }
-stakeholders = { label = "Key Stakeholders", type = "array", required = false, description = "People or groups affected by this use case" }
+business_value = { label = "Business Value", type = "text", required = false, description = "Quantifiable business impact and value proposition" }
+roi_estimate = { label = "ROI Estimate", type = "string", required = false, description = "Expected return on investment with timeframe" }
+strategic_priority = { label = "Strategic Priority", type = "string", required = false, description = "Alignment with organizational strategy (Critical, High, Medium, Low)" }
 
 [levels.advanced]
 name = "Advanced"
@@ -40,8 +40,8 @@ description = "Comprehensive business case with financial analysis, stakeholder 
 inherits = ["Normal"]
 
 [levels.advanced.custom_fields]
-# Inherits: business_value, roi_estimate, stakeholders (from normal)
-cost_estimate = { label = "Cost Estimate", type = "string", required = false, description = "Estimated cost of implementation" }
+# Inherits: business_value, roi_estimate, strategic_priority (from normal)
+cost_estimate = { label = "Cost Estimate", type = "text", required = false, description = "Detailed breakdown of implementation and operational costs" }
 
 [usage]
 when_to_use = [
@@ -75,9 +75,9 @@ business_value = "Reduce support costs by 30% while improving customer satisfact
 
 [examples.detailed]
 title = "Automated Invoice Processing"
-business_value = "Reduce processing time from 2 days to 2 hours, eliminate manual data entry errors"
+business_value = "Reduce processing time from 2 days to 2 hours, eliminate 95% of manual data entry errors, improve vendor relations"
 roi_estimate = "180% ROI within 18 months, annual savings of $120,000"
-stakeholders = ["Finance team", "Accounts payable", "Vendors", "Internal audit"]
+strategic_priority = "High - supports digital transformation initiative"
 cost_estimate = "$80,000 initial implementation + $15,000 annual maintenance"
 
 [related_methodologies]

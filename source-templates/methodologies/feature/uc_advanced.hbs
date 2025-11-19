@@ -7,10 +7,40 @@
 
 ---
 
-{{#if summary}}
+{{#if description}}
 ## Overview
+{{description}}
 
-{{summary}}
+{{/if}}
+{{#if user_segment}}
+## Target User Segment
+{{user_segment}}
+
+{{/if}}
+{{#if hypothesis}}
+## Product Hypothesis
+{{hypothesis}}
+
+{{/if}}
+{{#if success_metrics}}
+## Success Metrics
+{{#each success_metrics}}
+- {{this}}
+{{/each}}
+
+{{/if}}
+{{#if design_assets}}
+## Design Assets
+{{#each design_assets}}
+- {{this}}
+{{/each}}
+
+{{/if}}
+{{#if feature_dependencies}}
+## Feature Dependencies
+{{#each feature_dependencies}}
+- {{this}}
+{{/each}}
 
 {{/if}}
 {{#if preconditions}}
@@ -28,97 +58,10 @@
 
 {{/if}}
 {{> scenario}}
-{{#if value_proposition}}
-## Business Value
-
-{{value_proposition}}
-
-{{/if}}
-{{#if roi_analysis}}
-### Return on Investment
-{{roi_analysis}}
-
-{{/if}}
-{{#if primary_users}}
-## Target Users
-
-### Primary Users
-{{#each primary_users}}
-- {{this}}
-{{/each}}
-
-{{/if}}
-{{#if secondary_users}}
-### Secondary Users
-{{#each secondary_users}}
-- {{this}}
-{{/each}}
-
-{{/if}}
-{{#if objectives}}
-## Key Requirements
-
-### Objectives
-{{#each objectives}}
-- {{this}}
-{{/each}}
-
-{{/if}}
-{{#if success_criteria}}
-### Success Criteria
-{{#each success_criteria}}
-- {{this}}
-{{/each}}
-
-{{/if}}
-{{#if solution_overview}}
-## High-Level Approach
-
-{{solution_overview}}
-
-{{/if}}
-{{#if timeline}}
-## Implementation Timeline
-
-{{timeline}}
-
-{{/if}}
-{{#if resource_requirements}}
-## Resource Requirements
-
-{{resource_requirements}}
-
-{{/if}}
-{{#if risk_factors}}
-## Risks and Considerations
-
-### Known Risks
-{{#each risk_factors}}
-- {{this}}
-{{/each}}
-
-{{/if}}
 {{#if use_case_references}}
 ## Related Use Cases
 {{#each use_case_references}}
 - **{{relationship}}:** {{target_id}}{{#if description}} - {{description}}{{/if}}
-{{/each}}
-
-{{/if}}
-{{#if custom_field}}
-## Custom Fields Test
-
-**Custom Field (String):** {{custom_field}}
-{{/if}}
-
-{{#if another_custom}}
-**Another Custom (String):** {{another_custom}}
-{{/if}}
-
-{{#if custom_array}}
-**Custom Array (List):**
-{{#each custom_array}}
-- {{this}}
 {{/each}}
 
 {{/if}}

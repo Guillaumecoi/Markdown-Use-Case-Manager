@@ -28,8 +28,9 @@ description = "Standard feature documentation with sprint planning and agile wor
 inherits = []
 
 [levels.normal.custom_fields]
-sprint = { label = "Sprint", type = "string", required = false, description = "Sprint or iteration identifier" }
-story_points = { label = "Story Points", type = "number", required = false, description = "Estimation in story points" }
+user_segment = { label = "Target User Segment", type = "string", required = false, description = "Primary user group or persona this feature serves" }
+success_metrics = { label = "Success Metrics", type = "array", required = false, description = "Measurable outcomes that define feature success" }
+hypothesis = { label = "Product Hypothesis", type = "text", required = false, description = "Assumption about user needs this feature validates" }
 
 [levels.advanced]
 name = "Advanced"
@@ -40,9 +41,9 @@ description = "Comprehensive feature documentation with dependencies, mockups, a
 inherits = ["Normal"]
 
 [levels.advanced.custom_fields]
-# Inherits: sprint, story_points (from normal)
-dependencies = { label = "Feature Dependencies", type = "array", required = false, description = "Other features this depends on" }
-mockups = { label = "Mockup Links", type = "array", required = false, description = "Links to design mockups" }
+# Inherits: user_segment, success_metrics, hypothesis (from normal)
+feature_dependencies = { label = "Feature Dependencies", type = "array", required = false, description = "Other features or capabilities this requires" }
+design_assets = { label = "Design Assets", type = "array", required = false, description = "Links to mockups, prototypes, or design specs" }
 
 [usage]
 when_to_use = [
@@ -78,18 +79,19 @@ postconditions = [
     "Reset link is valid for 24 hours"
 ]
 
-[examples.with_sprint]
+[examples.with_segment]
 title = "Advanced Search and Filtering"
 description = "Enable users to search and filter content to find relevant information quickly"
-sprint = "Sprint 28 (Jan 20-Feb 2)"
-story_points = 8
+user_segment = "Power users and content creators who manage large content libraries"
+success_metrics = ["50% reduction in time to find content", "60% increase in search usage", "NPS score >8 for search experience"]
+hypothesis = "Users struggle to find relevant content because basic search lacks filtering options"
 postconditions = [
     "Search supports full-text across title, content, and tags",
     "Filter by date range, author, category, and tags",
     "Results sorted by relevance score"
 ]
-dependencies = ["Content indexing system", "User authentication"]
-mockups = ["https://figma.com/design/search-ui-v2"]
+feature_dependencies = ["Content indexing system", "User authentication"]
+design_assets = ["https://figma.com/design/search-ui-v2"]
 
 [related_methodologies]
 business = "For business case and stakeholder documentation"

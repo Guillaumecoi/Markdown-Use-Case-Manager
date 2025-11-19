@@ -7,46 +7,43 @@
 
 ---
 
-{{#if summary}}
+{{#if description}}
 ## Technical Overview
-
-{{summary}}
-
-{{/if}}
-{{#if solution_overview}}
-### Solution Architecture
-{{solution_overview}}
+{{description}}
 
 {{/if}}
-{{#if objectives}}
-## Technical Requirements
+{{#if api_endpoint}}
+### API Endpoint
+{{api_endpoint}}
 
-### Functional Requirements
-{{#each objectives}}
+{{/if}}
+{{#if database_tables}}
+### Database Tables
+{{#each database_tables}}
 - {{this}}
 {{/each}}
 
 {{/if}}
 {{#if performance_requirements}}
-### Performance Requirements
+## Performance Requirements
 {{performance_requirements}}
 
 {{/if}}
-{{#if security_requirements}}
-### Security Requirements
-{{security_requirements}}
+{{#if security_considerations}}
+## Security Considerations
+{{security_considerations}}
 
 {{/if}}
-{{#if architecture_overview}}
-## System Design
-
-### Architecture Details
-{{architecture_overview}}
+{{#if technical_dependencies}}
+## Technical Dependencies
+{{#each technical_dependencies}}
+- {{this}}
+{{/each}}
 
 {{/if}}
-{{#if data_requirements}}
-### Data Requirements
-{{data_requirements}}
+{{#if error_handling}}
+## Error Handling Strategy
+{{error_handling}}
 
 {{/if}}
 {{#if preconditions}}
@@ -64,60 +61,6 @@
 
 {{/if}}
 {{> scenario}}
-{{#if development_approach}}
-## Implementation Details
-
-### Development Approach
-{{development_approach}}
-
-{{/if}}
-{{#if integration_points}}
-### Integration Requirements
-{{integration_points}}
-
-{{/if}}
-{{#if test_strategy}}
-## Testing Strategy
-
-### Test Approach
-{{test_strategy}}
-
-{{/if}}
-{{#if test_scenarios}}
-### Test Scenarios
-{{#each test_scenarios}}
-- {{this}}
-{{/each}}
-
-{{/if}}
-{{#if deployment_strategy}}
-## Deployment and Operations
-
-### Deployment Strategy
-{{deployment_strategy}}
-
-{{/if}}
-{{#if monitoring_strategy}}
-### Monitoring and Maintenance
-{{monitoring_strategy}}
-
-{{/if}}
-{{#if technical_risks}}
-## Technical Risks
-
-### Risk Assessment
-{{#each technical_risks}}
-- {{this}}
-{{/each}}
-
-{{/if}}
-{{#if documentation_requirements}}
-## Documentation Requirements
-
-### Technical Documentation
-{{documentation_requirements}}
-
-{{/if}}
 {{#if use_case_references}}
 ## Related Use Cases
 {{#each use_case_references}}

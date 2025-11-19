@@ -13,11 +13,35 @@
 {{summary}}
 
 {{/if}}
-{{#if test_strategy}}
-### Test Strategy
-{{test_strategy}}
+{{#if test_type}}
+**Test Type:** {{test_type}}  
+{{/if}}
+{{#if test_priority}}
+**Priority:** {{test_priority}}  
+{{/if}}
+{{#if automation_status}}
+**Automation Status:** {{automation_status}}  
+{{/if}}
+{{#if test_environment}}
+**Test Environment:** {{test_environment}}
 
 {{/if}}
+{{#if regression_suite}}
+**Regression Suite:** {{regression_suite}}
+
+{{/if}}
+{{#if performance_baseline}}
+**Performance Baseline:** {{performance_baseline}}
+
+{{/if}}
+{{#if coverage_areas}}
+### Coverage Areas
+{{#each coverage_areas}}
+- {{this}}
+{{/each}}
+
+{{/if}}
+
 {{#if preconditions}}
 ## Preconditions
 {{#each preconditions}}
@@ -33,74 +57,31 @@
 
 {{/if}}
 {{> scenario}}
-{{#if objectives}}
-## Test Objectives
-
-### Validation Goals
-{{#each objectives}}
-- {{this}}
-{{/each}}
-
-{{/if}}
-{{#if acceptance_criteria}}
-### Acceptance Criteria
-{{#each acceptance_criteria}}
-- {{this}}
-{{/each}}
-
-{{/if}}
-{{#if test_scenarios}}
-## Test Scenarios
-
-### Detailed Test Cases
-{{#each test_scenarios}}
-### Test Scenario: {{this}}
-
-{{/each}}
-
-{{/if}}
 {{#if test_data_requirements}}
 ## Test Data Requirements
-
-### Test Data Strategy
 {{test_data_requirements}}
 
 {{/if}}
-{{#if testing_tools}}
-## Testing Tools and Environment
-
-### Test Tooling
-{{testing_tools}}
+{{#if test_environment}}
+## Test Environment
+{{test_environment}}
 
 {{/if}}
-{{#if testing_risks}}
-## Risk-Based Testing
+{{#if regression_suite}}
+## Regression Suite
+{{regression_suite}}
 
-### Test Risk Assessment
-{{#each testing_risks}}
+{{/if}}
+{{#if performance_baseline}}
+## Performance Baseline
+{{performance_baseline}}
+
+{{/if}}
+{{#if coverage_areas}}
+## Coverage Areas
+{{#each coverage_areas}}
 - {{this}}
 {{/each}}
-
-{{/if}}
-{{#if quality_metrics}}
-## Quality Metrics
-
-### Test Metrics and KPIs
-{{quality_metrics}}
-
-{{/if}}
-{{#if execution_plan}}
-## Test Execution Plan
-
-### Test Execution Strategy
-{{execution_plan}}
-
-{{/if}}
-{{#if defect_management}}
-## Defect Management
-
-### Defect Handling Process
-{{defect_management}}
 
 {{/if}}
 {{#if use_case_references}}

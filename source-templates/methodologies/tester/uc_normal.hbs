@@ -7,6 +7,16 @@
 {{description}}
 
 {{/if}}
+{{#if test_type}}
+**Test Type:** {{test_type}}  
+{{/if}}
+{{#if test_priority}}
+**Priority:** {{test_priority}}  
+{{/if}}
+{{#if automation_status}}
+**Automation Status:** {{automation_status}}
+
+{{/if}}
 {{#if test_strategy}}
 ### Test Strategy
 {{test_strategy}}
@@ -27,54 +37,9 @@
 
 {{/if}}
 {{> scenario}}
-{{#if objectives}}
-## Test Objectives
-
-### Validation Goals
-{{#each objectives}}
-- {{this}}
-{{/each}}
-
-{{/if}}
-{{#if test_scenarios}}
-## Test Scenarios
-
-### Detailed Test Cases
-{{#each test_scenarios}}
-#### {{this}}
-
-{{/each}}
-
-{{/if}}
-{{#if acceptance_criteria}}
-## Acceptance Criteria
-{{#each acceptance_criteria}}
-- {{this}}
-{{/each}}
-
-{{/if}}
 {{#if test_data_requirements}}
 ## Test Data Requirements
 {{test_data_requirements}}
-
-{{/if}}
-{{#if testing_tools}}
-## Testing Tools
-{{testing_tools}}
-
-{{/if}}
-{{#if quality_metrics}}
-## Quality Metrics
-{{quality_metrics}}
-
-{{/if}}
-{{#if testing_risks}}
-## Risk-Based Testing
-
-### Test Risk Assessment
-{{#each testing_risks}}
-- {{this}}
-{{/each}}
 
 {{/if}}
 {{#if use_case_references}}
