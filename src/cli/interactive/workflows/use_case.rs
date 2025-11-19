@@ -139,6 +139,145 @@ impl UseCaseWorkflow {
         Ok(())
     }
 
+    /// Prompt user for methodology-specific field values
+    fn prompt_for_methodology_fields(
+        runner: &InteractiveRunner,
+        views: &[(String, String)],
+    ) -> Result<HashMap<String, String>> {
+        // Collect field definitions
+        let field_collection = match runner.collect_methodology_fields(views) {
+            Ok(collection) => collection,
+            Err(e) => {
+                // If we can't collect fields (e.g., methodology not found in workspace),
+                // just warn and continue without methodology fields
+                UI::show_warning(&format!(
+                    "Could not collect methodology fields: {}. Continuing without methodology-specific fields.",
+                    e
+                ))?;
+                return Ok(HashMap::new());
+            }
+        };
+
+        // Show any warnings
+        for warning in &field_collection.warnings {
+            UI::show_warning(warning)?;
+        }
+
+        if field_collection.fields.is_empty() {
+            return Ok(HashMap::new());
+        }
+
+        UI::show_section_header("Methodology Fields", "🎯")?;
+        UI::show_info("These fields are defined by the methodologies you selected. Press Enter to skip optional fields.")?;
+
+        let mut field_values = HashMap::new();
+
+        // Group fields by methodology for better UX
+        let mut fields_by_methodology: HashMap<String, Vec<&crate::core::CollectedField>> = HashMap::new();
+        for field in field_collection.fields.values() {
+            for methodology in &field.methodologies {
+                fields_by_methodology
+                    .entry(methodology.clone())
+                    .or_insert_with(Vec::new)
+                    .push(field);
+            }
+        }
+
+        // Sort methodologies for consistent ordering
+        let mut methodology_names: Vec<_> = fields_by_methodology.keys().collect();
+        methodology_names.sort();
+
+        // Prompt for each methodology's fields
+        for methodology_name in methodology_names {
+            let fields = fields_by_methodology.get(methodology_name).unwrap();
+            if !fields.is_empty() {
+                UI::show_info(&format!("\n📋 {} Fields:", methodology_name))?;
+
+                for field in fields {
+                    let default_help = format!("{} ({})", field.label, field.field_type);
+                    let help_msg = field
+                        .description
+                        .as_deref()
+                        .unwrap_or(&default_help);
+
+                    let prompt_text = if field.required {
+                        format!("{} (required):", field.label)
+                    } else {
+                        format!("{} (optional):", field.label)
+                    };
+
+                    // Handle different field types
+                    let value = match field.field_type.as_str() {
+                        "boolean" => {
+                            // For boolean fields, use Confirm prompt
+                            let default = field
+                                .default
+                                .as_ref()
+                                .and_then(|d| d.parse::<bool>().ok())
+                                .unwrap_or(false);
+                            
+                            let result = Confirm::new(&prompt_text)
+                                .with_default(default)
+                                .with_help_message(help_msg)
+                                .prompt()?;
+                            
+                            Some(result.to_string())
+                        }
+                        "array" => {
+                            // For array fields, prompt for comma-separated values
+                            let result = Text::new(&prompt_text)
+                                .with_help_message(&format!("{} (comma-separated values)", help_msg))
+                                .with_default(field.default.as_deref().unwrap_or(""))
+                                .prompt_skippable()?;
+                            
+                            result.filter(|s| !s.trim().is_empty())
+                        }
+                        "number" => {
+                            // For number fields, validate input
+                            loop {
+                                let result = Text::new(&prompt_text)
+                                    .with_help_message(help_msg)
+                                    .with_default(field.default.as_deref().unwrap_or(""))
+                                    .prompt_skippable()?;
+                                
+                                match result {
+                                    Some(ref s) if !s.trim().is_empty() => {
+                                        // Try to parse as number
+                                        if s.parse::<f64>().is_ok() {
+                                            break Some(s.clone());
+                                        } else {
+                                            UI::show_error("Please enter a valid number")?;
+                                            continue;
+                                        }
+                                    }
+                                    _ => break None,
+                                }
+                            }
+                        }
+                        _ => {
+                            // Default to string
+                            let result = Text::new(&prompt_text)
+                                .with_help_message(help_msg)
+                                .with_default(field.default.as_deref().unwrap_or(""))
+                                .prompt_skippable()?;
+                            
+                            result.filter(|s| !s.trim().is_empty())
+                        }
+                    };
+
+                    if let Some(v) = value {
+                        field_values.insert(field.name.clone(), v);
+                    } else if field.required && field.default.is_none() {
+                        // Required field with no value and no default - use empty string
+                        field_values.insert(field.name.clone(), String::new());
+                    }
+                }
+            }
+        }
+
+        Ok(field_values)
+    }
+
     /// Interactive form for filling use case fields
     fn fill_use_case_form(
         runner: &mut InteractiveRunner,
@@ -204,6 +343,9 @@ impl UseCaseWorkflow {
             .with_help_message("Person responsible for reviewing this use case")
             .prompt_skippable()?;
 
+        // Collect methodology-specific field values
+        let methodology_field_values = Self::prompt_for_methodology_fields(runner, &views)?;
+
         // Create the use case with additional fields (only truly extra fields)
         let mut extra_fields = HashMap::new();
 
@@ -218,6 +360,9 @@ impl UseCaseWorkflow {
                 extra_fields.insert("reviewer".to_string(), rev);
             }
         }
+
+        // Merge methodology field values into extra_fields
+        extra_fields.extend(methodology_field_values);
 
         let result = runner.create_use_case_with_views_and_fields(
             title,

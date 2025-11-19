@@ -20,6 +20,7 @@
 use anyhow::Result;
 
 use crate::controller::{ProjectController, UseCaseController};
+use crate::core::{MethodologyFieldCollector, FieldCollection};
 
 /// Interactive runner that coordinates interactive CLI workflows
 pub struct InteractiveRunner {
@@ -77,6 +78,12 @@ impl InteractiveRunner {
     /// Get all available methodologies from source templates (for initialization)
     pub fn get_available_methodologies(&self) -> Result<Vec<MethodologyInfo>> {
         ProjectController::get_available_methodologies()
+    }
+
+    /// Collect methodology-specific field definitions for the given views
+    pub fn collect_methodology_fields(&self, views: &[(String, String)]) -> Result<FieldCollection> {
+        let collector = MethodologyFieldCollector::new()?;
+        collector.collect_fields_for_views(views)
     }
 
     /// Get installed/configured methodologies in the project (for creating use cases)

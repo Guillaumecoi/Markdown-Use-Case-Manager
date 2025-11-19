@@ -8,7 +8,10 @@ mod utils; // Internal only
 
 // Explicit public exports from private modules
 // Public exports - Explicit API surface
-pub use application::UseCaseApplicationService;
+pub use application::{
+    UseCaseApplicationService,
+    methodology_field_collector::{MethodologyFieldCollector, FieldCollection, CollectedField},
+};
 
 // Re-export domain types (from domain's public interface)
 pub use domain::{
