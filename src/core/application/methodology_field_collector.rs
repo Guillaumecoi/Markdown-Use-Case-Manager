@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use std::path::Path;
 
 use crate::config::Config;
-use crate::core::{CustomFieldConfig, MethodologyDefinition};
+use crate::core::{CustomFieldConfig, FieldResolver, MethodologyDefinition};
 
 /// Represents a field collected from one or more methodologies
 #[derive(Debug, Clone)]
@@ -142,7 +142,7 @@ impl MethodologyFieldCollector {
     /// # Returns
     /// HashMap of field_name -> CustomFieldConfig
     ///
-    /// Includes inherited fields (simple → normal → detailed)
+    /// Includes inherited fields using FieldResolver for proper inheritance chain resolution
     fn collect_fields_for_methodology(
         &self,
         methodology: &str,
@@ -161,40 +161,23 @@ impl MethodologyFieldCollector {
         let methodology_def = MethodologyDefinition::from_toml(&methodology_dir)
             .context(format!("Failed to load methodology '{}'", methodology))?;
 
-        // Get fields with inheritance
-        let mut all_fields = HashMap::new();
-
-        // Determine which levels to include based on inheritance
-        // normal: just normal
-        // advanced: normal + advanced
-        // Backward compatibility: simple -> normal, detailed -> advanced
-        let levels_to_include = match level.to_lowercase().as_str() {
-            "simple" | "s" => vec!["normal"], // Backward compatibility
-            "normal" | "n" => vec!["normal"],
-            "detailed" | "d" => vec!["normal", "advanced"], // Backward compatibility
-            "advanced" | "a" => vec!["normal", "advanced"],
-            _ => vec![level], // Fallback: just use the provided level
+        // Map backward compatibility aliases to actual level names
+        let level_name = match level.to_lowercase().as_str() {
+            "simple" | "s" => "Normal",     // Backward compatibility
+            "detailed" | "d" => "Advanced", // Backward compatibility
+            "normal" | "n" => "Normal",
+            "advanced" | "a" => "Advanced",
+            _ => level, // Use as-is for custom levels
         };
 
-        // Collect fields from each level
-        for level_name in levels_to_include {
-            // Access level_configs directly from methodology_def
-            if let Some(level_config) = methodology_def.level_configs.get(level_name) {
-                for (field_name, field_config) in &level_config.custom_fields {
-                    // Check for duplicate field within same methodology (error)
-                    if all_fields.contains_key(field_name) {
-                        return Err(anyhow::anyhow!(
-                            "Duplicate field '{}' found in methodology '{}' inheritance chain. \
-                             Field is defined in multiple levels (simple/normal/detailed). \
-                             Each field should only be defined once per methodology.",
-                            field_name,
-                            methodology
-                        ));
-                    }
-                    all_fields.insert(field_name.clone(), field_config.clone());
-                }
-            }
-        }
+        // Use FieldResolver for proper inheritance handling
+        let resolver = FieldResolver::new(&methodology_def);
+        let all_fields = resolver
+            .resolve_fields_for_level(level_name)
+            .context(format!(
+                "Failed to resolve fields for level '{}' in methodology '{}'",
+                level_name, methodology
+            ))?;
 
         Ok(all_fields)
     }

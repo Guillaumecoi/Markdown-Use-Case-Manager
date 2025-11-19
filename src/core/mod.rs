@@ -25,8 +25,8 @@ pub use domain::Scenario;
 
 // Re-export infrastructure types (from infrastructure's public interface)
 pub use infrastructure::{
-    file_operations, CustomFieldConfig, DocumentationLevel, LanguageRegistry, Methodology,
-    MethodologyDefinition, MethodologyRegistry, RepositoryFactory, TemplateEngine,
+    file_operations, CustomFieldConfig, DocumentationLevel, FieldResolver, LanguageRegistry,
+    Methodology, MethodologyDefinition, MethodologyRegistry, RepositoryFactory, TemplateEngine,
     UseCaseRepository,
 };
 

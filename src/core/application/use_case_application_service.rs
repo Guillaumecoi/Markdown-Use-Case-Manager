@@ -388,7 +388,7 @@ impl UseCaseApplicationService {
             for view in use_case.enabled_views() {
                 let markdown_content = self
                     .markdown_generator
-                    .generate_with_view(&use_case, &view)?;
+                    .generate(&use_case, None, Some(&view))?;
                 let filename = format!("{}-{}-{}.md", use_case.id, view.methodology, view.level);
                 self.repository.save_markdown_with_filename(
                     &use_case,
@@ -398,7 +398,7 @@ impl UseCaseApplicationService {
             }
         } else {
             // Single view: use default methodology
-            let markdown_content = self.generate_use_case_markdown(&use_case)?;
+            let markdown_content = self.markdown_generator.generate(&use_case, None, None)?;
             self.repository
                 .save_markdown(use_case_id, &markdown_content)?;
         }
@@ -418,7 +418,7 @@ impl UseCaseApplicationService {
                 for view in use_case.enabled_views() {
                     let markdown_content = self
                         .markdown_generator
-                        .generate_with_view(use_case, &view)?;
+                        .generate(use_case, None, Some(&view))?;
                     let filename =
                         format!("{}-{}-{}.md", use_case.id, view.methodology, view.level);
                     self.repository.save_markdown_with_filename(
@@ -429,7 +429,7 @@ impl UseCaseApplicationService {
                 }
             } else {
                 // Single view: use default methodology
-                let markdown_content = self.generate_use_case_markdown(use_case)?;
+                let markdown_content = self.markdown_generator.generate(use_case, None, None)?;
                 self.repository
                     .save_markdown(&use_case.id, &markdown_content)?;
             }
@@ -776,7 +776,7 @@ impl UseCaseApplicationService {
         )?;
 
         // Generate markdown from TOML data
-        let markdown_content = self.generate_use_case_markdown(&use_case)?;
+        let markdown_content = self.markdown_generator.generate(&use_case, None, None)?;
         self.repository
             .save_markdown(&use_case.id, &markdown_content)?;
 
@@ -803,7 +803,7 @@ impl UseCaseApplicationService {
         )?;
 
         // Generate markdown from TOML data
-        let markdown_content = self.generate_use_case_markdown(&use_case)?;
+        let markdown_content = self.markdown_generator.generate(&use_case, None, None)?;
         self.repository
             .save_markdown(&use_case.id, &markdown_content)?;
 
@@ -828,10 +828,11 @@ impl UseCaseApplicationService {
             let content = if let Some(view) = view_opt {
                 // Multi-view: generate with specific view
                 self.markdown_generator
-                    .generate_with_view(&use_case_from_toml, &view)?
+                    .generate(&use_case_from_toml, None, Some(&view))?
             } else {
                 // Single view: use methodology parameter (backward compatible)
-                self.generate_use_case_markdown_with_methodology(&use_case_from_toml, methodology)?
+                self.markdown_generator
+                    .generate(&use_case_from_toml, Some(methodology), None)?
             };
 
             self.repository.save_markdown_with_filename(
@@ -847,21 +848,6 @@ impl UseCaseApplicationService {
         }
 
         Ok(())
-    }
-
-    /// Helper to generate use case markdown
-    fn generate_use_case_markdown(&self, use_case: &UseCase) -> Result<String> {
-        self.markdown_generator.generate(use_case)
-    }
-
-    /// Helper to generate use case markdown with specific methodology
-    fn generate_use_case_markdown_with_methodology(
-        &self,
-        use_case: &UseCase,
-        methodology: &str,
-    ) -> Result<String> {
-        self.markdown_generator
-            .generate_with_methodology(use_case, methodology)
     }
 
     /// Generate test file for a use case

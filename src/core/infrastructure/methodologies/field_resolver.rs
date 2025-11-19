@@ -7,12 +7,9 @@ use super::{CustomFieldConfig, DocumentationLevel, Methodology, MethodologyDefin
 use std::collections::{HashMap, HashSet};
 
 /// Resolves custom fields for a specific methodology/level with inheritance
-#[allow(dead_code)]
 pub struct FieldResolver<'a> {
     methodology: &'a MethodologyDefinition,
 }
-
-#[allow(dead_code)]
 impl<'a> FieldResolver<'a> {
     /// Create a new field resolver for a methodology
     pub fn new(methodology: &'a MethodologyDefinition) -> Self {
