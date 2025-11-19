@@ -54,6 +54,11 @@ impl UseCaseController {
         Ok(Self { app_service })
     }
 
+    /// Get reference to the configuration
+    pub fn get_config(&self) -> &Config {
+        self.app_service.get_config()
+    }
+
     /// Create a new use case with flexible options.
     ///
     /// Creates a use case with optional methodology, views, priority, and custom fields.
@@ -1114,5 +1119,18 @@ impl UseCaseController {
             .iter()
             .find(|uc| uc.id == use_case_id)
             .ok_or_else(|| anyhow::anyhow!("Use case {} not found", use_case_id))
+    }
+
+    /// Get all use cases
+    ///
+    /// Retrieves all use cases in the project
+    ///
+    /// # Returns
+    /// Vector of UseCase entities
+    ///
+    /// # Errors
+    /// Returns error if retrieval fails
+    pub fn get_all_use_cases(&self) -> Result<Vec<UseCase>> {
+        Ok(self.app_service.get_all_use_cases().to_vec())
     }
 }

@@ -180,12 +180,12 @@ fn test_field_inheritance() -> Result<()> {
 
     // Normal level
     let normal_fields =
-        collector.collect_fields_for_views(&[("business".to_string(), "normal".to_string())])?;
+        collector.collect_fields_for_views(&[("business".to_string(), "normal".to_string())], None)?;
     let normal_count = normal_fields.fields.len();
 
     // Advanced level (inherits from normal)
     let advanced_fields =
-        collector.collect_fields_for_views(&[("business".to_string(), "advanced".to_string())])?;
+        collector.collect_fields_for_views(&[("business".to_string(), "advanced".to_string())], None)?;
     let advanced_count = advanced_fields.fields.len();
 
     assert!(

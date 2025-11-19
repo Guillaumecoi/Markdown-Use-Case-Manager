@@ -68,6 +68,12 @@ impl InteractiveRunner {
             .expect("controller was just initialized"))
     }
 
+    /// Get the configuration
+    pub fn get_config(&mut self) -> Result<&crate::config::Config> {
+        let controller = self.ensure_use_case_controller()?;
+        Ok(controller.get_config())
+    }
+
     /// Get available programming languages for selection
     pub fn get_available_languages(&self) -> Result<Vec<String>> {
         let selection_options = ProjectController::get_available_languages()?;
@@ -86,7 +92,9 @@ impl InteractiveRunner {
         views: &[(String, String)],
     ) -> Result<FieldCollection> {
         let collector = MethodologyFieldCollector::new()?;
-        collector.collect_fields_for_views(views)
+        // Pass None for config since we can't access it here (would need &mut self)
+        // The collector will use hardcoded defaults as fallback
+        collector.collect_fields_for_views(views, None)
     }
 
     /// Get installed/configured methodologies in the project (for creating use cases)
@@ -274,6 +282,100 @@ impl InteractiveRunner {
         let command = PersonaCommands::Delete { id: id.to_string() };
         handle_persona_command(command, &config)?;
         Ok(format!("Persona '{}' deleted successfully!", id))
+    }
+
+    // ========== Use Case Editing Methods ==========
+
+    /// Get list of all use case IDs for selection
+    pub fn get_use_case_ids(&mut self) -> Result<Vec<String>> {
+        let controller = self.ensure_use_case_controller()?;
+        let use_cases = controller.get_all_use_cases()?;
+        Ok(use_cases.iter().map(|uc| uc.id.clone()).collect())
+    }
+
+    /// Get use case details for editing
+    pub fn get_use_case_details(&mut self, use_case_id: &str) -> Result<crate::core::UseCase> {
+        let controller = self.ensure_use_case_controller()?;
+        let use_case = controller.get_use_case(use_case_id)?;
+        // Clone to return owned value
+        Ok(use_case.clone())
+    }
+
+    /// Update basic use case fields
+    pub fn update_use_case(
+        &mut self,
+        use_case_id: String,
+        title: Option<String>,
+        category: Option<String>,
+        description: Option<String>,
+        priority: Option<String>,
+    ) -> Result<String> {
+        let controller = self.ensure_use_case_controller()?;
+        let result = controller.update_use_case(
+            use_case_id.clone(),
+            title,
+            category,
+            description,
+            priority,
+        )?;
+        Ok(result.message)
+    }
+
+    /// Update methodology-specific fields for a use case
+    pub fn update_methodology_fields(
+        &mut self,
+        use_case_id: &str,
+        methodology: &str,
+        fields: std::collections::HashMap<String, String>,
+    ) -> Result<String> {
+        let controller = self.ensure_use_case_controller()?;
+        let result = controller.update_use_case_methodology_fields(
+            use_case_id.to_string(),
+            methodology.to_string(),
+            fields,
+        )?;
+        Ok(result.message)
+    }
+
+    /// Add a new view to a use case
+    pub fn add_view_to_use_case(
+        &mut self,
+        use_case_id: &str,
+        methodology: &str,
+        level: &str,
+    ) -> Result<String> {
+        let controller = self.ensure_use_case_controller()?;
+        let result = controller.add_view(
+            use_case_id.to_string(),
+            methodology.to_string(),
+            level.to_string(),
+        )?;
+        Ok(result.message)
+    }
+
+    /// Remove a view from a use case
+    pub fn remove_view_from_use_case(
+        &mut self,
+        use_case_id: &str,
+        methodology: &str,
+    ) -> Result<String> {
+        let controller = self.ensure_use_case_controller()?;
+        let result = controller.remove_view(use_case_id.to_string(), methodology.to_string())?;
+        Ok(result.message)
+    }
+
+    /// Get current methodology field values for a use case
+    pub fn get_methodology_field_values(
+        &mut self,
+        use_case_id: &str,
+        methodology: &str,
+    ) -> Result<std::collections::HashMap<String, serde_json::Value>> {
+        let use_case = self.get_use_case_details(use_case_id)?;
+        Ok(use_case
+            .methodology_fields
+            .get(methodology)
+            .cloned()
+            .unwrap_or_default())
     }
 }
 

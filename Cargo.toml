@@ -11,6 +11,9 @@ documentation = "https://github.com/GuillaumeCOI/markdown-use-case-manager/docs"
 readme = "README.md"
 keywords = ["markdown", "use-case", "documentation", "cli", "git"]
 categories = ["command-line-utilities", "development-tools", "template-engine"]
+include = [
+    "source-templates/**/*",
+]
 
 [[bin]]
 name = "mucm"

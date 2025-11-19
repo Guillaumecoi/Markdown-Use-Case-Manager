@@ -185,6 +185,10 @@ pub struct Config {
     /// Persona configuration with custom fields
     #[serde(default)]
     pub persona: PersonaConfig,
+    /// Additional fields available for all use cases (beyond mandatory id/title/category)
+    /// These are standard extra fields like description, author, custom, etc.
+    #[serde(default)]
+    pub extra_fields: std::collections::HashMap<String, crate::core::CustomFieldConfig>,
 }
 
 /// Project-level configuration settings.

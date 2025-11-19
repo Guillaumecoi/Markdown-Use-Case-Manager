@@ -359,6 +359,7 @@ impl Config {
                         last_updated: true,
                     },
                     persona: PersonaConfig::default(),
+                    extra_fields: std::collections::HashMap::new(),
                 });
             }
         };

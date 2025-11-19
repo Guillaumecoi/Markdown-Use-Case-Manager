@@ -59,6 +59,7 @@ impl MethodologyFieldCollector {
     ///
     /// # Arguments
     /// * `views` - List of (methodology, level) pairs (e.g., [("business", "detailed"), ("feature", "simple")])
+    /// * `config` - Optional config to get standard extra fields from (if not provided, uses hardcoded defaults)
     ///
     /// # Returns
     /// FieldCollection with merged fields and any warnings
@@ -67,11 +68,20 @@ impl MethodologyFieldCollector {
     /// - If methodology not found
     /// - If field collision detected between different methodologies
     /// - If duplicate field within same methodology inheritance chain
-    pub fn collect_fields_for_views(&self, views: &[(String, String)]) -> Result<FieldCollection> {
+    pub fn collect_fields_for_views(
+        &self,
+        views: &[(String, String)],
+        config: Option<&Config>,
+    ) -> Result<FieldCollection> {
         let mut collection = FieldCollection::default();
 
-        // Standard extra field names (these have priority over methodology fields)
-        let standard_fields = vec!["author", "reviewer", "description"];
+        // Standard extra field names from config (these have priority over methodology fields)
+        let standard_fields: Vec<String> = if let Some(cfg) = config {
+            cfg.extra_fields.keys().map(|k| k.to_string()).collect()
+        } else {
+            // Fallback to hardcoded defaults if no config provided
+            vec!["description".to_string(), "author".to_string()]
+        };
 
         // Collect fields from each view
         for (methodology, level) in views {
@@ -79,7 +89,7 @@ impl MethodologyFieldCollector {
 
             for (field_name, field_config) in methodology_fields {
                 // Check if this conflicts with a standard field
-                if standard_fields.contains(&field_name.as_str()) {
+                if standard_fields.contains(&field_name) {
                     collection.warnings.push(format!(
                         "⚠️  Methodology '{}' defines field '{}' which conflicts with standard field. Using standard field.",
                         methodology, field_name

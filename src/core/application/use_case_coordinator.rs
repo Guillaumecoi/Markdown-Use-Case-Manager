@@ -101,6 +101,11 @@ impl UseCaseCoordinator {
     // Deleted: get_all_use_case_ids() - never used (PR #13)
     // Deleted: get_all_categories() - never used (PR #13)
 
+    /// Get reference to the configuration
+    pub fn get_config(&self) -> &Config {
+        &self.config
+    }
+
     // ========== Use Case Creation ==========
 
     /// Create a use case with specific methodology

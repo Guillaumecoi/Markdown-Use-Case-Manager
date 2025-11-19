@@ -31,7 +31,6 @@ backend = "toml"                      # Options: "toml" or "sqlite"
 # These extra fields can be added by editing TOML files directly or through the interactive CLI.
 # Methodology-specific custom fields are defined in each methodology's config.toml file.
 [extra_fields]
-description = { type = "string", required = true }
 author = { type = "string", required = false }
 reviewer = { type = "string", required = false }
 

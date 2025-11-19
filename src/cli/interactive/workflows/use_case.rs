@@ -341,45 +341,53 @@ impl UseCaseWorkflow {
             .with_help_message("Priority level for this use case")
             .prompt()?;
 
-        // Description (if not already provided)
-        let final_description = if description.is_some() {
-            description
-        } else {
-            Text::new("Description:")
-                .with_help_message("Brief description of what this use case accomplishes")
-                .prompt_skippable()?
-        };
+        // Prompt for extra fields from config
+        let config = runner.get_config()?;
+        let mut extra_field_values: HashMap<String, String> = HashMap::new();
 
-        // Author (optional)
-        let author = Text::new("Author (optional):")
-            .with_help_message("Person who created this use case")
-            .prompt_skippable()?;
+        // Handle description specially if provided as parameter
+        let final_description = description.clone();
 
-        // Reviewer (optional)
-        let reviewer = Text::new("Reviewer (optional):")
-            .with_help_message("Person responsible for reviewing this use case")
-            .prompt_skippable()?;
+        for (field_name, field_config) in &config.extra_fields {
+            // Skip description if already provided
+            if field_name == "description" && description.is_some() {
+                if let Some(desc) = &description {
+                    extra_field_values.insert(field_name.clone(), desc.clone());
+                }
+                continue;
+            }
+
+            let label = if field_config.required {
+                format!("{}:", field_name)
+            } else {
+                format!("{} (optional):", field_name)
+            };
+
+            let help_msg = field_config.description.as_deref()
+                .unwrap_or("Enter value for this field");
+
+            let value = if field_config.required {
+                Some(Text::new(&label)
+                    .with_help_message(help_msg)
+                    .prompt()?)
+            } else {
+                Text::new(&label)
+                    .with_help_message(help_msg)
+                    .prompt_skippable()?
+            };
+
+            if let Some(val) = value {
+                if !val.is_empty() {
+                    extra_field_values.insert(field_name.clone(), val);
+                }
+            }
+        }
 
         // Collect methodology-specific field values
         let methodology_field_values = Self::prompt_for_methodology_fields(runner, &views)?;
 
-        // Create the use case with additional fields (only truly extra fields)
-        let mut extra_fields = HashMap::new();
-
-        if let Some(auth) = author {
-            if !auth.is_empty() {
-                extra_fields.insert("author".to_string(), auth);
-            }
-        }
-
-        if let Some(rev) = reviewer {
-            if !rev.is_empty() {
-                extra_fields.insert("reviewer".to_string(), rev);
-            }
-        }
-
-        // Merge methodology field values into extra_fields
-        extra_fields.extend(methodology_field_values);
+        // Merge methodology fields into extra fields
+        extra_field_values.extend(methodology_field_values);
 
         let result = runner.create_use_case_with_views_and_fields(
             title,
@@ -387,7 +395,7 @@ impl UseCaseWorkflow {
             final_description,
             priority.to_string(),
             views.clone(),
-            extra_fields,
+            extra_field_values,
         )?;
 
         UI::show_success(&result)?;
@@ -423,6 +431,355 @@ impl UseCaseWorkflow {
         Ok(())
     }
 
+    /// Interactive use case editing workflow
+    pub fn edit_use_case() -> Result<()> {
+        UI::show_section_header("Edit Use Case", "✏️")?;
+
+        let mut runner = InteractiveRunner::new();
+
+        // Get list of use cases
+        let use_case_ids = runner.get_use_case_ids()?;
+
+        if use_case_ids.is_empty() {
+            UI::show_error("No use cases found. Please create a use case first.")?;
+            UI::pause_for_input()?;
+            return Ok(());
+        }
+
+        // Let user select which use case to edit
+        let selected_id = Select::new("Select use case to edit:", use_case_ids)
+            .with_help_message("Choose the use case you want to modify")
+            .prompt()?;
+
+        // Load use case details
+        let use_case = runner.get_use_case_details(&selected_id)?;
+
+        // Show edit menu
+        loop {
+            UI::clear_screen()?;
+            UI::show_section_header(&format!("Editing: {}", use_case.title), "✏️")?;
+            UI::show_info(&format!("ID: {}", use_case.id))?;
+            UI::show_info(&format!("Category: {}", use_case.category))?;
+
+            let edit_options = vec![
+                "Edit Basic Info (title, category, description, priority)",
+                "Edit Methodology Fields",
+                "Manage Views (add/remove)",
+                "Back to Menu",
+            ];
+
+            let choice = Select::new("What would you like to edit?", edit_options).prompt()?;
+
+            match choice {
+                "Edit Basic Info (title, category, description, priority)" => {
+                    Self::edit_basic_info(&mut runner, &selected_id, &use_case)?
+                }
+                "Edit Methodology Fields" => {
+                    Self::edit_methodology_fields(&mut runner, &selected_id, &use_case)?
+                }
+                "Manage Views (add/remove)" => {
+                    Self::manage_views(&mut runner, &selected_id, &use_case)?
+                }
+                "Back to Menu" => break,
+                _ => {}
+            }
+
+            // Reload use case after edits
+            let _use_case = runner.get_use_case_details(&selected_id)?;
+        }
+
+        UI::pause_for_input()?;
+        Ok(())
+    }
+
+    /// Edit basic use case information
+    fn edit_basic_info(
+        runner: &mut InteractiveRunner,
+        use_case_id: &str,
+        use_case: &crate::core::UseCase,
+    ) -> Result<()> {
+        UI::show_section_header("Edit Basic Information", "📝")?;
+
+        // Title
+        let new_title = Text::new("Title:")
+            .with_default(&use_case.title)
+            .with_help_message("Press Enter to keep current value")
+            .prompt()?;
+
+        let title = if new_title != use_case.title {
+            Some(new_title)
+        } else {
+            None
+        };
+
+        // Category
+        let new_category = Text::new("Category:")
+            .with_default(&use_case.category)
+            .with_help_message("Press Enter to keep current value")
+            .prompt()?;
+
+        let category = if new_category != use_case.category {
+            Some(new_category)
+        } else {
+            None
+        };
+
+        // Description
+        let current_desc = use_case.description.clone();
+        let new_description = Text::new("Description:")
+            .with_default(&current_desc)
+            .with_help_message("Press Enter to keep current value")
+            .prompt()?;
+
+        let description = if new_description != current_desc {
+            Some(new_description)
+        } else {
+            None
+        };
+
+        // Priority
+        let priority_options = vec!["Low", "Medium", "High", "Critical"];
+        let current_priority = format!("{:?}", use_case.priority);
+        let priority_idx = priority_options
+            .iter()
+            .position(|&p| p == current_priority)
+            .unwrap_or(1);
+
+        let new_priority = Select::new("Priority:", priority_options)
+            .with_starting_cursor(priority_idx)
+            .with_help_message("Select priority level")
+            .prompt()?;
+
+        let priority = if new_priority != current_priority {
+            Some(new_priority.to_string())
+        } else {
+            None
+        };
+
+        // Only update if something changed
+        if title.is_none() && category.is_none() && description.is_none() && priority.is_none() {
+            UI::show_info("No changes made.")?;
+            return Ok(());
+        }
+
+        let result = runner.update_use_case(
+            use_case_id.to_string(),
+            title,
+            category,
+            description,
+            priority,
+        )?;
+
+        UI::show_success(&result)?;
+        UI::pause_for_input()?;
+        Ok(())
+    }
+
+    /// Edit methodology-specific fields
+    fn edit_methodology_fields(
+        runner: &mut InteractiveRunner,
+        use_case_id: &str,
+        use_case: &crate::core::UseCase,
+    ) -> Result<()> {
+        UI::show_section_header("Edit Methodology Fields", "🎯")?;
+
+        // Get list of methodologies in this use case
+        let methodologies: Vec<String> = use_case
+            .views
+            .iter()
+            .map(|v| format!("{}:{}", v.methodology, v.level))
+            .collect();
+
+        if methodologies.is_empty() {
+            UI::show_error("No methodology views found in this use case.")?;
+            UI::pause_for_input()?;
+            return Ok(());
+        }
+
+        // Let user select which methodology to edit
+        let selected = Select::new("Select methodology to edit:", methodologies)
+            .with_help_message("Choose which view's fields to modify")
+            .prompt()?;
+
+        let (methodology, level) = selected.split_once(':').context("Invalid methodology format")?;
+
+        // Collect field definitions for this methodology
+        let views = vec![(methodology.to_string(), level.to_string())];
+        let field_collection = runner.collect_methodology_fields(&views)?;
+
+        if field_collection.fields.is_empty() {
+            UI::show_info("No custom fields defined for this methodology.")?;
+            UI::pause_for_input()?;
+            return Ok(());
+        }
+
+        // Get current values
+        let current_values = runner.get_methodology_field_values(use_case_id, methodology)?;
+
+        // Prompt for each field
+        let mut updated_fields = HashMap::new();
+
+        UI::show_info("Press Enter to keep current value, or type new value:")?;
+
+        for (field_name, field_def) in &field_collection.fields {
+            let current = current_values
+                .get(field_name)
+                .map(|v| format!("{}", v))
+                .unwrap_or_else(|| "".to_string());
+
+            let prompt_text = format!("{} (current: {})", field_def.label, current);
+
+            let new_value = Text::new(&prompt_text)
+                .with_default(&current)
+                .with_help_message(&field_def.description.clone().unwrap_or_default())
+                .prompt()?;
+
+            if new_value != current {
+                updated_fields.insert(field_name.clone(), new_value);
+            }
+        }
+
+        if updated_fields.is_empty() {
+            UI::show_info("No changes made.")?;
+            return Ok(());
+        }
+
+        let result = runner.update_methodology_fields(use_case_id, methodology, updated_fields)?;
+
+        UI::show_success(&result)?;
+        UI::pause_for_input()?;
+        Ok(())
+    }
+
+    /// Manage views (add/remove)
+    fn manage_views(
+        runner: &mut InteractiveRunner,
+        use_case_id: &str,
+        use_case: &crate::core::UseCase,
+    ) -> Result<()> {
+        UI::show_section_header("Manage Views", "👁️")?;
+
+        // Show current views
+        UI::show_info("Current views:")?;
+        for view in &use_case.views {
+            println!("  • {}:{} {}", view.methodology, view.level, if view.enabled { "" } else { "(disabled)" });
+        }
+
+        let options = vec!["Add New View", "Remove View", "Back"];
+
+        let choice = Select::new("What would you like to do?", options).prompt()?;
+
+        match choice {
+            "Add New View" => {
+                let methodologies = runner.get_installed_methodologies()?;
+
+                if methodologies.is_empty() {
+                    UI::show_error("No methodologies available.")?;
+                    UI::pause_for_input()?;
+                    return Ok(());
+                }
+
+                // Select methodology
+                let methodology_options: Vec<String> = methodologies
+                    .iter()
+                    .map(|m| format!("{} - {}", m.display_name, m.description))
+                    .collect();
+
+                let selected_idx = Select::new("Select methodology:", methodology_options).prompt()?;
+
+                let selected_methodology = &methodologies[methodologies
+                    .iter()
+                    .position(|m| format!("{} - {}", m.display_name, m.description) == selected_idx)
+                    .context("Selected methodology not found")?];
+
+                let methodology_name = selected_methodology.name.clone();
+
+                // Get available levels
+                let available_levels = runner.get_methodology_levels(&methodology_name)?;
+
+                if available_levels.is_empty() {
+                    UI::show_error(&format!(
+                        "No levels available for methodology '{}'",
+                        methodology_name
+                    ))?;
+                    UI::pause_for_input()?;
+                    return Ok(());
+                }
+
+                // Select level
+                let level_options: Vec<String> = available_levels
+                    .iter()
+                    .map(|level| {
+                        let display_name = level
+                            .name
+                            .chars()
+                            .enumerate()
+                            .map(|(i, c)| {
+                                if i == 0 {
+                                    c.to_uppercase().next().unwrap()
+                                } else {
+                                    c
+                                }
+                            })
+                            .collect::<String>();
+                        format!("{} - {}", display_name, level.description)
+                    })
+                    .collect();
+
+                let selected_level_display = Select::new("Select level:", level_options).prompt()?;
+
+                let level = selected_level_display
+                    .split(" - ")
+                    .next()
+                    .context("Failed to parse level name")?
+                    .to_lowercase();
+
+                // Add the view
+                let result =
+                    runner.add_view_to_use_case(use_case_id, &methodology_name, &level)?;
+
+                UI::show_success(&result)?;
+                UI::pause_for_input()?;
+            }
+            "Remove View" => {
+                if use_case.views.len() == 1 {
+                    UI::show_error("Cannot remove the last view from a use case.")?;
+                    UI::pause_for_input()?;
+                    return Ok(());
+                }
+
+                let view_options: Vec<String> = use_case
+                    .views
+                    .iter()
+                    .map(|v| format!("{}:{}", v.methodology, v.level))
+                    .collect();
+
+                let selected = Select::new("Select view to remove:", view_options).prompt()?;
+
+                let methodology = selected
+                    .split(':')
+                    .next()
+                    .context("Invalid view format")?;
+
+                let confirm = Confirm::new(&format!("Remove view '{}'?", selected))
+                    .with_default(false)
+                    .prompt()?;
+
+                if confirm {
+                    let result = runner.remove_view_from_use_case(use_case_id, methodology)?;
+                    UI::show_success(&result)?;
+                } else {
+                    UI::show_info("Removal cancelled.")?;
+                }
+
+                UI::pause_for_input()?;
+            }
+            _ => {}
+        }
+
+        Ok(())
+    }
+
     /// Interactive use case management menu
     pub fn manage_use_cases() -> Result<()> {
         UI::clear_screen()?;
@@ -431,6 +788,7 @@ impl UseCaseWorkflow {
         loop {
             let options = vec![
                 "Create New Use Case",
+                "Edit Use Case",
                 "List All Use Cases",
                 "Show Project Status",
                 "Back to Main Menu",
@@ -440,6 +798,7 @@ impl UseCaseWorkflow {
 
             match choice {
                 "Create New Use Case" => Self::create_use_case()?,
+                "Edit Use Case" => Self::edit_use_case()?,
                 "List All Use Cases" => Self::list_use_cases()?,
                 "Show Project Status" => Self::show_status()?,
                 "Back to Main Menu" => break,

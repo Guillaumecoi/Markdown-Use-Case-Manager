@@ -143,9 +143,13 @@ impl TemplateManager {
     /// Locate the source templates directory.
     ///
     /// Searches for the source-templates directory in multiple locations:
-    /// 1. Current working directory
-    /// 2. CARGO_MANIFEST_DIR environment variable (for tests/builds)
-    /// 3. Relative to the current executable path
+    /// 1. User config directory (~/.config/mucm/templates/)
+    /// 2. Current working directory
+    /// 3. CARGO_MANIFEST_DIR environment variable (for tests/builds)
+    /// 4. Relative to the current executable path
+    ///
+    /// If templates are found in development locations (2-4) but not in user config,
+    /// they are automatically copied to ~/.config/mucm/templates/ for future use.
     ///
     /// # Returns
     /// The path to the source-templates directory, or an error if not found.
@@ -154,9 +158,30 @@ impl TemplateManager {
     /// Returns an error if the source-templates directory cannot be located
     /// in any of the expected locations.
     pub fn find_source_templates_dir() -> Result<PathBuf> {
-        // Try current directory first
+        use directories::ProjectDirs;
+
+        // Try user config directory first (~/.config/mucm/templates/)
+        if let Some(proj_dirs) = ProjectDirs::from("", "", "mucm") {
+            let user_templates = proj_dirs.config_dir().join("templates");
+            if user_templates.exists() {
+                return Ok(user_templates);
+            }
+        }
+
+        // Try current directory
         let local_templates = Path::new("source-templates");
         if local_templates.exists() {
+            // Found in dev location - install to user config for future use
+            Self::install_templates_to_user_config(&local_templates)?;
+            
+            // Return user config path if installation succeeded
+            if let Some(proj_dirs) = ProjectDirs::from("", "", "mucm") {
+                let user_templates = proj_dirs.config_dir().join("templates");
+                if user_templates.exists() {
+                    return Ok(user_templates);
+                }
+            }
+            
             return Ok(local_templates.to_path_buf());
         }
 
@@ -164,6 +189,17 @@ impl TemplateManager {
         if let Ok(manifest_dir) = std::env::var("CARGO_MANIFEST_DIR") {
             let cargo_templates = Path::new(&manifest_dir).join("source-templates");
             if cargo_templates.exists() {
+                // Found in dev location - install to user config for future use
+                Self::install_templates_to_user_config(&cargo_templates)?;
+                
+                // Return user config path if installation succeeded
+                if let Some(proj_dirs) = ProjectDirs::from("", "", "mucm") {
+                    let user_templates = proj_dirs.config_dir().join("templates");
+                    if user_templates.exists() {
+                        return Ok(user_templates);
+                    }
+                }
+                
                 return Ok(cargo_templates);
             }
         }
@@ -178,13 +214,65 @@ impl TemplateManager {
                     .map(|p| p.join("source-templates"));
                 if let Some(dev_templates) = dev_templates {
                     if dev_templates.exists() {
+                        // Found in dev location - install to user config for future use
+                        Self::install_templates_to_user_config(&dev_templates)?;
+                        
+                        // Return user config path if installation succeeded
+                        if let Some(proj_dirs) = ProjectDirs::from("", "", "mucm") {
+                            let user_templates = proj_dirs.config_dir().join("templates");
+                            if user_templates.exists() {
+                                return Ok(user_templates);
+                            }
+                        }
+                        
                         return Ok(dev_templates);
                     }
                 }
             }
         }
 
-        anyhow::bail!("Source templates directory not found. Run from project root or ensure source-templates/ exists.")
+        anyhow::bail!(
+            "Source templates directory not found. Run from project root or ensure source-templates/ exists.\n\
+             Tip: Templates should be installed to ~/.config/mucm/templates/ automatically on first run."
+        )
+    }
+
+    /// Install templates to user config directory (~/.config/mucm/templates/)
+    ///
+    /// This function copies the source templates from a development location
+    /// to the user's config directory for persistent use across runs.
+    ///
+    /// # Arguments
+    /// * `source_path` - Path to the source-templates directory to copy from
+    ///
+    /// # Returns
+    /// Ok(()) if successful, or an error if the copy fails
+    fn install_templates_to_user_config(source_path: &Path) -> Result<()> {
+        use directories::ProjectDirs;
+
+        let proj_dirs = ProjectDirs::from("", "", "mucm")
+            .ok_or_else(|| anyhow::anyhow!("Could not determine user config directory"))?;
+
+        let user_templates_dir = proj_dirs.config_dir().join("templates");
+
+        // Skip if already exists
+        if user_templates_dir.exists() {
+            return Ok(());
+        }
+
+        // Create parent directory
+        if let Some(parent) = user_templates_dir.parent() {
+            fs::create_dir_all(parent)
+                .context("Failed to create user config directory")?;
+        }
+
+        // Copy templates recursively
+        Self::copy_dir_recursive(source_path, &user_templates_dir)
+            .context("Failed to copy templates to user config directory")?;
+
+        eprintln!("✓ Installed templates to {}", user_templates_dir.display());
+        
+        Ok(())
     }
 
     /// Copy all templates to the configuration directory.

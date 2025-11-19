@@ -52,7 +52,7 @@ impl UseCaseCreator {
         // Collect and store methodology fields for this view
         let collector = MethodologyFieldCollector::new()?;
         let collection = collector
-            .collect_fields_for_views(&[(methodology.to_string(), "normal".to_string())])?;
+            .collect_fields_for_views(&[(methodology.to_string(), "normal".to_string())], None)?;
 
         // Store fields grouped by methodology
         if !collection.fields.is_empty() {
@@ -112,7 +112,7 @@ impl UseCaseCreator {
         // Collect methodology fields
         let collector = MethodologyFieldCollector::new()?;
         let collection = collector
-            .collect_fields_for_views(&[(methodology.to_string(), "normal".to_string())])?;
+            .collect_fields_for_views(&[(methodology.to_string(), "normal".to_string())], None)?;
 
         // Store fields grouped by methodology, with user overrides
         let mut methodology_fields = HashMap::new();
@@ -182,7 +182,7 @@ impl UseCaseCreator {
             .map(|v| (v.methodology.clone(), v.level.clone()))
             .collect();
 
-        let field_collection = match collector.collect_fields_for_views(&view_pairs) {
+        let field_collection = match collector.collect_fields_for_views(&view_pairs, None) {
             Ok(collection) => collection,
             Err(e) => {
                 eprintln!(
@@ -198,8 +198,25 @@ impl UseCaseCreator {
             eprintln!("{}", warning);
         }
 
-        // Apply user-provided values to the collected fields
-        let methodology_field_values = collector.apply_user_values(&field_collection, user_fields);
+        // Separate extra fields from methodology fields
+        let collected_field_names: std::collections::HashSet<String> = 
+            field_collection.fields.keys().cloned().collect();
+        
+        let mut extra_field_values: HashMap<String, String> = HashMap::new();
+        let mut methodology_only_fields: HashMap<String, String> = HashMap::new();
+        
+        for (field_name, field_value) in user_fields {
+            if collected_field_names.contains(&field_name) {
+                // This is a methodology field
+                methodology_only_fields.insert(field_name, field_value);
+            } else {
+                // This is an extra field (description, author, custom, etc.)
+                extra_field_values.insert(field_name, field_value);
+            }
+        }
+
+        // Apply user-provided values to the collected methodology fields
+        let methodology_field_values = collector.apply_user_values(&field_collection, methodology_only_fields);
 
         // Group fields by methodology for storage in methodology_fields
         let mut methodology_fields: HashMap<String, HashMap<String, Value>> = HashMap::new();
@@ -224,13 +241,18 @@ impl UseCaseCreator {
             }
         }
 
-        // Create the use case with empty extra fields (methodology fields go in methodology_fields)
+        // Create the use case
         let mut use_case =
             UseCase::new(use_case_id.clone(), title, category, description, priority)
                 .map_err(|e| anyhow::anyhow!(e))?;
 
         // Set methodology fields
         use_case.methodology_fields = methodology_fields;
+
+        // Set extra fields (author, custom, etc.)
+        for (field_name, field_value) in extra_field_values {
+            use_case.extra.insert(field_name, Value::String(field_value));
+        }
 
         // Add all views
         for view in views {
