@@ -12,6 +12,7 @@ use crate::core::{
     UseCase, UseCaseRepository,
 };
 use anyhow::Result;
+use std::collections::HashMap;
 
 /// Application service that coordinates use case operations
 /// This replaces the old UseCaseCoordinator with clean architecture
@@ -200,31 +201,26 @@ impl UseCaseApplicationService {
             return Err(anyhow::anyhow!("At least one view must be specified"));
         }
 
-        // Get first view's methodology for initial creation
+        // Get first view's methodology for markdown generation
         let first_methodology = view_list[0].methodology.clone();
 
-        // Create use case with first methodology (but don't generate markdown yet)
-        let use_case = self.use_case_creator.create_use_case_with_methodology(
+        // Use the new create_use_case_with_views method with empty user fields
+        let use_case = self.use_case_creator.create_use_case_with_views(
             title,
             category,
             description,
             "Medium".to_string(), // Default priority for create_use_case_with_views
-            &first_methodology,
+            view_list,
+            HashMap::new(), // No user fields provided
             &self.use_cases,
             self.repository.as_ref(),
         )?;
 
-        // Add all views to the use case
-        let mut use_case_with_views = use_case;
-        for view in view_list {
-            use_case_with_views.add_view(view);
-        }
-
-        let use_case_id = use_case_with_views.id.clone();
+        let use_case_id = use_case.id.clone();
 
         // Save and generate markdown for all views (multi-view mode)
-        self.save_use_case_with_methodology(&use_case_with_views, &first_methodology)?;
-        self.use_cases.push(use_case_with_views);
+        self.save_use_case_with_methodology(&use_case, &first_methodology)?;
+        self.use_cases.push(use_case);
         self.generate_overview()?;
 
         Ok(use_case_id)
@@ -274,32 +270,26 @@ impl UseCaseApplicationService {
             return Err(anyhow::anyhow!("At least one view must be specified"));
         }
 
-        // Get first view's methodology for initial creation
+        // Get first view's methodology for markdown generation
         let first_methodology = view_list[0].methodology.clone();
 
-        // Create use case with first methodology and custom fields
-        let use_case = self.use_case_creator.create_use_case_with_custom_fields(
+        // Use the new create_use_case_with_views method that properly handles methodology_fields
+        let use_case = self.use_case_creator.create_use_case_with_views(
             title,
             category,
             description,
             priority,
-            &first_methodology,
+            view_list,
             extra_fields,
             &self.use_cases,
             self.repository.as_ref(),
         )?;
 
-        // Add all views to the use case
-        let mut use_case_with_views = use_case;
-        for view in view_list {
-            use_case_with_views.add_view(view);
-        }
-
-        let use_case_id = use_case_with_views.id.clone();
+        let use_case_id = use_case.id.clone();
 
         // Save and generate markdown for all views (multi-view mode)
-        self.save_use_case_with_methodology(&use_case_with_views, &first_methodology)?;
-        self.use_cases.push(use_case_with_views);
+        self.save_use_case_with_methodology(&use_case, &first_methodology)?;
+        self.use_cases.push(use_case);
         self.generate_overview()?;
 
         Ok(use_case_id)

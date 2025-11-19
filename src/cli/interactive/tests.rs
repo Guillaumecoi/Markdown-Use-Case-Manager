@@ -76,9 +76,10 @@ mod interactive_runner_tests {
             vec![("business".to_string(), "normal".to_string())],
         );
 
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "Failed to create use case: {:?}", result);
         let message = result.unwrap();
-        assert!(message.contains("Created multi-view use case"));
+        eprintln!("Actual message: {}", message);
+        assert!(message.contains("Created multi-view use case"), "Message was: {}", message);
     }
 
     #[test]
