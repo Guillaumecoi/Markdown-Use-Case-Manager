@@ -173,7 +173,7 @@ impl TemplateManager {
         if local_templates.exists() {
             // Found in dev location - install to user config for future use
             Self::install_templates_to_user_config(&local_templates)?;
-            
+
             // Return user config path if installation succeeded
             if let Some(proj_dirs) = ProjectDirs::from("", "", "mucm") {
                 let user_templates = proj_dirs.config_dir().join("templates");
@@ -181,7 +181,7 @@ impl TemplateManager {
                     return Ok(user_templates);
                 }
             }
-            
+
             return Ok(local_templates.to_path_buf());
         }
 
@@ -191,7 +191,7 @@ impl TemplateManager {
             if cargo_templates.exists() {
                 // Found in dev location - install to user config for future use
                 Self::install_templates_to_user_config(&cargo_templates)?;
-                
+
                 // Return user config path if installation succeeded
                 if let Some(proj_dirs) = ProjectDirs::from("", "", "mucm") {
                     let user_templates = proj_dirs.config_dir().join("templates");
@@ -199,7 +199,7 @@ impl TemplateManager {
                         return Ok(user_templates);
                     }
                 }
-                
+
                 return Ok(cargo_templates);
             }
         }
@@ -216,7 +216,7 @@ impl TemplateManager {
                     if dev_templates.exists() {
                         // Found in dev location - install to user config for future use
                         Self::install_templates_to_user_config(&dev_templates)?;
-                        
+
                         // Return user config path if installation succeeded
                         if let Some(proj_dirs) = ProjectDirs::from("", "", "mucm") {
                             let user_templates = proj_dirs.config_dir().join("templates");
@@ -224,7 +224,7 @@ impl TemplateManager {
                                 return Ok(user_templates);
                             }
                         }
-                        
+
                         return Ok(dev_templates);
                     }
                 }
@@ -262,8 +262,7 @@ impl TemplateManager {
 
         // Create parent directory
         if let Some(parent) = user_templates_dir.parent() {
-            fs::create_dir_all(parent)
-                .context("Failed to create user config directory")?;
+            fs::create_dir_all(parent).context("Failed to create user config directory")?;
         }
 
         // Copy templates recursively
@@ -271,7 +270,7 @@ impl TemplateManager {
             .context("Failed to copy templates to user config directory")?;
 
         eprintln!("✓ Installed templates to {}", user_templates_dir.display());
-        
+
         Ok(())
     }
 
@@ -547,6 +546,8 @@ mod tests {
     #[test]
     #[serial]
     fn test_find_source_templates_dir_current_dir() -> Result<()> {
+        use directories::ProjectDirs;
+
         let temp_dir = TempDir::new()?;
         std::env::set_current_dir(&temp_dir)?;
 
@@ -554,7 +555,20 @@ mod tests {
         fs::create_dir("source-templates")?;
 
         let result = TemplateManager::find_source_templates_dir()?;
-        assert_eq!(result, Path::new("source-templates"));
+
+        // The function now auto-installs to user config, so check for either location
+        let is_valid = if let Some(proj_dirs) = ProjectDirs::from("", "", "mucm") {
+            let user_templates = proj_dirs.config_dir().join("templates");
+            result == user_templates || result == Path::new("source-templates")
+        } else {
+            result == Path::new("source-templates")
+        };
+
+        assert!(
+            is_valid,
+            "Expected templates in user config or local dir, got: {:?}",
+            result
+        );
 
         Ok(())
     }
@@ -562,6 +576,8 @@ mod tests {
     #[test]
     #[serial]
     fn test_find_source_templates_dir_manifest_dir() -> Result<()> {
+        use directories::ProjectDirs;
+
         let temp_dir = TempDir::new()?;
         std::env::set_current_dir(&temp_dir)?;
 
@@ -570,10 +586,23 @@ mod tests {
         let expected_path = manifest_dir.join("source-templates");
         fs::create_dir(&manifest_dir)?;
         fs::create_dir(&expected_path)?;
-        std::env::set_var("CARGO_MANIFEST_DIR", manifest_dir);
+        std::env::set_var("CARGO_MANIFEST_DIR", &manifest_dir);
 
         let result = TemplateManager::find_source_templates_dir()?;
-        assert_eq!(result, expected_path);
+
+        // The function now auto-installs to user config, so check for either location
+        let is_valid = if let Some(proj_dirs) = ProjectDirs::from("", "", "mucm") {
+            let user_templates = proj_dirs.config_dir().join("templates");
+            result == user_templates || result == expected_path
+        } else {
+            result == expected_path
+        };
+
+        assert!(
+            is_valid,
+            "Expected templates in user config or manifest dir, got: {:?}",
+            result
+        );
 
         // Clean up
         std::env::remove_var("CARGO_MANIFEST_DIR");
@@ -584,6 +613,8 @@ mod tests {
     #[test]
     #[serial]
     fn test_find_source_templates_dir_not_found() -> Result<()> {
+        use directories::ProjectDirs;
+
         let temp_dir = TempDir::new()?;
         std::env::set_current_dir(&temp_dir)?;
 
@@ -591,6 +622,22 @@ mod tests {
         std::env::remove_var("CARGO_MANIFEST_DIR");
 
         let result = TemplateManager::find_source_templates_dir();
+
+        // If user config directory exists from previous runs, the function will succeed
+        // Otherwise it should fail
+        if let Some(proj_dirs) = ProjectDirs::from("", "", "mucm") {
+            let user_templates = proj_dirs.config_dir().join("templates");
+            if user_templates.exists() {
+                // Templates exist in user config, so function should succeed
+                assert!(
+                    result.is_ok(),
+                    "Expected success when user config templates exist"
+                );
+                return Ok(());
+            }
+        }
+
+        // No templates anywhere, should fail
         assert!(result.is_err());
         assert!(result
             .unwrap_err()

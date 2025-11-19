@@ -101,11 +101,6 @@ impl UseCaseCoordinator {
     // Deleted: get_all_use_case_ids() - never used (PR #13)
     // Deleted: get_all_categories() - never used (PR #13)
 
-    /// Get reference to the configuration
-    pub fn get_config(&self) -> &Config {
-        &self.config
-    }
-
     // ========== Use Case Creation ==========
 
     /// Create a use case with specific methodology
@@ -826,11 +821,7 @@ impl UseCaseCoordinator {
             .ok_or_else(|| anyhow::anyhow!("Use case {} not found", use_case_id))?;
 
         // Verify methodology exists in views
-        if !use_case
-            .views
-            .iter()
-            .any(|v| v.methodology == methodology)
-        {
+        if !use_case.views.iter().any(|v| v.methodology == methodology) {
             return Err(anyhow::anyhow!(
                 "Methodology {} not found in use case views",
                 methodology
@@ -887,12 +878,7 @@ impl UseCaseCoordinator {
     /// - View with same methodology already exists
     /// - Repository save fails
     /// - Markdown generation fails
-    pub fn add_view(
-        &mut self,
-        use_case_id: &str,
-        methodology: &str,
-        level: &str,
-    ) -> Result<()> {
+    pub fn add_view(&mut self, use_case_id: &str, methodology: &str, level: &str) -> Result<()> {
         // Load existing use case
         let mut use_case = self
             .repository
@@ -900,11 +886,7 @@ impl UseCaseCoordinator {
             .ok_or_else(|| anyhow::anyhow!("Use case {} not found", use_case_id))?;
 
         // Check if view already exists
-        if use_case
-            .views
-            .iter()
-            .any(|v| v.methodology == methodology)
-        {
+        if use_case.views.iter().any(|v| v.methodology == methodology) {
             return Err(anyhow::anyhow!(
                 "View for methodology {} already exists",
                 methodology
@@ -973,7 +955,10 @@ impl UseCaseCoordinator {
         // Check if methodology exists in views
         let view_exists = use_case.views.iter().any(|v| v.methodology == methodology);
         if !view_exists {
-            return Err(anyhow::anyhow!("View {} not found in use case", methodology));
+            return Err(anyhow::anyhow!(
+                "View {} not found in use case",
+                methodology
+            ));
         }
 
         // Remove the view by retaining all except the one to remove

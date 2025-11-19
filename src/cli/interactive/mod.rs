@@ -27,6 +27,7 @@
 //! - **Main Menu**: Central navigation hub for all interactive features
 
 // Private modules - used only within CLI interactive
+mod field_helpers;
 mod menus;
 mod runner;
 mod selectors;

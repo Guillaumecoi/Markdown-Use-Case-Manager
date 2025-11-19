@@ -54,11 +54,6 @@ impl UseCaseController {
         Ok(Self { app_service })
     }
 
-    /// Get reference to the configuration
-    pub fn get_config(&self) -> &Config {
-        self.app_service.get_config()
-    }
-
     /// Create a new use case with flexible options.
     ///
     /// Creates a use case with optional methodology, views, priority, and custom fields.
@@ -1087,7 +1082,11 @@ impl UseCaseController {
     ///
     /// # Errors
     /// Returns error if use case not found or if it's the last view
-    pub fn remove_view(&mut self, use_case_id: String, methodology: String) -> Result<DisplayResult> {
+    pub fn remove_view(
+        &mut self,
+        use_case_id: String,
+        methodology: String,
+    ) -> Result<DisplayResult> {
         match self.app_service.remove_view(&use_case_id, &methodology) {
             Ok(_) => {
                 let message = format!(

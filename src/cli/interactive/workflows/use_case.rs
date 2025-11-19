@@ -7,7 +7,7 @@ use anyhow::{Context, Result};
 use inquire::{Confirm, Select, Text};
 use std::collections::HashMap;
 
-use crate::cli::interactive::{runner::InteractiveRunner, ui::UI};
+use crate::cli::interactive::{field_helpers::FieldHelpers, runner::InteractiveRunner, ui::UI};
 
 /// Use case workflow handler
 pub struct UseCaseWorkflow;
@@ -341,53 +341,45 @@ impl UseCaseWorkflow {
             .with_help_message("Priority level for this use case")
             .prompt()?;
 
-        // Prompt for extra fields from config
-        let config = runner.get_config()?;
-        let mut extra_field_values: HashMap<String, String> = HashMap::new();
+        // Description (if not already provided)
+        let final_description = if description.is_some() {
+            description
+        } else {
+            Text::new("Description:")
+                .with_help_message("Brief description of what this use case accomplishes")
+                .prompt_skippable()?
+        };
 
-        // Handle description specially if provided as parameter
-        let final_description = description.clone();
+        // Author (optional)
+        let author = Text::new("Author (optional):")
+            .with_help_message("Person who created this use case")
+            .prompt_skippable()?;
 
-        for (field_name, field_config) in &config.extra_fields {
-            // Skip description if already provided
-            if field_name == "description" && description.is_some() {
-                if let Some(desc) = &description {
-                    extra_field_values.insert(field_name.clone(), desc.clone());
-                }
-                continue;
-            }
-
-            let label = if field_config.required {
-                format!("{}:", field_name)
-            } else {
-                format!("{} (optional):", field_name)
-            };
-
-            let help_msg = field_config.description.as_deref()
-                .unwrap_or("Enter value for this field");
-
-            let value = if field_config.required {
-                Some(Text::new(&label)
-                    .with_help_message(help_msg)
-                    .prompt()?)
-            } else {
-                Text::new(&label)
-                    .with_help_message(help_msg)
-                    .prompt_skippable()?
-            };
-
-            if let Some(val) = value {
-                if !val.is_empty() {
-                    extra_field_values.insert(field_name.clone(), val);
-                }
-            }
-        }
+        // Reviewer (optional)
+        let reviewer = Text::new("Reviewer (optional):")
+            .with_help_message("Person responsible for reviewing this use case")
+            .prompt_skippable()?;
 
         // Collect methodology-specific field values
         let methodology_field_values = Self::prompt_for_methodology_fields(runner, &views)?;
 
-        // Merge methodology fields into extra fields
-        extra_field_values.extend(methodology_field_values);
+        // Create the use case with additional fields (only truly extra fields)
+        let mut extra_fields = HashMap::new();
+
+        if let Some(auth) = author {
+            if !auth.is_empty() {
+                extra_fields.insert("author".to_string(), auth);
+            }
+        }
+
+        if let Some(rev) = reviewer {
+            if !rev.is_empty() {
+                extra_fields.insert("reviewer".to_string(), rev);
+            }
+        }
+
+        // Merge methodology field values into extra_fields
+        extra_fields.extend(methodology_field_values);
 
         let result = runner.create_use_case_with_views_and_fields(
             title,
@@ -395,7 +387,7 @@ impl UseCaseWorkflow {
             final_description,
             priority.to_string(),
             views.clone(),
-            extra_field_values,
+            extra_fields,
         )?;
 
         UI::show_success(&result)?;
@@ -601,7 +593,9 @@ impl UseCaseWorkflow {
             .with_help_message("Choose which view's fields to modify")
             .prompt()?;
 
-        let (methodology, level) = selected.split_once(':').context("Invalid methodology format")?;
+        let (methodology, level) = selected
+            .split_once(':')
+            .context("Invalid methodology format")?;
 
         // Collect field definitions for this methodology
         let views = vec![(methodology.to_string(), level.to_string())];
@@ -619,22 +613,19 @@ impl UseCaseWorkflow {
         // Prompt for each field
         let mut updated_fields = HashMap::new();
 
-        UI::show_info("Press Enter to keep current value, or type new value:")?;
+        UI::show_info("Choose fields to edit (smart input based on field type):")?;
 
         for (field_name, field_def) in &field_collection.fields {
-            let current = current_values
-                .get(field_name)
-                .map(|v| format!("{}", v))
-                .unwrap_or_else(|| "".to_string());
+            let current_json = current_values.get(field_name);
+            let help_msg = field_def.description.clone().unwrap_or_default();
 
-            let prompt_text = format!("{} (current: {})", field_def.label, current);
-
-            let new_value = Text::new(&prompt_text)
-                .with_default(&current)
-                .with_help_message(&field_def.description.clone().unwrap_or_default())
-                .prompt()?;
-
-            if new_value != current {
+            // Use FieldHelpers to handle different field types automatically
+            if let Some(new_value) = FieldHelpers::edit_by_type(
+                &field_def.field_type,
+                &field_def.label,
+                current_json,
+                &help_msg,
+            )? {
                 updated_fields.insert(field_name.clone(), new_value);
             }
         }
@@ -662,7 +653,12 @@ impl UseCaseWorkflow {
         // Show current views
         UI::show_info("Current views:")?;
         for view in &use_case.views {
-            println!("  • {}:{} {}", view.methodology, view.level, if view.enabled { "" } else { "(disabled)" });
+            println!(
+                "  • {}:{} {}",
+                view.methodology,
+                view.level,
+                if view.enabled { "" } else { "(disabled)" }
+            );
         }
 
         let options = vec!["Add New View", "Remove View", "Back"];
@@ -685,7 +681,8 @@ impl UseCaseWorkflow {
                     .map(|m| format!("{} - {}", m.display_name, m.description))
                     .collect();
 
-                let selected_idx = Select::new("Select methodology:", methodology_options).prompt()?;
+                let selected_idx =
+                    Select::new("Select methodology:", methodology_options).prompt()?;
 
                 let selected_methodology = &methodologies[methodologies
                     .iter()
@@ -726,7 +723,8 @@ impl UseCaseWorkflow {
                     })
                     .collect();
 
-                let selected_level_display = Select::new("Select level:", level_options).prompt()?;
+                let selected_level_display =
+                    Select::new("Select level:", level_options).prompt()?;
 
                 let level = selected_level_display
                     .split(" - ")
@@ -735,8 +733,7 @@ impl UseCaseWorkflow {
                     .to_lowercase();
 
                 // Add the view
-                let result =
-                    runner.add_view_to_use_case(use_case_id, &methodology_name, &level)?;
+                let result = runner.add_view_to_use_case(use_case_id, &methodology_name, &level)?;
 
                 UI::show_success(&result)?;
                 UI::pause_for_input()?;
@@ -756,10 +753,7 @@ impl UseCaseWorkflow {
 
                 let selected = Select::new("Select view to remove:", view_options).prompt()?;
 
-                let methodology = selected
-                    .split(':')
-                    .next()
-                    .context("Invalid view format")?;
+                let methodology = selected.split(':').next().context("Invalid view format")?;
 
                 let confirm = Confirm::new(&format!("Remove view '{}'?", selected))
                     .with_default(false)

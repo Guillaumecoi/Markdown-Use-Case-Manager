@@ -68,12 +68,6 @@ impl InteractiveRunner {
             .expect("controller was just initialized"))
     }
 
-    /// Get the configuration
-    pub fn get_config(&mut self) -> Result<&crate::config::Config> {
-        let controller = self.ensure_use_case_controller()?;
-        Ok(controller.get_config())
-    }
-
     /// Get available programming languages for selection
     pub fn get_available_languages(&self) -> Result<Vec<String>> {
         let selection_options = ProjectController::get_available_languages()?;
@@ -92,9 +86,7 @@ impl InteractiveRunner {
         views: &[(String, String)],
     ) -> Result<FieldCollection> {
         let collector = MethodologyFieldCollector::new()?;
-        // Pass None for config since we can't access it here (would need &mut self)
-        // The collector will use hardcoded defaults as fallback
-        collector.collect_fields_for_views(views, None)
+        collector.collect_fields_for_views(views)
     }
 
     /// Get installed/configured methodologies in the project (for creating use cases)
