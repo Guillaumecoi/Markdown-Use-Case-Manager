@@ -860,6 +860,28 @@ impl CliRunner {
             Ok(DisplayResult::success(output))
         }
     }
+
+    /// Clean up orphaned methodology fields from use cases
+    ///
+    /// Scans methodology_fields and removes entries for methodologies not used by any enabled view.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - Optional specific use case to clean. If None, cleans all use cases.
+    /// * `dry_run` - If true, shows what would be cleaned without making changes
+    ///
+    /// # Returns
+    /// DisplayResult with summary of cleanup operation
+    ///
+    /// # Errors
+    /// Returns error if use case not found or cleanup fails
+    pub fn cleanup_methodology_fields(
+        &mut self,
+        use_case_id: Option<String>,
+        dry_run: bool,
+    ) -> Result<DisplayResult> {
+        let controller = self.ensure_use_case_controller()?;
+        controller.cleanup_methodology_fields(use_case_id, dry_run)
+    }
 }
 
 #[cfg(test)]

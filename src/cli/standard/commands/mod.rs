@@ -5,6 +5,7 @@
 /// business logic to the CliRunner. This separation keeps the CLI layer
 /// focused on user interaction while the runner manages domain operations.
 // Private modules
+mod cleanup;
 mod fields;
 mod language;
 mod methodology;
@@ -14,6 +15,7 @@ mod scenarios;
 mod usecase;
 
 // Explicit public exports
+pub use cleanup::handle_cleanup_command;
 pub use fields::{
     handle_postcondition_add_command, handle_postcondition_list_command,
     handle_postcondition_remove_command, handle_precondition_add_command,

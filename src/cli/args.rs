@@ -102,6 +102,18 @@ pub enum Commands {
         #[command(subcommand)]
         command: PersonaCommands,
     },
+    /// Clean up orphaned methodology fields from TOML files
+    ///
+    /// Scans all use case TOML files and removes methodology sections that are no longer
+    /// used by any view in the use case. This helps maintain clean TOML files after
+    /// removing views or changing methodologies.
+    Cleanup {
+        /// Use case ID to clean (e.g., UC-SEC-001). If omitted, cleans all use cases.
+        use_case_id: Option<String>,
+        /// Dry run mode - show what would be cleaned without making changes
+        #[arg(long, short = 'n')]
+        dry_run: bool,
+    },
     /// Enter interactive mode
     Interactive,
 }

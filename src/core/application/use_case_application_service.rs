@@ -840,6 +840,82 @@ impl UseCaseApplicationService {
     fn generate_overview(&self) -> Result<()> {
         self.overview_generator.generate(&self.use_cases)
     }
+
+    // ========== Cleanup Operations ==========
+
+    /// Clean up orphaned methodology fields from use cases
+    ///
+    /// Scans methodology_fields HashMap in each use case and removes entries for
+    /// methodologies that are not currently used by any enabled view.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - Optional specific use case to clean. If None, cleans all use cases.
+    /// * `dry_run` - If true, returns what would be cleaned without making changes
+    ///
+    /// # Returns
+    /// A tuple of (cleaned_count, total_checked, details) where:
+    /// - cleaned_count: number of use cases that had fields removed
+    /// - total_checked: number of use cases checked
+    /// - details: vector of (use_case_id, removed_methodologies) for each cleaned use case
+    pub fn cleanup_methodology_fields(
+        &mut self,
+        use_case_id: Option<String>,
+        dry_run: bool,
+    ) -> Result<(usize, usize, Vec<(String, Vec<String>)>)> {
+        let mut cleaned_count = 0;
+        let mut total_checked = 0;
+        let mut details = Vec::new();
+
+        // Determine which use cases to process
+        let use_case_ids: Vec<String> = if let Some(id) = use_case_id {
+            // Single use case
+            if !self.use_cases.iter().any(|uc| uc.id == id) {
+                anyhow::bail!("Use case '{}' not found", id);
+            }
+            vec![id]
+        } else {
+            // All use cases
+            self.use_cases.iter().map(|uc| uc.id.clone()).collect()
+        };
+
+        for uc_id in use_case_ids {
+            total_checked += 1;
+            let index = self.find_use_case_index(&uc_id)?;
+            let use_case = &mut self.use_cases[index];
+
+            // Get set of methodologies currently in use by enabled views
+            let active_methodologies: std::collections::HashSet<String> = use_case
+                .views
+                .iter()
+                .filter(|view| view.enabled)
+                .map(|view| view.methodology.clone())
+                .collect();
+
+            // Find orphaned methodologies in methodology_fields
+            let orphaned: Vec<String> = use_case
+                .methodology_fields
+                .keys()
+                .filter(|m| !active_methodologies.contains(*m))
+                .cloned()
+                .collect();
+
+            if !orphaned.is_empty() {
+                cleaned_count += 1;
+                details.push((use_case.id.clone(), orphaned.clone()));
+
+                // Remove orphaned fields if not dry run
+                if !dry_run {
+                    for methodology in &orphaned {
+                        use_case.methodology_fields.remove(methodology);
+                    }
+                    // Save the updated use case
+                    self.repository.save(use_case)?;
+                }
+            }
+        }
+
+        Ok((cleaned_count, total_checked, details))
+    }
 }
 
 #[cfg(test)]

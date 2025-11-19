@@ -28,17 +28,17 @@ use crate::presentation::DisplayResultFormatter;
 use args::{Cli, Commands};
 use interactive::run_interactive_session;
 use standard::{
-    handle_create_command, handle_init_command, handle_languages_command, handle_list_command,
-    handle_list_methodologies_command, handle_methodology_info_command, handle_persona_command,
-    handle_postcondition_add_command, handle_postcondition_list_command,
-    handle_postcondition_remove_command, handle_precondition_add_command,
-    handle_precondition_list_command, handle_precondition_remove_command,
-    handle_reference_add_command, handle_reference_list_command, handle_reference_remove_command,
-    handle_regenerate_command, handle_scenario_add_command, handle_scenario_add_step_command,
-    handle_scenario_list_command, handle_scenario_reference_add_command,
-    handle_scenario_reference_list_command, handle_scenario_reference_remove_command,
-    handle_scenario_remove_step_command, handle_scenario_update_status_command,
-    handle_status_command, CliRunner,
+    handle_cleanup_command, handle_create_command, handle_init_command,
+    handle_languages_command, handle_list_command, handle_list_methodologies_command,
+    handle_methodology_info_command, handle_persona_command, handle_postcondition_add_command,
+    handle_postcondition_list_command, handle_postcondition_remove_command,
+    handle_precondition_add_command, handle_precondition_list_command,
+    handle_precondition_remove_command, handle_reference_add_command,
+    handle_reference_list_command, handle_reference_remove_command, handle_regenerate_command,
+    handle_scenario_add_command, handle_scenario_add_step_command, handle_scenario_list_command,
+    handle_scenario_reference_add_command, handle_scenario_reference_list_command,
+    handle_scenario_reference_remove_command, handle_scenario_remove_step_command,
+    handle_scenario_update_status_command, handle_status_command, CliRunner,
 };
 
 use crate::config::Config;
@@ -358,6 +358,13 @@ pub fn run() -> Result<()> {
         Commands::Persona { command } => {
             let config = Config::load()?;
             handle_persona_command(command, &config)
+        }
+        Commands::Cleanup {
+            use_case_id,
+            dry_run,
+        } => {
+            execute_command(|| handle_cleanup_command(&mut runner, use_case_id, dry_run));
+            Ok(())
         }
         Commands::Interactive => {
             // This case is handled above, but included for completeness
