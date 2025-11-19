@@ -53,15 +53,14 @@ impl MarkdownGenerator {
             }
         }
 
-        // Merge methodology_fields into top-level HashMap for template access
-        // This flattens methodology_fields.{methodology}.{field} -> {field}
-        // Note: If same field exists in multiple methodologies, last one wins
+        // Merge methodology_fields for the SPECIFIC methodology into top-level HashMap
+        // This flattens methodology_fields.{current_methodology}.{field} -> {field}
         if let Some(Value::Object(methodology_fields_map)) = data.remove("methodology_fields") {
-            for (_methodology_name, fields) in methodology_fields_map {
+            if let Some(fields) = methodology_fields_map.get(methodology) {
                 if let Value::Object(field_map) = fields {
                     for (field_name, field_value) in field_map {
                         // Only insert if not already present (standard fields take priority)
-                        data.entry(field_name).or_insert(field_value);
+                        data.entry(field_name.clone()).or_insert(field_value.clone());
                     }
                 }
             }
@@ -83,9 +82,31 @@ impl MarkdownGenerator {
     /// # Returns
     /// The generated markdown content for this specific view
     pub fn generate_with_view(&self, use_case: &UseCase, view: &MethodologyView) -> Result<String> {
-        // For now, just use the methodology
-        // TODO: In next phase, use FieldResolver to get level-specific fields
-        self.generate_with_methodology(use_case, &view.methodology)
+        // Convert UseCase to JSON and flatten methodology fields
+        let use_case_json = serde_json::to_value(use_case)?;
+        let mut data: HashMap<String, Value> = serde_json::from_value(use_case_json)?;
+
+        // Merge extra fields into top-level HashMap
+        if let Some(Value::Object(extra_map)) = data.remove("extra") {
+            for (key, value) in extra_map {
+                data.insert(key, value);
+            }
+        }
+
+        // Merge methodology_fields for the SPECIFIC methodology into top-level HashMap
+        if let Some(Value::Object(methodology_fields_map)) = data.remove("methodology_fields") {
+            if let Some(fields) = methodology_fields_map.get(&view.methodology) {
+                if let Value::Object(field_map) = fields {
+                    for (field_name, field_value) in field_map {
+                        data.entry(field_name.clone()).or_insert(field_value.clone());
+                    }
+                }
+            }
+        }
+
+        // Render with methodology and level
+        self.template_engine
+            .render_use_case_with_methodology_and_level(&data, &view.methodology, &view.level)
     }
 
     /// Generates all markdown outputs for a use case.

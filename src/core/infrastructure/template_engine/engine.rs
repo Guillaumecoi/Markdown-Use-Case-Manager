@@ -284,6 +284,25 @@ Generated at: {{generated_at}}
         self.render_use_case_with_template(&template_name, data)
     }
 
+    /// Render a use case with specific methodology and level
+    pub fn render_use_case_with_methodology_and_level(
+        &self,
+        data: &HashMap<String, Value>,
+        methodology: &str,
+        level: &str,
+    ) -> Result<String> {
+        let template_name = format!("{}-{}", methodology, level);
+        if self.handlebars.get_template(&template_name).is_none() {
+            anyhow::bail!(
+                "Invalid source-templates: Methodology '{}' does not have a valid uc_{}.hbs template. \
+                Check source-templates/methodologies/{}/uc_{}.hbs exists and is valid.",
+                methodology, level, methodology, level
+            );
+        }
+
+        self.render_use_case_with_template(&template_name, data)
+    }
+
     /// Get available methodologies
     pub fn available_methodologies(&self) -> Vec<String> {
         self.methodologies.clone()

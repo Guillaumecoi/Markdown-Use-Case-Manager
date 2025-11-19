@@ -224,13 +224,35 @@ impl UseCaseWorkflow {
                             Some(result.to_string())
                         }
                         "array" => {
-                            // For array fields, prompt for comma-separated values
-                            let result = Text::new(&prompt_text)
-                                .with_help_message(&format!("{} (comma-separated values)", help_msg))
-                                .with_default(field.default.as_deref().unwrap_or(""))
-                                .prompt_skippable()?;
+                            // For array fields, collect items one by one
+                            UI::show_info("  💡 Enter items one at a time. Press Enter on empty line when done.")?;
                             
-                            result.filter(|s| !s.trim().is_empty())
+                            let mut items = Vec::new();
+                            let mut item_num = 1;
+                            
+                            loop {
+                                let item_prompt = format!("  Item {}: ", item_num);
+                                let result = Text::new(&item_prompt)
+                                    .with_help_message(help_msg)
+                                    .prompt_skippable()?;
+                                
+                                match result {
+                                    Some(item) if !item.trim().is_empty() => {
+                                        items.push(item.trim().to_string());
+                                        item_num += 1;
+                                    }
+                                    _ => break,
+                                }
+                            }
+                            
+                            if items.is_empty() && field.required {
+                                None // Will be handled by required field logic below
+                            } else if items.is_empty() {
+                                None
+                            } else {
+                                // Join items with newlines for array storage
+                                Some(items.join("\n"))
+                            }
                         }
                         "number" => {
                             // For number fields, validate input

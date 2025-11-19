@@ -382,10 +382,24 @@ impl UseCaseApplicationService {
             }
         };
 
-        // Generate markdown from TOML data
-        let markdown_content = self.generate_use_case_markdown(&use_case)?;
-        self.repository
-            .save_markdown(use_case_id, &markdown_content)?;
+        // Handle multi-view vs single-view use cases
+        if use_case.is_multi_view() {
+            // Generate markdown for each enabled view
+            for view in use_case.enabled_views() {
+                let markdown_content = self.markdown_generator.generate_with_view(&use_case, &view)?;
+                let filename = format!("{}-{}-{}.md", use_case.id, view.methodology, view.level);
+                self.repository.save_markdown_with_filename(
+                    &use_case,
+                    &filename,
+                    &markdown_content,
+                )?;
+            }
+        } else {
+            // Single view: use default methodology
+            let markdown_content = self.generate_use_case_markdown(&use_case)?;
+            self.repository
+                .save_markdown(use_case_id, &markdown_content)?;
+        }
 
         Ok(())
     }
@@ -396,10 +410,24 @@ impl UseCaseApplicationService {
         let use_cases = self.repository.load_all()?;
 
         for use_case in &use_cases {
-            // Generate markdown from TOML data
-            let markdown_content = self.generate_use_case_markdown(use_case)?;
-            self.repository
-                .save_markdown(&use_case.id, &markdown_content)?;
+            // Handle multi-view vs single-view use cases
+            if use_case.is_multi_view() {
+                // Generate markdown for each enabled view
+                for view in use_case.enabled_views() {
+                    let markdown_content = self.markdown_generator.generate_with_view(use_case, &view)?;
+                    let filename = format!("{}-{}-{}.md", use_case.id, view.methodology, view.level);
+                    self.repository.save_markdown_with_filename(
+                        use_case,
+                        &filename,
+                        &markdown_content,
+                    )?;
+                }
+            } else {
+                // Single view: use default methodology
+                let markdown_content = self.generate_use_case_markdown(use_case)?;
+                self.repository
+                    .save_markdown(&use_case.id, &markdown_content)?;
+            }
         }
 
         self.generate_overview()?;
