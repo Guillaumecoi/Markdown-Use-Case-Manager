@@ -83,67 +83,43 @@ impl UseCaseController {
         priority: Option<String>,
         extra_fields: Option<std::collections::HashMap<String, String>>,
     ) -> Result<DisplayResult> {
-        // Determine which creation path to use based on provided parameters
-        let result = if let Some(views_str) = views {
-            // Multi-view use case
-            if let (Some(prio), Some(fields)) = (priority, extra_fields) {
-                self.app_service.create_use_case_with_views_and_fields(
-                    title,
-                    category,
-                    description,
-                    prio,
-                    &views_str,
-                    fields,
-                )
-            } else {
-                self.app_service
-                    .create_use_case_with_views(title, category, description, &views_str)
-            }
-            .map(|use_case_id| {
-                UseCaseFormatter::display_created(&use_case_id, "multi-view");
-                (
-                    use_case_id.clone(),
-                    format!(
-                        "Created multi-view use case: {} with views: {}",
-                        use_case_id, views_str
-                    ),
-                )
-            })
+        // Determine views string - either from views parameter or from methodology parameter
+        let views_str = if let Some(views_str) = views {
+            views_str
         } else {
-            // Single methodology use case
+            // Convert methodology to views format (methodology:normal)
             let methodology_str = methodology.unwrap_or_else(|| {
                 Config::load()
                     .map(|c| c.templates.default_methodology.clone())
                     .unwrap_or_else(|_| "feature".to_string())
             });
-
-            if let Some(fields) = extra_fields {
-                self.app_service.create_use_case_with_fields(
-                    title,
-                    category,
-                    description,
-                    &methodology_str,
-                    fields,
-                )
-            } else {
-                self.app_service.create_use_case_with_methodology(
-                    title,
-                    category,
-                    description,
-                    &methodology_str,
-                )
-            }
-            .map(|use_case_id| {
-                UseCaseFormatter::display_created(&use_case_id, &methodology_str);
-                (
-                    use_case_id.clone(),
-                    format!(
-                        "Created use case: {} with {} methodology",
-                        use_case_id, methodology_str
-                    ),
-                )
-            })
+            format!("{}:normal", methodology_str)
         };
+
+        // All use cases now use the views-based API
+        let result = if let (Some(prio), Some(fields)) = (priority, extra_fields) {
+            self.app_service.create_use_case_with_views_and_fields(
+                title,
+                category,
+                description,
+                prio,
+                &views_str,
+                fields,
+            )
+        } else {
+            self.app_service
+                .create_use_case_with_views(title, category, description, &views_str)
+        }
+        .map(|use_case_id| {
+            UseCaseFormatter::display_created(&use_case_id, &views_str);
+            (
+                use_case_id.clone(),
+                format!(
+                    "Created use case: {} with views: {}",
+                    use_case_id, views_str
+                ),
+            )
+        });
 
         match result {
             Ok((_, message)) => Ok(DisplayResult::success(message)),

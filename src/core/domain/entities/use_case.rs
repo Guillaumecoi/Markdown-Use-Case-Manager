@@ -250,13 +250,23 @@ impl UseCase {
     }
 
     /// Get all enabled views
+    ///
+    /// Note: Every use case must have at least one enabled view.
     pub fn enabled_views(&self) -> impl Iterator<Item = &MethodologyView> {
         self.views.iter().filter(|v| v.enabled)
     }
 
-    /// Check if use case is in multi-view mode
-    pub fn is_multi_view(&self) -> bool {
-        !self.views.is_empty()
+    /// Get all views (enabled and disabled)
+    pub fn views(&self) -> &[MethodologyView] {
+        &self.views
+    }
+
+    /// Get the primary (first enabled) view for this use case
+    ///
+    /// Returns the first enabled view, or None if all views are disabled
+    /// (which should not happen in normal operation).
+    pub fn primary_view(&self) -> Option<&MethodologyView> {
+        self.enabled_views().next()
     }
 }
 
@@ -1060,9 +1070,9 @@ mod use_case_tests {
         assert_eq!(enabled[1].methodology, "tester");
     }
 
-    /// Test is_multi_view method
+    /// Test views() and primary_view() methods
     #[test]
-    fn test_is_multi_view() {
+    fn test_views_and_primary_view() {
         let mut use_case = UseCase::new(
             "UC-TEST-001".to_string(),
             "Test Use Case".to_string(),
@@ -1072,10 +1082,20 @@ mod use_case_tests {
         )
         .unwrap();
 
-        assert!(!use_case.is_multi_view());
+        // Initially no views
+        assert_eq!(use_case.views().len(), 0);
+        assert!(use_case.primary_view().is_none());
 
+        // Add first view
         use_case.add_view(MethodologyView::new("feature", "simple"));
-        assert!(use_case.is_multi_view());
+        assert_eq!(use_case.views().len(), 1);
+        assert_eq!(use_case.primary_view().unwrap().methodology, "feature");
+
+        // Add second view
+        use_case.add_view(MethodologyView::new("business", "normal"));
+        assert_eq!(use_case.views().len(), 2);
+        // Primary view should still be the first one
+        assert_eq!(use_case.primary_view().unwrap().methodology, "feature");
     }
 
     /// Test views field serialization

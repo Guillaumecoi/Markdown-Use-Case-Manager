@@ -159,8 +159,15 @@ impl InteractiveRunner {
             .collect::<Vec<_>>()
             .join(",");
 
-        let result =
-            controller.create_use_case(title, category, description, None, Some(views_string), None, None)?;
+        let result = controller.create_use_case(
+            title,
+            category,
+            description,
+            None,
+            Some(views_string),
+            None,
+            None,
+        )?;
         Ok(result.message)
     }
 

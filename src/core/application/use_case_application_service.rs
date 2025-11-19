@@ -153,7 +153,7 @@ impl UseCaseApplicationService {
         let use_case_id = use_case.id.clone();
 
         // Save and generate markdown
-        self.save_use_case_with_methodology(&use_case, methodology)?;
+        self.save_use_case_with_views(&use_case)?;
         self.use_cases.push(use_case);
         self.generate_overview()?;
 
@@ -201,9 +201,6 @@ impl UseCaseApplicationService {
             return Err(anyhow::anyhow!("At least one view must be specified"));
         }
 
-        // Get first view's methodology for markdown generation
-        let first_methodology = view_list[0].methodology.clone();
-
         // Use the new create_use_case_with_views method with empty user fields
         let use_case = self.use_case_creator.create_use_case_with_views(
             title,
@@ -219,7 +216,7 @@ impl UseCaseApplicationService {
         let use_case_id = use_case.id.clone();
 
         // Save and generate markdown for all views (multi-view mode)
-        self.save_use_case_with_methodology(&use_case, &first_methodology)?;
+        self.save_use_case_with_views(&use_case)?;
         self.use_cases.push(use_case);
         self.generate_overview()?;
 
@@ -270,9 +267,6 @@ impl UseCaseApplicationService {
             return Err(anyhow::anyhow!("At least one view must be specified"));
         }
 
-        // Get first view's methodology for markdown generation
-        let first_methodology = view_list[0].methodology.clone();
-
         // Use the new create_use_case_with_views method that properly handles methodology_fields
         let use_case = self.use_case_creator.create_use_case_with_views(
             title,
@@ -288,7 +282,7 @@ impl UseCaseApplicationService {
         let use_case_id = use_case.id.clone();
 
         // Save and generate markdown for all views (multi-view mode)
-        self.save_use_case_with_methodology(&use_case, &first_methodology)?;
+        self.save_use_case_with_views(&use_case)?;
         self.use_cases.push(use_case);
         self.generate_overview()?;
 
@@ -325,7 +319,7 @@ impl UseCaseApplicationService {
         let use_case_id = use_case.id.clone();
 
         // Save and generate markdown
-        self.save_use_case_with_methodology(&use_case, methodology)?;
+        self.save_use_case_with_views(&use_case)?;
         self.use_cases.push(use_case);
         self.generate_overview()?;
 
@@ -363,7 +357,7 @@ impl UseCaseApplicationService {
         }
 
         // Regenerate with new methodology
-        self.save_use_case_with_methodology(&use_case, methodology)?;
+        self.save_use_case_with_views(&use_case)?;
 
         Ok(())
     }
@@ -382,25 +376,14 @@ impl UseCaseApplicationService {
             }
         };
 
-        // Handle multi-view vs single-view use cases
-        if use_case.is_multi_view() {
-            // Generate markdown for each enabled view
-            for view in use_case.enabled_views() {
-                let markdown_content = self
-                    .markdown_generator
+        // Generate markdown for each enabled view
+        for view in use_case.enabled_views() {
+            let markdown_content =
+                self.markdown_generator
                     .generate(&use_case, None, Some(&view))?;
-                let filename = format!("{}-{}-{}.md", use_case.id, view.methodology, view.level);
-                self.repository.save_markdown_with_filename(
-                    &use_case,
-                    &filename,
-                    &markdown_content,
-                )?;
-            }
-        } else {
-            // Single view: use default methodology
-            let markdown_content = self.markdown_generator.generate(&use_case, None, None)?;
+            let filename = format!("{}-{}-{}.md", use_case.id, view.methodology, view.level);
             self.repository
-                .save_markdown(use_case_id, &markdown_content)?;
+                .save_markdown_with_filename(&use_case, &filename, &markdown_content)?;
         }
 
         Ok(())
@@ -412,26 +395,17 @@ impl UseCaseApplicationService {
         let use_cases = self.repository.load_all()?;
 
         for use_case in &use_cases {
-            // Handle multi-view vs single-view use cases
-            if use_case.is_multi_view() {
-                // Generate markdown for each enabled view
-                for view in use_case.enabled_views() {
-                    let markdown_content = self
-                        .markdown_generator
+            // Generate markdown for each enabled view
+            for view in use_case.enabled_views() {
+                let markdown_content =
+                    self.markdown_generator
                         .generate(use_case, None, Some(&view))?;
-                    let filename =
-                        format!("{}-{}-{}.md", use_case.id, view.methodology, view.level);
-                    self.repository.save_markdown_with_filename(
-                        use_case,
-                        &filename,
-                        &markdown_content,
-                    )?;
-                }
-            } else {
-                // Single view: use default methodology
-                let markdown_content = self.markdown_generator.generate(use_case, None, None)?;
-                self.repository
-                    .save_markdown(&use_case.id, &markdown_content)?;
+                let filename = format!("{}-{}-{}.md", use_case.id, view.methodology, view.level);
+                self.repository.save_markdown_with_filename(
+                    use_case,
+                    &filename,
+                    &markdown_content,
+                )?;
             }
         }
 
@@ -810,8 +784,8 @@ impl UseCaseApplicationService {
         Ok(use_case)
     }
 
-    /// Save use case with specific methodology rendering
-    fn save_use_case_with_methodology(&self, use_case: &UseCase, methodology: &str) -> Result<()> {
+    /// Save use case and generate markdown for all views
+    fn save_use_case_with_views(&self, use_case: &UseCase) -> Result<()> {
         // Step 1: Save TOML first (source of truth)
         self.repository.save(use_case)?;
 
@@ -824,16 +798,11 @@ impl UseCaseApplicationService {
         // Step 3: Generate markdown files based on views
         // Always use OutputManager for consistent filename generation
         let all_outputs = OutputManager::generate_all_filenames(&use_case_from_toml);
-        for (filename, view_opt) in all_outputs {
-            let content = if let Some(view) = view_opt {
-                // Multi-view: generate with specific view
+        for (filename, view) in all_outputs {
+            // Generate with specific view
+            let content =
                 self.markdown_generator
-                    .generate(&use_case_from_toml, None, Some(&view))?
-            } else {
-                // Single view: use methodology parameter (backward compatible)
-                self.markdown_generator
-                    .generate(&use_case_from_toml, Some(methodology), None)?
-            };
+                    .generate(&use_case_from_toml, None, Some(&view))?;
 
             self.repository.save_markdown_with_filename(
                 &use_case_from_toml,
@@ -958,11 +927,11 @@ mod tests {
         let mut coordinator = UseCaseApplicationService::load()?;
         let default_methodology = coordinator.config.templates.default_methodology.clone();
 
-        let use_case_id = coordinator.create_use_case_with_methodology(
+        let use_case_id = coordinator.create_use_case_with_views(
             "Interactive Test".to_string(),
             "testing".to_string(),
             Some("Created via interactive mode".to_string()),
-            &default_methodology,
+            &format!("{}:normal", default_methodology),
         )?;
         assert_eq!(use_case_id, "UC-TES-001");
 
@@ -1003,25 +972,25 @@ mod tests {
         categories.dedup();
         assert!(categories.is_empty());
 
-        coordinator.create_use_case_with_methodology(
+        coordinator.create_use_case_with_views(
             "Auth Use Case".to_string(),
             "authentication".to_string(),
             None,
-            &default_methodology,
+            &format!("{}:normal", default_methodology),
         )?;
 
-        coordinator.create_use_case_with_methodology(
+        coordinator.create_use_case_with_views(
             "API Use Case".to_string(),
             "api".to_string(),
             None,
-            &default_methodology,
+            &format!("{}:normal", default_methodology),
         )?;
 
-        coordinator.create_use_case_with_methodology(
+        coordinator.create_use_case_with_views(
             "Another Auth Use Case".to_string(),
             "authentication".to_string(),
             None,
-            &default_methodology,
+            &format!("{}:normal", default_methodology),
         )?;
 
         let mut categories: Vec<String> = coordinator
@@ -1059,18 +1028,18 @@ mod tests {
         let mut coordinator = UseCaseApplicationService::load()?;
         let default_methodology = coordinator.config.templates.default_methodology.clone();
 
-        let _uc1 = coordinator.create_use_case_with_methodology(
+        let _uc1 = coordinator.create_use_case_with_views(
             "User Authentication".to_string(),
             "auth".to_string(),
             Some("Handle user login and logout".to_string()),
-            &default_methodology,
+            &format!("{}:normal", default_methodology),
         )?;
 
-        let _uc2 = coordinator.create_use_case_with_methodology(
+        let _uc2 = coordinator.create_use_case_with_views(
             "Data Export".to_string(),
             "api".to_string(),
             Some("Export data in various formats".to_string()),
-            &default_methodology,
+            &format!("{}:normal", default_methodology),
         )?;
 
         let all_use_cases: Vec<String> = coordinator
@@ -1131,11 +1100,11 @@ mod tests {
         // (user_segment, success_metrics, hypothesis, feature_dependencies, design_assets)
         let mut coordinator = UseCaseApplicationService::load()?;
 
-        let use_case_id = coordinator.create_use_case_with_methodology(
+        let use_case_id = coordinator.create_use_case_with_views(
             "Test Custom Fields".to_string(),
             "testing".to_string(),
             Some("Testing custom fields integration".to_string()),
-            "feature",
+            "feature:normal",
         )?;
 
         // Verify the use case was created
@@ -1171,7 +1140,7 @@ mod tests {
         // Verify markdown was generated
         let md_path = Path::new(&coordinator.config.directories.use_case_dir)
             .join("testing")
-            .join("UC-TES-001.md");
+            .join("UC-TES-001-feature-normal.md");
         assert!(
             md_path.exists(),
             "Markdown file should exist at {:?}",

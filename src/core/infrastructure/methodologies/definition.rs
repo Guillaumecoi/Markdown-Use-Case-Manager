@@ -411,10 +411,7 @@ hypothesis = { label = "Product Hypothesis", type = "text", required = false, de
 
         // Check success_metrics field
         let success_metrics = custom_fields.get("success_metrics").unwrap();
-        assert_eq!(
-            success_metrics.label,
-            Some("Success Metrics".to_string())
-        );
+        assert_eq!(success_metrics.label, Some("Success Metrics".to_string()));
         assert_eq!(success_metrics.field_type, "array");
         assert_eq!(success_metrics.required, true);
 

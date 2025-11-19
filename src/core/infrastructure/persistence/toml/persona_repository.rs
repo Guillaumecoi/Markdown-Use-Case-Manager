@@ -140,11 +140,10 @@ mod tests {
         let temp_path = temp_dir.path().to_str().unwrap();
 
         // Create a test config pointing to temp directory
-        // Important: use_case_dir must be in format "{base}/docs/use-cases"
-        // so that get_markdown_dir() can extract "{base}/docs/personas"
         let mut config = Config::default();
         config.directories.use_case_dir = format!("{}/docs/use-cases", temp_path);
         config.directories.data_dir = format!("{}/.mucm", temp_path);
+        config.directories.persona_dir = format!("{}/docs/personas", temp_path);
 
         let repo = TomlPersonaRepository::new(config);
         (repo, temp_dir)

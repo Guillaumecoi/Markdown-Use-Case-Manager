@@ -736,14 +736,18 @@ mod tests {
         let config = Config::load()?;
         let default_methodology = config.templates.default_methodology.clone();
 
-        let _uc_id = coordinator.create_use_case_with_methodology(
+        let _uc_id = coordinator.create_use_case_with_views(
             "Integration Test Use Case".to_string(),
             "integration".to_string(),
             Some("Testing integration between auto-init and settings".to_string()),
-            &default_methodology,
+            &format!("{}:normal", default_methodology),
         )?;
 
-        let custom_use_case_file = Path::new("docs/custom-use-cases/integration/UC-INT-001.md");
+        let filename = format!(
+            "docs/custom-use-cases/integration/UC-INT-001-{}-normal.md",
+            default_methodology
+        );
+        let custom_use_case_file = Path::new(&filename);
         assert!(
             custom_use_case_file.exists(),
             "Use case should be created in custom directory"

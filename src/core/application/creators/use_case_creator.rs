@@ -1,14 +1,10 @@
 use crate::config::Config;
 use crate::core::application::MethodologyFieldCollector;
 use crate::core::domain::UseCaseService;
-use crate::core::{
-    Methodology, MethodologyDefinition, MethodologyRegistry, MethodologyView, UseCase,
-    UseCaseRepository,
-};
+use crate::core::{MethodologyView, UseCase, UseCaseRepository};
 use anyhow::Result;
 use serde_json::Value;
 use std::collections::HashMap;
-use std::path::Path;
 
 /// Handles use case creation with methodology support
 pub struct UseCaseCreator {
@@ -42,22 +38,38 @@ impl UseCaseCreator {
         );
         let description = description.unwrap_or_default();
 
-        // Load methodology definition to get custom fields
-        let extra_fields = self.load_methodology_fields(methodology)?;
+        // Create base use case
+        let mut use_case =
+            UseCase::new(use_case_id.clone(), title, category, description, priority)
+                .map_err(|e: String| anyhow::anyhow!(e))?;
 
-        let use_case = self
-            .use_case_service
-            .create_use_case_with_extra(
-                use_case_id.clone(),
-                title,
-                category,
-                description,
-                priority,
-                extra_fields,
-            )
-            .map_err(|e: String| anyhow::anyhow!(e))?;
+        // Add default view (methodology:normal)
+        use_case.add_view(MethodologyView::new(
+            methodology.to_string(),
+            "normal".to_string(),
+        ));
 
-        // Step 1: Save TOML first (source of truth) - this will include custom fields
+        // Collect and store methodology fields for this view
+        let collector = MethodologyFieldCollector::new()?;
+        let collection = collector
+            .collect_fields_for_views(&[(methodology.to_string(), "normal".to_string())])?;
+
+        // Store fields grouped by methodology
+        if !collection.fields.is_empty() {
+            let mut methodology_fields = HashMap::new();
+            for (field_name, field_config) in collection.fields {
+                let value = field_config
+                    .default
+                    .map(|d| serde_json::Value::String(d))
+                    .unwrap_or(serde_json::Value::Null);
+                methodology_fields.insert(field_name, value);
+            }
+            use_case
+                .methodology_fields
+                .insert(methodology.to_string(), methodology_fields);
+        }
+
+        // Step 1: Save TOML first (source of truth)
         repository.save(&use_case)?;
 
         // Step 2: Load from TOML to ensure we're working with persisted data
@@ -86,27 +98,50 @@ impl UseCaseCreator {
         );
         let description = description.unwrap_or_default();
 
-        // Load methodology default fields
-        let mut extra_fields = self.load_methodology_fields(methodology)?;
+        // Create base use case
+        let mut use_case =
+            UseCase::new(use_case_id.clone(), title, category, description, priority)
+                .map_err(|e: String| anyhow::anyhow!(e))?;
 
-        // Override with user-provided fields
-        for (key, value) in user_fields {
-            extra_fields.insert(key, serde_json::Value::String(value));
+        // Add default view (methodology:normal)
+        use_case.add_view(MethodologyView::new(
+            methodology.to_string(),
+            "normal".to_string(),
+        ));
+
+        // Collect methodology fields
+        let collector = MethodologyFieldCollector::new()?;
+        let collection = collector
+            .collect_fields_for_views(&[(methodology.to_string(), "normal".to_string())])?;
+
+        // Store fields grouped by methodology, with user overrides
+        let mut methodology_fields = HashMap::new();
+        for (field_name, field_config) in collection.fields {
+            // Use user-provided value if available, otherwise use default
+            let value = if let Some(user_value) = user_fields.get(&field_name) {
+                serde_json::Value::String(user_value.clone())
+            } else if let Some(default) = field_config.default {
+                serde_json::Value::String(default)
+            } else {
+                serde_json::Value::Null
+            };
+            methodology_fields.insert(field_name, value);
         }
 
-        let use_case = self
-            .use_case_service
-            .create_use_case_with_extra(
-                use_case_id.clone(),
-                title,
-                category,
-                description,
-                priority,
-                extra_fields,
-            )
-            .map_err(|e: String| anyhow::anyhow!(e))?;
+        // Add any user fields that weren't in the methodology definition
+        for (key, value) in user_fields {
+            if !methodology_fields.contains_key(&key) {
+                methodology_fields.insert(key, serde_json::Value::String(value));
+            }
+        }
 
-        // Step 1: Save TOML first (source of truth) - this will include custom fields
+        if !methodology_fields.is_empty() {
+            use_case
+                .methodology_fields
+                .insert(methodology.to_string(), methodology_fields);
+        }
+
+        // Step 1: Save TOML first (source of truth)
         repository.save(&use_case)?;
 
         // Step 2: Load from TOML to ensure we're working with persisted data
@@ -209,55 +244,5 @@ impl UseCaseCreator {
             .ok_or_else(|| anyhow::anyhow!("Failed to load newly created use case from TOML"))?;
 
         Ok(use_case_from_toml)
-    }
-
-    /// Load custom fields for a methodology with default values
-    fn load_methodology_fields(&self, methodology: &str) -> Result<HashMap<String, Value>> {
-        let templates_dir = format!(".config/.mucm/{}", crate::config::Config::TEMPLATES_DIR);
-
-        // MethodologyRegistry expects the parent directory containing "methodologies/"
-        // But during template copying, methodologies are placed directly in template-assets/
-        // Check if methodology directory exists directly in templates_dir
-        let methodology_dir = Path::new(&templates_dir).join(methodology);
-        let extra_fields =
-            if methodology_dir.exists() && methodology_dir.join("config.toml").exists() {
-                // Load methodology definition directly
-                match MethodologyDefinition::from_toml(&methodology_dir) {
-                    Ok(methodology_def) => self.extract_fields_from_definition(&methodology_def),
-                    Err(_) => HashMap::new(),
-                }
-            } else {
-                // Try standard structure: template-assets/methodologies/feature/
-                let methodology_registry = MethodologyRegistry::new_dynamic(&templates_dir)?;
-                if let Some(methodology_def) = methodology_registry.get(methodology) {
-                    self.extract_fields_from_definition(methodology_def)
-                } else {
-                    HashMap::new()
-                }
-            };
-
-        Ok(extra_fields)
-    }
-
-    /// Extract fields from a methodology definition with appropriate defaults
-    fn extract_fields_from_definition(
-        &self,
-        methodology_def: &MethodologyDefinition,
-    ) -> HashMap<String, Value> {
-        let mut fields = HashMap::new();
-        for (field_name, field_config) in methodology_def.custom_fields() {
-            // Use default value if provided, otherwise use empty string for required fields
-            let value = if let Some(default) = &field_config.default {
-                Value::String(default.clone())
-            } else if field_config.required {
-                // For required fields without defaults, use empty string
-                Value::String(String::new())
-            } else {
-                // For optional fields without defaults, use null
-                Value::Null
-            };
-            fields.insert(field_name.clone(), value);
-        }
-        fields
     }
 }

@@ -13,21 +13,15 @@ impl OutputManager {
     /// Generates all filenames for a use case based on its enabled views.
     ///
     /// Returns a vector of (filename, view) tuples for each enabled view.
-    /// If the use case has no views (single-view mode), returns a single filename without a view.
-    pub fn generate_all_filenames(use_case: &UseCase) -> Vec<(String, Option<MethodologyView>)> {
-        if !use_case.is_multi_view() {
-            // Single view: just the main filename
-            vec![(format!("{}.md", use_case.id), None)]
-        } else {
-            // Multiple views: one filename per enabled view
-            use_case
-                .enabled_views()
-                .map(|view| {
-                    let filename = format!("{}-{}.md", use_case.id, view.key());
-                    (filename, Some(view.clone()))
-                })
-                .collect()
-        }
+    /// Every use case must have at least one view.
+    pub fn generate_all_filenames(use_case: &UseCase) -> Vec<(String, MethodologyView)> {
+        use_case
+            .enabled_views()
+            .map(|view| {
+                let filename = format!("{}-{}.md", use_case.id, view.key());
+                (filename, view.clone())
+            })
+            .collect()
     }
 }
 
@@ -38,7 +32,7 @@ mod tests {
 
     #[test]
     fn test_generate_all_filenames_single_view() {
-        let use_case = UseCase::new(
+        let mut use_case = UseCase::new(
             "UC-001".to_string(),
             "Test Use Case".to_string(),
             "testing".to_string(),
@@ -47,11 +41,18 @@ mod tests {
         )
         .unwrap();
 
+        // Add a single view
+        use_case.add_view(MethodologyView::new(
+            "business".to_string(),
+            "normal".to_string(),
+        ));
+
         let filenames = OutputManager::generate_all_filenames(&use_case);
 
         assert_eq!(filenames.len(), 1);
-        assert_eq!(filenames[0].0, "UC-001.md");
-        assert!(filenames[0].1.is_none());
+        assert_eq!(filenames[0].0, "UC-001-business-normal.md");
+        assert_eq!(filenames[0].1.methodology, "business");
+        assert_eq!(filenames[0].1.level, "normal");
     }
 
     #[test]
@@ -84,7 +85,8 @@ mod tests {
         assert!(filename_strings.contains(&"UC-001-business-normal.md".to_string()));
 
         // All should have associated views
-        assert!(filenames.iter().all(|(_, view)| view.is_some()));
+        assert_eq!(filenames[0].1.methodology, "feature");
+        assert_eq!(filenames[1].1.methodology, "business");
     }
 
     #[test]

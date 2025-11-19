@@ -80,7 +80,7 @@ mod interactive_runner_tests {
         let message = result.unwrap();
         eprintln!("Actual message: {}", message);
         assert!(
-            message.contains("Created multi-view use case"),
+            message.contains("Created use case:") && message.contains("with views:"),
             "Message was: {}",
             message
         );

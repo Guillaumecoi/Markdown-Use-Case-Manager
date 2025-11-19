@@ -507,9 +507,22 @@ impl UseCaseRepository for SqliteUseCaseRepository {
 
         let mut use_cases = Vec::new();
         for id in ids {
-            if let Some(use_case) = Self::load_by_id_internal_conn(&conn, &id)
+            if let Some(mut use_case) = Self::load_by_id_internal_conn(&conn, &id)
                 .with_context(|| format!("Failed to load use case {}", id))?
             {
+                // Migration: If use case has no views, add default view
+                if use_case.views.is_empty() {
+                    use crate::core::MethodologyView;
+                    let config = crate::config::Config::load()
+                        .unwrap_or_else(|_| crate::config::Config::default());
+                    let default_methodology = &config.templates.default_methodology;
+                    let default_view = MethodologyView::new(default_methodology, "normal");
+                    use_case.views.push(default_view);
+
+                    // Note: Auto-save happens via the application service layer
+                    // which will detect the change and persist it
+                }
+
                 use_cases.push(use_case);
             }
         }

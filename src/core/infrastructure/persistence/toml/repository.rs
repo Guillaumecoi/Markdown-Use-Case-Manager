@@ -68,7 +68,19 @@ impl UseCaseRepository for TomlUseCaseRepository {
                 // extra fields are serde_json::Value instead of toml::Value
                 let toml_value: toml::Value = toml::from_str(&content)?;
                 let json_str = serde_json::to_string(&toml_value)?;
-                let use_case: UseCase = serde_json::from_str(&json_str)?;
+                let mut use_case: UseCase = serde_json::from_str(&json_str)?;
+
+                // Migration: If use case has no views, add default view
+                if use_case.views.is_empty() {
+                    use crate::core::MethodologyView;
+                    let default_methodology = &self.config.templates.default_methodology;
+                    let default_view = MethodologyView::new(default_methodology, "normal");
+                    use_case.views.push(default_view);
+
+                    // Auto-save the migrated use case
+                    self.save_toml_only(&use_case)?;
+                }
+
                 use_cases.push(use_case);
             }
         }
