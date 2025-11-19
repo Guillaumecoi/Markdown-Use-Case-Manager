@@ -1,13 +1,14 @@
 use anyhow::{Context, Result};
 use handlebars::Handlebars;
 use serde_json::Value;
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
 pub struct TemplateEngine {
-    handlebars: Handlebars<'static>,
+    handlebars: RefCell<Handlebars<'static>>,
     /// Map of language name to template name for test generation
     /// TODO: Use this when implementing test file generation feature
     test_templates: HashMap<String, String>,
@@ -215,7 +216,7 @@ Generated at: {{generated_at}}
         }
 
         Ok(TemplateEngine {
-            handlebars,
+            handlebars: RefCell::new(handlebars),
             test_templates,
             methodologies,
         })
@@ -227,6 +228,7 @@ Generated at: {{generated_at}}
 
     pub fn render_overview(&self, data: &HashMap<String, Value>) -> Result<String> {
         self.handlebars
+            .borrow()
             .render("overview", data)
             .context("Failed to render overview template")
     }
@@ -238,6 +240,7 @@ Generated at: {{generated_at}}
         data: &HashMap<String, Value>,
     ) -> Result<String> {
         self.handlebars
+            .borrow()
             .render(template_name, data)
             .with_context(|| format!("Failed to render use case with template: {}", template_name))
     }
@@ -253,6 +256,7 @@ Generated at: {{generated_at}}
             .ok_or_else(|| anyhow::anyhow!("Unsupported language: {}", language))?;
 
         self.handlebars
+            .borrow()
             .render(template_key, data)
             .with_context(|| format!("Failed to render {} test template", language))
     }
@@ -266,22 +270,14 @@ Generated at: {{generated_at}}
 
     /// Render use case with methodology-specific template
     /// Simple version: just renders the template with the data - no processing
+    /// Defaults to "normal" level
     pub fn render_use_case_with_methodology(
         &self,
         data: &HashMap<String, Value>,
         methodology: &str,
     ) -> Result<String> {
-        // Check if methodology template exists
-        let template_name = format!("{}-normal", methodology);
-        if self.handlebars.get_template(&template_name).is_none() {
-            anyhow::bail!(
-                "Invalid source-templates: Methodology '{}' does not have a valid uc_normal.hbs template. \
-                Check source-templates/methodologies/{}/uc_normal.hbs exists and is valid.",
-                methodology, methodology
-            );
-        }
-
-        self.render_use_case_with_template(&template_name, data)
+        // Delegate to render_use_case_with_methodology_and_level with "normal" level
+        self.render_use_case_with_methodology_and_level(data, methodology, "normal")
     }
 
     /// Render a use case with specific methodology and level
@@ -292,7 +288,12 @@ Generated at: {{generated_at}}
         level: &str,
     ) -> Result<String> {
         let template_name = format!("{}-{}", methodology, level);
-        if self.handlebars.get_template(&template_name).is_none() {
+        if self
+            .handlebars
+            .borrow()
+            .get_template(&template_name)
+            .is_none()
+        {
             anyhow::bail!(
                 "Invalid source-templates: Methodology '{}' does not have a valid uc_{}.hbs template. \
                 Check source-templates/methodologies/{}/uc_{}.hbs exists and is valid.",
@@ -300,7 +301,109 @@ Generated at: {{generated_at}}
             );
         }
 
+        // Load scenario template for this level and register as partial
+        self.register_scenario_partial_for_level(methodology, level)?;
+
         self.render_use_case_with_template(&template_name, data)
+    }
+
+    /// Resolve the path to a scenario template based on the template path specification
+    ///
+    /// # Path Resolution Rules
+    /// - If path contains `/`: relative to source-templates root (e.g., "scenarios/scenario.hbs")
+    /// - If path is filename only: relative to methodology directory (e.g., "custom-scenario.hbs")
+    /// - Paths use forward slashes in TOML, converted to OS-specific separators by PathBuf
+    fn resolve_scenario_template_path(
+        templates_dir: &Path,
+        methodology: &str,
+        scenario_template_path: &str,
+    ) -> PathBuf {
+        if scenario_template_path.contains('/') {
+            // Absolute path from source-templates root
+            // e.g., "scenarios/scenario.hbs" -> source-templates/scenarios/scenario.hbs
+            templates_dir.join(scenario_template_path)
+        } else {
+            // Relative to methodology directory
+            // e.g., "business-scenario.hbs" -> source-templates/methodologies/business/business-scenario.hbs
+            templates_dir
+                .join("methodologies")
+                .join(methodology)
+                .join(scenario_template_path)
+        }
+    }
+
+    /// Register the scenario partial for a specific methodology and level
+    /// This loads the scenario template configured for the level and registers it as "scenario"
+    /// If the scenario template cannot be loaded, this returns Ok(()) to allow rendering to continue
+    fn register_scenario_partial_for_level(&self, methodology: &str, level: &str) -> Result<()> {
+        use super::super::methodologies::MethodologyDefinition;
+
+        // Determine templates directory
+        let user_templates_path =
+            Path::new(".config/.mucm").join(crate::config::Config::TEMPLATES_DIR);
+        let source_templates_path = Path::new("source-templates").to_path_buf();
+
+        let templates_dir = if user_templates_path.exists() {
+            &user_templates_path
+        } else {
+            &source_templates_path
+        };
+
+        // Load methodology definition to get scenario_template config
+        let methodology_dir = templates_dir.join("methodologies").join(methodology);
+        let methodology_def = match MethodologyDefinition::from_toml(&methodology_dir) {
+            Ok(def) => def,
+            Err(e) => {
+                // If we can't load the methodology definition, just skip scenario partial registration
+                // This allows templates without scenario_template config to continue working
+                eprintln!(
+                    "Warning: Could not load methodology definition for '{}': {}",
+                    methodology, e
+                );
+                return Ok(());
+            }
+        };
+
+        // Get level config
+        let level_config = match methodology_def.level_configs.get(level) {
+            Some(config) => config,
+            None => {
+                eprintln!(
+                    "Warning: Level '{}' not found in methodology '{}'",
+                    level, methodology
+                );
+                return Ok(());
+            }
+        };
+
+        // Determine scenario template path
+        let scenario_template_path = level_config
+            .scenario_template
+            .as_deref()
+            .unwrap_or("scenarios/scenario.hbs"); // Default
+
+        // Resolve full path
+        let full_path = Self::resolve_scenario_template_path(
+            templates_dir,
+            methodology,
+            scenario_template_path,
+        );
+
+        // Load and register as "scenario" partial
+        if full_path.exists() {
+            let content = fs::read_to_string(&full_path)
+                .with_context(|| format!("Failed to read scenario template: {:?}", full_path))?;
+
+            self.handlebars
+                .borrow_mut()
+                .register_partial("scenario", content)
+                .context("Failed to register scenario partial")?;
+        } else {
+            // Scenario template not found - this is optional, so just warn
+            eprintln!("Warning: Scenario template not found at {:?}", full_path);
+        }
+
+        Ok(())
     }
 
     /// Get available methodologies

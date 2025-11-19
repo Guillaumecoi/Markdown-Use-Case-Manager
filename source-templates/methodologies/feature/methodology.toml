@@ -23,6 +23,7 @@ overwrite_test_documentation = false
 name = "Normal"
 abbreviation = "n"
 filename = "uc_normal.hbs"
+scenario_template = "scenarios/scenario.hbs"
 description = "Standard feature documentation with sprint planning and agile workflow"
 inherits = []
 
@@ -34,7 +35,8 @@ story_points = { label = "Story Points", type = "number", required = false, desc
 name = "Advanced"
 abbreviation = "a"
 filename = "uc_advanced.hbs"
-description = "Comprehensive feature specification with dependencies, mockups, and detailed planning"
+scenario_template = "scenarios/scenario.hbs"
+description = "Comprehensive feature documentation with dependencies, mockups, and detailed planning"
 inherits = ["Normal"]
 
 [levels.advanced.custom_fields]

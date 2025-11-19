@@ -231,6 +231,9 @@ impl TemplateManager {
         // Copy root template files
         Self::copy_root_templates(&source_templates_dir, &config_templates_dir)?;
 
+        // Copy scenarios directory
+        Self::copy_scenarios(&source_templates_dir, &config_templates_dir)?;
+
         // Copy methodologies
         Self::copy_methodologies(&source_templates_dir, &config, &config_templates_dir)?;
 
@@ -258,6 +261,28 @@ impl TemplateManager {
             let overview_dst = config_templates_dir.join("overview.hbs");
             fs::copy(&overview_src, &overview_dst)?;
             println!("✓ Copied overview template");
+        }
+
+        Ok(())
+    }
+
+    /// Copy shared scenario templates.
+    ///
+    /// Copies the scenarios directory containing shared scenario rendering templates
+    /// that can be used by multiple methodologies via Handlebars partials.
+    ///
+    /// # Arguments
+    /// * `source_templates_dir` - Path to the source templates directory
+    /// * `config_templates_dir` - Path to the destination templates directory
+    ///
+    /// # Errors
+    /// Returns an error if the scenarios directory exists but cannot be copied.
+    fn copy_scenarios(source_templates_dir: &Path, config_templates_dir: &Path) -> Result<()> {
+        let scenarios_src = source_templates_dir.join("scenarios");
+        if scenarios_src.exists() {
+            let scenarios_dst = config_templates_dir.join("scenarios");
+            Self::copy_dir_recursive(&scenarios_src, &scenarios_dst)?;
+            println!("✓ Copied scenario templates");
         }
 
         Ok(())

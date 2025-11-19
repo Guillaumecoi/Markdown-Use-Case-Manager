@@ -21,35 +21,7 @@
 {{/each}}
 
 {{/if}}
-{{#if scenarios}}
-## Actors and Personas
-
-### Actors
-{{#each (unique_actors scenarios)}}
-- **{{this}}**
-{{/each}}
-
-{{#if (has_personas scenarios)}}
-### Personas
-{{#each (unique_personas scenarios)}}
-- 🙂 **{{this}}**
-{{/each}}
-{{/if}}
-
-## Scenarios
-
-{{#each scenarios}}
-### {{scenario_type}}: {{title}}
-
-**Status:** {{status}}{{#if persona}} | **Persona:** 🙂 {{persona}}{{/if}}
-
-#### Flow
-{{#each steps}}
-{{order}}. **{{actor}}** {{action}} {{description}}
-{{/each}}
-
-{{/each}}
-{{/if}}
+{{> scenario}}
 {{#if value_proposition}}
 ## Business Value
 {{value_proposition}}

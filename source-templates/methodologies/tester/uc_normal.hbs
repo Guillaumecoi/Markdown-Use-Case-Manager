@@ -26,35 +26,7 @@
 {{/each}}
 
 {{/if}}
-{{#if scenarios}}
-## Test Actors and Personas
-
-### Actors Under Test
-{{#each (unique_actors scenarios)}}
-- **{{this}}**
-{{/each}}
-
-{{#if (has_personas scenarios)}}
-### Test Personas
-{{#each (unique_personas scenarios)}}
-- 🙂 **{{this}}**
-{{/each}}
-{{/if}}
-
-## Scenario-Based Testing
-
-{{#each scenarios}}
-### {{scenario_type}}: {{title}}
-
-**Test Status:** {{status}}{{#if persona}} | **Test Persona:** 🙂 {{persona}}{{/if}}
-
-#### Test Flow
-{{#each steps}}
-{{order}}. **{{actor}}** {{action}} {{description}}
-{{/each}}
-
-{{/each}}
-{{/if}}
+{{> scenario}}
 {{#if objectives}}
 ## Test Objectives
 

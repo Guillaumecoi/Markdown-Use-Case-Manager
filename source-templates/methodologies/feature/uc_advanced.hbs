@@ -27,55 +27,7 @@
 {{/each}}
 
 {{/if}}
-{{#if scenarios}}
-## Actors and Personas
-
-### Actors Involved
-{{#each (unique_actors scenarios)}}
-- **{{this}}**
-{{/each}}
-
-{{#if (has_personas scenarios)}}
-### Target Personas
-{{#each (unique_personas scenarios)}}
-- 🙂 **{{this}}**
-{{/each}}
-{{/if}}
-
-## Scenarios
-
-{{#each scenarios}}
-### {{scenario_type}}: {{title}}
-
-**ID:** {{id}}  
-**Status:** {{status}}  
-**Description:** {{description}}
-
-{{#if persona}}
-**Persona:** 🙂 {{persona}}
-{{/if}}
-
-#### Flow
-{{#each steps}}
-{{order}}. **{{actor}}** {{action}} {{description}}{{#if notes}} ({{notes}}){{/if}}
-{{/each}}
-
-{{#if preconditions}}
-#### Preconditions
-{{#each preconditions}}
-- {{this}}
-{{/each}}
-{{/if}}
-
-{{#if postconditions}}
-#### Postconditions
-{{#each postconditions}}
-- {{this}}
-{{/each}}
-{{/if}}
-
-{{/each}}
-{{/if}}
+{{> scenario}}
 {{#if value_proposition}}
 ## Business Value
 

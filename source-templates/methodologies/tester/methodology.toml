@@ -22,7 +22,8 @@ overwrite_test_documentation = true
 name = "Normal"
 abbreviation = "n"
 filename = "uc_normal.hbs"
-description = "Standard QA documentation with test type, priority, automation, and expected results"
+scenario_template = "scenarios/scenario.hbs"
+description = "Standard test documentation covering test types, priorities, and expected results"
 inherits = []
 
 [levels.normal.custom_fields]
@@ -36,7 +37,8 @@ expected_result = { label = "Expected Result", type = "string", required = true,
 name = "Advanced"
 abbreviation = "a"
 filename = "uc_advanced.hbs"
-description = "Comprehensive testing specification with environment details, regression suites, and quality metrics"
+scenario_template = "scenarios/scenario.hbs"
+description = "Comprehensive test specification with environment setup, regression suites, and coverage metrics"
 inherits = ["Normal"]
 
 [levels.advanced.custom_fields]

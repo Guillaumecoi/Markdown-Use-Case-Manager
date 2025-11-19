@@ -49,6 +49,9 @@ pub(crate) struct LevelConfig {
     /// Custom fields specific to this level
     #[serde(default)]
     pub(crate) custom_fields: HashMap<String, CustomFieldConfig>,
+    /// Optional path to scenario template (e.g., "scenarios/scenario.hbs", "business-scenario.hbs")
+    /// Paths use forward slashes, converted to OS-specific at runtime
+    pub(crate) scenario_template: Option<String>,
 }
 
 impl MethodologyDefinition {
@@ -111,6 +114,9 @@ impl MethodologyDefinition {
             inherits: Vec<String>,
             #[serde(default)]
             custom_fields: HashMap<String, CustomFieldConfig>,
+            /// Optional path to scenario template (e.g., "scenarios/scenario.hbs")
+            /// Paths use forward slashes, converted to OS-specific at runtime
+            scenario_template: Option<String>,
         }
 
         let methodology_path = methodology_dir.join("methodology.toml");
@@ -141,6 +147,7 @@ impl MethodologyDefinition {
                     level_name.clone(),
                     LevelConfig {
                         custom_fields: level_data.custom_fields.clone(),
+                        scenario_template: level_data.scenario_template.clone(),
                     },
                 )
             })

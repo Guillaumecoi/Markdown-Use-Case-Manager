@@ -63,55 +63,7 @@
 {{/each}}
 
 {{/if}}
-{{#if scenarios}}
-## Actors and Personas
-
-### System Actors
-{{#each (unique_actors scenarios)}}
-- **{{this}}** - _Technical entity in system interactions_
-{{/each}}
-
-{{#if (has_personas scenarios)}}
-### User Personas
-{{#each (unique_personas scenarios)}}
-- **{{this}}** - _End-user profile for scenario_
-{{/each}}
-{{/if}}
-
-## Technical Scenarios
-
-{{#each scenarios}}
-### {{scenario_type}}: {{title}}
-
-**Scenario ID:** {{id}}  
-**Implementation Status:** {{status}}  
-**Technical Description:** {{description}}
-
-{{#if persona}}
-**Target Persona:** 🙂 {{persona}}
-{{/if}}
-
-#### Technical Flow
-{{#each steps}}
-{{order}}. **{{actor}}** {{action}} {{description}}{{#if notes}} ({{notes}}){{/if}}
-{{/each}}
-
-{{#if preconditions}}
-#### Scenario Preconditions
-{{#each preconditions}}
-- {{this}}
-{{/each}}
-{{/if}}
-
-{{#if postconditions}}
-#### Scenario Postconditions
-{{#each postconditions}}
-- {{this}}
-{{/each}}
-{{/if}}
-
-{{/each}}
-{{/if}}
+{{> scenario}}
 {{#if development_approach}}
 ## Implementation Details
 

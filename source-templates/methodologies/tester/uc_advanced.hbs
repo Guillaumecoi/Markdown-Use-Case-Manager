@@ -32,55 +32,7 @@
 {{/each}}
 
 {{/if}}
-{{#if scenarios}}
-## Test Actors and Personas
-
-### Actors Under Test
-{{#each (unique_actors scenarios)}}
-- **{{this}}** - _System or user role being tested_
-{{/each}}
-
-{{#if (has_personas scenarios)}}
-### Test Personas
-{{#each (unique_personas scenarios)}}
-- 🙂 **{{this}}** - _User profile for test scenarios_
-{{/each}}
-{{/if}}
-
-## Scenario-Based Testing
-
-{{#each scenarios}}
-### {{scenario_type}}: {{title}}
-
-**Scenario ID:** {{id}}  
-**Test Status:** {{status}}  
-**Test Description:** {{description}}
-
-{{#if persona}}
-**Test Persona:** 🙂 {{persona}}
-{{/if}}
-
-#### Test Flow
-{{#each steps}}
-{{order}}. **{{actor}}** {{action}} {{description}}{{#if notes}} ({{notes}}){{/if}}
-{{/each}}
-
-{{#if preconditions}}
-#### Test Preconditions
-{{#each preconditions}}
-- {{this}}
-{{/each}}
-{{/if}}
-
-{{#if postconditions}}
-#### Test Postconditions
-{{#each postconditions}}
-- {{this}}
-{{/each}}
-{{/if}}
-
-{{/each}}
-{{/if}}
+{{> scenario}}
 {{#if objectives}}
 ## Test Objectives
 

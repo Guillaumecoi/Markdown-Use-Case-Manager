@@ -56,22 +56,7 @@
 {{/each}}
 
 {{/if}}
-{{#if scenarios}}
-## Actors and Personas
 
-### System Actors
-{{#each (unique_actors scenarios)}}
-- **{{this}}** - _System or external entity participating in scenarios_
-{{/each}}
-
-{{#if (has_personas scenarios)}}
-### Target Personas
-{{#each (unique_personas scenarios)}}
-- **{{this}}** - _User persona experiencing this scenario_
-{{/each}}
-{{/if}}
-
-{{/if}}
 {{#if business.success_criteria}}
 ### Success Criteria
 {{#each business.success_criteria}}
@@ -93,41 +78,7 @@
 {{/each}}
 
 {{/if}}
-{{#if scenarios}}
-## Scenario Analysis
-
-{{#each scenarios}}
-### {{scenario_type}}: {{title}}
-
-**Scenario ID:** {{id}}  
-**Status:** {{status}}  
-**Business Description:** {{description}}
-
-{{#if persona}}
-**Target Persona:** 🙂 {{persona}}
-{{/if}}
-
-#### Business Flow
-{{#each steps}}
-{{order}}. **{{actor}}** {{action}} {{description}}{{#if notes}} ({{notes}}){{/if}}
-{{/each}}
-
-{{#if preconditions}}
-#### Scenario Preconditions
-{{#each preconditions}}
-- {{this}}
-{{/each}}
-{{/if}}
-
-{{#if postconditions}}
-#### Scenario Postconditions
-{{#each postconditions}}
-- {{this}}
-{{/each}}
-{{/if}}
-
-{{/each}}
-{{/if}}
+{{> scenario}}
 {{#if use_case_references}}
 ## Related Use Cases
 {{#each use_case_references}}

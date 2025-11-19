@@ -22,6 +22,7 @@ overwrite_test_documentation = false
 name = "Normal"
 abbreviation = "n"
 filename = "uc_normal.hbs"
+scenario_template = "scenarios/scenario.hbs"
 description = "Standard business documentation covering essential stakeholder needs and business value"
 inherits = []
 
@@ -34,6 +35,7 @@ stakeholders = { label = "Key Stakeholders", type = "array", required = false, d
 name = "Advanced"
 abbreviation = "a"
 filename = "uc_advanced.hbs"
+scenario_template = "scenarios/scenario.hbs"
 description = "Comprehensive business case with financial analysis, stakeholder mapping, and detailed planning"
 inherits = ["Normal"]
 
