@@ -25,6 +25,7 @@
 //! - `MethodologyInfo`: Methodology metadata for display and selection
 
 mod dto;
+mod persona_controller;
 mod project_controller;
 mod use_case_controller;
 
@@ -32,6 +33,7 @@ mod use_case_controller;
 mod tests;
 
 // Re-export commonly used controllers
+pub use persona_controller::PersonaController;
 pub use project_controller::ProjectController;
 pub use use_case_controller::UseCaseController;
 

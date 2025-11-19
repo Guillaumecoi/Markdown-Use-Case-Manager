@@ -11,5 +11,6 @@ pub mod traits;
 
 // Re-export for convenience
 pub use repository_factory::RepositoryFactory;
-pub use toml::TomlUseCaseRepository;
+pub use sqlite::{SqlitePersonaRepository, SqliteUseCaseRepository};
+pub use toml::{TomlPersonaRepository, TomlUseCaseRepository};
 pub use traits::UseCaseRepository;

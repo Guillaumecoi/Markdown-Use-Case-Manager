@@ -15,8 +15,8 @@ pub use application::{
 
 // Re-export domain types (from domain's public interface)
 pub use domain::{
-    MethodologyView, Persona, ReferenceType, ScenarioReference, ScenarioReferenceValidator,
-    ScenarioType, Status, UseCase,
+    MethodologyView, Persona, PersonaRepository, ReferenceType, ScenarioReference,
+    ScenarioReferenceValidator, ScenarioType, Status, UseCase,
 };
 
 // Exported for integration tests (appear unused to lib but required by tests/)
@@ -32,7 +32,9 @@ pub use infrastructure::{
 
 // Exported for integration tests (appear unused to lib but required by tests/)
 #[allow(unused_imports)]
-pub use infrastructure::{SqliteUseCaseRepository, TomlUseCaseRepository};
+pub use infrastructure::{
+    SqlitePersonaRepository, SqliteUseCaseRepository, TomlPersonaRepository, TomlUseCaseRepository,
+};
 
 // Re-export utility functions
 pub use utils::to_snake_case;

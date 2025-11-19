@@ -11,8 +11,8 @@ pub use methodologies::{
     CustomFieldConfig, DocumentationLevel, FieldResolver, Methodology, MethodologyDefinition,
     MethodologyRegistry,
 };
-pub use persistence::sqlite::SqliteUseCaseRepository;
 pub use persistence::{
-    file_operations, RepositoryFactory, TomlUseCaseRepository, UseCaseRepository,
+    file_operations, RepositoryFactory, SqlitePersonaRepository, SqliteUseCaseRepository,
+    TomlPersonaRepository, TomlUseCaseRepository, UseCaseRepository,
 };
 pub use template_engine::TemplateEngine;
