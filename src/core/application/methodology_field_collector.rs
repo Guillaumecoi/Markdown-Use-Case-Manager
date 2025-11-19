@@ -197,30 +197,27 @@ impl MethodologyFieldCollector {
     ) -> HashMap<String, serde_json::Value> {
         let mut result = HashMap::new();
 
-        for (field_name, user_value) in user_values {
-            if let Some(field) = field_collection.fields.get(&field_name) {
-                // Convert string value to appropriate JSON type
-                let json_value = self.convert_to_json_type(&user_value, &field.field_type);
-                result.insert(field_name, json_value);
-            }
-        }
-
-        // Add default values for required fields that weren't provided
+        // First, add all fields from the collection with appropriate defaults
+        // This ensures ALL fields are present in the TOML, even if empty
         for (field_name, field) in &field_collection.fields {
-            if field.required && !result.contains_key(field_name) {
-                if let Some(default) = &field.default {
-                    let json_value = self.convert_to_json_type(default, &field.field_type);
-                    result.insert(field_name.clone(), json_value);
-                } else {
-                    // Required field with no default and no user value - use empty/zero
-                    let json_value = match field.field_type.as_str() {
-                        "array" => serde_json::Value::Array(vec![]),
-                        "number" => serde_json::Value::Number(serde_json::Number::from(0)),
-                        "boolean" => serde_json::Value::Bool(false),
-                        _ => serde_json::Value::String(String::new()),
-                    };
-                    result.insert(field_name.clone(), json_value);
-                }
+            // Check if user provided a value
+            if let Some(user_value) = user_values.get(field_name) {
+                // User provided value - convert and use it
+                let json_value = self.convert_to_json_type(user_value, &field.field_type);
+                result.insert(field_name.clone(), json_value);
+            } else if let Some(default) = &field.default {
+                // No user value but has default - use default
+                let json_value = self.convert_to_json_type(default, &field.field_type);
+                result.insert(field_name.clone(), json_value);
+            } else {
+                // No user value and no default - use empty value based on type
+                let json_value = match field.field_type.as_str() {
+                    "array" => serde_json::Value::Array(vec![]),
+                    "number" => serde_json::Value::Number(serde_json::Number::from(0)),
+                    "boolean" => serde_json::Value::Bool(false),
+                    _ => serde_json::Value::String(String::new()),
+                };
+                result.insert(field_name.clone(), json_value);
             }
         }
 
@@ -303,5 +300,267 @@ mod tests {
 
         let value = collector.convert_to_json_type("false", "boolean");
         assert_eq!(value, serde_json::Value::Bool(false));
+    }
+
+    #[test]
+    fn test_apply_user_values_all_fields_present_when_empty() {
+        let collector = MethodologyFieldCollector::default();
+
+        // Create a field collection with multiple field types
+        let mut field_collection = FieldCollection::default();
+
+        // Required string field
+        field_collection.fields.insert(
+            "required_field".to_string(),
+            CollectedField {
+                name: "required_field".to_string(),
+                field_type: "string".to_string(),
+                label: "Required Field".to_string(),
+                required: true,
+                default: None,
+                description: None,
+                methodologies: vec!["test".to_string()],
+                level: "normal".to_string(),
+            },
+        );
+
+        // Optional string field
+        field_collection.fields.insert(
+            "optional_string".to_string(),
+            CollectedField {
+                name: "optional_string".to_string(),
+                field_type: "string".to_string(),
+                label: "Optional String".to_string(),
+                required: false,
+                default: None,
+                description: None,
+                methodologies: vec!["test".to_string()],
+                level: "normal".to_string(),
+            },
+        );
+
+        // Optional array field
+        field_collection.fields.insert(
+            "optional_array".to_string(),
+            CollectedField {
+                name: "optional_array".to_string(),
+                field_type: "array".to_string(),
+                label: "Optional Array".to_string(),
+                required: false,
+                default: None,
+                description: None,
+                methodologies: vec!["test".to_string()],
+                level: "normal".to_string(),
+            },
+        );
+
+        // Optional number field
+        field_collection.fields.insert(
+            "optional_number".to_string(),
+            CollectedField {
+                name: "optional_number".to_string(),
+                field_type: "number".to_string(),
+                label: "Optional Number".to_string(),
+                required: false,
+                default: None,
+                description: None,
+                methodologies: vec!["test".to_string()],
+                level: "normal".to_string(),
+            },
+        );
+
+        // Optional boolean field
+        field_collection.fields.insert(
+            "optional_boolean".to_string(),
+            CollectedField {
+                name: "optional_boolean".to_string(),
+                field_type: "boolean".to_string(),
+                label: "Optional Boolean".to_string(),
+                required: false,
+                default: None,
+                description: None,
+                methodologies: vec!["test".to_string()],
+                level: "normal".to_string(),
+            },
+        );
+
+        // Apply with empty user_values (simulating user skipping all optional fields)
+        let user_values = HashMap::new();
+        let result = collector.apply_user_values(&field_collection, user_values);
+
+        // ALL fields should be present, even though no values were provided
+        assert_eq!(
+            result.len(),
+            5,
+            "All 5 fields should be present in the result"
+        );
+
+        // Verify each field has appropriate empty/default value
+        assert_eq!(
+            result.get("required_field"),
+            Some(&serde_json::Value::String(String::new())),
+            "Required field should have empty string"
+        );
+        assert_eq!(
+            result.get("optional_string"),
+            Some(&serde_json::Value::String(String::new())),
+            "Optional string should have empty string"
+        );
+        assert_eq!(
+            result.get("optional_array"),
+            Some(&serde_json::Value::Array(vec![])),
+            "Optional array should have empty array"
+        );
+        assert_eq!(
+            result.get("optional_number"),
+            Some(&serde_json::Value::Number(serde_json::Number::from(0))),
+            "Optional number should have 0"
+        );
+        assert_eq!(
+            result.get("optional_boolean"),
+            Some(&serde_json::Value::Bool(false)),
+            "Optional boolean should have false"
+        );
+    }
+
+    #[test]
+    fn test_apply_user_values_with_defaults() {
+        let collector = MethodologyFieldCollector::default();
+
+        let mut field_collection = FieldCollection::default();
+
+        // Field with default value
+        field_collection.fields.insert(
+            "field_with_default".to_string(),
+            CollectedField {
+                name: "field_with_default".to_string(),
+                field_type: "string".to_string(),
+                label: "Field With Default".to_string(),
+                required: false,
+                default: Some("default value".to_string()),
+                description: None,
+                methodologies: vec!["test".to_string()],
+                level: "normal".to_string(),
+            },
+        );
+
+        // Apply without user value - should use default
+        let user_values = HashMap::new();
+        let result = collector.apply_user_values(&field_collection, user_values);
+
+        assert_eq!(
+            result.get("field_with_default"),
+            Some(&serde_json::Value::String("default value".to_string())),
+            "Field should use default value when no user value provided"
+        );
+    }
+
+    #[test]
+    fn test_apply_user_values_user_overrides_default() {
+        let collector = MethodologyFieldCollector::default();
+
+        let mut field_collection = FieldCollection::default();
+
+        // Field with default value
+        field_collection.fields.insert(
+            "field_with_default".to_string(),
+            CollectedField {
+                name: "field_with_default".to_string(),
+                field_type: "string".to_string(),
+                label: "Field With Default".to_string(),
+                required: false,
+                default: Some("default value".to_string()),
+                description: None,
+                methodologies: vec!["test".to_string()],
+                level: "normal".to_string(),
+            },
+        );
+
+        // Apply with user value - should override default
+        let mut user_values = HashMap::new();
+        user_values.insert("field_with_default".to_string(), "user value".to_string());
+        let result = collector.apply_user_values(&field_collection, user_values);
+
+        assert_eq!(
+            result.get("field_with_default"),
+            Some(&serde_json::Value::String("user value".to_string())),
+            "User value should override default"
+        );
+    }
+
+    #[test]
+    fn test_apply_user_values_mixed_filled_and_empty() {
+        let collector = MethodologyFieldCollector::default();
+
+        let mut field_collection = FieldCollection::default();
+
+        // Add three fields
+        field_collection.fields.insert(
+            "filled_field".to_string(),
+            CollectedField {
+                name: "filled_field".to_string(),
+                field_type: "string".to_string(),
+                label: "Filled Field".to_string(),
+                required: false,
+                default: None,
+                description: None,
+                methodologies: vec!["test".to_string()],
+                level: "normal".to_string(),
+            },
+        );
+
+        field_collection.fields.insert(
+            "empty_field".to_string(),
+            CollectedField {
+                name: "empty_field".to_string(),
+                field_type: "string".to_string(),
+                label: "Empty Field".to_string(),
+                required: false,
+                default: None,
+                description: None,
+                methodologies: vec!["test".to_string()],
+                level: "normal".to_string(),
+            },
+        );
+
+        field_collection.fields.insert(
+            "array_field".to_string(),
+            CollectedField {
+                name: "array_field".to_string(),
+                field_type: "array".to_string(),
+                label: "Array Field".to_string(),
+                required: false,
+                default: None,
+                description: None,
+                methodologies: vec!["test".to_string()],
+                level: "normal".to_string(),
+            },
+        );
+
+        // Only fill one field
+        let mut user_values = HashMap::new();
+        user_values.insert("filled_field".to_string(), "some value".to_string());
+
+        let result = collector.apply_user_values(&field_collection, user_values);
+
+        // All three fields should be present
+        assert_eq!(result.len(), 3, "All fields should be present");
+
+        // Check values
+        assert_eq!(
+            result.get("filled_field"),
+            Some(&serde_json::Value::String("some value".to_string())),
+            "Filled field should have user value"
+        );
+        assert_eq!(
+            result.get("empty_field"),
+            Some(&serde_json::Value::String(String::new())),
+            "Empty field should have empty string"
+        );
+        assert_eq!(
+            result.get("array_field"),
+            Some(&serde_json::Value::Array(vec![])),
+            "Empty array field should have empty array"
+        );
     }
 }

@@ -226,3 +226,167 @@ fn test_multi_methodology_storage() -> Result<()> {
 
     Ok(())
 }
+
+/// Test that ALL methodology-specific fields are present in TOML, even when empty
+/// This ensures the TOML file structure is complete for all defined fields
+#[test]
+#[serial]
+fn test_all_fields_present_in_toml_when_empty() -> Result<()> {
+    let temp_dir = TempDir::new()?;
+    env::set_current_dir(&temp_dir)?;
+
+    init_test_environment(vec!["developer".to_string(), "feature".to_string()])?;
+    let mut service = UseCaseCoordinator::load()?;
+
+    // Create use case with developer:normal and feature:normal WITHOUT filling any fields
+    // This simulates the interactive mode where user skips optional fields
+    service.create_use_case_with_views(
+        "Test Empty Fields".to_string(),
+        "testing".to_string(),
+        Some("Testing that all fields are created".to_string()),
+        "developer:normal,feature:normal",
+    )?;
+
+    let use_case = service
+        .get_all_use_cases()
+        .iter()
+        .find(|uc| uc.id == "UC-TES-001")
+        .expect("Use case should exist");
+
+    // Verify developer methodology fields
+    let developer_fields = use_case
+        .methodology_fields
+        .get("developer")
+        .expect("Developer methodology should be present");
+
+    // Developer:normal should have these fields defined in methodology.toml
+    assert!(
+        developer_fields.contains_key("api_endpoint"),
+        "api_endpoint field should be present (even if empty)"
+    );
+    assert!(
+        developer_fields.contains_key("database_tables"),
+        "database_tables field should be present (even if empty)"
+    );
+
+    // Verify the fields are empty (no value provided)
+    assert_eq!(
+        developer_fields.get("api_endpoint"),
+        Some(&serde_json::Value::String(String::new())),
+        "api_endpoint should be empty string"
+    );
+    assert_eq!(
+        developer_fields.get("database_tables"),
+        Some(&serde_json::Value::Array(vec![])),
+        "database_tables should be empty array"
+    );
+
+    // Verify feature methodology fields
+    let feature_fields = use_case
+        .methodology_fields
+        .get("feature")
+        .expect("Feature methodology should be present");
+
+    // Feature:normal should have these fields defined in methodology.toml
+    assert!(
+        feature_fields.contains_key("user_segment"),
+        "user_segment field should be present (even if empty)"
+    );
+    assert!(
+        feature_fields.contains_key("success_metrics"),
+        "success_metrics field should be present (even if empty)"
+    );
+    assert!(
+        feature_fields.contains_key("hypothesis"),
+        "hypothesis field should be present (even if empty)"
+    );
+
+    // Verify the fields are empty
+    assert_eq!(
+        feature_fields.get("user_segment"),
+        Some(&serde_json::Value::String(String::new())),
+        "user_segment should be empty string"
+    );
+    assert_eq!(
+        feature_fields.get("success_metrics"),
+        Some(&serde_json::Value::Array(vec![])),
+        "success_metrics should be empty array"
+    );
+    assert_eq!(
+        feature_fields.get("hypothesis"),
+        Some(&serde_json::Value::String(String::new())),
+        "hypothesis should be empty string"
+    );
+
+    Ok(())
+}
+
+/// Test that advanced level includes all inherited fields plus its own fields
+#[test]
+#[serial]
+fn test_advanced_level_has_all_fields_including_inherited() -> Result<()> {
+    let temp_dir = TempDir::new()?;
+    env::set_current_dir(&temp_dir)?;
+
+    init_test_environment(vec!["developer".to_string()])?;
+    let mut service = UseCaseCoordinator::load()?;
+
+    // Create use case with developer:advanced (inherits from normal)
+    service.create_use_case_with_views(
+        "Test Advanced Fields".to_string(),
+        "testing".to_string(),
+        None,
+        "developer:advanced",
+    )?;
+
+    let use_case = service
+        .get_all_use_cases()
+        .iter()
+        .find(|uc| uc.id == "UC-TES-001")
+        .expect("Use case should exist");
+
+    let developer_fields = use_case
+        .methodology_fields
+        .get("developer")
+        .expect("Developer methodology should be present");
+
+    // Check inherited fields from normal level
+    assert!(
+        developer_fields.contains_key("api_endpoint"),
+        "Inherited field api_endpoint should be present"
+    );
+    assert!(
+        developer_fields.contains_key("database_tables"),
+        "Inherited field database_tables should be present"
+    );
+
+    // Check advanced-level specific fields
+    assert!(
+        developer_fields.contains_key("performance_requirements"),
+        "Advanced field performance_requirements should be present"
+    );
+    assert!(
+        developer_fields.contains_key("security_considerations"),
+        "Advanced field security_considerations should be present"
+    );
+    assert!(
+        developer_fields.contains_key("technical_dependencies"),
+        "Advanced field technical_dependencies should be present"
+    );
+    assert!(
+        developer_fields.contains_key("error_handling"),
+        "Advanced field error_handling should be present"
+    );
+
+    // Verify all are empty (no values provided)
+    assert_eq!(
+        developer_fields.get("performance_requirements"),
+        Some(&serde_json::Value::String(String::new()))
+    );
+    assert_eq!(
+        developer_fields.get("technical_dependencies"),
+        Some(&serde_json::Value::Array(vec![]))
+    );
+
+    Ok(())
+}
