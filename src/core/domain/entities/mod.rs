@@ -25,5 +25,5 @@ pub use scenario_reference::ScenarioReference;
 pub use scenario_step::ScenarioStep;
 pub use scenario_type::ScenarioType;
 pub use status::Status;
-pub use use_case::UseCase;
+pub use use_case::{Priority, UseCase};
 pub use use_case_reference::UseCaseReference;

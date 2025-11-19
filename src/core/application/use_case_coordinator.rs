@@ -9,7 +9,7 @@ use crate::core::application::generators::{
 use crate::core::application::services;
 use crate::core::utils::suggest_alternatives;
 use crate::core::{
-    domain::{Scenario, ScenarioReference, ScenarioType, UseCaseReference},
+    domain::{Priority, Scenario, ScenarioReference, ScenarioType, UseCaseReference},
     MethodologyView, RepositoryFactory, TemplateEngine, UseCase, UseCaseRepository,
 };
 use anyhow::Result;
@@ -716,6 +716,280 @@ impl UseCaseCoordinator {
         let mut service =
             services::MethodologyFieldCleanupService::new(&self.repository, &mut self.use_cases);
         service.cleanup_methodology_fields(use_case_id, dry_run)
+    }
+
+    // ========== Update Operations ==========
+
+    /// Update basic use case fields
+    ///
+    /// Updates the title, category, description, and/or priority of an existing use case.
+    /// Only provided fields (Some) are updated; None values leave fields unchanged.
+    /// After updating, regenerates markdown files and reloads use cases.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case to update
+    /// * `title` - Optional new title
+    /// * `category` - Optional new category
+    /// * `description` - Optional new description
+    /// * `priority` - Optional new priority (e.g., "high", "medium", "low")
+    ///
+    /// # Returns
+    /// Ok(()) on successful update
+    ///
+    /// # Errors
+    /// Returns error if:
+    /// - Use case not found
+    /// - Invalid priority value
+    /// - Repository save fails
+    /// - Markdown regeneration fails
+    pub fn update_use_case(
+        &mut self,
+        use_case_id: &str,
+        title: Option<&str>,
+        category: Option<&str>,
+        description: Option<&str>,
+        priority: Option<&str>,
+    ) -> Result<()> {
+        // Load existing use case
+        let mut use_case = self
+            .repository
+            .load_by_id(use_case_id)?
+            .ok_or_else(|| anyhow::anyhow!("Use case {} not found", use_case_id))?;
+
+        // Apply updates (only if Some)
+        if let Some(t) = title {
+            use_case.title = t.to_string();
+        }
+        if let Some(c) = category {
+            use_case.category = c.to_string();
+        }
+        if let Some(d) = description {
+            use_case.description = d.to_string();
+        }
+        if let Some(p) = priority {
+            // Parse priority string - use the imported Priority enum
+            use_case.priority = match p.to_lowercase().as_str() {
+                "low" => Priority::Low,
+                "medium" => Priority::Medium,
+                "high" => Priority::High,
+                "critical" => Priority::Critical,
+                _ => return Err(anyhow::anyhow!("Invalid priority: {}", p)),
+            };
+        }
+
+        // Touch metadata to update modified timestamp
+        use_case.metadata.touch();
+
+        // Save updated use case (TOML and markdown)
+        self.save_use_case_with_views(&use_case)?;
+
+        // Reload use cases to refresh in-memory state
+        self.use_cases = self.repository.load_all()?;
+
+        Ok(())
+    }
+
+    /// Update methodology-specific fields for a use case
+    ///
+    /// Updates the custom fields for a specific methodology in the use case.
+    /// The provided fields are merged with existing fields for that methodology.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case to update
+    /// * `methodology` - The methodology whose fields to update
+    /// * `fields` - HashMap of field names to new values (in string format)
+    ///
+    /// # Returns
+    /// Ok(()) on successful update
+    ///
+    /// # Errors
+    /// Returns error if:
+    /// - Use case not found
+    /// - Methodology not in use case views
+    /// - Repository save fails
+    /// - Markdown regeneration fails
+    pub fn update_methodology_fields(
+        &mut self,
+        use_case_id: &str,
+        methodology: &str,
+        fields: HashMap<String, String>,
+    ) -> Result<()> {
+        // Load existing use case
+        let mut use_case = self
+            .repository
+            .load_by_id(use_case_id)?
+            .ok_or_else(|| anyhow::anyhow!("Use case {} not found", use_case_id))?;
+
+        // Verify methodology exists in views
+        if !use_case
+            .views
+            .iter()
+            .any(|v| v.methodology == methodology)
+        {
+            return Err(anyhow::anyhow!(
+                "Methodology {} not found in use case views",
+                methodology
+            ));
+        }
+
+        // Get existing methodology fields or create new entry
+        let methodology_fields = use_case
+            .methodology_fields
+            .entry(methodology.to_string())
+            .or_insert_with(HashMap::new);
+
+        // Convert string values to JSON values and merge
+        for (key, value) in fields {
+            // Try to parse as JSON, otherwise treat as string
+            let json_value = if value.is_empty() {
+                serde_json::Value::String(String::new())
+            } else if let Ok(val) = serde_json::from_str::<serde_json::Value>(&value) {
+                val
+            } else {
+                serde_json::Value::String(value)
+            };
+            methodology_fields.insert(key, json_value);
+        }
+
+        // Touch metadata
+        use_case.metadata.touch();
+
+        // Save updated use case and regenerate markdown
+        self.save_use_case_with_views(&use_case)?;
+
+        // Reload use cases
+        self.use_cases = self.repository.load_all()?;
+
+        Ok(())
+    }
+
+    /// Add a new methodology view to a use case
+    ///
+    /// Adds a new methodology:level view to the use case and initializes
+    /// empty methodology fields for it.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `methodology` - The methodology to add
+    /// * `level` - The level for the methodology
+    ///
+    /// # Returns
+    /// Ok(()) on successful addition
+    ///
+    /// # Errors
+    /// Returns error if:
+    /// - Use case not found
+    /// - View with same methodology already exists
+    /// - Repository save fails
+    /// - Markdown generation fails
+    pub fn add_view(
+        &mut self,
+        use_case_id: &str,
+        methodology: &str,
+        level: &str,
+    ) -> Result<()> {
+        // Load existing use case
+        let mut use_case = self
+            .repository
+            .load_by_id(use_case_id)?
+            .ok_or_else(|| anyhow::anyhow!("Use case {} not found", use_case_id))?;
+
+        // Check if view already exists
+        if use_case
+            .views
+            .iter()
+            .any(|v| v.methodology == methodology)
+        {
+            return Err(anyhow::anyhow!(
+                "View for methodology {} already exists",
+                methodology
+            ));
+        }
+
+        // Add new view
+        use_case.add_view(MethodologyView::new(
+            methodology.to_string(),
+            level.to_string(),
+        ));
+
+        // Initialize empty methodology fields for this methodology
+        if !use_case.methodology_fields.contains_key(methodology) {
+            use_case
+                .methodology_fields
+                .insert(methodology.to_string(), HashMap::new());
+        }
+
+        // Touch metadata
+        use_case.metadata.touch();
+
+        // Save updated use case and generate markdown for new view
+        self.save_use_case_with_views(&use_case)?;
+
+        // Regenerate overview
+        self.generate_overview()?;
+
+        // Reload use cases
+        self.use_cases = self.repository.load_all()?;
+
+        Ok(())
+    }
+
+    /// Remove a methodology view from a use case
+    ///
+    /// Removes the specified methodology view and cleans up its associated
+    /// methodology fields. Prevents removal if it's the last view.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `methodology` - The methodology to remove
+    ///
+    /// # Returns
+    /// Ok(()) on successful removal
+    ///
+    /// # Errors
+    /// Returns error if:
+    /// - Use case not found
+    /// - Trying to remove the last view
+    /// - Repository save fails
+    pub fn remove_view(&mut self, use_case_id: &str, methodology: &str) -> Result<()> {
+        // Load existing use case
+        let mut use_case = self
+            .repository
+            .load_by_id(use_case_id)?
+            .ok_or_else(|| anyhow::anyhow!("Use case {} not found", use_case_id))?;
+
+        // Check if it's the last view
+        if use_case.views.len() <= 1 {
+            return Err(anyhow::anyhow!(
+                "Cannot remove the last view from a use case"
+            ));
+        }
+
+        // Check if methodology exists in views
+        let view_exists = use_case.views.iter().any(|v| v.methodology == methodology);
+        if !view_exists {
+            return Err(anyhow::anyhow!("View {} not found in use case", methodology));
+        }
+
+        // Remove the view by retaining all except the one to remove
+        use_case.views.retain(|v| v.methodology != methodology);
+
+        // Clean up methodology fields for removed methodology
+        use_case.methodology_fields.remove(methodology);
+
+        // Touch metadata
+        use_case.metadata.touch();
+
+        // Save updated use case and regenerate remaining markdown
+        self.save_use_case_with_views(&use_case)?;
+
+        // Regenerate overview
+        self.generate_overview()?;
+
+        // Reload use cases
+        self.use_cases = self.repository.load_all()?;
+
+        Ok(())
     }
 }
 

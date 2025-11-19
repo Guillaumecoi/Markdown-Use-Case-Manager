@@ -22,7 +22,9 @@
 
 use crate::config::Config;
 use crate::controller::dto::{DisplayResult, SelectionOptions};
-use crate::core::{ReferenceType, ScenarioReference, ScenarioType, Status, UseCaseCoordinator};
+use crate::core::{
+    ReferenceType, ScenarioReference, ScenarioType, Status, UseCase, UseCaseCoordinator,
+};
 use crate::presentation::{StatusFormatter, UseCaseFormatter};
 use anyhow::Result;
 
@@ -950,5 +952,167 @@ impl UseCaseController {
             }
             Err(e) => Ok(DisplayResult::error(e.to_string())),
         }
+    }
+
+    // ========== Update Operations ==========
+
+    /// Update basic use case information
+    ///
+    /// Updates the title, category, description, and/or priority of an existing use case.
+    /// Only updates fields that are provided (Some). None values leave the field unchanged.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case to update
+    /// * `title` - Optional new title
+    /// * `category` - Optional new category
+    /// * `description` - Optional new description
+    /// * `priority` - Optional new priority
+    ///
+    /// # Returns
+    /// DisplayResult with success message and updated use case ID
+    ///
+    /// # Errors
+    /// Returns error if use case not found or update fails
+    pub fn update_use_case(
+        &mut self,
+        use_case_id: String,
+        title: Option<String>,
+        category: Option<String>,
+        description: Option<String>,
+        priority: Option<String>,
+    ) -> Result<DisplayResult> {
+        match self.app_service.update_use_case(
+            &use_case_id,
+            title.as_deref(),
+            category.as_deref(),
+            description.as_deref(),
+            priority.as_deref(),
+        ) {
+            Ok(_) => {
+                let message = format!("✅ Updated use case: {}", use_case_id);
+                Ok(DisplayResult::success(message))
+            }
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Update methodology-specific fields for a use case
+    ///
+    /// Updates the custom fields for a specific methodology view in the use case.
+    /// The fields are merged with existing fields for that methodology.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case to update
+    /// * `methodology` - The methodology whose fields to update
+    /// * `fields` - HashMap of field names to new values
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or methodology not in use case views
+    pub fn update_use_case_methodology_fields(
+        &mut self,
+        use_case_id: String,
+        methodology: String,
+        fields: std::collections::HashMap<String, String>,
+    ) -> Result<DisplayResult> {
+        match self
+            .app_service
+            .update_methodology_fields(&use_case_id, &methodology, fields)
+        {
+            Ok(_) => {
+                let message = format!(
+                    "✅ Updated {} methodology fields for use case: {}",
+                    methodology, use_case_id
+                );
+                Ok(DisplayResult::success(message))
+            }
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Add a new methodology view to an existing use case
+    ///
+    /// Adds a new methodology:level view to the use case and initializes
+    /// empty methodology fields for it.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `methodology` - The methodology to add
+    /// * `level` - The level for the methodology
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or view already exists
+    pub fn add_view(
+        &mut self,
+        use_case_id: String,
+        methodology: String,
+        level: String,
+    ) -> Result<DisplayResult> {
+        match self
+            .app_service
+            .add_view(&use_case_id, &methodology, &level)
+        {
+            Ok(_) => {
+                let message = format!(
+                    "✅ Added {}:{} view to use case: {}",
+                    methodology, level, use_case_id
+                );
+                Ok(DisplayResult::success(message))
+            }
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Remove a methodology view from a use case
+    ///
+    /// Removes the specified methodology view and cleans up its associated
+    /// methodology fields.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `methodology` - The methodology to remove
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or if it's the last view
+    pub fn remove_view(&mut self, use_case_id: String, methodology: String) -> Result<DisplayResult> {
+        match self.app_service.remove_view(&use_case_id, &methodology) {
+            Ok(_) => {
+                let message = format!(
+                    "✅ Removed {} view from use case: {}",
+                    methodology, use_case_id
+                );
+                Ok(DisplayResult::success(message))
+            }
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Get use case by ID for display/editing
+    ///
+    /// Retrieves a use case by its ID, useful for displaying current values
+    /// when editing.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case to retrieve
+    ///
+    /// # Returns
+    /// The UseCase entity if found
+    ///
+    /// # Errors
+    /// Returns error if use case not found
+    pub fn get_use_case(&self, use_case_id: &str) -> Result<&UseCase> {
+        self.app_service
+            .get_all_use_cases()
+            .iter()
+            .find(|uc| uc.id == use_case_id)
+            .ok_or_else(|| anyhow::anyhow!("Use case {} not found", use_case_id))
     }
 }
