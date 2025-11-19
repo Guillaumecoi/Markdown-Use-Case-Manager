@@ -54,205 +54,99 @@ impl UseCaseController {
         Ok(Self { app_service })
     }
 
-    /// Create a new use case using the project's default methodology.
+    /// Create a new use case with flexible options.
     ///
-    /// Creates a use case using the project's default methodology, allowing
-    /// users to quickly create use cases without specifying a methodology.
+    /// Creates a use case with optional methodology, views, priority, and custom fields.
+    /// If no methodology or views are specified, uses the project's default methodology.
     ///
     /// # Arguments
     /// * `title` - The title of the use case
     /// * `category` - The category under which to organize the use case
     /// * `description` - Optional detailed description of the use case
+    /// * `methodology` - Optional methodology to use (ignored if views are specified)
+    /// * `views` - Optional comma-separated methodology:level pairs (e.g., "feature:simple,business:normal")
+    /// * `priority` - Optional priority for multi-view use cases
+    /// * `extra_fields` - Optional additional field values (priority, status, author, etc.)
     ///
     /// # Returns
     /// DisplayResult with success message and use case information
     ///
     /// # Errors
-    /// Returns error if use case creation fails or configuration cannot be loaded
+    /// Returns error if use case creation fails or parameters are invalid
     pub fn create_use_case(
         &mut self,
         title: String,
         category: String,
         description: Option<String>,
+        methodology: Option<String>,
+        views: Option<String>,
+        priority: Option<String>,
+        extra_fields: Option<std::collections::HashMap<String, String>>,
     ) -> Result<DisplayResult> {
-        match (|| -> Result<DisplayResult> {
-            let config = Config::load()?;
-            let default_methodology = config.templates.default_methodology.clone();
-            self.create_use_case_with_methodology(title, category, description, default_methodology)
-        })() {
-            Ok(result) => Ok(result),
-            Err(e) => Ok(DisplayResult::error(e.to_string())),
-        }
-    }
-
-    /// Create a new use case with a specific methodology.
-    ///
-    /// Creates a use case using the specified methodology, allowing users to
-    /// override the default methodology for individual use cases.
-    ///
-    /// # Arguments
-    /// * `title` - The title of the use case
-    /// * `category` - The category under which to organize the use case
-    /// * `description` - Optional detailed description of the use case
-    /// * `methodology` - The methodology to use for this use case
-    ///
-    /// # Returns
-    /// DisplayResult with success message and use case information
-    ///
-    /// # Errors
-    /// Returns error if use case creation fails or methodology is invalid
-    pub fn create_use_case_with_methodology(
-        &mut self,
-        title: String,
-        category: String,
-        description: Option<String>,
-        methodology: String,
-    ) -> Result<DisplayResult> {
-        match self.app_service.create_use_case_with_methodology(
-            title,
-            category,
-            description,
-            &methodology,
-        ) {
-            Ok(use_case_id) => {
-                // Display using formatter
-                UseCaseFormatter::display_created(&use_case_id, &methodology);
-
-                Ok(DisplayResult::success(format!(
-                    "Created use case: {} with {} methodology",
-                    use_case_id, methodology
-                )))
+        // Determine which creation path to use based on provided parameters
+        let result = if let Some(views_str) = views {
+            // Multi-view use case
+            if let (Some(prio), Some(fields)) = (priority, extra_fields) {
+                self.app_service.create_use_case_with_views_and_fields(
+                    title,
+                    category,
+                    description,
+                    prio,
+                    &views_str,
+                    fields,
+                )
+            } else {
+                self.app_service
+                    .create_use_case_with_views(title, category, description, &views_str)
             }
-            Err(e) => Ok(DisplayResult::error(e.to_string())),
-        }
-    }
-
-    /// Create a new use case with multiple views.
-    ///
-    /// Creates a use case that can be rendered in multiple methodology/level combinations.
-    /// The views parameter should be a comma-separated list of methodology:level pairs.
-    ///
-    /// # Arguments
-    /// * `title` - The title of the use case
-    /// * `category` - The category under which to organize the use case
-    /// * `description` - Optional detailed description of the use case
-    /// * `views` - Comma-separated methodology:level pairs (e.g., "feature:simple,business:normal")
-    ///
-    /// # Returns
-    /// DisplayResult with success message and use case information
-    ///
-    /// # Errors
-    /// Returns error if use case creation fails or views are invalid
-    pub fn create_use_case_with_views(
-        &mut self,
-        title: String,
-        category: String,
-        description: Option<String>,
-        views: String,
-    ) -> Result<DisplayResult> {
-        match self
-            .app_service
-            .create_use_case_with_views(title, category, description, &views)
-        {
-            Ok(use_case_id) => {
+            .map(|use_case_id| {
                 UseCaseFormatter::display_created(&use_case_id, "multi-view");
+                (
+                    use_case_id.clone(),
+                    format!(
+                        "Created multi-view use case: {} with views: {}",
+                        use_case_id, views_str
+                    ),
+                )
+            })
+        } else {
+            // Single methodology use case
+            let methodology_str = methodology.unwrap_or_else(|| {
+                Config::load()
+                    .map(|c| c.templates.default_methodology.clone())
+                    .unwrap_or_else(|_| "feature".to_string())
+            });
 
-                Ok(DisplayResult::success(format!(
-                    "Created multi-view use case: {} with views: {}",
-                    use_case_id, views
-                )))
+            if let Some(fields) = extra_fields {
+                self.app_service.create_use_case_with_fields(
+                    title,
+                    category,
+                    description,
+                    &methodology_str,
+                    fields,
+                )
+            } else {
+                self.app_service.create_use_case_with_methodology(
+                    title,
+                    category,
+                    description,
+                    &methodology_str,
+                )
             }
-            Err(e) => Ok(DisplayResult::error(e.to_string())),
-        }
-    }
+            .map(|use_case_id| {
+                UseCaseFormatter::display_created(&use_case_id, &methodology_str);
+                (
+                    use_case_id.clone(),
+                    format!(
+                        "Created use case: {} with {} methodology",
+                        use_case_id, methodology_str
+                    ),
+                )
+            })
+        };
 
-    /// Create a new use case with multiple views and additional fields.
-    ///
-    /// Creates a use case with custom field values provided by the user,
-    /// merged with methodology defaults.
-    ///
-    /// # Arguments
-    /// * `title` - The title of the use case
-    /// * `category` - The category under which to organize the use case
-    /// * `description` - Optional detailed description of the use case
-    /// * `views` - Comma-separated methodology:level pairs (e.g., "feature:simple,business:normal")
-    /// * `extra_fields` - Additional field values (priority, status, author, etc.)
-    ///
-    /// # Returns
-    /// DisplayResult with success message and use case information
-    ///
-    /// # Errors
-    /// Returns error if use case creation fails or views format is invalid
-    pub fn create_use_case_with_views_and_fields(
-        &mut self,
-        title: String,
-        category: String,
-        description: Option<String>,
-        priority: String,
-        views: String,
-        extra_fields: std::collections::HashMap<String, String>,
-    ) -> Result<DisplayResult> {
-        match self.app_service.create_use_case_with_views_and_fields(
-            title,
-            category,
-            description,
-            priority,
-            &views,
-            extra_fields,
-        ) {
-            Ok(use_case_id) => {
-                UseCaseFormatter::display_created(&use_case_id, "multi-view");
-
-                Ok(DisplayResult::success(format!(
-                    "Created multi-view use case: {} with views: {}",
-                    use_case_id, views
-                )))
-            }
-            Err(e) => Ok(DisplayResult::error(e.to_string())),
-        }
-    }
-
-    /// Create a new use case with a specific methodology and additional fields.
-    ///
-    /// Creates a use case with custom field values provided by the user,
-    /// merged with methodology defaults.
-    ///
-    /// # Arguments
-    /// * `title` - The title of the use case
-    /// * `category` - The category under which to organize the use case
-    /// * `description` - Optional detailed description of the use case
-    /// * `methodology` - The methodology to use for this use case
-    /// * `extra_fields` - Additional field values (priority, status, author, etc.)
-    ///
-    /// # Returns
-    /// DisplayResult with success message and use case information
-    ///
-    /// # Errors
-    /// Returns error if use case creation fails or methodology is invalid
-    pub fn create_use_case_with_fields(
-        &mut self,
-        title: String,
-        category: String,
-        description: Option<String>,
-        methodology: String,
-        extra_fields: std::collections::HashMap<String, String>,
-    ) -> Result<DisplayResult> {
-        match self.app_service.create_use_case_with_fields(
-            title,
-            category,
-            description,
-            &methodology,
-            extra_fields,
-        ) {
-            Ok(use_case_id) => {
-                // Display using formatter
-                UseCaseFormatter::display_created(&use_case_id, &methodology);
-
-                Ok(DisplayResult::success(format!(
-                    "Created use case: {} with {} methodology",
-                    use_case_id, methodology
-                )))
-            }
+        match result {
+            Ok((_, message)) => Ok(DisplayResult::success(message)),
             Err(e) => Ok(DisplayResult::error(e.to_string())),
         }
     }

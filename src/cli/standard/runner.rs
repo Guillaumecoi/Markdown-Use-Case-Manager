@@ -149,6 +149,10 @@ impl CliRunner {
             Self::sanitize_required_string(title),
             Self::sanitize_required_string(category),
             Self::sanitize_optional_string(description),
+            None,
+            None,
+            None,
+            None,
         )
     }
 
@@ -173,11 +177,14 @@ impl CliRunner {
         methodology: String,
     ) -> Result<DisplayResult> {
         let controller = self.ensure_use_case_controller()?;
-        controller.create_use_case_with_methodology(
+        controller.create_use_case(
             Self::sanitize_required_string(title),
             Self::sanitize_required_string(category),
             Self::sanitize_optional_string(description),
-            Self::sanitize_required_string(methodology),
+            Some(Self::sanitize_required_string(methodology)),
+            None,
+            None,
+            None,
         )
     }
 
@@ -202,11 +209,14 @@ impl CliRunner {
         views: String,
     ) -> Result<DisplayResult> {
         let controller = self.ensure_use_case_controller()?;
-        controller.create_use_case_with_views(
+        controller.create_use_case(
             Self::sanitize_required_string(title),
             Self::sanitize_required_string(category),
             Self::sanitize_optional_string(description),
-            Self::sanitize_required_string(views),
+            None,
+            Some(Self::sanitize_required_string(views)),
+            None,
+            None,
         )
     }
 

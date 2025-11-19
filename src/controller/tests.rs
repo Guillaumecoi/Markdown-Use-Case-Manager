@@ -51,11 +51,14 @@ mod use_case_controller_tests {
     fn test_create_use_case_basic() {
         let (_temp_dir, mut controller) = setup_test_env();
 
-        let result = controller.create_use_case_with_methodology(
+        let result = controller.create_use_case(
             "Test Use Case".to_string(),
             "test".to_string(),
             Some("Test description".to_string()),
-            "business".to_string(),
+            Some("business".to_string()),
+            None,
+            None,
+            None,
         );
 
         assert!(result.is_ok());
@@ -71,11 +74,14 @@ mod use_case_controller_tests {
 
         // Create a use case
         controller
-            .create_use_case_with_methodology(
+            .create_use_case(
                 "Test UC 1".to_string(),
                 "test".to_string(),
                 None,
-                "business".to_string(),
+                Some("business".to_string()),
+                None,
+                None,
+                None,
             )
             .unwrap();
 
@@ -91,11 +97,14 @@ mod use_case_controller_tests {
 
         // Create a use case first
         let create_result = controller
-            .create_use_case_with_methodology(
+            .create_use_case(
                 "Test UC".to_string(),
                 "test".to_string(),
                 None,
-                "business".to_string(),
+                Some("business".to_string()),
+                None,
+                None,
+                None,
             )
             .unwrap();
 
@@ -117,11 +126,14 @@ mod use_case_controller_tests {
 
         // Create a use case
         let create_result = controller
-            .create_use_case_with_methodology(
+            .create_use_case(
                 "Test UC".to_string(),
                 "test".to_string(),
                 None,
-                "business".to_string(),
+                Some("business".to_string()),
+                None,
+                None,
+                None,
             )
             .unwrap();
         let use_case_id = extract_use_case_id(&create_result.message);
@@ -153,11 +165,14 @@ mod use_case_controller_tests {
 
         // Create a use case
         let create_result = controller
-            .create_use_case_with_methodology(
+            .create_use_case(
                 "Test UC".to_string(),
                 "test".to_string(),
                 None,
-                "business".to_string(),
+                Some("business".to_string()),
+                None,
+                None,
+                None,
             )
             .unwrap();
         let use_case_id = extract_use_case_id(&create_result.message);
@@ -177,21 +192,27 @@ mod use_case_controller_tests {
 
         // Create two use cases
         let result1 = controller
-            .create_use_case_with_methodology(
+            .create_use_case(
                 "Test UC 1".to_string(),
                 "test".to_string(),
                 None,
-                "business".to_string(),
+                Some("business".to_string()),
+                None,
+                None,
+                None,
             )
             .unwrap();
         let uc_id_1 = extract_use_case_id(&result1.message);
 
         let result2 = controller
-            .create_use_case_with_methodology(
+            .create_use_case(
                 "Test UC 2".to_string(),
                 "test".to_string(),
                 None,
-                "business".to_string(),
+                Some("business".to_string()),
+                None,
+                None,
+                None,
             )
             .unwrap();
         let uc_id_2 = extract_use_case_id(&result2.message);
@@ -216,21 +237,27 @@ mod use_case_controller_tests {
 
         // Create use cases
         let result1 = controller
-            .create_use_case_with_methodology(
+            .create_use_case(
                 "Test UC 1".to_string(),
                 "test".to_string(),
                 None,
-                "business".to_string(),
+                Some("business".to_string()),
+                None,
+                None,
+                None,
             )
             .unwrap();
         let uc_id_1 = extract_use_case_id(&result1.message);
 
         let result2 = controller
-            .create_use_case_with_methodology(
+            .create_use_case(
                 "Test UC 2".to_string(),
                 "test".to_string(),
                 None,
-                "business".to_string(),
+                Some("business".to_string()),
+                None,
+                None,
+                None,
             )
             .unwrap();
         let uc_id_2 = extract_use_case_id(&result2.message);
@@ -262,11 +289,14 @@ mod use_case_controller_tests {
 
         // Create a use case
         let result = controller
-            .create_use_case_with_methodology(
+            .create_use_case(
                 "Test UC".to_string(),
                 "test".to_string(),
                 None,
-                "business".to_string(),
+                Some("business".to_string()),
+                None,
+                None,
+                None,
             )
             .unwrap();
         let use_case_id = extract_use_case_id(&result.message);
@@ -292,11 +322,14 @@ mod use_case_controller_tests {
 
         // Create a use case
         let result = controller
-            .create_use_case_with_methodology(
+            .create_use_case(
                 "Test UC".to_string(),
                 "test".to_string(),
                 None,
-                "business".to_string(),
+                Some("business".to_string()),
+                None,
+                None,
+                None,
             )
             .unwrap();
         let use_case_id = extract_use_case_id(&result.message);
@@ -337,11 +370,14 @@ mod use_case_controller_tests {
 
         // Create a use case and scenario
         let result = controller
-            .create_use_case_with_methodology(
+            .create_use_case(
                 "Test UC".to_string(),
                 "test".to_string(),
                 None,
-                "business".to_string(),
+                Some("business".to_string()),
+                None,
+                None,
+                None,
             )
             .unwrap();
         let use_case_id = extract_use_case_id(&result.message);
@@ -380,11 +416,14 @@ mod use_case_controller_tests {
 
         // Create a use case and scenario
         let result = controller
-            .create_use_case_with_methodology(
+            .create_use_case(
                 "Test UC".to_string(),
                 "test".to_string(),
                 None,
-                "business".to_string(),
+                Some("business".to_string()),
+                None,
+                None,
+                None,
             )
             .unwrap();
         let use_case_id = extract_use_case_id(&result.message);
@@ -423,11 +462,14 @@ mod use_case_controller_tests {
 
         // Create a use case and scenario
         let result = controller
-            .create_use_case_with_methodology(
+            .create_use_case(
                 "Test UC".to_string(),
                 "test".to_string(),
                 None,
-                "business".to_string(),
+                Some("business".to_string()),
+                None,
+                None,
+                None,
             )
             .unwrap();
         let use_case_id = extract_use_case_id(&result.message);
@@ -483,11 +525,14 @@ mod use_case_controller_tests {
 
         // Create a use case
         let result = controller
-            .create_use_case_with_methodology(
+            .create_use_case(
                 "Test UC".to_string(),
                 "test".to_string(),
                 None,
-                "business".to_string(),
+                Some("business".to_string()),
+                None,
+                None,
+                None,
             )
             .unwrap();
         let use_case_id = extract_use_case_id(&result.message);
@@ -513,11 +558,14 @@ mod use_case_controller_tests {
 
         // Create a use case
         let result = controller
-            .create_use_case_with_methodology(
+            .create_use_case(
                 "Test UC".to_string(),
                 "test".to_string(),
                 None,
-                "business".to_string(),
+                Some("business".to_string()),
+                None,
+                None,
+                None,
             )
             .unwrap();
         let use_case_id = extract_use_case_id(&result.message);

@@ -1142,7 +1142,7 @@ mod tests {
         }
 
         // Use the existing "feature" methodology which has custom fields defined
-        // (sprint, story_points, dependencies, mockups)
+        // (user_segment, success_metrics, hypothesis, feature_dependencies, design_assets)
         let mut coordinator = UseCaseApplicationService::load()?;
 
         let use_case_id = coordinator.create_use_case_with_methodology(
@@ -1162,7 +1162,7 @@ mod tests {
             .expect("Use case should exist");
 
         // Verify that the use case can have custom fields from feature methodology
-        // Note: Simple level has no required custom fields - sprint and story_points are optional
+        // Note: Normal level has optional custom fields - user_segment, success_metrics, hypothesis
         // Custom fields will only appear if they have actual values set
 
         // Note: Optional fields with null/empty values are not saved to TOML

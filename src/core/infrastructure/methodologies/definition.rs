@@ -373,7 +373,7 @@ overwrite_test_documentation = false
 
 [usage]
 when_to_use = ["Feature development", "User story tracking"]
-key_features = ["User stories", "Acceptance criteria", "Story points"]
+key_features = ["User stories", "Acceptance criteria", "Product metrics"]
 
 [levels.normal]
 name = "Normal"
@@ -383,9 +383,9 @@ description = "Simple feature specification"
 inherits = []
 
 [levels.normal.custom_fields]
-user_story = { label = "User Story", type = "string", required = true }
-acceptance_criteria = { label = "Acceptance Criteria", type = "text", required = true }
-story_points = { label = "Story Points", type = "number", required = false, default = "3" }
+user_segment = { label = "Target User Segment", type = "string", required = true }
+success_metrics = { label = "Success Metrics", type = "array", required = true }
+hypothesis = { label = "Product Hypothesis", type = "text", required = false, default = "To be defined" }
 "#,
         )
         .unwrap();
@@ -402,28 +402,28 @@ story_points = { label = "Story Points", type = "number", required = false, defa
         let custom_fields = methodology.custom_fields();
         assert_eq!(custom_fields.len(), 3);
 
-        // Check user_story field
-        let user_story = custom_fields.get("user_story").unwrap();
-        assert_eq!(user_story.label, Some("User Story".to_string()));
-        assert_eq!(user_story.field_type, "string");
-        assert_eq!(user_story.required, true);
-        assert_eq!(user_story.default, None);
+        // Check user_segment field
+        let user_segment = custom_fields.get("user_segment").unwrap();
+        assert_eq!(user_segment.label, Some("Target User Segment".to_string()));
+        assert_eq!(user_segment.field_type, "string");
+        assert_eq!(user_segment.required, true);
+        assert_eq!(user_segment.default, None);
 
-        // Check acceptance_criteria field
-        let acceptance_criteria = custom_fields.get("acceptance_criteria").unwrap();
+        // Check success_metrics field
+        let success_metrics = custom_fields.get("success_metrics").unwrap();
         assert_eq!(
-            acceptance_criteria.label,
-            Some("Acceptance Criteria".to_string())
+            success_metrics.label,
+            Some("Success Metrics".to_string())
         );
-        assert_eq!(acceptance_criteria.field_type, "text");
-        assert_eq!(acceptance_criteria.required, true);
+        assert_eq!(success_metrics.field_type, "array");
+        assert_eq!(success_metrics.required, true);
 
-        // Check story_points field (with default)
-        let story_points = custom_fields.get("story_points").unwrap();
-        assert_eq!(story_points.label, Some("Story Points".to_string()));
-        assert_eq!(story_points.field_type, "number");
-        assert_eq!(story_points.required, false);
-        assert_eq!(story_points.default, Some("3".to_string()));
+        // Check hypothesis field (with default)
+        let hypothesis = custom_fields.get("hypothesis").unwrap();
+        assert_eq!(hypothesis.label, Some("Product Hypothesis".to_string()));
+        assert_eq!(hypothesis.field_type, "text");
+        assert_eq!(hypothesis.required, false);
+        assert_eq!(hypothesis.default, Some("To be defined".to_string()));
     }
 
     #[test]
