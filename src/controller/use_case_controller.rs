@@ -22,9 +22,7 @@
 
 use crate::config::Config;
 use crate::controller::dto::{DisplayResult, SelectionOptions};
-use crate::core::{
-    ReferenceType, ScenarioReference, ScenarioType, Status, UseCaseApplicationService,
-};
+use crate::core::{ReferenceType, ScenarioReference, ScenarioType, Status, UseCaseCoordinator};
 use crate::presentation::{StatusFormatter, UseCaseFormatter};
 use anyhow::Result;
 
@@ -35,7 +33,7 @@ use anyhow::Result;
 /// between CLI commands and the use case application services.
 pub struct UseCaseController {
     /// Application service for use case business logic
-    app_service: UseCaseApplicationService,
+    app_service: UseCaseCoordinator,
 }
 
 impl UseCaseController {
@@ -50,7 +48,7 @@ impl UseCaseController {
     /// # Errors
     /// Returns error if the application service cannot be loaded
     pub fn new() -> Result<Self> {
-        let app_service = UseCaseApplicationService::load()?;
+        let app_service = UseCaseCoordinator::load()?;
         Ok(Self { app_service })
     }
 

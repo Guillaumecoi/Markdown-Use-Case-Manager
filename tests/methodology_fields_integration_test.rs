@@ -3,7 +3,7 @@
 /// Tests the complete methodology field workflow from collection to cleanup.
 use anyhow::Result;
 use markdown_use_case_manager::config::{Config, ConfigFileManager};
-use markdown_use_case_manager::core::{MethodologyFieldCollector, UseCaseApplicationService};
+use markdown_use_case_manager::core::{MethodologyFieldCollector, UseCaseCoordinator};
 use serial_test::serial;
 use std::collections::HashMap;
 use std::env;
@@ -32,7 +32,7 @@ fn test_methodology_fields_storage() -> Result<()> {
     env::set_current_dir(&temp_dir)?;
 
     init_test_environment(vec!["business".to_string()])?;
-    let mut service = UseCaseApplicationService::load()?;
+    let mut service = UseCaseCoordinator::load()?;
 
     // Create use case with business view
     let result = service.create_use_case_with_views(
@@ -73,7 +73,7 @@ fn test_cleanup_orphaned_fields() -> Result<()> {
     env::set_current_dir(&temp_dir)?;
 
     init_test_environment(vec!["business".to_string(), "feature".to_string()])?;
-    let mut service = UseCaseApplicationService::load()?;
+    let mut service = UseCaseCoordinator::load()?;
 
     // Create use case with both views
     service.create_use_case_with_views(
@@ -99,7 +99,7 @@ fn test_cleanup_orphaned_fields() -> Result<()> {
     repository.save(&use_case)?;
 
     // Reload and run cleanup
-    let mut service = UseCaseApplicationService::load()?;
+    let mut service = UseCaseCoordinator::load()?;
     let (cleaned_count, _total, details) =
         service.cleanup_methodology_fields(Some("UC-TES-001".to_string()), false)?;
 
@@ -107,7 +107,7 @@ fn test_cleanup_orphaned_fields() -> Result<()> {
     assert_eq!(details[0].1, vec!["developer".to_string()]);
 
     // Verify cleanup
-    let service = UseCaseApplicationService::load()?;
+    let service = UseCaseCoordinator::load()?;
     let use_case = service.get_all_use_cases().first().unwrap();
 
     assert!(!use_case.methodology_fields.contains_key("developer"));
@@ -125,7 +125,7 @@ fn test_cleanup_dry_run() -> Result<()> {
     env::set_current_dir(&temp_dir)?;
 
     init_test_environment(vec!["business".to_string()])?;
-    let mut service = UseCaseApplicationService::load()?;
+    let mut service = UseCaseCoordinator::load()?;
 
     // Create use case
     service.create_use_case_with_views(
@@ -150,14 +150,14 @@ fn test_cleanup_dry_run() -> Result<()> {
     repository.save(&use_case)?;
 
     // Reload and run dry-run
-    let mut service = UseCaseApplicationService::load()?;
+    let mut service = UseCaseCoordinator::load()?;
     let (cleaned_count, _, details) = service.cleanup_methodology_fields(None, true)?;
 
     assert_eq!(cleaned_count, 1);
     assert_eq!(details[0].1, vec!["feature".to_string()]);
 
     // Verify nothing removed
-    let service = UseCaseApplicationService::load()?;
+    let service = UseCaseCoordinator::load()?;
     let use_case = service.get_all_use_cases().first().unwrap();
 
     assert!(
@@ -204,7 +204,7 @@ fn test_multi_methodology_storage() -> Result<()> {
     env::set_current_dir(&temp_dir)?;
 
     init_test_environment(vec!["business".to_string(), "feature".to_string()])?;
-    let mut service = UseCaseApplicationService::load()?;
+    let mut service = UseCaseCoordinator::load()?;
 
     // Create with multiple views
     service.create_use_case_with_views(

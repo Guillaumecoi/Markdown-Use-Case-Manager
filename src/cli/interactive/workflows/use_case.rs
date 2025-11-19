@@ -15,7 +15,7 @@ pub struct UseCaseWorkflow;
 impl UseCaseWorkflow {
     /// Interactive use case creation workflow
     pub fn create_use_case() -> Result<()> {
-        UI::show_section_header("Create Multi-View Use Case", "🔄")?;
+        UI::show_section_header("Create Use Case", "🔄")?;
 
         let mut runner = InteractiveRunner::new();
         let methodologies = runner.get_installed_methodologies()?;
@@ -39,12 +39,9 @@ impl UseCaseWorkflow {
             .with_help_message("Group this use case (e.g., 'authentication', 'data-processing')")
             .prompt()?;
 
-        // Step 2: Collect multiple views
+        // Step 2: Collect views
         UI::show_section_header("Select Views", "👁️")?;
-        UI::show_info(
-            "Add multiple methodology views. Each view will generate a separate markdown file.",
-        )?;
-
+        UI::show_info("Add methodology views. Each view will generate a separate markdown file.")?;
         let mut views: Vec<(String, String)> = Vec::new();
 
         loop {

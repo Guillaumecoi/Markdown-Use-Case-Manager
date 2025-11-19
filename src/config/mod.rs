@@ -731,8 +731,8 @@ mod tests {
         fs::create_dir_all(&config.directories.use_case_dir)?;
         fs::create_dir_all(&config.directories.test_dir)?;
 
-        use crate::core::UseCaseApplicationService;
-        let mut coordinator = UseCaseApplicationService::load()?;
+        use crate::core::UseCaseCoordinator;
+        let mut coordinator = UseCaseCoordinator::load()?;
         let config = Config::load()?;
         let default_methodology = config.templates.default_methodology.clone();
 

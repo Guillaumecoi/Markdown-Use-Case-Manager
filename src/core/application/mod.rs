@@ -2,10 +2,11 @@
 pub mod creators;
 pub mod generators;
 pub mod methodology_field_collector;
-mod use_case_application_service;
+pub mod services;
+mod use_case_coordinator;
 
 pub use methodology_field_collector::MethodologyFieldCollector;
-pub use use_case_application_service::UseCaseApplicationService;
+pub use use_case_coordinator::UseCaseCoordinator;
 
 #[cfg(test)]
 pub mod testing;

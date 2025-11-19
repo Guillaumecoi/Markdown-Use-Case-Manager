@@ -1,22 +1,31 @@
-// Application service for use case operations
-// This orchestrates domain services and infrastructure
+// Coordinator for use case operations
+// This orchestrates domain services, manages state, and provides transaction boundaries
+// Controllers (presentation layer) call this coordinator, which delegates to domain services
 use crate::config::Config;
 use crate::core::application::creators::{ScenarioCreator, UseCaseCreator};
 use crate::core::application::generators::{
     MarkdownGenerator, OutputManager, OverviewGenerator, TestGenerator,
 };
+use crate::core::application::services;
 use crate::core::utils::suggest_alternatives;
 use crate::core::{
     domain::{Scenario, ScenarioReference, ScenarioType, UseCaseReference},
-    MethodologyView, ReferenceType, RepositoryFactory, ScenarioReferenceValidator, TemplateEngine,
-    UseCase, UseCaseRepository,
+    MethodologyView, RepositoryFactory, TemplateEngine, UseCase, UseCaseRepository,
 };
 use anyhow::Result;
 use std::collections::HashMap;
 
-/// Application service that coordinates use case operations
-/// This replaces the old UseCaseCoordinator with clean architecture
-pub struct UseCaseApplicationService {
+/// Coordinator that orchestrates use case operations and manages application state
+///
+/// This coordinator provides a centralized point for:
+/// - State management (use_cases collection, repository, config)
+/// - Service orchestration (delegates to domain services)
+/// - Transaction boundaries (coordinates multi-service operations)
+/// - Cross-cutting concerns (overview generation, test generation)
+///
+/// Controllers (presentation layer) are thin adapters that convert CLI/HTTP parameters
+/// into domain types and format results for display.
+pub struct UseCaseCoordinator {
     config: Config,
     repository: Box<dyn UseCaseRepository>,
     template_engine: TemplateEngine,
@@ -28,7 +37,7 @@ pub struct UseCaseApplicationService {
     overview_generator: OverviewGenerator,
 }
 
-impl UseCaseApplicationService {
+impl UseCaseCoordinator {
     // ========== Initialization ==========
 
     pub fn new(config: Config) -> Result<Self> {
@@ -75,21 +84,8 @@ impl UseCaseApplicationService {
         use_case_id: &str,
         scenario_title: &str,
     ) -> Result<String> {
-        let index = self.find_use_case_index(use_case_id)?;
-        let use_case = &self.use_cases[index];
-
-        use_case
-            .scenarios
-            .iter()
-            .find(|s| s.title == scenario_title)
-            .map(|s| s.id.clone())
-            .ok_or_else(|| {
-                anyhow::anyhow!(
-                    "Scenario with title '{}' not found in use case '{}'",
-                    scenario_title,
-                    use_case_id
-                )
-            })
+        let query_service = services::UseCaseQueryService::new(&self.use_cases);
+        query_service.find_scenario_id_by_title(use_case_id, scenario_title)
     }
 
     /// Get all use case info that uses a specific persona
@@ -98,26 +94,8 @@ impl UseCaseApplicationService {
         &self,
         persona_id: &str,
     ) -> Result<Vec<(String, String, usize)>> {
-        let mut matching_use_cases = Vec::new();
-
-        // Scan all loaded use cases for scenarios that use this persona
-        for use_case in &self.use_cases {
-            let scenario_count = use_case
-                .scenarios
-                .iter()
-                .filter(|scenario| scenario.persona.as_deref() == Some(persona_id))
-                .count();
-
-            if scenario_count > 0 {
-                matching_use_cases.push((
-                    use_case.id.clone(),
-                    use_case.title.clone(),
-                    scenario_count,
-                ));
-            }
-        }
-
-        Ok(matching_use_cases)
+        let query_service = services::UseCaseQueryService::new(&self.use_cases);
+        query_service.get_use_cases_for_persona(persona_id)
     }
 
     // Deleted: get_all_use_case_ids() - never used (PR #13)
@@ -334,59 +312,24 @@ impl UseCaseApplicationService {
         use_case_id: &str,
         methodology: &str,
     ) -> Result<()> {
-        // Find the use case
-        let use_case = match self.use_cases.iter().find(|uc| uc.id == use_case_id) {
-            Some(uc) => uc.clone(),
-            None => {
-                // Get available use case IDs for suggestions
-                let available_ids: Vec<String> =
-                    self.use_cases.iter().map(|uc| uc.id.clone()).collect();
-                let error_msg = suggest_alternatives(use_case_id, &available_ids, "Use case");
-                return Err(anyhow::anyhow!("{}", error_msg));
-            }
-        };
-
-        // Validate methodology exists
-        let available_methodologies = self.template_engine.available_methodologies();
-        if !available_methodologies.contains(&methodology.to_string()) {
-            return Err(anyhow::anyhow!(
-                "Unknown methodology '{}'. Available: {:?}",
-                methodology,
-                available_methodologies
-            ));
-        }
-
-        // Regenerate with new methodology
-        self.save_use_case_with_views(&use_case)?;
-
-        Ok(())
+        let regen_service = services::MarkdownRegenerationService::new(
+            &self.repository,
+            &self.use_cases,
+            &self.markdown_generator,
+            &self.template_engine,
+        );
+        regen_service.regenerate_use_case_with_methodology(use_case_id, methodology)
     }
 
     /// Regenerate markdown for a single use case
     pub fn regenerate_markdown(&self, use_case_id: &str) -> Result<()> {
-        // Load use case from TOML (source of truth)
-        let use_case = match self.repository.load_by_id(use_case_id)? {
-            Some(uc) => uc,
-            None => {
-                // Get available use case IDs for suggestions
-                let available_ids: Vec<String> =
-                    self.use_cases.iter().map(|uc| uc.id.clone()).collect();
-                let error_msg = suggest_alternatives(use_case_id, &available_ids, "Use case");
-                return Err(anyhow::anyhow!("{}", error_msg));
-            }
-        };
-
-        // Generate markdown for each enabled view
-        for view in use_case.enabled_views() {
-            let markdown_content =
-                self.markdown_generator
-                    .generate(&use_case, None, Some(&view))?;
-            let filename = format!("{}-{}-{}.md", use_case.id, view.methodology, view.level);
-            self.repository
-                .save_markdown_with_filename(&use_case, &filename, &markdown_content)?;
-        }
-
-        Ok(())
+        let regen_service = services::MarkdownRegenerationService::new(
+            &self.repository,
+            &self.use_cases,
+            &self.markdown_generator,
+            &self.template_engine,
+        );
+        regen_service.regenerate_markdown(use_case_id)
     }
 
     /// Regenerate markdown for all use cases
@@ -417,12 +360,9 @@ impl UseCaseApplicationService {
 
     /// Add a precondition to a use case
     pub fn add_precondition(&mut self, use_case_id: &str, precondition: String) -> Result<()> {
-        let index = self.find_use_case_index(use_case_id)?;
-        let mut use_case = self.use_cases[index].clone();
-        use_case.add_precondition(precondition);
-        self.repository.save(&use_case)?;
-        self.use_cases[index] = use_case;
-        Ok(())
+        let mut service =
+            services::PreconditionPostconditionService::new(&self.repository, &mut self.use_cases);
+        service.add_precondition(use_case_id, precondition)
     }
 
     /// Get all preconditions for a use case
@@ -433,32 +373,16 @@ impl UseCaseApplicationService {
 
     /// Remove a precondition from a use case
     pub fn remove_precondition(&mut self, use_case_id: &str, index: usize) -> Result<()> {
-        let index_in_vec = self.find_use_case_index(use_case_id)?;
-        let mut use_case = self.use_cases[index_in_vec].clone();
-
-        // Convert 1-based index to 0-based
-        let zero_based_index = index.saturating_sub(1);
-        if zero_based_index >= use_case.preconditions.len() {
-            return Err(anyhow::anyhow!(
-                "Precondition index {} is out of bounds",
-                index
-            ));
-        }
-
-        use_case.preconditions.remove(zero_based_index);
-        self.repository.save(&use_case)?;
-        self.use_cases[index_in_vec] = use_case;
-        Ok(())
+        let mut service =
+            services::PreconditionPostconditionService::new(&self.repository, &mut self.use_cases);
+        service.remove_precondition(use_case_id, index)
     }
 
     /// Add a postcondition to a use case
     pub fn add_postcondition(&mut self, use_case_id: &str, postcondition: String) -> Result<()> {
-        let index = self.find_use_case_index(use_case_id)?;
-        let mut use_case = self.use_cases[index].clone();
-        use_case.add_postcondition(postcondition);
-        self.repository.save(&use_case)?;
-        self.use_cases[index] = use_case;
-        Ok(())
+        let mut service =
+            services::PreconditionPostconditionService::new(&self.repository, &mut self.use_cases);
+        service.add_postcondition(use_case_id, postcondition)
     }
 
     /// Get all postconditions for a use case
@@ -469,22 +393,9 @@ impl UseCaseApplicationService {
 
     /// Remove a postcondition from a use case
     pub fn remove_postcondition(&mut self, use_case_id: &str, index: usize) -> Result<()> {
-        let index_in_vec = self.find_use_case_index(use_case_id)?;
-        let mut use_case = self.use_cases[index_in_vec].clone();
-
-        // Convert 1-based index to 0-based
-        let zero_based_index = index.saturating_sub(1);
-        if zero_based_index >= use_case.postconditions.len() {
-            return Err(anyhow::anyhow!(
-                "Postcondition index {} is out of bounds",
-                index
-            ));
-        }
-
-        use_case.postconditions.remove(zero_based_index);
-        self.repository.save(&use_case)?;
-        self.use_cases[index_in_vec] = use_case;
-        Ok(())
+        let mut service =
+            services::PreconditionPostconditionService::new(&self.repository, &mut self.use_cases);
+        service.remove_postcondition(use_case_id, index)
     }
 
     /// Add a reference to a use case
@@ -495,18 +406,9 @@ impl UseCaseApplicationService {
         relationship: String,
         description: Option<String>,
     ) -> Result<()> {
-        let index = self.find_use_case_index(use_case_id)?;
-        let mut use_case = self.use_cases[index].clone();
-        let reference = UseCaseReference::new(target_id, relationship);
-        let reference = if let Some(desc) = description {
-            reference.with_description(desc)
-        } else {
-            reference
-        };
-        use_case.add_reference(reference);
-        self.repository.save(&use_case)?;
-        self.use_cases[index] = use_case;
-        Ok(())
+        let mut service =
+            services::ReferenceManagementService::new(&self.repository, &mut self.use_cases);
+        service.add_reference(use_case_id, target_id, relationship, description)
     }
 
     /// Get all references for a use case
@@ -517,14 +419,9 @@ impl UseCaseApplicationService {
 
     /// Remove a reference from a use case
     pub fn remove_reference(&mut self, use_case_id: &str, target_id: &str) -> Result<()> {
-        let index = self.find_use_case_index(use_case_id)?;
-        let mut use_case = self.use_cases[index].clone();
-        use_case
-            .use_case_references
-            .retain(|r| r.target_id != target_id);
-        self.repository.save(&use_case)?;
-        self.use_cases[index] = use_case;
-        Ok(())
+        let mut service =
+            services::ReferenceManagementService::new(&self.repository, &mut self.use_cases);
+        service.remove_reference(use_case_id, target_id)
     }
 
     // ========== Scenario Management Methods ==========
@@ -540,25 +437,20 @@ impl UseCaseApplicationService {
         postconditions: Vec<String>,
         actors: Vec<String>,
     ) -> Result<String> {
-        let index = self.find_use_case_index(use_case_id)?;
-        let use_case = &self.use_cases[index];
-
-        let scenario = self.scenario_creator.create_scenario(
-            use_case,
+        let mut scenario_service = services::ScenarioManagementService::new(
+            &self.repository,
+            &mut self.use_cases,
+            &self.scenario_creator,
+        );
+        scenario_service.add_scenario(
+            use_case_id,
             title,
             scenario_type,
             description,
             preconditions,
             postconditions,
             actors,
-        );
-
-        let mut updated_use_case = self.use_cases[index].clone();
-        updated_use_case.add_scenario(scenario.clone());
-        self.repository.save(&updated_use_case)?;
-        self.use_cases[index] = updated_use_case;
-
-        Ok(scenario.id)
+        )
     }
 
     /// Add a step to an existing scenario
@@ -571,18 +463,19 @@ impl UseCaseApplicationService {
         action: String,
         expected_result: Option<String>,
     ) -> Result<()> {
-        let index = self.find_use_case_index(use_case_id)?;
-        let mut use_case = self.use_cases[index].clone();
-
-        let step =
-            self.scenario_creator
-                .create_scenario_step(order, actor, action, expected_result);
-
-        use_case.add_step_to_scenario(scenario_id, step)?;
-        self.repository.save(&use_case)?;
-        self.use_cases[index] = use_case;
-
-        Ok(())
+        let mut scenario_service = services::ScenarioManagementService::new(
+            &self.repository,
+            &mut self.use_cases,
+            &self.scenario_creator,
+        );
+        scenario_service.add_scenario_step(
+            use_case_id,
+            scenario_id,
+            order,
+            actor,
+            action,
+            expected_result,
+        )
     }
 
     /// Update the status of a scenario
@@ -592,14 +485,12 @@ impl UseCaseApplicationService {
         scenario_id: &str,
         new_status: crate::core::Status,
     ) -> Result<()> {
-        let index = self.find_use_case_index(use_case_id)?;
-        let mut use_case = self.use_cases[index].clone();
-
-        use_case.update_scenario_status(scenario_id, new_status)?;
-        self.repository.save(&use_case)?;
-        self.use_cases[index] = use_case;
-
-        Ok(())
+        let mut scenario_service = services::ScenarioManagementService::new(
+            &self.repository,
+            &mut self.use_cases,
+            &self.scenario_creator,
+        );
+        scenario_service.update_scenario_status(use_case_id, scenario_id, new_status)
     }
 
     /// Get all scenarios for a use case
@@ -615,14 +506,12 @@ impl UseCaseApplicationService {
         scenario_id: &str,
         step_order: u32,
     ) -> Result<()> {
-        let index = self.find_use_case_index(use_case_id)?;
-        let mut use_case = self.use_cases[index].clone();
-
-        use_case.remove_step_from_scenario(scenario_id, step_order)?;
-        self.repository.save(&use_case)?;
-        self.use_cases[index] = use_case;
-
-        Ok(())
+        let mut scenario_service = services::ScenarioManagementService::new(
+            &self.repository,
+            &mut self.use_cases,
+            &self.scenario_creator,
+        );
+        scenario_service.remove_scenario_step(use_case_id, scenario_id, step_order)
     }
 
     /// Add a reference to a scenario
@@ -632,33 +521,12 @@ impl UseCaseApplicationService {
         scenario_id: &str,
         reference: ScenarioReference,
     ) -> Result<()> {
-        let index = self.find_use_case_index(use_case_id)?;
-        let mut use_case = self.use_cases[index].clone();
-
-        // Inline the functionality of deleted add_reference_to_scenario
-        let scenario_index = use_case
-            .scenarios
-            .iter()
-            .position(|s| s.id == scenario_id)
-            .ok_or_else(|| anyhow::anyhow!("Scenario with ID '{}' not found", scenario_id))?;
-
-        // Validate no circular reference for scenario-to-scenario references
-        if matches!(reference.ref_type, ReferenceType::Scenario) {
-            ScenarioReferenceValidator::validate_no_circular_reference(
-                &use_case,
-                scenario_id,
-                &reference.target_id,
-            )?;
-        }
-
-        // Add the reference directly to the scenario
-        use_case.scenarios[scenario_index].add_reference(reference);
-        use_case.metadata.touch();
-
-        self.repository.save(&use_case)?;
-        self.use_cases[index] = use_case;
-
-        Ok(())
+        let mut scenario_service = services::ScenarioManagementService::new(
+            &self.repository,
+            &mut self.use_cases,
+            &self.scenario_creator,
+        );
+        scenario_service.add_scenario_reference(use_case_id, scenario_id, reference)
     }
 
     /// Remove a reference from a scenario
@@ -669,22 +537,17 @@ impl UseCaseApplicationService {
         target_id: &str,
         relationship: &str,
     ) -> Result<()> {
-        let index = self.find_use_case_index(use_case_id)?;
-        let mut use_case = self.use_cases[index].clone();
-
-        // Inline the functionality of deleted remove_reference_from_scenario
-        let scenario_index = use_case
-            .scenarios
-            .iter()
-            .position(|s| s.id == scenario_id)
-            .ok_or_else(|| anyhow::anyhow!("Scenario with ID '{}' not found", scenario_id))?;
-
-        use_case.scenarios[scenario_index].remove_reference(target_id, relationship);
-        use_case.metadata.touch();
-        self.repository.save(&use_case)?;
-        self.use_cases[index] = use_case;
-
-        Ok(())
+        let mut scenario_service = services::ScenarioManagementService::new(
+            &self.repository,
+            &mut self.use_cases,
+            &self.scenario_creator,
+        );
+        scenario_service.remove_scenario_reference(
+            use_case_id,
+            scenario_id,
+            target_id,
+            relationship,
+        )
     }
 
     /// Get all scenarios referenced by a scenario
@@ -850,59 +713,9 @@ impl UseCaseApplicationService {
         use_case_id: Option<String>,
         dry_run: bool,
     ) -> Result<(usize, usize, Vec<(String, Vec<String>)>)> {
-        let mut cleaned_count = 0;
-        let mut total_checked = 0;
-        let mut details = Vec::new();
-
-        // Determine which use cases to process
-        let use_case_ids: Vec<String> = if let Some(id) = use_case_id {
-            // Single use case
-            if !self.use_cases.iter().any(|uc| uc.id == id) {
-                anyhow::bail!("Use case '{}' not found", id);
-            }
-            vec![id]
-        } else {
-            // All use cases
-            self.use_cases.iter().map(|uc| uc.id.clone()).collect()
-        };
-
-        for uc_id in use_case_ids {
-            total_checked += 1;
-            let index = self.find_use_case_index(&uc_id)?;
-            let use_case = &mut self.use_cases[index];
-
-            // Get set of methodologies currently in use by enabled views
-            let active_methodologies: std::collections::HashSet<String> = use_case
-                .views
-                .iter()
-                .filter(|view| view.enabled)
-                .map(|view| view.methodology.clone())
-                .collect();
-
-            // Find orphaned methodologies in methodology_fields
-            let orphaned: Vec<String> = use_case
-                .methodology_fields
-                .keys()
-                .filter(|m| !active_methodologies.contains(*m))
-                .cloned()
-                .collect();
-
-            if !orphaned.is_empty() {
-                cleaned_count += 1;
-                details.push((use_case.id.clone(), orphaned.clone()));
-
-                // Remove orphaned fields if not dry run
-                if !dry_run {
-                    for methodology in &orphaned {
-                        use_case.methodology_fields.remove(methodology);
-                    }
-                    // Save the updated use case
-                    self.repository.save(use_case)?;
-                }
-            }
-        }
-
-        Ok((cleaned_count, total_checked, details))
+        let mut service =
+            services::MethodologyFieldCleanupService::new(&self.repository, &mut self.use_cases);
+        service.cleanup_methodology_fields(use_case_id, dry_run)
     }
 }
 
@@ -924,7 +737,7 @@ mod tests {
 
         init_test_project(None)?;
 
-        let mut coordinator = UseCaseApplicationService::load()?;
+        let mut coordinator = UseCaseCoordinator::load()?;
         let default_methodology = coordinator.config.templates.default_methodology.clone();
 
         let use_case_id = coordinator.create_use_case_with_views(
@@ -960,7 +773,7 @@ mod tests {
         env::set_current_dir(&temp_dir)?;
 
         init_test_project(None)?;
-        let mut coordinator = UseCaseApplicationService::load()?;
+        let mut coordinator = UseCaseCoordinator::load()?;
         let default_methodology = coordinator.config.templates.default_methodology.clone();
 
         let mut categories: Vec<String> = coordinator
@@ -1025,7 +838,7 @@ mod tests {
 
         init_test_project(Some("rust".to_string()))?;
 
-        let mut coordinator = UseCaseApplicationService::load()?;
+        let mut coordinator = UseCaseCoordinator::load()?;
         let default_methodology = coordinator.config.templates.default_methodology.clone();
 
         let _uc1 = coordinator.create_use_case_with_views(
@@ -1098,7 +911,7 @@ mod tests {
 
         // Use the existing "feature" methodology which has custom fields defined
         // (user_segment, success_metrics, hypothesis, feature_dependencies, design_assets)
-        let mut coordinator = UseCaseApplicationService::load()?;
+        let mut coordinator = UseCaseCoordinator::load()?;
 
         let use_case_id = coordinator.create_use_case_with_views(
             "Test Custom Fields".to_string(),
