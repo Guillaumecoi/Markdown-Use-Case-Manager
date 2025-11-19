@@ -165,6 +165,15 @@ impl UseCaseCreator {
 
         // Group fields by methodology for storage in methodology_fields
         let mut methodology_fields: HashMap<String, HashMap<String, Value>> = HashMap::new();
+        
+        // Initialize empty HashMap for each methodology in views
+        for view in &views {
+            methodology_fields
+                .entry(view.methodology.clone())
+                .or_insert_with(HashMap::new);
+        }
+        
+        // Populate with actual field values
         for (field_name, field_value) in methodology_field_values {
             // Find which methodology this field belongs to
             if let Some(collected_field) = field_collection.fields.get(&field_name) {

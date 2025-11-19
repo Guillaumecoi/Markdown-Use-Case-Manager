@@ -3,7 +3,6 @@
 use anyhow::Result;
 
 use crate::cli::standard::runner::CliRunner;
-use crate::controller::DisplayResult;
 use crate::presentation::DisplayResultFormatter;
 
 /// Handle the cleanup command to remove orphaned methodology fields.

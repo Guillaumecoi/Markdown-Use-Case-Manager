@@ -52,7 +52,7 @@ pub struct MethodologyFieldCollector {
 impl MethodologyFieldCollector {
     /// Create a new field collector
     pub fn new() -> Result<Self> {
-        let templates_dir = format!(".config/.mucm/{}", Config::TEMPLATES_DIR);
+        let templates_dir = format!(".config/.mucm/{}/methodologies", Config::TEMPLATES_DIR);
         Ok(Self { templates_dir })
     }
 
