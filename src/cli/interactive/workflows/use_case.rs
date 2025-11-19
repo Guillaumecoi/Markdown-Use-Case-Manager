@@ -154,11 +154,12 @@ impl UseCaseWorkflow {
             .prompt()?;
 
         if !fill_additional {
-            // Create use case with just the basic fields
+            // Create use case with just the basic fields and default priority
             let result = runner.create_use_case_with_views_and_fields(
                 title,
                 category,
                 description,
+                "Medium".to_string(), // Default priority
                 views.clone(),
                 HashMap::new(),
             )?;
@@ -176,6 +177,13 @@ impl UseCaseWorkflow {
         }
 
         UI::show_section_header("Additional Fields", "📝")?;
+
+        // Priority (with default)
+        let priority_options = vec!["Low", "Medium", "High", "Critical"];
+        let priority = Select::new("Priority:", priority_options)
+            .with_starting_cursor(1) // Default to "Medium"
+            .with_help_message("Priority level for this use case")
+            .prompt()?;
 
         // Description (if not already provided)
         let final_description = if description.is_some() {
@@ -215,6 +223,7 @@ impl UseCaseWorkflow {
             title,
             category,
             final_description,
+            priority.to_string(),
             views.clone(),
             extra_fields,
         )?;

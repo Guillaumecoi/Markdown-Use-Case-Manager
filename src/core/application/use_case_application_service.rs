@@ -208,6 +208,7 @@ impl UseCaseApplicationService {
             title,
             category,
             description,
+            "Medium".to_string(), // Default priority for create_use_case_with_views
             &first_methodology,
             &self.use_cases,
             self.repository.as_ref(),
@@ -245,6 +246,7 @@ impl UseCaseApplicationService {
         title: String,
         category: String,
         description: Option<String>,
+        priority: String,
         views: &str,
         extra_fields: std::collections::HashMap<String, String>,
     ) -> Result<String> {
@@ -280,6 +282,7 @@ impl UseCaseApplicationService {
             title,
             category,
             description,
+            priority,
             &first_methodology,
             extra_fields,
             &self.use_cases,
@@ -743,6 +746,7 @@ impl UseCaseApplicationService {
             title,
             category,
             description,
+            "Medium".to_string(), // Default priority for internal helper
             methodology,
             &self.use_cases,
             self.repository.as_ref(),
@@ -768,6 +772,7 @@ impl UseCaseApplicationService {
             title,
             category,
             description,
+            "Medium".to_string(), // Default priority for internal helper
             methodology,
             extra_fields,
             &self.use_cases,

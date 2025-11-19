@@ -162,6 +162,7 @@ impl InteractiveRunner {
         title: String,
         category: String,
         description: Option<String>,
+        priority: String,
         views: Vec<(String, String)>, // Vec of (methodology, level) pairs
         extra_fields: std::collections::HashMap<String, String>,
     ) -> Result<String> {
@@ -178,6 +179,7 @@ impl InteractiveRunner {
             title,
             category,
             description,
+            priority,
             views_string,
             extra_fields,
         )?;

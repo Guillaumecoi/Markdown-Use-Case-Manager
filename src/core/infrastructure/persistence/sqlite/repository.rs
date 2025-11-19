@@ -418,6 +418,7 @@ impl SqliteUseCaseRepository {
                     views: Vec::new(), // Will be populated below (multi-view support)
                     preconditions: Vec::new(), // Will be populated below
                     postconditions: Vec::new(), // Will be populated below
+                    methodology_fields: std::collections::HashMap::new(), // New field for methodology-specific fields
                     use_case_references: Vec::new(), // Will be populated below
                     scenarios: Vec::new(), // Will be loaded from relational tables
                     extra,

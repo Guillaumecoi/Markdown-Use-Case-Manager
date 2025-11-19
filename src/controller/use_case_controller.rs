@@ -188,6 +188,7 @@ impl UseCaseController {
         title: String,
         category: String,
         description: Option<String>,
+        priority: String,
         views: String,
         extra_fields: std::collections::HashMap<String, String>,
     ) -> Result<DisplayResult> {
@@ -195,6 +196,7 @@ impl UseCaseController {
             title,
             category,
             description,
+            priority,
             &views,
             extra_fields,
         ) {

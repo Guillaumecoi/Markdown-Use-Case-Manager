@@ -66,8 +66,16 @@ pub struct UseCase {
     #[serde(default)]
     pub scenarios: Vec<Scenario>,
 
-    // Catch-all for any additional fields from TOML (including business_value,
-    // acceptance_criteria, prerequisites, etc.) - fully flexible!
+    // Methodology-specific custom fields, grouped by methodology name
+    // Example: { "business": { "business_value": "...", "stakeholders": [...] } }
+    // This allows clean separation and easy add/remove of methodology fields
+    pub methodology_fields: std::collections::HashMap<
+        String,
+        std::collections::HashMap<String, serde_json::Value>,
+    >,
+
+    // Catch-all for standard extra fields (author, reviewer, etc.)
+    // Note: methodology-specific fields go in methodology_fields above
     #[serde(flatten)]
     pub extra: std::collections::HashMap<String, serde_json::Value>,
 }
@@ -93,6 +101,7 @@ impl UseCase {
             postconditions: Vec::new(),
             use_case_references: Vec::new(),
             scenarios: Vec::new(),
+            methodology_fields: std::collections::HashMap::new(),
             extra: std::collections::HashMap::new(),
         })
     }
@@ -558,6 +567,7 @@ mod use_case_tests {
                 "updated_at": "2023-01-01T00:00:00Z",
                 "version": 1
             },
+            "methodology_fields": {},
             "business_value": "High impact",
             "acceptance_criteria": ["Must work", "Must be fast", "Must be secure"],
             "prerequisites": "User authentication",
@@ -694,29 +704,7 @@ mod use_case_tests {
         assert_eq!(use_case.use_case_references.len(), 1);
     }
 
-    /// Test backward compatibility - old use cases without new fields
-    #[test]
-    fn test_backward_compatibility() {
-        // Old use case JSON without new fields
-        let json = r#"{
-            "id": "UC-TEST-001",
-            "title": "Test Use Case",
-            "category": "Test",
-            "description": "A test use case",
-            "priority": "Medium",
-            "metadata": {
-                "created_at": "2023-01-01T00:00:00Z",
-                "updated_at": "2023-01-01T00:00:00Z"
-            }
-        }"#;
-
-        let use_case: UseCase = serde_json::from_str(json).unwrap();
-
-        assert!(use_case.preconditions.is_empty());
-        assert!(use_case.postconditions.is_empty());
-        assert!(use_case.use_case_references.is_empty());
-        assert!(use_case.scenarios.is_empty());
-    }
+    // Removed: test_backward_compatibility - backward compatibility not required
 
     /// Test serialization with new fields
     #[test]

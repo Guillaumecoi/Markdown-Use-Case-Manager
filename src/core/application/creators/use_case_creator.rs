@@ -28,6 +28,7 @@ impl UseCaseCreator {
         title: String,
         category: String,
         description: Option<String>,
+        priority: String,
         methodology: &str,
         existing_use_cases: &[UseCase],
         repository: &dyn UseCaseRepository,
@@ -49,6 +50,7 @@ impl UseCaseCreator {
                 title,
                 category,
                 description,
+                priority,
                 extra_fields,
             )
             .map_err(|e: String| anyhow::anyhow!(e))?;
@@ -69,6 +71,7 @@ impl UseCaseCreator {
         title: String,
         category: String,
         description: Option<String>,
+        priority: String,
         methodology: &str,
         user_fields: std::collections::HashMap<String, String>,
         existing_use_cases: &[UseCase],
@@ -96,6 +99,7 @@ impl UseCaseCreator {
                 title,
                 category,
                 description,
+                priority,
                 extra_fields,
             )
             .map_err(|e: String| anyhow::anyhow!(e))?;
