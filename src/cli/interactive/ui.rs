@@ -30,6 +30,10 @@ impl UI {
             Print("║                                                              ║\n"),
             Print("╚══════════════════════════════════════════════════════════════╝\n"),
             ResetColor,
+            Print("\n"),
+            SetForegroundColor(Color::DarkGrey),
+            Print("  Tip: Use arrow keys to navigate, Enter to select\n"),
+            ResetColor,
             Print("\n")
         )?;
 

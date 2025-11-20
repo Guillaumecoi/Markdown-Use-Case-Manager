@@ -38,42 +38,28 @@ pub fn run_interactive_session() -> Result<()> {
 }
 
 /// Create the main menu options
+///
+/// Simple action-oriented menu:
+/// - Manage Use Cases: All use case operations (create, edit, list, status)
+/// - Manage Personas: All persona operations
+/// - Project Settings: Configuration
 fn create_main_menu_options() -> Vec<MenuOption<CliRunner>> {
     vec![
-        MenuOption::new("📝 Manage use cases", |_| {
+        MenuOption::new("📝 Manage Use Cases", |_| {
             if let Err(e) = UseCaseWorkflow::manage_use_cases() {
                 UI::show_error(&format!("Error managing use cases: {}", e))?;
             }
             Ok(false) // Don't exit
         }),
-        MenuOption::new("⚙️  Configure settings", |_| {
-            if let Err(e) = Settings::configure() {
-                UI::show_error(&format!("Error configuring settings: {}", e))?;
-            }
-            Ok(false) // Don't exit
-        }),
-        MenuOption::new("� Manage personas", |_| {
+        MenuOption::new("👤 Manage Personas", |_| {
             if let Err(e) = PersonaWorkflow::manage_personas() {
                 UI::show_error(&format!("Error managing personas: {}", e))?;
             }
             Ok(false) // Don't exit
         }),
-        MenuOption::new("�📋 List all use cases", |runner: &mut CliRunner| {
-            if let Err(e) = runner.list_use_cases() {
-                UI::show_error(&format!("Error listing use cases: {}", e))?;
-            }
-            Ok(false) // Don't exit
-        }),
-        MenuOption::new("📊 Show project status", |runner: &mut CliRunner| {
-            if let Err(e) = runner.show_status() {
-                UI::show_error(&format!("Error showing status: {}", e))?;
-            }
-            Ok(false) // Don't exit
-        }),
-        MenuOption::new("🗣️  Show available languages", |_| {
-            match CliRunner::show_languages() {
-                Ok(languages) => println!("\n{}", languages),
-                Err(e) => UI::show_error(&format!("Error showing languages: {}", e))?,
+        MenuOption::new("⚙️  Project Settings", |_| {
+            if let Err(e) = Settings::configure() {
+                UI::show_error(&format!("Error configuring settings: {}", e))?;
             }
             Ok(false) // Don't exit
         }),
