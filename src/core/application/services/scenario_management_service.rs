@@ -125,6 +125,195 @@ impl<'a> ScenarioManagementService<'a> {
         Ok(())
     }
 
+    /// Edit an existing scenario
+    pub fn edit_scenario(
+        &mut self,
+        use_case_id: &str,
+        scenario_id: &str,
+        title: Option<String>,
+        description: Option<String>,
+        scenario_type: Option<ScenarioType>,
+        status: Option<Status>,
+    ) -> Result<()> {
+        let index = self.find_use_case_index(use_case_id)?;
+        let mut use_case = self.use_cases[index].clone();
+
+        let scenario_index = use_case
+            .scenarios
+            .iter()
+            .position(|s| s.id == scenario_id)
+            .ok_or_else(|| anyhow::anyhow!("Scenario with ID '{}' not found", scenario_id))?;
+
+        // Update fields if provided
+        if let Some(new_title) = title {
+            use_case.scenarios[scenario_index].title = new_title;
+        }
+        if let Some(new_desc) = description {
+            use_case.scenarios[scenario_index].description = new_desc;
+        }
+        if let Some(new_type) = scenario_type {
+            use_case.scenarios[scenario_index].scenario_type = new_type;
+        }
+        if let Some(new_status) = status {
+            use_case.scenarios[scenario_index].set_status(new_status);
+        }
+
+        use_case.metadata.touch();
+        self.repository.save(&use_case)?;
+        self.use_cases[index] = use_case;
+
+        Ok(())
+    }
+
+    /// Delete a scenario from a use case
+    pub fn delete_scenario(&mut self, use_case_id: &str, scenario_id: &str) -> Result<()> {
+        let index = self.find_use_case_index(use_case_id)?;
+        let mut use_case = self.use_cases[index].clone();
+
+        // Check if other scenarios reference this one
+        let has_references = use_case
+            .scenarios
+            .iter()
+            .any(|s| s.id != scenario_id && s.references_scenario(scenario_id));
+
+        if has_references {
+            return Err(anyhow::anyhow!(
+                "Cannot delete scenario '{}': it is referenced by other scenarios",
+                scenario_id
+            ));
+        }
+
+        use_case.scenarios.retain(|s| s.id != scenario_id);
+        use_case.metadata.touch();
+
+        self.repository.save(&use_case)?;
+        self.use_cases[index] = use_case;
+
+        Ok(())
+    }
+
+    /// Edit a scenario step
+    pub fn edit_scenario_step(
+        &mut self,
+        use_case_id: &str,
+        scenario_id: &str,
+        step_order: u32,
+        new_description: String,
+    ) -> Result<()> {
+        let index = self.find_use_case_index(use_case_id)?;
+        let mut use_case = self.use_cases[index].clone();
+
+        let scenario_index = use_case
+            .scenarios
+            .iter()
+            .position(|s| s.id == scenario_id)
+            .ok_or_else(|| anyhow::anyhow!("Scenario with ID '{}' not found", scenario_id))?;
+
+        let step = use_case.scenarios[scenario_index]
+            .steps
+            .iter_mut()
+            .find(|s| s.order == step_order as usize)
+            .ok_or_else(|| {
+                anyhow::anyhow!("Step {} not found in scenario {}", step_order, scenario_id)
+            })?;
+
+        step.action = new_description;
+        use_case.scenarios[scenario_index].metadata.touch();
+        use_case.metadata.touch();
+
+        self.repository.save(&use_case)?;
+        self.use_cases[index] = use_case;
+
+        Ok(())
+    }
+
+    /// Reorder scenario steps
+    pub fn reorder_scenario_steps(
+        &mut self,
+        use_case_id: &str,
+        scenario_id: &str,
+        reorderings: std::collections::HashMap<u32, u32>,
+    ) -> Result<()> {
+        let index = self.find_use_case_index(use_case_id)?;
+        let mut use_case = self.use_cases[index].clone();
+
+        let scenario_index = use_case
+            .scenarios
+            .iter()
+            .position(|s| s.id == scenario_id)
+            .ok_or_else(|| anyhow::anyhow!("Scenario with ID '{}' not found", scenario_id))?;
+
+        // Apply reorderings
+        for step in &mut use_case.scenarios[scenario_index].steps {
+            if let Some(&new_order) = reorderings.get(&(step.order as u32)) {
+                step.order = new_order as usize;
+            }
+        }
+
+        // Re-sort steps
+        use_case.scenarios[scenario_index]
+            .steps
+            .sort_by_key(|s| s.order);
+        use_case.scenarios[scenario_index].metadata.touch();
+        use_case.metadata.touch();
+
+        self.repository.save(&use_case)?;
+        self.use_cases[index] = use_case;
+
+        Ok(())
+    }
+
+    /// Assign a persona to a scenario
+    pub fn assign_persona_to_scenario(
+        &mut self,
+        use_case_id: &str,
+        scenario_id: &str,
+        persona_id: &str,
+    ) -> Result<()> {
+        let index = self.find_use_case_index(use_case_id)?;
+        let mut use_case = self.use_cases[index].clone();
+
+        let scenario_index = use_case
+            .scenarios
+            .iter()
+            .position(|s| s.id == scenario_id)
+            .ok_or_else(|| anyhow::anyhow!("Scenario with ID '{}' not found", scenario_id))?;
+
+        use_case.scenarios[scenario_index].persona = Some(persona_id.to_string());
+        use_case.scenarios[scenario_index].metadata.touch();
+        use_case.metadata.touch();
+
+        self.repository.save(&use_case)?;
+        self.use_cases[index] = use_case;
+
+        Ok(())
+    }
+
+    /// Unassign persona from a scenario
+    pub fn unassign_persona_from_scenario(
+        &mut self,
+        use_case_id: &str,
+        scenario_id: &str,
+    ) -> Result<()> {
+        let index = self.find_use_case_index(use_case_id)?;
+        let mut use_case = self.use_cases[index].clone();
+
+        let scenario_index = use_case
+            .scenarios
+            .iter()
+            .position(|s| s.id == scenario_id)
+            .ok_or_else(|| anyhow::anyhow!("Scenario with ID '{}' not found", scenario_id))?;
+
+        use_case.scenarios[scenario_index].persona = None;
+        use_case.scenarios[scenario_index].metadata.touch();
+        use_case.metadata.touch();
+
+        self.repository.save(&use_case)?;
+        self.use_cases[index] = use_case;
+
+        Ok(())
+    }
+
     /// Add a reference to a scenario
     pub fn add_scenario_reference(
         &mut self,

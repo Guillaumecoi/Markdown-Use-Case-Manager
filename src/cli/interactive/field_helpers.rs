@@ -15,11 +15,11 @@ pub struct FieldHelpers;
 
 impl FieldHelpers {
     /// Edit an array field interactively with add/edit/remove/clear options
-    /// 
+    ///
     /// # Arguments
     /// * `label` - Display name for the array field
     /// * `current_items` - Existing items in the array
-    /// 
+    ///
     /// # Returns
     /// * `Ok(Some(items))` - Modified array items
     /// * `Ok(None)` - No changes made (user kept original)
@@ -28,11 +28,7 @@ impl FieldHelpers {
         let mut items = current_items;
 
         loop {
-            UI::show_info(&format!(
-                "\n📋 {} (current: [{}])",
-                label,
-                items.join(", ")
-            ))?;
+            UI::show_info(&format!("\n📋 {} (current: [{}])", label, items.join(", ")))?;
 
             let options = if items.is_empty() {
                 vec!["Add item", "Done (keep empty)"]
@@ -54,7 +50,8 @@ impl FieldHelpers {
                         continue;
                     }
 
-                    let item_to_edit = Select::new("Select item to edit:", items.clone()).prompt()?;
+                    let item_to_edit =
+                        Select::new("Select item to edit:", items.clone()).prompt()?;
                     let idx = items.iter().position(|i| i == &item_to_edit).unwrap();
 
                     let new_value = Text::new(&format!("  Edit '{}' to:", item_to_edit))
@@ -96,12 +93,12 @@ impl FieldHelpers {
     }
 
     /// Prompt for a number with validation
-    /// 
+    ///
     /// # Arguments
     /// * `label` - Display text for the prompt
     /// * `current` - Current value as string
     /// * `help` - Help message to display
-    /// 
+    ///
     /// # Returns
     /// * `Ok(Some(value))` - New validated number as string
     /// * `Ok(None)` - No change (kept original or empty)
@@ -125,12 +122,12 @@ impl FieldHelpers {
     }
 
     /// Prompt for a boolean value
-    /// 
+    ///
     /// # Arguments
     /// * `label` - Display text for the prompt
     /// * `current` - Current boolean value
     /// * `help` - Help message to display
-    /// 
+    ///
     /// # Returns
     /// * `Ok(Some(value))` - New boolean as string if changed
     /// * `Ok(None)` - No change (kept original)
@@ -148,12 +145,12 @@ impl FieldHelpers {
     }
 
     /// Prompt for a string value
-    /// 
+    ///
     /// # Arguments
     /// * `label` - Display text for the prompt
     /// * `current` - Current string value
     /// * `help` - Help message to display
-    /// 
+    ///
     /// # Returns
     /// * `Ok(Some(value))` - New string if changed
     /// * `Ok(None)` - No change (kept original)
@@ -171,10 +168,10 @@ impl FieldHelpers {
     }
 
     /// Parse JSON value as array of strings
-    /// 
+    ///
     /// # Arguments
     /// * `json_val` - JSON value that might be an array
-    /// 
+    ///
     /// # Returns
     /// Vector of strings extracted from the JSON value
     pub fn parse_json_array(json_val: &JsonValue) -> Vec<String> {
@@ -194,10 +191,10 @@ impl FieldHelpers {
     }
 
     /// Convert vector of strings to storage format (newline-separated)
-    /// 
+    ///
     /// # Arguments
     /// * `items` - Vector of string items
-    /// 
+    ///
     /// # Returns
     /// String with items joined by newlines
     pub fn array_to_storage(items: &[String]) -> String {
@@ -205,16 +202,16 @@ impl FieldHelpers {
     }
 
     /// Edit a field based on its type definition
-    /// 
+    ///
     /// This is a high-level helper that automatically chooses the appropriate
     /// input method based on the field type.
-    /// 
+    ///
     /// # Arguments
     /// * `field_type` - Type of the field ("string", "number", "boolean", "array")
     /// * `label` - Display name for the field
     /// * `current_value` - Current JSON value of the field (if any)
     /// * `help` - Help message to display
-    /// 
+    ///
     /// # Returns
     /// * `Ok(Some(value))` - New value as string if changed
     /// * `Ok(None)` - No change made
@@ -237,9 +234,7 @@ impl FieldHelpers {
                 }
             }
             "number" => {
-                let current = current_value
-                    .map(|v| format!("{}", v))
-                    .unwrap_or_default();
+                let current = current_value.map(|v| format!("{}", v)).unwrap_or_default();
 
                 Self::edit_number(&format!("{}: ", label), &current, help)
             }
@@ -286,7 +281,11 @@ mod tests {
 
     #[test]
     fn test_array_to_storage() {
-        let items = vec!["item1".to_string(), "item2".to_string(), "item3".to_string()];
+        let items = vec![
+            "item1".to_string(),
+            "item2".to_string(),
+            "item3".to_string(),
+        ];
         let result = FieldHelpers::array_to_storage(&items);
         assert_eq!(result, "item1\nitem2\nitem3");
     }

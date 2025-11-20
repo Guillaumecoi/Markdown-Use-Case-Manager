@@ -27,6 +27,7 @@
 mod dto;
 mod persona_controller;
 mod project_controller;
+mod scenario_controller;
 mod use_case_controller;
 
 #[cfg(test)]
@@ -35,6 +36,7 @@ mod tests;
 // Re-export commonly used controllers
 pub use persona_controller::PersonaController;
 pub use project_controller::ProjectController;
+pub use scenario_controller::ScenarioController;
 pub use use_case_controller::UseCaseController;
 
 // Re-export DTOs for use in CLI layer

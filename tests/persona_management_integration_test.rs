@@ -76,7 +76,11 @@ pain_points = { type = "array", required = false }
 /// Test helper: Read persona TOML file
 fn read_persona_toml(temp_dir: &TempDir, persona_id: &str) -> String {
     // Personas are stored in {data_dir}/personas/{persona_id}.toml
-    let toml_path = temp_dir.path().join("data").join("personas").join(format!("{}.toml", persona_id));
+    let toml_path = temp_dir
+        .path()
+        .join("data")
+        .join("personas")
+        .join(format!("{}.toml", persona_id));
     fs::read_to_string(toml_path).expect("Failed to read persona TOML file")
 }
 
@@ -429,7 +433,9 @@ fn test_persona_error_handling() {
     assert!(result.is_err() || !result.unwrap().success);
 
     // Try to delete non-existent persona
-    let result = controller.delete_persona("nonexistent".to_string()).unwrap();
+    let result = controller
+        .delete_persona("nonexistent".to_string())
+        .unwrap();
     assert!(!result.success);
     assert!(result.message.contains("not found") || result.message.contains("doesn't exist"));
 

@@ -710,7 +710,9 @@ mod use_case_controller_tests {
         assert!(result.is_ok());
         let display = result.unwrap();
         assert!(display.is_success());
-        assert!(display.message.contains("Updated business methodology fields"));
+        assert!(display
+            .message
+            .contains("Updated business methodology fields"));
     }
 
     #[test]

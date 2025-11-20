@@ -58,7 +58,13 @@ fn read_toml_file(temp_dir: &TempDir, use_case_id: &str, category: &str) -> Stri
 
 /// Test helper: Read markdown file content
 /// Files are named UC-XXX-nnn-methodology-level.md (e.g., UC-TES-001-business-normal.md)
-fn read_markdown_file(temp_dir: &TempDir, use_case_id: &str, category: &str, methodology: &str, level: &str) -> String {
+fn read_markdown_file(
+    temp_dir: &TempDir,
+    use_case_id: &str,
+    category: &str,
+    methodology: &str,
+    level: &str,
+) -> String {
     let md_path = temp_dir
         .path()
         .join("docs/use-cases")
@@ -112,7 +118,10 @@ fn test_complete_use_case_edit_workflow() {
     let use_case = controller.get_use_case(&use_case_id).unwrap();
     assert_eq!(use_case.title, "Updated Login Title");
     assert_eq!(use_case.category, "security");
-    assert_eq!(use_case.description, "Enhanced user authentication workflow");
+    assert_eq!(
+        use_case.description,
+        "Enhanced user authentication workflow"
+    );
     assert_eq!(use_case.priority.to_string(), "HIGH");
 
     // Verify TOML persistence
@@ -352,7 +361,7 @@ fn test_methodology_fields_per_view() {
 
     // Verify fields are stored per methodology
     let use_case = controller.get_use_case(&use_case_id).unwrap();
-    
+
     // Business fields should exist
     assert!(use_case
         .methodology_fields

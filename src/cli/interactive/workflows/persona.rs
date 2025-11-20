@@ -120,11 +120,7 @@ impl PersonaWorkflow {
             UI::show_section_header(&format!("Editing: {}", persona.name), "✏️")?;
             UI::show_info(&format!("ID: {}", persona.id))?;
 
-            let edit_options = vec![
-                "Edit Name",
-                "Edit Custom Fields",
-                "Back to Menu",
-            ];
+            let edit_options = vec!["Edit Name", "Edit Custom Fields", "Back to Menu"];
 
             let choice = Select::new("What would you like to edit?", edit_options).prompt()?;
 

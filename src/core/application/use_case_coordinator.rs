@@ -571,6 +571,101 @@ impl UseCaseCoordinator {
         Ok(scenario.references.clone())
     }
 
+    /// Edit an existing scenario
+    pub fn edit_scenario(
+        &mut self,
+        use_case_id: &str,
+        scenario_id: &str,
+        title: Option<String>,
+        description: Option<String>,
+        scenario_type: Option<ScenarioType>,
+        status: Option<crate::core::Status>,
+    ) -> Result<()> {
+        let mut scenario_service = services::ScenarioManagementService::new(
+            &self.repository,
+            &mut self.use_cases,
+            &self.scenario_creator,
+        );
+        scenario_service.edit_scenario(
+            use_case_id,
+            scenario_id,
+            title,
+            description,
+            scenario_type,
+            status,
+        )
+    }
+
+    /// Delete a scenario from a use case
+    pub fn delete_scenario(&mut self, use_case_id: &str, scenario_id: &str) -> Result<()> {
+        let mut scenario_service = services::ScenarioManagementService::new(
+            &self.repository,
+            &mut self.use_cases,
+            &self.scenario_creator,
+        );
+        scenario_service.delete_scenario(use_case_id, scenario_id)
+    }
+
+    /// Edit a scenario step
+    pub fn edit_scenario_step(
+        &mut self,
+        use_case_id: &str,
+        scenario_id: &str,
+        step_order: u32,
+        new_description: String,
+    ) -> Result<()> {
+        let mut scenario_service = services::ScenarioManagementService::new(
+            &self.repository,
+            &mut self.use_cases,
+            &self.scenario_creator,
+        );
+        scenario_service.edit_scenario_step(use_case_id, scenario_id, step_order, new_description)
+    }
+
+    /// Reorder scenario steps
+    pub fn reorder_scenario_steps(
+        &mut self,
+        use_case_id: &str,
+        scenario_id: &str,
+        reorderings: HashMap<u32, u32>,
+    ) -> Result<()> {
+        let mut scenario_service = services::ScenarioManagementService::new(
+            &self.repository,
+            &mut self.use_cases,
+            &self.scenario_creator,
+        );
+        scenario_service.reorder_scenario_steps(use_case_id, scenario_id, reorderings)
+    }
+
+    /// Assign a persona to a scenario
+    pub fn assign_persona_to_scenario(
+        &mut self,
+        use_case_id: &str,
+        scenario_id: &str,
+        persona_id: &str,
+    ) -> Result<()> {
+        let mut scenario_service = services::ScenarioManagementService::new(
+            &self.repository,
+            &mut self.use_cases,
+            &self.scenario_creator,
+        );
+        scenario_service.assign_persona_to_scenario(use_case_id, scenario_id, persona_id)
+    }
+
+    /// Unassign persona from a scenario
+    pub fn unassign_persona_from_scenario(
+        &mut self,
+        use_case_id: &str,
+        scenario_id: &str,
+    ) -> Result<()> {
+        let mut scenario_service = services::ScenarioManagementService::new(
+            &self.repository,
+            &mut self.use_cases,
+            &self.scenario_creator,
+        );
+        scenario_service.unassign_persona_from_scenario(use_case_id, scenario_id)
+    }
+
     // ========== Private Helpers (Delegation) ==========
 
     /// Helper to find a use case index by ID
