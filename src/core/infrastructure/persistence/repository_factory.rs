@@ -7,10 +7,10 @@
 use crate::config::{Config, StorageBackend};
 use crate::core::domain::PersonaRepository;
 use crate::core::infrastructure::persistence::sqlite::{
-    SqlitePersonaRepository, SqliteUseCaseRepository,
+    SqliteActorRepository, SqliteUseCaseRepository,
 };
 use crate::core::infrastructure::persistence::toml::{
-    TomlPersonaRepository, TomlUseCaseRepository,
+    TomlActorRepository, TomlUseCaseRepository,
 };
 use crate::core::infrastructure::persistence::traits::UseCaseRepository;
 use anyhow::{Context, Result};
@@ -88,7 +88,7 @@ impl RepositoryFactory {
     pub fn create_persona_repository(config: &Config) -> Result<Box<dyn PersonaRepository>> {
         match config.storage.backend {
             StorageBackend::Toml => {
-                let repo = TomlPersonaRepository::new(config.clone());
+                let repo = TomlActorRepository::new(config.clone());
                 Ok(Box::new(repo))
             }
             StorageBackend::Sqlite => {
@@ -106,9 +106,9 @@ impl RepositoryFactory {
                 // Open connection and initialize schema
                 let conn = Connection::open(&db_path)
                     .with_context(|| format!("Failed to open database at {:?}", db_path))?;
-                SqlitePersonaRepository::initialize(&conn)?;
+                SqliteActorRepository::initialize(&conn)?;
 
-                let repo = SqlitePersonaRepository::new(Arc::new(Mutex::new(conn)));
+                let repo = SqliteActorRepository::new(Arc::new(Mutex::new(conn)));
                 Ok(Box::new(repo))
             }
         }
@@ -130,7 +130,7 @@ impl RepositoryFactory {
     ) -> Result<Box<dyn PersonaRepository>> {
         match config.storage.backend {
             StorageBackend::Toml => {
-                let repo = TomlPersonaRepository::new(config.clone());
+                let repo = TomlActorRepository::new(config.clone());
                 Ok(Box::new(repo))
             }
             StorageBackend::Sqlite => {
@@ -138,9 +138,9 @@ impl RepositoryFactory {
                 let conn = Connection::open(db_path.as_ref()).with_context(|| {
                     format!("Failed to open database at {:?}", db_path.as_ref())
                 })?;
-                SqlitePersonaRepository::initialize(&conn)?;
+                SqliteActorRepository::initialize(&conn)?;
 
-                let repo = SqlitePersonaRepository::new(Arc::new(Mutex::new(conn)));
+                let repo = SqliteActorRepository::new(Arc::new(Mutex::new(conn)));
                 Ok(Box::new(repo))
             }
         }

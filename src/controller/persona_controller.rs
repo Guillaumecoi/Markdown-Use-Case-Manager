@@ -15,7 +15,7 @@
 
 use crate::config::Config;
 use crate::controller::dto::DisplayResult;
-use crate::core::{Persona, PersonaRepository, SqlitePersonaRepository, TomlPersonaRepository};
+use crate::core::{Persona, PersonaRepository, SqliteActorRepository, TomlActorRepository};
 use anyhow::{Context, Result};
 use std::collections::HashMap;
 
@@ -52,12 +52,12 @@ impl PersonaController {
 
                 let db_path = format!("{}/mucm.db", config.directories.data_dir);
                 let conn = Connection::open(&db_path)?;
-                SqlitePersonaRepository::initialize(&conn)?;
-                let repo = SqlitePersonaRepository::new(Arc::new(Mutex::new(conn)));
+                SqliteActorRepository::initialize(&conn)?;
+                let repo = SqliteActorRepository::new(Arc::new(Mutex::new(conn)));
                 Box::new(repo)
             }
             crate::config::StorageBackend::Toml => {
-                let repo = TomlPersonaRepository::new(config.clone());
+                let repo = TomlActorRepository::new(config.clone());
                 Box::new(repo)
             }
         };

@@ -1,11 +1,11 @@
 //! TOML-based persistence implementation.
 //!
-//! This module provides TOML file-based storage for use cases and personas.
+//! This module provides TOML file-based storage for use cases and actors (personas and system actors).
 //! Each entity is stored as a separate TOML file, making it
 //! git-friendly and human-readable.
 
-mod persona_repository;
+mod actor_repository;
 mod repository;
 
-pub use persona_repository::TomlPersonaRepository;
+pub use actor_repository::TomlActorRepository;
 pub use repository::TomlUseCaseRepository;

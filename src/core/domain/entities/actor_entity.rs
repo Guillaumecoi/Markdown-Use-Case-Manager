@@ -45,11 +45,26 @@ impl ActorType {
 impl std::fmt::Display for ActorType {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            ActorType::Persona => write!(f, "persona"),
-            ActorType::System => write!(f, "system"),
-            ActorType::ExternalService => write!(f, "external_service"),
-            ActorType::Database => write!(f, "database"),
-            ActorType::Custom => write!(f, "custom"),
+            ActorType::Persona => write!(f, "Persona"),
+            ActorType::System => write!(f, "System"),
+            ActorType::ExternalService => write!(f, "ExternalService"),
+            ActorType::Database => write!(f, "Database"),
+            ActorType::Custom => write!(f, "Custom"),
+        }
+    }
+}
+
+impl std::str::FromStr for ActorType {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Persona" | "persona" => Ok(ActorType::Persona),
+            "System" | "system" => Ok(ActorType::System),
+            "ExternalService" | "external_service" => Ok(ActorType::ExternalService),
+            "Database" | "database" => Ok(ActorType::Database),
+            "Custom" | "custom" => Ok(ActorType::Custom),
+            _ => Err(format!("Invalid actor type: {}", s)),
         }
     }
 }

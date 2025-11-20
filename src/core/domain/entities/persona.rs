@@ -81,6 +81,33 @@ impl Persona {
             _ => "🙂",
         }
     }
+
+    /// Convert Persona to ActorEntity (for unified actor system)
+    pub fn to_actor(&self) -> super::ActorEntity {
+        super::ActorEntity {
+            id: self.id.clone(),
+            name: self.name.clone(),
+            actor_type: super::ActorType::Persona,
+            emoji: self.emoji().to_string(),
+            metadata: self.metadata.clone(),
+            extra: self.extra.clone(),
+        }
+    }
+
+    /// Convert ActorEntity to Persona (for backward compatibility)
+    /// Returns None if the actor is not a Persona type
+    pub fn from_actor(actor: &super::ActorEntity) -> Option<Self> {
+        if matches!(actor.actor_type, super::ActorType::Persona) {
+            Some(Self {
+                id: actor.id.clone(),
+                name: actor.name.clone(),
+                metadata: actor.metadata.clone(),
+                extra: actor.extra.clone(),
+            })
+        } else {
+            None
+        }
+    }
 }
 
 #[cfg(test)]

@@ -33,7 +33,7 @@ pub use infrastructure::{
 // Exported for integration tests (appear unused to lib but required by tests/)
 #[allow(unused_imports)]
 pub use infrastructure::{
-    SqlitePersonaRepository, SqliteUseCaseRepository, TomlPersonaRepository, TomlUseCaseRepository,
+    SqliteActorRepository, SqliteUseCaseRepository, TomlActorRepository, TomlUseCaseRepository,
 };
 
 // Re-export utility functions
