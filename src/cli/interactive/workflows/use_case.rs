@@ -459,6 +459,7 @@ impl UseCaseWorkflow {
                 "Manage Views (add/remove)",
                 "Manage Preconditions",
                 "Manage Postconditions",
+                "Manage References",
                 "Manage Scenarios",
                 "Back to Menu",
             ];
@@ -480,6 +481,9 @@ impl UseCaseWorkflow {
                 }
                 "Manage Postconditions" => {
                     super::conditions::ConditionsWorkflow::manage_postconditions(&selected_id)?
+                }
+                "Manage References" => {
+                    super::references::ReferencesWorkflow::manage_references(&selected_id)?
                 }
                 "Manage Scenarios" => {
                     super::scenario::ScenarioWorkflow::manage_scenarios(&selected_id)?

@@ -9,5 +9,6 @@ pub mod config;
 pub mod initialization;
 pub mod methodology;
 pub mod persona;
+pub mod references;
 pub mod scenario;
 pub mod use_case;
