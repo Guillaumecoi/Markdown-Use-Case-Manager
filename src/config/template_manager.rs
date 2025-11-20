@@ -126,7 +126,7 @@ impl TemplateManager {
         );
         template_content = template_content.replace(
             r#"persona_dir = "docs/personas""#,
-            &format!(r#"persona_dir = "{}""#, config.directories.persona_dir),
+            &format!(r#"actor_dir = "{}""#, config.directories.actor_dir),
         );
         template_content = template_content.replace(
             r#"data_dir = "use-cases-data""#,

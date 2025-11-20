@@ -36,7 +36,7 @@ mod types;
 // Explicit public exports
 pub use file_manager::ConfigFileManager;
 pub use template_manager::TemplateManager;
-pub use types::{Config, PersonaConfig, StorageBackend, StorageConfig};
+pub use types::{ActorConfig, Config, StorageBackend, StorageConfig};
 
 // Re-export from other modules
 use anyhow::{Context, Result};
@@ -152,7 +152,7 @@ impl Config {
         // Update directories
         config.directories.use_case_dir = use_case_dir;
         config.directories.test_dir = test_dir;
-        config.directories.persona_dir = persona_dir;
+        config.directories.actor_dir = persona_dir;
         config.directories.data_dir = data_dir;
 
         config
@@ -302,8 +302,8 @@ impl Config {
             .context("Failed to create use case directory")?;
         fs::create_dir_all(&config.directories.test_dir)
             .context("Failed to create test directory")?;
-        fs::create_dir_all(&config.directories.persona_dir)
-            .context("Failed to create persona directory")?;
+        fs::create_dir_all(&config.directories.actor_dir)
+            .context("Failed to create actor directory")?;
         fs::create_dir_all(&config.directories.data_dir)
             .context("Failed to create data directory")?;
 
@@ -358,7 +358,7 @@ impl Config {
                         created: true,
                         last_updated: true,
                     },
-                    persona: PersonaConfig::default(),
+                    actor: ActorConfig::default(),
                 });
             }
         };

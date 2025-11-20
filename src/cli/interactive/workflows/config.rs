@@ -45,8 +45,8 @@ impl ConfigWorkflow {
             .with_help_message("Where to generate test scaffolding")
             .prompt()?;
 
-        config.directories.persona_dir = Text::new("Persona directory:")
-            .with_default(&config.directories.persona_dir)
+        config.directories.actor_dir = Text::new("Actor directory:")
+            .with_default(&config.directories.actor_dir)
             .with_help_message("Where to store generated persona markdown files")
             .prompt()?;
 
@@ -135,7 +135,7 @@ impl ConfigWorkflow {
         println!("Test Dir: {}", config.directories.test_dir);
         println!(
             "Persona Dir: {} (generated)",
-            config.directories.persona_dir
+            config.directories.actor_dir
         );
         println!(
             "Data Dir: {} (source of truth)",

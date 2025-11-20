@@ -161,16 +161,15 @@ mod storage_backend_tests {
 /// created = true
 /// last_updated = true
 ///
-/// [persona.fields]
-/// department = { type = "string", required = false }
-/// experience_level = { type = "string", required = false }
-/// pain_points = { type = "array", required = false }
+/// [actor.persona_fields]
+/// background = { type = "text", required = false, description = "...", example = "..." }
+/// job_role = { type = "string", required = false, description = "...", example = "..." }
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     /// Basic project information and metadata
     pub project: ProjectConfig,
-    /// Directory paths for use cases, tests, and templates
+    /// Directory paths for use cases, tests, and actors
     pub directories: DirectoryConfig,
     /// Methodology and language template settings
     pub templates: TemplateConfig,
@@ -182,9 +181,9 @@ pub struct Config {
     /// Storage backend configuration
     #[serde(default)]
     pub storage: StorageConfig,
-    /// Persona configuration with custom fields
-    #[serde(default)]
-    pub persona: PersonaConfig,
+    /// Actor configuration with custom persona fields
+    #[serde(default, alias = "persona")]
+    pub actor: ActorConfig,
 }
 
 /// Project-level configuration settings.
@@ -210,8 +209,10 @@ pub struct DirectoryConfig {
     pub use_case_dir: String,
     /// Directory where generated test files are stored
     pub test_dir: String,
-    /// Directory where persona markdown files are stored
-    pub persona_dir: String,
+    /// Directory where actor markdown files are stored (personas and system actors)
+    /// Replaces the old persona_dir field
+    #[serde(alias = "persona_dir")]
+    pub actor_dir: String,
     /// Directory for the source of truth files (TOML, SQLite database)
     pub data_dir: String,
 }
@@ -303,33 +304,33 @@ impl Default for StorageConfig {
     }
 }
 
-/// Persona configuration settings.
+/// Actor configuration settings.
 ///
-/// Defines custom fields that can be used when creating personas.
-/// These fields extend the base persona fields with project-specific
-/// attributes for better persona modeling.
+/// Defines custom fields for actors (personas and system actors).
+/// Persona fields are based on Sommerville's software engineering principles:
+/// personas represent archetypal users with backgrounds, education, and motivations.
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
-pub struct PersonaConfig {
-    /// Custom fields available for personas
+pub struct ActorConfig {
+    /// Custom fields available for personas (human actors)
     /// Key is the field name, value is the field configuration
-    /// Serialized inline as: fields.fieldname = { ... }
-    #[serde(default, rename = "fields")]
-    pub fields: std::collections::HashMap<String, crate::core::CustomFieldConfig>,
+    /// Serialized as: persona_fields.fieldname = { ... }
+    #[serde(default, rename = "persona_fields")]
+    pub persona_fields: std::collections::HashMap<String, crate::core::CustomFieldConfig>,
 }
 
-impl PersonaConfig {
-    /// Get a custom field by name
-    pub fn get_field(&self, name: &str) -> Option<&crate::core::CustomFieldConfig> {
-        self.fields.get(name)
+impl ActorConfig {
+    /// Get a persona custom field by name
+    pub fn get_persona_field(&self, name: &str) -> Option<&crate::core::CustomFieldConfig> {
+        self.persona_fields.get(name)
     }
 
-    /// Check if a custom field exists
-    pub fn has_field(&self, name: &str) -> bool {
-        self.fields.contains_key(name)
+    /// Check if a persona custom field exists
+    pub fn has_persona_field(&self, name: &str) -> bool {
+        self.persona_fields.contains_key(name)
     }
 
-    /// Get all custom field names
-    pub fn field_names(&self) -> Vec<&String> {
-        self.fields.keys().collect()
+    /// Get all persona custom field names
+    pub fn persona_field_names(&self) -> Vec<&String> {
+        self.persona_fields.keys().collect()
     }
 }
