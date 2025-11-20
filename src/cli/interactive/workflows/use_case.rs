@@ -457,6 +457,7 @@ impl UseCaseWorkflow {
                 "Edit Basic Info (title, category, description, priority)",
                 "Edit Methodology Fields",
                 "Manage Views (add/remove)",
+                "Manage Scenarios",
                 "Back to Menu",
             ];
 
@@ -471,6 +472,9 @@ impl UseCaseWorkflow {
                 }
                 "Manage Views (add/remove)" => {
                     Self::manage_views(&mut runner, &selected_id, &use_case)?
+                }
+                "Manage Scenarios" => {
+                    super::scenario::ScenarioWorkflow::manage_scenarios(&selected_id)?
                 }
                 "Back to Menu" => break,
                 _ => {}

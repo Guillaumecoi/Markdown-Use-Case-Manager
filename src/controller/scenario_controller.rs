@@ -167,6 +167,17 @@ impl ScenarioController {
         Ok(DisplayResult::success(output))
     }
 
+    /// Get all scenarios for a use case (for programmatic use)
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    ///
+    /// # Returns
+    /// Vector of scenarios
+    pub fn get_scenarios(&mut self, use_case_id: &str) -> Result<Vec<crate::core::Scenario>> {
+        self.app_service.get_scenarios(use_case_id)
+    }
+
     /// Get details of a specific scenario
     ///
     /// # Arguments
