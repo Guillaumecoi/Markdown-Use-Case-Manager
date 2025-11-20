@@ -23,7 +23,7 @@
 use crate::config::Config;
 use crate::controller::dto::{DisplayResult, SelectionOptions};
 use crate::core::{
-    ReferenceType, ScenarioReference, ScenarioType, Status, UseCaseApplicationService,
+    ReferenceType, ScenarioReference, ScenarioType, Status, UseCase, UseCaseCoordinator,
 };
 use crate::presentation::{StatusFormatter, UseCaseFormatter};
 use anyhow::Result;
@@ -35,7 +35,7 @@ use anyhow::Result;
 /// between CLI commands and the use case application services.
 pub struct UseCaseController {
     /// Application service for use case business logic
-    app_service: UseCaseApplicationService,
+    app_service: UseCaseCoordinator,
 }
 
 impl UseCaseController {
@@ -50,79 +50,81 @@ impl UseCaseController {
     /// # Errors
     /// Returns error if the application service cannot be loaded
     pub fn new() -> Result<Self> {
-        let app_service = UseCaseApplicationService::load()?;
+        let app_service = UseCaseCoordinator::load()?;
         Ok(Self { app_service })
     }
 
-    /// Create a new use case using the project's default methodology.
+    /// Create a new use case with flexible options.
     ///
-    /// Creates a use case using the project's default methodology, allowing
-    /// users to quickly create use cases without specifying a methodology.
+    /// Creates a use case with optional methodology, views, priority, and custom fields.
+    /// If no methodology or views are specified, uses the project's default methodology.
     ///
     /// # Arguments
     /// * `title` - The title of the use case
     /// * `category` - The category under which to organize the use case
     /// * `description` - Optional detailed description of the use case
+    /// * `methodology` - Optional methodology to use (ignored if views are specified)
+    /// * `views` - Optional comma-separated methodology:level pairs (e.g., "feature:simple,business:normal")
+    /// * `priority` - Optional priority for multi-view use cases
+    /// * `extra_fields` - Optional additional field values (priority, status, author, etc.)
     ///
     /// # Returns
     /// DisplayResult with success message and use case information
     ///
     /// # Errors
-    /// Returns error if use case creation fails or configuration cannot be loaded
+    /// Returns error if use case creation fails or parameters are invalid
     pub fn create_use_case(
         &mut self,
         title: String,
         category: String,
         description: Option<String>,
+        methodology: Option<String>,
+        views: Option<String>,
+        priority: Option<String>,
+        extra_fields: Option<std::collections::HashMap<String, String>>,
     ) -> Result<DisplayResult> {
-        match (|| -> Result<DisplayResult> {
-            let config = Config::load()?;
-            let default_methodology = config.templates.default_methodology.clone();
-            self.create_use_case_with_methodology(title, category, description, default_methodology)
-        })() {
-            Ok(result) => Ok(result),
-            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        // Determine views string - either from views parameter or from methodology parameter
+        let views_str = if let Some(views_str) = views {
+            views_str
+        } else {
+            // Convert methodology to views format (methodology:normal)
+            let methodology_str = methodology.unwrap_or_else(|| {
+                Config::load()
+                    .map(|c| c.templates.default_methodology.clone())
+                    .unwrap_or_else(|_| "feature".to_string())
+            });
+            format!("{}:normal", methodology_str)
+        };
+
+        // All use cases now use the views-based API
+        let result = if priority.is_some() || extra_fields.is_some() {
+            let prio = priority.unwrap_or_else(|| "medium".to_string());
+            let fields = extra_fields.unwrap_or_else(|| std::collections::HashMap::new());
+            self.app_service.create_use_case_with_views_and_fields(
+                title,
+                category,
+                description,
+                prio,
+                &views_str,
+                fields,
+            )
+        } else {
+            self.app_service
+                .create_use_case_with_views(title, category, description, &views_str)
         }
-    }
+        .map(|use_case_id| {
+            UseCaseFormatter::display_created(&use_case_id, &views_str);
+            (
+                use_case_id.clone(),
+                format!(
+                    "Created use case: {} with views: {}",
+                    use_case_id, views_str
+                ),
+            )
+        });
 
-    /// Create a new use case with a specific methodology.
-    ///
-    /// Creates a use case using the specified methodology, allowing users to
-    /// override the default methodology for individual use cases.
-    ///
-    /// # Arguments
-    /// * `title` - The title of the use case
-    /// * `category` - The category under which to organize the use case
-    /// * `description` - Optional detailed description of the use case
-    /// * `methodology` - The methodology to use for this use case
-    ///
-    /// # Returns
-    /// DisplayResult with success message and use case information
-    ///
-    /// # Errors
-    /// Returns error if use case creation fails or methodology is invalid
-    pub fn create_use_case_with_methodology(
-        &mut self,
-        title: String,
-        category: String,
-        description: Option<String>,
-        methodology: String,
-    ) -> Result<DisplayResult> {
-        match self.app_service.create_use_case_with_methodology(
-            title,
-            category,
-            description,
-            &methodology,
-        ) {
-            Ok(use_case_id) => {
-                // Display using formatter
-                UseCaseFormatter::display_created(&use_case_id, &methodology);
-
-                Ok(DisplayResult::success(format!(
-                    "Created use case: {} with {} methodology",
-                    use_case_id, methodology
-                )))
-            }
+        match result {
+            Ok((_, message)) => Ok(DisplayResult::success(message)),
             Err(e) => Ok(DisplayResult::error(e.to_string())),
         }
     }
@@ -340,6 +342,92 @@ impl UseCaseController {
         }
     }
 
+    /// Edit a precondition in a use case.
+    ///
+    /// Updates the text of an existing precondition at the specified index.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `index` - The 1-based index of the precondition to edit
+    /// * `new_text` - The new text for the precondition
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or index is invalid
+    pub fn edit_precondition(
+        &mut self,
+        use_case_id: String,
+        index: usize,
+        new_text: String,
+    ) -> Result<DisplayResult> {
+        match self
+            .app_service
+            .edit_precondition(&use_case_id, index, new_text)
+        {
+            Ok(_) => Ok(DisplayResult::success(format!(
+                "Updated precondition {} in use case: {}",
+                index, use_case_id
+            ))),
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Reorder preconditions in a use case.
+    ///
+    /// Moves a precondition from one position to another.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `from_index` - The 1-based index of the precondition to move
+    /// * `to_index` - The 1-based index of the destination position
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or indices are invalid
+    pub fn reorder_preconditions(
+        &mut self,
+        use_case_id: String,
+        from_index: usize,
+        to_index: usize,
+    ) -> Result<DisplayResult> {
+        match self
+            .app_service
+            .reorder_preconditions(&use_case_id, from_index, to_index)
+        {
+            Ok(_) => Ok(DisplayResult::success(format!(
+                "Reordered preconditions in use case: {}",
+                use_case_id
+            ))),
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Clear all preconditions from a use case.
+    ///
+    /// Removes all preconditions from the specified use case.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found
+    pub fn clear_preconditions(&mut self, use_case_id: String) -> Result<DisplayResult> {
+        match self.app_service.clear_preconditions(&use_case_id) {
+            Ok(_) => Ok(DisplayResult::success(format!(
+                "Cleared all preconditions from use case: {}",
+                use_case_id
+            ))),
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
     /// Add a postcondition to a use case.
     ///
     /// Adds a new postcondition to the specified use case.
@@ -421,6 +509,92 @@ impl UseCaseController {
             Ok(_) => Ok(DisplayResult::success(format!(
                 "Removed postcondition {} from use case: {}",
                 index, use_case_id
+            ))),
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Edit a postcondition in a use case.
+    ///
+    /// Updates the text of an existing postcondition at the specified index.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `index` - The 1-based index of the postcondition to edit
+    /// * `new_text` - The new text for the postcondition
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or index is invalid
+    pub fn edit_postcondition(
+        &mut self,
+        use_case_id: String,
+        index: usize,
+        new_text: String,
+    ) -> Result<DisplayResult> {
+        match self
+            .app_service
+            .edit_postcondition(&use_case_id, index, new_text)
+        {
+            Ok(_) => Ok(DisplayResult::success(format!(
+                "Updated postcondition {} in use case: {}",
+                index, use_case_id
+            ))),
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Reorder postconditions in a use case.
+    ///
+    /// Moves a postcondition from one position to another.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `from_index` - The 1-based index of the postcondition to move
+    /// * `to_index` - The 1-based index of the destination position
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or indices are invalid
+    pub fn reorder_postconditions(
+        &mut self,
+        use_case_id: String,
+        from_index: usize,
+        to_index: usize,
+    ) -> Result<DisplayResult> {
+        match self
+            .app_service
+            .reorder_postconditions(&use_case_id, from_index, to_index)
+        {
+            Ok(_) => Ok(DisplayResult::success(format!(
+                "Reordered postconditions in use case: {}",
+                use_case_id
+            ))),
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Clear all postconditions from a use case.
+    ///
+    /// Removes all postconditions from the specified use case.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found
+    pub fn clear_postconditions(&mut self, use_case_id: String) -> Result<DisplayResult> {
+        match self.app_service.clear_postconditions(&use_case_id) {
+            Ok(_) => Ok(DisplayResult::success(format!(
+                "Cleared all postconditions from use case: {}",
+                use_case_id
             ))),
             Err(e) => Ok(DisplayResult::error(e.to_string())),
         }
@@ -882,5 +1056,254 @@ impl UseCaseController {
         persona_id: String,
     ) -> Result<Vec<(String, String, usize)>> {
         self.app_service.get_use_cases_for_persona(&persona_id)
+    }
+
+    /// Clean up orphaned methodology fields from use cases
+    ///
+    /// Scans methodology_fields and removes entries for methodologies not used by any enabled view.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - Optional specific use case to clean. If None, cleans all use cases.
+    /// * `dry_run` - If true, shows what would be cleaned without making changes
+    ///
+    /// # Returns
+    /// DisplayResult with summary of cleanup operation
+    ///
+    /// # Errors
+    /// Returns error if use case not found or cleanup fails
+    pub fn cleanup_methodology_fields(
+        &mut self,
+        use_case_id: Option<String>,
+        dry_run: bool,
+    ) -> Result<DisplayResult> {
+        match self
+            .app_service
+            .cleanup_methodology_fields(use_case_id.clone(), dry_run)
+        {
+            Ok((cleaned_count, total_checked, details)) => {
+                if dry_run {
+                    let mut message = format!(
+                        "🔍 Dry run: Would clean {} of {} use case(s)\n",
+                        cleaned_count, total_checked
+                    );
+
+                    if !details.is_empty() {
+                        message.push_str("\nOrphaned methodology fields found:\n");
+                        for (uc_id, methodologies) in details {
+                            message.push_str(&format!(
+                                "  • {}: {}\n",
+                                uc_id,
+                                methodologies.join(", ")
+                            ));
+                        }
+                        message.push_str("\nRun without --dry-run to remove these fields.");
+                    } else {
+                        message.push_str("\nNo orphaned methodology fields found.");
+                    }
+
+                    Ok(DisplayResult::success(message))
+                } else {
+                    let mut message = format!(
+                        "✨ Cleaned {} of {} use case(s)\n",
+                        cleaned_count, total_checked
+                    );
+
+                    if !details.is_empty() {
+                        message.push_str("\nRemoved methodology fields:\n");
+                        for (uc_id, methodologies) in details {
+                            message.push_str(&format!(
+                                "  • {}: {}\n",
+                                uc_id,
+                                methodologies.join(", ")
+                            ));
+                        }
+                    } else {
+                        message.push_str("\nNo orphaned methodology fields found.");
+                    }
+
+                    Ok(DisplayResult::success(message))
+                }
+            }
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    // ========== Update Operations ==========
+
+    /// Update basic use case information
+    ///
+    /// Updates the title, category, description, and/or priority of an existing use case.
+    /// Only updates fields that are provided (Some). None values leave the field unchanged.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case to update
+    /// * `title` - Optional new title
+    /// * `category` - Optional new category
+    /// * `description` - Optional new description
+    /// * `priority` - Optional new priority
+    ///
+    /// # Returns
+    /// DisplayResult with success message and updated use case ID
+    ///
+    /// # Errors
+    /// Returns error if use case not found or update fails
+    pub fn update_use_case(
+        &mut self,
+        use_case_id: String,
+        title: Option<String>,
+        category: Option<String>,
+        description: Option<String>,
+        priority: Option<String>,
+    ) -> Result<DisplayResult> {
+        match self.app_service.update_use_case(
+            &use_case_id,
+            title.as_deref(),
+            category.as_deref(),
+            description.as_deref(),
+            priority.as_deref(),
+        ) {
+            Ok(_) => {
+                let message = format!("✅ Updated use case: {}", use_case_id);
+                Ok(DisplayResult::success(message))
+            }
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Update methodology-specific fields for a use case
+    ///
+    /// Updates the custom fields for a specific methodology view in the use case.
+    /// The fields are merged with existing fields for that methodology.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case to update
+    /// * `methodology` - The methodology whose fields to update
+    /// * `fields` - HashMap of field names to new values
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or methodology not in use case views
+    pub fn update_use_case_methodology_fields(
+        &mut self,
+        use_case_id: String,
+        methodology: String,
+        fields: std::collections::HashMap<String, String>,
+    ) -> Result<DisplayResult> {
+        match self
+            .app_service
+            .update_methodology_fields(&use_case_id, &methodology, fields)
+        {
+            Ok(_) => {
+                let message = format!(
+                    "✅ Updated {} methodology fields for use case: {}",
+                    methodology, use_case_id
+                );
+                Ok(DisplayResult::success(message))
+            }
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Add a new methodology view to an existing use case
+    ///
+    /// Adds a new methodology:level view to the use case and initializes
+    /// empty methodology fields for it.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `methodology` - The methodology to add
+    /// * `level` - The level for the methodology
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or view already exists
+    pub fn add_view(
+        &mut self,
+        use_case_id: String,
+        methodology: String,
+        level: String,
+    ) -> Result<DisplayResult> {
+        match self
+            .app_service
+            .add_view(&use_case_id, &methodology, &level)
+        {
+            Ok(_) => {
+                let message = format!(
+                    "✅ Added {}:{} view to use case: {}",
+                    methodology, level, use_case_id
+                );
+                Ok(DisplayResult::success(message))
+            }
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Remove a methodology view from a use case
+    ///
+    /// Removes the specified methodology view and cleans up its associated
+    /// methodology fields.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `methodology` - The methodology to remove
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or if it's the last view
+    pub fn remove_view(
+        &mut self,
+        use_case_id: String,
+        methodology: String,
+    ) -> Result<DisplayResult> {
+        match self.app_service.remove_view(&use_case_id, &methodology) {
+            Ok(_) => {
+                let message = format!(
+                    "✅ Removed {} view from use case: {}",
+                    methodology, use_case_id
+                );
+                Ok(DisplayResult::success(message))
+            }
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Get use case by ID for display/editing
+    ///
+    /// Retrieves a use case by its ID, useful for displaying current values
+    /// when editing.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case to retrieve
+    ///
+    /// # Returns
+    /// The UseCase entity if found
+    ///
+    /// # Errors
+    /// Returns error if use case not found
+    pub fn get_use_case(&self, use_case_id: &str) -> Result<&UseCase> {
+        self.app_service
+            .get_all_use_cases()
+            .iter()
+            .find(|uc| uc.id == use_case_id)
+            .ok_or_else(|| anyhow::anyhow!("Use case {} not found", use_case_id))
+    }
+
+    /// Get all use cases
+    ///
+    /// Retrieves all use cases in the project
+    ///
+    /// # Returns
+    /// Vector of UseCase entities
+    ///
+    /// # Errors
+    /// Returns error if retrieval fails
+    pub fn get_all_use_cases(&self) -> Result<Vec<UseCase>> {
+        Ok(self.app_service.get_all_use_cases().to_vec())
     }
 }

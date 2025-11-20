@@ -313,12 +313,14 @@ mucm reference remove UC-SEC-001 UC-AUTH-001
 
 ## Scenario Management Commands
 
-### `scenario add`
+All scenario management commands are nested under `usecase scenario` for better organization.
+
+### `usecase scenario add`
 
 Add a new scenario to a use case.
 
 ```bash
-mucm scenario add [OPTIONS] <USE_CASE_ID> <TITLE> --scenario-type <TYPE>
+mucm usecase scenario add [OPTIONS] <USE_CASE_ID> <TITLE> --scenario-type <TYPE>
 ```
 
 **Arguments:**
@@ -327,62 +329,65 @@ mucm scenario add [OPTIONS] <USE_CASE_ID> <TITLE> --scenario-type <TYPE>
 
 **Options:**
 - `-t, --scenario-type <TYPE>`: Scenario type (main, alternative, exception)
-- `-d, --description <DESCRIPTION>`: Optional scenario description
+- `-d, --description <DESCRIPTION>`: Optional scenario description  
+- `-p, --persona <PERSONA_ID>`: Assign a persona to the scenario
 
 **Examples:**
 ```bash
-mucm scenario add UC-SEC-001 "Happy Path Login" --scenario-type main
-mucm scenario add UC-SEC-001 "Login with 2FA" --scenario-type alternative
-mucm scenario add UC-SEC-001 "Invalid Password" --scenario-type exception
+mucm usecase scenario add UC-SEC-001 "Happy Path Login" --scenario-type main
+mucm usecase scenario add UC-SEC-001 "Login with 2FA" --scenario-type alternative
+mucm usecase scenario add UC-SEC-001 "Invalid Password" --scenario-type exception
+mucm usecase scenario add UC-SEC-001 "Admin Login" --scenario-type main --persona admin-user
 ```
 
-### `scenario add-step`
+### `usecase scenario edit`
 
-Add a step to a scenario.
+Edit an existing scenario's properties.
 
 ```bash
-mucm scenario add-step [OPTIONS] <USE_CASE_ID> <SCENARIO_TITLE> <STEP>
+mucm usecase scenario edit <USE_CASE_ID> <SCENARIO_ID> [OPTIONS]
 ```
 
 **Arguments:**
 - `<USE_CASE_ID>`: Use case ID (e.g., UC-SEC-001)
-- `<SCENARIO_TITLE>`: Scenario title
-- `<STEP>`: Step description
+- `<SCENARIO_ID>`: Scenario ID (e.g., UC-SEC-001-S01)
 
 **Options:**
-- `-o, --order <ORDER>`: Step order (1-based, optional - appends if not specified)
+- `--title <TITLE>`: Update scenario title
+- `--description <DESCRIPTION>`: Update description
+- `--scenario-type <TYPE>`: Update scenario type (main, alternative, exception)
+- `--status <STATUS>`: Update status (planned, in-progress, completed, deprecated)
 
 **Examples:**
 ```bash
-mucm scenario add-step UC-SEC-001 "Happy Path Login" "User enters credentials"
-mucm scenario add-step UC-SEC-001 "Happy Path Login" "System validates credentials" --order 2
+mucm usecase scenario edit UC-SEC-001 UC-SEC-001-S01 --title "Updated Login Flow"
+mucm usecase scenario edit UC-SEC-001 UC-SEC-001-S01 --status in-progress
+mucm usecase scenario edit UC-SEC-001 UC-SEC-001-S02 --description "New description" --status completed
 ```
 
-### `scenario update-status`
+### `usecase scenario delete`
 
-Update the status of a scenario.
+Delete a scenario from a use case.
 
 ```bash
-mucm scenario update-status <USE_CASE_ID> <SCENARIO_TITLE> <STATUS>
+mucm usecase scenario delete <USE_CASE_ID> <SCENARIO_ID>
 ```
 
 **Arguments:**
 - `<USE_CASE_ID>`: Use case ID (e.g., UC-SEC-001)
-- `<SCENARIO_TITLE>`: Scenario title
-- `<STATUS>`: New status (planned, in-progress, completed, deprecated)
+- `<SCENARIO_ID>`: Scenario ID to delete (e.g., UC-SEC-001-S01)
 
 **Examples:**
 ```bash
-mucm scenario update-status UC-SEC-001 "Happy Path Login" in-progress
-mucm scenario update-status UC-SEC-001 "Login with 2FA" completed
+mucm usecase scenario delete UC-SEC-001 UC-SEC-001-S03
 ```
 
-### `scenario list`
+### `usecase scenario list`
 
 List all scenarios for a use case.
 
 ```bash
-mucm scenario list <USE_CASE_ID>
+mucm usecase scenario list <USE_CASE_ID>
 ```
 
 **Arguments:**
@@ -390,41 +395,128 @@ mucm scenario list <USE_CASE_ID>
 
 **Examples:**
 ```bash
-mucm scenario list UC-SEC-001
+mucm usecase scenario list UC-SEC-001
 ```
 
-### `scenario remove-step`
+### Scenario Step Management
+
+#### `usecase scenario step add`
+
+Add a step to a scenario.
+
+```bash
+mucm usecase scenario step add <USE_CASE_ID> <SCENARIO_ID> <DESCRIPTION> [OPTIONS]
+```
+
+**Arguments:**
+- `<USE_CASE_ID>`: Use case ID (e.g., UC-SEC-001)
+- `<SCENARIO_ID>`: Scenario ID (e.g., UC-SEC-001-S01)
+- `<DESCRIPTION>`: Step description
+
+**Options:**
+- `-a, --actor <ACTOR>`: Actor performing the step (optional)
+- `-o, --order <ORDER>`: Step order (1-based, optional - appends if not specified)
+
+**Examples:**
+```bash
+mucm usecase scenario step add UC-SEC-001 UC-SEC-001-S01 "User enters credentials"
+mucm usecase scenario step add UC-SEC-001 UC-SEC-001-S01 "System validates credentials" --order 2
+mucm usecase scenario step add UC-SEC-001 UC-SEC-001-S01 "Display welcome message" --actor system
+```
+
+#### `usecase scenario step edit`
+
+Edit an existing step in a scenario.
+
+```bash
+mucm usecase scenario step edit <USE_CASE_ID> <SCENARIO_ID> <STEP_ORDER> [OPTIONS]
+```
+
+**Arguments:**
+- `<USE_CASE_ID>`: Use case ID (e.g., UC-SEC-001)
+- `<SCENARIO_ID>`: Scenario ID (e.g., UC-SEC-001-S01)
+- `<STEP_ORDER>`: Step order number (1-based)
+
+**Options:**
+- `-d, --description <DESCRIPTION>`: Update step description
+- `-a, --actor <ACTOR>`: Update actor
+
+**Examples:**
+```bash
+mucm usecase scenario step edit UC-SEC-001 UC-SEC-001-S01 1 --description "Updated step text"
+mucm usecase scenario step edit UC-SEC-001 UC-SEC-001-S01 2 --actor admin
+```
+
+#### `usecase scenario step remove`
 
 Remove a step from a scenario.
 
 ```bash
-mucm scenario remove-step <USE_CASE_ID> <SCENARIO_TITLE> <ORDER>
+mucm usecase scenario step remove <USE_CASE_ID> <SCENARIO_ID> <STEP_ORDER>
 ```
 
 **Arguments:**
 - `<USE_CASE_ID>`: Use case ID (e.g., UC-SEC-001)
-- `<SCENARIO_TITLE>`: Scenario title
-- `<ORDER>`: Step order to remove (1-based)
+- `<SCENARIO_ID>`: Scenario ID (e.g., UC-SEC-001-S01)
+- `<STEP_ORDER>`: Step order to remove (1-based)
 
 **Examples:**
 ```bash
-mucm scenario remove-step UC-SEC-001 "Happy Path Login" 3
+mucm usecase scenario step remove UC-SEC-001 UC-SEC-001-S01 3
+```
+
+### Scenario Persona Management
+
+#### `usecase scenario assign-persona`
+
+Assign a persona to a scenario.
+
+```bash
+mucm usecase scenario assign-persona <USE_CASE_ID> <SCENARIO_ID> <PERSONA_ID>
+```
+
+**Arguments:**
+- `<USE_CASE_ID>`: Use case ID (e.g., UC-SEC-001)
+- `<SCENARIO_ID>`: Scenario ID (e.g., UC-SEC-001-S01)
+- `<PERSONA_ID>`: Persona ID to assign
+
+**Examples:**
+```bash
+mucm usecase scenario assign-persona UC-SEC-001 UC-SEC-001-S01 admin-user
+mucm usecase scenario assign-persona UC-API-001 UC-API-001-S02 developer
+```
+
+#### `usecase scenario unassign-persona`
+
+Remove persona assignment from a scenario.
+
+```bash
+mucm usecase scenario unassign-persona <USE_CASE_ID> <SCENARIO_ID>
+```
+
+**Arguments:**
+- `<USE_CASE_ID>`: Use case ID (e.g., UC-SEC-001)
+- `<SCENARIO_ID>`: Scenario ID (e.g., UC-SEC-001-S01)
+
+**Examples:**
+```bash
+mucm usecase scenario unassign-persona UC-SEC-001 UC-SEC-001-S01
 ```
 
 ### Scenario Reference Management
 
-#### `scenario reference add`
+#### `usecase scenario reference add`
 
 Add a reference from one scenario to another scenario or use case.
 
 ```bash
-mucm scenario reference add [OPTIONS] <USE_CASE_ID> <SCENARIO_TITLE> <TARGET_ID> \
+mucm usecase scenario reference add [OPTIONS] <USE_CASE_ID> <SCENARIO_ID> <TARGET_ID> \
   --ref-type <TYPE> --relationship <RELATIONSHIP>
 ```
 
 **Arguments:**
 - `<USE_CASE_ID>`: Use case ID containing the source scenario
-- `<SCENARIO_TITLE>`: Title of the source scenario
+- `<SCENARIO_ID>`: Source scenario ID (e.g., UC-SEC-001-S01)
 - `<TARGET_ID>`: Target scenario or use case ID
 
 **Options:**
@@ -435,32 +527,32 @@ mucm scenario reference add [OPTIONS] <USE_CASE_ID> <SCENARIO_TITLE> <TARGET_ID>
 **Examples:**
 ```bash
 # Reference another scenario
-mucm scenario reference add UC-SEC-001 "Happy Path Login" UC-SEC-001-S02 \
+mucm usecase scenario reference add UC-SEC-001 UC-SEC-001-S01 UC-SEC-001-S02 \
   --ref-type scenario --relationship extends \
   --description "Extends with 2FA verification"
 
 # Reference a use case
-mucm scenario reference add UC-API-001 "API Call Flow" UC-SEC-001 \
+mucm usecase scenario reference add UC-API-001 UC-API-001-S01 UC-SEC-001 \
   --ref-type usecase --relationship depends-on \
   --description "Requires user authentication"
 
 # Include another scenario
-mucm scenario reference add UC-SEC-001 "Login Flow" UC-SEC-001-S03 \
+mucm usecase scenario reference add UC-SEC-001 UC-SEC-001-S01 UC-SEC-001-S03 \
   --ref-type scenario --relationship includes
 ```
 
-#### `scenario reference remove`
+#### `usecase scenario reference remove`
 
 Remove a reference from a scenario.
 
 ```bash
-mucm scenario reference remove <USE_CASE_ID> <SCENARIO_TITLE> <TARGET_ID> \
+mucm usecase scenario reference remove <USE_CASE_ID> <SCENARIO_ID> <TARGET_ID> \
   --relationship <RELATIONSHIP>
 ```
 
 **Arguments:**
 - `<USE_CASE_ID>`: Use case ID containing the scenario
-- `<SCENARIO_TITLE>`: Scenario title
+- `<SCENARIO_ID>`: Scenario ID (e.g., UC-SEC-001-S01)
 - `<TARGET_ID>`: Target ID to remove
 
 **Options:**
@@ -468,29 +560,29 @@ mucm scenario reference remove <USE_CASE_ID> <SCENARIO_TITLE> <TARGET_ID> \
 
 **Examples:**
 ```bash
-mucm scenario reference remove UC-SEC-001 "Happy Path Login" UC-SEC-001-S02 \
+mucm usecase scenario reference remove UC-SEC-001 UC-SEC-001-S01 UC-SEC-001-S02 \
   --relationship extends
 
-mucm scenario reference remove UC-API-001 "API Call Flow" UC-SEC-001 \
+mucm usecase scenario reference remove UC-API-001 UC-API-001-S01 UC-SEC-001 \
   --relationship depends-on
 ```
 
-#### `scenario reference list`
+#### `usecase scenario reference list`
 
 List all references for a scenario.
 
 ```bash
-mucm scenario reference list <USE_CASE_ID> <SCENARIO_TITLE>
+mucm usecase scenario reference list <USE_CASE_ID> <SCENARIO_ID>
 ```
 
 **Arguments:**
 - `<USE_CASE_ID>`: Use case ID containing the scenario
-- `<SCENARIO_TITLE>`: Scenario title
+- `<SCENARIO_ID>`: Scenario ID (e.g., UC-SEC-001-S01)
 
 **Examples:**
 ```bash
-mucm scenario reference list UC-SEC-001 "Happy Path Login"
-mucm scenario reference list UC-API-001 "API Call Flow"
+mucm usecase scenario reference list UC-SEC-001 UC-SEC-001-S01
+mucm usecase scenario reference list UC-API-001 UC-API-001-S02
 ```
 
 ### Scenario Reference Relationship Types

@@ -55,9 +55,9 @@ impl MethodologyRegistry {
 
             if path.is_dir() {
                 if let Some(methodology_name) = path.file_name().and_then(|n| n.to_str()) {
-                    let config_path = path.join("config.toml");
+                    let methodology_path = path.join("methodology.toml");
 
-                    if config_path.exists() {
+                    if methodology_path.exists() {
                         match MethodologyDefinition::from_toml(&path) {
                             Ok(methodology) => {
                                 methodologies.insert(methodology_name.to_string(), methodology);
@@ -140,21 +140,29 @@ mod tests {
     use std::fs;
     use tempfile::TempDir;
 
-    /// Helper function to create a temporary methodology directory with config.toml and info.toml
+    /// Helper function to create a temporary methodology directory with methodology.toml
     fn create_test_methodology(
         dir: &std::path::Path,
         name: &str,
-        title: &str,
+        _title: &str,
         description: &str,
         preferred_style: &str,
     ) -> std::path::PathBuf {
         let methodology_dir = dir.join(name);
         fs::create_dir(&methodology_dir).unwrap();
 
-        let info_content = format!(
-            r#"[overview]
-title = "{}"
+        let methodology_content = format!(
+            r#"[methodology]
+name = "{}"
+abbreviation = "{}"
 description = "{}"
+
+[template]
+preferred_style = "{}"
+
+[generation]
+auto_generate_tests = false
+overwrite_test_documentation = false
 
 [usage]
 when_to_use = [
@@ -166,31 +174,34 @@ key_features = [
     "Feature 2"
 ]
 
-[[levels]]
-name = "simple"
-filename = "uc_simple.hbs"
+[levels.normal]
+name = "Normal"
+abbreviation = "n"
+filename = "uc_normal.hbs"
 description = "Basic level"
+inherits = []
 
-[[levels]]
-name = "detailed"
-filename = "uc_detailed.hbs"
+[levels.normal.custom_fields]
+
+[levels.advanced]
+name = "Advanced"
+abbreviation = "a"
+filename = "uc_advanced.hbs"
 description = "Detailed level"
+inherits = ["Normal"]
+
+[levels.advanced.custom_fields]
 "#,
-            title, description
+            name,
+            &name[..3.min(name.len())], // abbreviation = first 3 chars
+            description,
+            preferred_style
         );
-        fs::write(methodology_dir.join("info.toml"), info_content).unwrap();
-
-        let config_content = format!(
-            r#"[template]
-name = "{}"
-preferred_style = "{}"
-
-[generation]
-auto_generate_tests = false
-overwrite_test_documentation = false"#,
-            name, preferred_style
-        );
-        fs::write(methodology_dir.join("config.toml"), config_content).unwrap();
+        fs::write(
+            methodology_dir.join("methodology.toml"),
+            methodology_content,
+        )
+        .unwrap();
 
         methodology_dir
     }
@@ -229,7 +240,7 @@ overwrite_test_documentation = false"#,
         // Check that they have correct data
         let method1 = registry.get("method1").unwrap();
         assert_eq!(method1.name(), "method1");
-        assert_eq!(method1.title(), "Method 1");
+        assert_eq!(method1.title(), "method1 Methodology");
         assert_eq!(method1.description(), "Description 1");
         assert_eq!(method1.preferred_style(), "simple");
     }
@@ -320,7 +331,7 @@ overwrite_test_documentation = false"#,
         // Create a malformed methodology directory (invalid TOML)
         let bad_methodology_dir = methodologies_dir.join("bad");
         fs::create_dir(&bad_methodology_dir).unwrap();
-        fs::write(bad_methodology_dir.join("config.toml"), "invalid toml").unwrap();
+        fs::write(bad_methodology_dir.join("methodology.toml"), "invalid toml").unwrap();
 
         let result = MethodologyRegistry::new_dynamic(&temp_dir.path());
         assert!(result.is_ok()); // Should succeed despite one bad methodology

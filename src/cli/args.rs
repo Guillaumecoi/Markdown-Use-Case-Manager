@@ -19,7 +19,7 @@ pub enum Commands {
         /// Programming language for test templates (rust, python, javascript, etc.)
         #[arg(short, long)]
         language: Option<String>,
-        /// Documentation methodology (feature, business, developer, tester)
+        /// Documentation methodologies (feature, business, developer, tester) - can specify multiple
         #[arg(short, long)]
         methodology: Option<String>,
         /// Storage backend (toml or sqlite)
@@ -40,8 +40,18 @@ pub enum Commands {
         #[arg(short, long)]
         description: Option<String>,
         /// Documentation methodology (feature, business, developer, tester)
+        /// Deprecated: Use --views for multi-view support
         #[arg(long)]
         methodology: Option<String>,
+        /// Multiple views as comma-separated methodology:level pairs
+        /// Example: --views feature:simple,business:normal
+        #[arg(long)]
+        views: Option<String>,
+    },
+    /// Manage use cases and their scenarios
+    UseCase {
+        #[command(subcommand)]
+        command: UseCaseCommands,
     },
     /// List all use cases
     List,
@@ -87,15 +97,22 @@ pub enum Commands {
         #[command(subcommand)]
         command: ReferenceCommands,
     },
-    /// Manage use case scenarios
-    Scenario {
-        #[command(subcommand)]
-        command: ScenarioCommands,
-    },
     /// Manage personas
     Persona {
         #[command(subcommand)]
         command: PersonaCommands,
+    },
+    /// Clean up orphaned methodology fields from TOML files
+    ///
+    /// Scans all use case TOML files and removes methodology sections that are no longer
+    /// used by any view in the use case. This helps maintain clean TOML files after
+    /// removing views or changing methodologies.
+    Cleanup {
+        /// Use case ID to clean (e.g., UC-SEC-001). If omitted, cleans all use cases.
+        use_case_id: Option<String>,
+        /// Dry run mode - show what would be cleaned without making changes
+        #[arg(long, short = 'n')]
+        dry_run: bool,
     },
     /// Enter interactive mode
     Interactive,
@@ -176,122 +193,18 @@ pub enum ReferenceCommands {
 }
 
 #[derive(Debug, Subcommand)]
-pub enum ScenarioCommands {
-    /// Add a scenario to a use case
-    Add {
-        /// Use case ID (e.g., UC-SEC-001)
-        use_case_id: String,
-        /// Scenario title
-        title: String,
-        /// Scenario type (main, alternative, exception)
-        #[arg(short, long)]
-        scenario_type: String,
-        /// Optional description
-        #[arg(short, long)]
-        description: Option<String>,
-    },
-    /// Add a step to a scenario
-    AddStep {
-        /// Use case ID (e.g., UC-SEC-001)
-        use_case_id: String,
-        /// Scenario title
-        scenario_title: String,
-        /// Step description
-        step: String,
-        /// Step order (1-based, optional - will be appended if not specified)
-        #[arg(short, long)]
-        order: Option<u32>,
-    },
-    /// Update scenario status
-    UpdateStatus {
-        /// Use case ID (e.g., UC-SEC-001)
-        use_case_id: String,
-        /// Scenario title
-        scenario_title: String,
-        /// New status (planned, in-progress, completed, deprecated)
-        status: String,
-    },
-    /// List scenarios for a use case
-    List {
-        /// Use case ID (e.g., UC-SEC-001)
-        use_case_id: String,
-    },
-    /// Remove a step from a scenario
-    RemoveStep {
-        /// Use case ID (e.g., UC-SEC-001)
-        use_case_id: String,
-        /// Scenario title
-        scenario_title: String,
-        /// Step order to remove (1-based)
-        order: u32,
-    },
-    /// Manage scenario references
-    #[command(subcommand)]
-    Reference(ScenarioReferenceCommands),
-}
-
-#[derive(Debug, Subcommand)]
-pub enum ScenarioReferenceCommands {
-    /// Add a reference from one scenario to another scenario or use case
-    Add {
-        /// Use case ID containing the source scenario
-        use_case_id: String,
-        /// Source scenario title
-        scenario_title: String,
-        /// Target ID (scenario or use case)
-        target_id: String,
-        /// Reference type: "scenario" or "usecase"
-        #[arg(short = 't', long)]
-        ref_type: String,
-        /// Relationship: "includes", "extends", "depends-on", "alternative-to"
-        #[arg(short, long)]
-        relationship: String,
-        /// Optional description
-        #[arg(short, long)]
-        description: Option<String>,
-    },
-    /// Remove a reference from a scenario
-    Remove {
-        /// Use case ID containing the scenario
-        use_case_id: String,
-        /// Scenario title
-        scenario_title: String,
-        /// Target ID to remove
-        target_id: String,
-        /// Relationship type
-        #[arg(short, long)]
-        relationship: String,
-    },
-    /// List all references for a scenario
-    List {
-        /// Use case ID containing the scenario
-        use_case_id: String,
-        /// Scenario title
-        scenario_title: String,
-    },
-}
-
-#[derive(Debug, Subcommand)]
 pub enum PersonaCommands {
-    /// Create a new persona
+    /// Create a new persona with fields from config
+    ///
+    /// Creates a persona with the required id and name fields.
+    /// Additional fields are determined by your persona configuration
+    /// in .config/.mucm/mucm.toml and can be filled in by editing the
+    /// generated TOML file or SQL record directly.
     Create {
         /// Persona ID (e.g., "admin", "customer")
         id: String,
         /// Persona name
         name: String,
-        /// Persona description
-        description: String,
-        /// Primary goal
-        goal: String,
-        /// Context/background information
-        #[arg(long)]
-        context: Option<String>,
-        /// Technical proficiency level (1-5)
-        #[arg(long)]
-        tech_level: Option<u8>,
-        /// Frequency of system use (e.g., "daily", "weekly", "occasional")
-        #[arg(long)]
-        usage_frequency: Option<String>,
     },
     /// List all personas
     List,
@@ -309,5 +222,168 @@ pub enum PersonaCommands {
     Delete {
         /// Persona ID
         id: String,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum UseCaseCommands {
+    /// Manage scenarios within a use case
+    Scenario {
+        #[command(subcommand)]
+        command: UseCaseScenarioCommands,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum UseCaseScenarioCommands {
+    /// Add a scenario to a use case
+    Add {
+        /// Use case ID (e.g., UC-SEC-001)
+        use_case_id: String,
+        /// Scenario title
+        title: String,
+        /// Scenario type (main, alternative, exception)
+        #[arg(short, long)]
+        scenario_type: String,
+        /// Optional description
+        #[arg(short, long)]
+        description: Option<String>,
+        /// Optional persona ID to assign
+        #[arg(short, long)]
+        persona: Option<String>,
+    },
+    /// Edit an existing scenario
+    Edit {
+        /// Use case ID (e.g., UC-SEC-001)
+        use_case_id: String,
+        /// Scenario ID (e.g., UC-SEC-001-S01)
+        scenario_id: String,
+        /// New title
+        #[arg(long)]
+        title: Option<String>,
+        /// New description
+        #[arg(long)]
+        description: Option<String>,
+        /// New type (main, alternative, exception)
+        #[arg(long)]
+        scenario_type: Option<String>,
+        /// New status (Planned, InProgress, Implemented, Tested, Deployed)
+        #[arg(long)]
+        status: Option<String>,
+    },
+    /// Delete a scenario from a use case
+    Delete {
+        /// Use case ID (e.g., UC-SEC-001)
+        use_case_id: String,
+        /// Scenario ID (e.g., UC-SEC-001-S01)
+        scenario_id: String,
+    },
+    /// List scenarios for a use case
+    List {
+        /// Use case ID (e.g., UC-SEC-001)
+        use_case_id: String,
+    },
+    /// Manage scenario steps
+    Step {
+        #[command(subcommand)]
+        command: ScenarioStepCommands,
+    },
+    /// Assign a persona to a scenario
+    AssignPersona {
+        /// Use case ID (e.g., UC-SEC-001)
+        use_case_id: String,
+        /// Scenario ID (e.g., UC-SEC-001-S01)
+        scenario_id: String,
+        /// Persona ID to assign
+        persona_id: String,
+    },
+    /// Unassign persona from a scenario
+    UnassignPersona {
+        /// Use case ID (e.g., UC-SEC-001)
+        use_case_id: String,
+        /// Scenario ID (e.g., UC-SEC-001-S01)
+        scenario_id: String,
+    },
+    /// Manage scenario references
+    Reference {
+        #[command(subcommand)]
+        command: UseCaseScenarioReferenceCommands,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ScenarioStepCommands {
+    /// Add a step to a scenario
+    Add {
+        /// Use case ID (e.g., UC-SEC-001)
+        use_case_id: String,
+        /// Scenario ID (e.g., UC-SEC-001-S01)
+        scenario_id: String,
+        /// Step description
+        description: String,
+        /// Step order (1-based, optional - will be appended if not specified)
+        #[arg(short, long)]
+        order: Option<u32>,
+    },
+    /// Edit a scenario step
+    Edit {
+        /// Use case ID (e.g., UC-SEC-001)
+        use_case_id: String,
+        /// Scenario ID (e.g., UC-SEC-001-S01)
+        scenario_id: String,
+        /// Step order (1-based)
+        order: u32,
+        /// New step description
+        description: String,
+    },
+    /// Remove a step from a scenario
+    Remove {
+        /// Use case ID (e.g., UC-SEC-001)
+        use_case_id: String,
+        /// Scenario ID (e.g., UC-SEC-001-S01)
+        scenario_id: String,
+        /// Step order to remove (1-based)
+        order: u32,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum UseCaseScenarioReferenceCommands {
+    /// Add a reference from one scenario to another scenario or use case
+    Add {
+        /// Use case ID containing the source scenario
+        use_case_id: String,
+        /// Source scenario ID (e.g., UC-SEC-001-S01)
+        scenario_id: String,
+        /// Target ID (scenario or use case)
+        target_id: String,
+        /// Reference type: "scenario" or "usecase"
+        #[arg(short = 't', long)]
+        ref_type: String,
+        /// Relationship: "includes", "extends", "depends-on", "alternative-to"
+        #[arg(short, long)]
+        relationship: String,
+        /// Optional description
+        #[arg(short, long)]
+        description: Option<String>,
+    },
+    /// Remove a reference from a scenario
+    Remove {
+        /// Use case ID containing the scenario
+        use_case_id: String,
+        /// Scenario ID (e.g., UC-SEC-001-S01)
+        scenario_id: String,
+        /// Target ID to remove
+        target_id: String,
+        /// Relationship type
+        #[arg(short, long)]
+        relationship: String,
+    },
+    /// List all references for a scenario
+    List {
+        /// Use case ID containing the scenario
+        use_case_id: String,
+        /// Scenario ID (e.g., UC-SEC-001-S01)
+        scenario_id: String,
     },
 }

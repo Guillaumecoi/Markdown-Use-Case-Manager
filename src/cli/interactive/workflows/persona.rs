@@ -5,14 +5,18 @@
 
 use anyhow::Result;
 use inquire::{Select, Text};
+use std::collections::HashMap;
 
-use crate::cli::interactive::{runner::InteractiveRunner, ui::UI};
+use crate::cli::interactive::{field_helpers::FieldHelpers, runner::InteractiveRunner, ui::UI};
 
 /// Persona workflow handler
 pub struct PersonaWorkflow;
 
 impl PersonaWorkflow {
     /// Interactive persona creation workflow
+    ///
+    /// Creates a minimal persona (id + name) with fields determined by config.
+    /// Users can fill in additional fields later by editing the TOML/SQL record.
     pub fn create_persona() -> Result<()> {
         UI::show_section_header("Create Persona", "👤")?;
 
@@ -24,49 +28,9 @@ impl PersonaWorkflow {
             .with_help_message("Display name (e.g., 'System Administrator', 'End User')")
             .prompt()?;
 
-        let description = Text::new("Description:")
-            .with_help_message("Brief description of this persona")
-            .prompt()?;
-
-        let goal = Text::new("Primary goal:")
-            .with_help_message("What is this persona trying to achieve?")
-            .prompt()?;
-
-        let context = Text::new("Context (optional):")
-            .with_help_message("Background information, work environment, etc.")
-            .prompt_skippable()?;
-
-        let tech_level_input = Text::new("Technical proficiency (1-5, optional):")
-            .with_help_message("1=Beginner, 2=Basic, 3=Intermediate, 4=Advanced, 5=Expert")
-            .prompt_skippable()?;
-
-        let tech_level = if let Some(level_str) = tech_level_input {
-            match level_str.trim().parse::<u8>() {
-                Ok(level) if level >= 1 && level <= 5 => Some(level),
-                _ => {
-                    UI::show_error("Invalid tech level. Must be between 1 and 5. Skipping.")?;
-                    None
-                }
-            }
-        } else {
-            None
-        };
-
-        let usage_frequency = Text::new("Usage frequency (optional):")
-            .with_help_message("e.g., 'daily', 'weekly', 'occasional'")
-            .prompt_skippable()?;
-
         // Create the persona
         let mut runner = InteractiveRunner::new();
-        let result = runner.create_persona_interactive(
-            id,
-            name,
-            description,
-            goal,
-            context,
-            tech_level,
-            usage_frequency,
-        )?;
+        let result = runner.create_persona_interactive(id, name)?;
 
         UI::show_success(&result)?;
         UI::pause_for_input()?;
@@ -127,6 +91,136 @@ impl PersonaWorkflow {
         Ok(())
     }
 
+    /// Edit an existing persona
+    pub fn edit_persona() -> Result<()> {
+        UI::show_section_header("Edit Persona", "✏️")?;
+
+        let mut runner = InteractiveRunner::new();
+
+        // Get list of personas
+        let persona_ids = runner.get_persona_ids()?;
+
+        if persona_ids.is_empty() {
+            UI::show_error("No personas found. Please create a persona first.")?;
+            UI::pause_for_input()?;
+            return Ok(());
+        }
+
+        // Let user select which persona to edit
+        let selected_id = Select::new("Select persona to edit:", persona_ids)
+            .with_help_message("Choose the persona you want to modify")
+            .prompt()?;
+
+        // Load persona details
+        let persona = runner.get_persona_details(&selected_id)?;
+
+        // Show edit menu
+        loop {
+            UI::clear_screen()?;
+            UI::show_section_header(&format!("Editing: {}", persona.name), "✏️")?;
+            UI::show_info(&format!("ID: {}", persona.id))?;
+
+            let edit_options = vec!["Edit Name", "Edit Custom Fields", "Back to Menu"];
+
+            let choice = Select::new("What would you like to edit?", edit_options).prompt()?;
+
+            match choice {
+                "Edit Name" => Self::edit_persona_name(&mut runner, &selected_id, &persona)?,
+                "Edit Custom Fields" => {
+                    Self::edit_persona_fields(&mut runner, &selected_id, &persona)?
+                }
+                "Back to Menu" => break,
+                _ => {}
+            }
+
+            // Reload persona after edits
+            let _persona = runner.get_persona_details(&selected_id)?;
+        }
+
+        UI::pause_for_input()?;
+        Ok(())
+    }
+
+    /// Edit persona name
+    fn edit_persona_name(
+        runner: &mut InteractiveRunner,
+        persona_id: &str,
+        persona: &crate::core::Persona,
+    ) -> Result<()> {
+        UI::show_section_header("Edit Persona Name", "📝")?;
+
+        let new_name = Text::new("Name:")
+            .with_default(&persona.name)
+            .with_help_message("Press Enter to keep current value")
+            .prompt()?;
+
+        if new_name == persona.name {
+            UI::show_info("No changes made.")?;
+            return Ok(());
+        }
+
+        let result = runner.update_persona_name(persona_id.to_string(), Some(new_name))?;
+
+        UI::show_success(&result)?;
+        UI::pause_for_input()?;
+        Ok(())
+    }
+
+    /// Edit persona custom fields
+    fn edit_persona_fields(
+        runner: &mut InteractiveRunner,
+        persona_id: &str,
+        _persona: &crate::core::Persona,
+    ) -> Result<()> {
+        UI::show_section_header("Edit Custom Fields", "🎯")?;
+
+        // Get field configuration
+        let field_config = runner.get_persona_field_config()?;
+
+        if field_config.is_empty() {
+            UI::show_info("No custom fields defined in project configuration.")?;
+            UI::pause_for_input()?;
+            return Ok(());
+        }
+
+        // Get current values
+        let current_values = runner.get_persona_field_values(persona_id)?;
+
+        // Prompt for each field
+        let mut updated_fields = HashMap::new();
+
+        UI::show_info("Edit fields (smart input based on field type):")?;
+
+        for (field_name, field_def) in &field_config {
+            let current_json = current_values.get(field_name);
+            let help_msg = field_def
+                .description
+                .clone()
+                .unwrap_or_else(|| format!("{} field", field_def.field_type));
+
+            // Use FieldHelpers to handle different field types automatically
+            if let Some(new_value) = FieldHelpers::edit_by_type(
+                &field_def.field_type,
+                &field_name,
+                current_json,
+                &help_msg,
+            )? {
+                updated_fields.insert(field_name.clone(), new_value);
+            }
+        }
+
+        if updated_fields.is_empty() {
+            UI::show_info("No changes made.")?;
+            return Ok(());
+        }
+
+        let result = runner.update_persona_fields(persona_id.to_string(), updated_fields)?;
+
+        UI::show_success(&result)?;
+        UI::pause_for_input()?;
+        Ok(())
+    }
+
     /// Interactive persona management menu
     pub fn manage_personas() -> Result<()> {
         UI::clear_screen()?;
@@ -135,6 +229,7 @@ impl PersonaWorkflow {
         loop {
             let options = vec![
                 "Create New Persona",
+                "Edit Persona",
                 "List All Personas",
                 "Show Persona Details",
                 "Delete Persona",
@@ -145,6 +240,7 @@ impl PersonaWorkflow {
 
             match choice {
                 "Create New Persona" => Self::create_persona()?,
+                "Edit Persona" => Self::edit_persona()?,
                 "List All Personas" => Self::list_personas()?,
                 "Show Persona Details" => Self::show_persona()?,
                 "Delete Persona" => Self::delete_persona()?,

@@ -1,13 +1,14 @@
 use anyhow::{Context, Result};
 use handlebars::Handlebars;
 use serde_json::Value;
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
 pub struct TemplateEngine {
-    handlebars: Handlebars<'static>,
+    handlebars: RefCell<Handlebars<'static>>,
     /// Map of language name to template name for test generation
     /// TODO: Use this when implementing test file generation feature
     test_templates: HashMap<String, String>,
@@ -23,8 +24,9 @@ impl TemplateEngine {
 
         // First try to load templates from user's config directory
         // Then fall back to source-templates if not found
-        let user_templates_path =
-            Path::new(".config/.mucm").join(crate::config::Config::TEMPLATES_DIR);
+        let user_templates_path = Path::new(".config/.mucm")
+            .join(crate::config::Config::TEMPLATES_DIR)
+            .join("methodologies");
         let source_templates_path = Path::new("source-templates/methodologies").to_path_buf();
 
         let methodologies_path = if user_templates_path.exists() {
@@ -42,33 +44,32 @@ impl TemplateEngine {
 
                 if path.is_dir() {
                     if let Some(methodology_name) = path.file_name().and_then(|n| n.to_str()) {
-                        // Register templates for this methodology: uc_simple.hbs, uc_normal.hbs, uc_detailed.hbs
-                        let simple_path = path.join("uc_simple.hbs");
-                        let normal_path = path.join("uc_normal.hbs");
-                        let detailed_path = path.join("uc_detailed.hbs");
+                        // Register all uc_*.hbs templates for this methodology
+                        // This allows users to add custom levels beyond simple/normal/detailed
+                        for template_entry in fs::read_dir(&path)? {
+                            let template_entry = template_entry?;
+                            let template_path = template_entry.path();
 
-                        if simple_path.exists() {
-                            let template = fs::read_to_string(&simple_path)?;
-                            handlebars.register_template_string(
-                                &format!("{}-simple", methodology_name),
-                                template,
-                            )?;
-                        }
+                            if template_path.is_file() {
+                                if let Some(filename) =
+                                    template_path.file_name().and_then(|n| n.to_str())
+                                {
+                                    // Only register uc_*.hbs files
+                                    if filename.starts_with("uc_") && filename.ends_with(".hbs") {
+                                        // Extract level name from filename (e.g., "uc_simple.hbs" -> "simple")
+                                        let level_name = filename
+                                            .strip_prefix("uc_")
+                                            .and_then(|s| s.strip_suffix(".hbs"))
+                                            .unwrap_or(filename);
 
-                        if normal_path.exists() {
-                            let template = fs::read_to_string(&normal_path)?;
-                            handlebars.register_template_string(
-                                &format!("{}-normal", methodology_name),
-                                template,
-                            )?;
-                        }
-
-                        if detailed_path.exists() {
-                            let template = fs::read_to_string(&detailed_path)?;
-                            handlebars.register_template_string(
-                                &format!("{}-detailed", methodology_name),
-                                template,
-                            )?;
+                                        let template = fs::read_to_string(&template_path)?;
+                                        handlebars.register_template_string(
+                                            &format!("{}-{}", methodology_name, level_name),
+                                            template,
+                                        )?;
+                                    }
+                                }
+                            }
                         }
 
                         methodologies.push(methodology_name.to_string());
@@ -78,8 +79,11 @@ impl TemplateEngine {
         }
 
         // Register general overview template (not methodology-specific)
-        let overview_path = if user_templates_path.exists() {
-            user_templates_path.join("overview.hbs") // .config/.mucm/{TEMPLATES_DIR}/overview.hbs
+        // Overview.hbs is at the root of template-assets, not in methodologies subdirectory
+        let overview_path = if user_templates_path.parent().is_some()
+            && user_templates_path.parent().unwrap().exists()
+        {
+            user_templates_path.parent().unwrap().join("overview.hbs") // .config/.mucm/{TEMPLATES_DIR}/overview.hbs
         } else {
             Path::new("source-templates/overview.hbs").to_path_buf()
         };
@@ -212,7 +216,7 @@ Generated at: {{generated_at}}
         }
 
         Ok(TemplateEngine {
-            handlebars,
+            handlebars: RefCell::new(handlebars),
             test_templates,
             methodologies,
         })
@@ -224,6 +228,7 @@ Generated at: {{generated_at}}
 
     pub fn render_overview(&self, data: &HashMap<String, Value>) -> Result<String> {
         self.handlebars
+            .borrow()
             .render("overview", data)
             .context("Failed to render overview template")
     }
@@ -235,6 +240,7 @@ Generated at: {{generated_at}}
         data: &HashMap<String, Value>,
     ) -> Result<String> {
         self.handlebars
+            .borrow()
             .render(template_name, data)
             .with_context(|| format!("Failed to render use case with template: {}", template_name))
     }
@@ -250,6 +256,7 @@ Generated at: {{generated_at}}
             .ok_or_else(|| anyhow::anyhow!("Unsupported language: {}", language))?;
 
         self.handlebars
+            .borrow()
             .render(template_key, data)
             .with_context(|| format!("Failed to render {} test template", language))
     }
@@ -263,22 +270,140 @@ Generated at: {{generated_at}}
 
     /// Render use case with methodology-specific template
     /// Simple version: just renders the template with the data - no processing
+    /// Defaults to "normal" level
     pub fn render_use_case_with_methodology(
         &self,
         data: &HashMap<String, Value>,
         methodology: &str,
     ) -> Result<String> {
-        // Check if methodology template exists
-        let template_name = format!("{}-simple", methodology);
-        if self.handlebars.get_template(&template_name).is_none() {
+        // Delegate to render_use_case_with_methodology_and_level with "normal" level
+        self.render_use_case_with_methodology_and_level(data, methodology, "normal")
+    }
+
+    /// Render a use case with specific methodology and level
+    pub fn render_use_case_with_methodology_and_level(
+        &self,
+        data: &HashMap<String, Value>,
+        methodology: &str,
+        level: &str,
+    ) -> Result<String> {
+        let template_name = format!("{}-{}", methodology, level);
+        if self
+            .handlebars
+            .borrow()
+            .get_template(&template_name)
+            .is_none()
+        {
             anyhow::bail!(
-                "Invalid source-templates: Methodology '{}' does not have a valid uc_simple.hbs template. \
-                Check source-templates/methodologies/{}/uc_simple.hbs exists and is valid.",
-                methodology, methodology
+                "Invalid source-templates: Methodology '{}' does not have a valid uc_{}.hbs template. \
+                Check source-templates/methodologies/{}/uc_{}.hbs exists and is valid.",
+                methodology, level, methodology, level
             );
         }
 
+        // Load scenario template for this level and register as partial
+        self.register_scenario_partial_for_level(methodology, level)?;
+
         self.render_use_case_with_template(&template_name, data)
+    }
+
+    /// Resolve the path to a scenario template based on the template path specification
+    ///
+    /// # Path Resolution Rules
+    /// - If path contains `/`: relative to source-templates root (e.g., "scenarios/scenario.hbs")
+    /// - If path is filename only: relative to methodology directory (e.g., "custom-scenario.hbs")
+    /// - Paths use forward slashes in TOML, converted to OS-specific separators by PathBuf
+    fn resolve_scenario_template_path(
+        templates_dir: &Path,
+        methodology: &str,
+        scenario_template_path: &str,
+    ) -> PathBuf {
+        if scenario_template_path.contains('/') {
+            // Absolute path from source-templates root
+            // e.g., "scenarios/scenario.hbs" -> source-templates/scenarios/scenario.hbs
+            templates_dir.join(scenario_template_path)
+        } else {
+            // Relative to methodology directory
+            // e.g., "business-scenario.hbs" -> source-templates/methodologies/business/business-scenario.hbs
+            templates_dir
+                .join("methodologies")
+                .join(methodology)
+                .join(scenario_template_path)
+        }
+    }
+
+    /// Register the scenario partial for a specific methodology and level
+    /// This loads the scenario template configured for the level and registers it as "scenario"
+    /// If the scenario template cannot be loaded, this returns Ok(()) to allow rendering to continue
+    fn register_scenario_partial_for_level(&self, methodology: &str, level: &str) -> Result<()> {
+        use super::super::methodologies::MethodologyDefinition;
+
+        // Determine templates directory
+        let user_templates_path =
+            Path::new(".config/.mucm").join(crate::config::Config::TEMPLATES_DIR);
+        let source_templates_path = Path::new("source-templates").to_path_buf();
+
+        let templates_dir = if user_templates_path.exists() {
+            &user_templates_path
+        } else {
+            &source_templates_path
+        };
+
+        // Load methodology definition to get scenario_template config
+        let methodology_dir = templates_dir.join("methodologies").join(methodology);
+        let methodology_def = match MethodologyDefinition::from_toml(&methodology_dir) {
+            Ok(def) => def,
+            Err(e) => {
+                // If we can't load the methodology definition, just skip scenario partial registration
+                // This allows templates without scenario_template config to continue working
+                eprintln!(
+                    "Warning: Could not load methodology definition for '{}': {}",
+                    methodology, e
+                );
+                return Ok(());
+            }
+        };
+
+        // Get level config
+        let level_config = match methodology_def.level_configs.get(level) {
+            Some(config) => config,
+            None => {
+                eprintln!(
+                    "Warning: Level '{}' not found in methodology '{}'",
+                    level, methodology
+                );
+                return Ok(());
+            }
+        };
+
+        // Determine scenario template path
+        let scenario_template_path = level_config
+            .scenario_template
+            .as_deref()
+            .unwrap_or("scenarios/scenario.hbs"); // Default
+
+        // Resolve full path
+        let full_path = Self::resolve_scenario_template_path(
+            templates_dir,
+            methodology,
+            scenario_template_path,
+        );
+
+        // Load and register as "scenario" partial
+        if full_path.exists() {
+            let content = fs::read_to_string(&full_path)
+                .with_context(|| format!("Failed to read scenario template: {:?}", full_path))?;
+
+            self.handlebars
+                .borrow_mut()
+                .register_partial("scenario", content)
+                .context("Failed to register scenario partial")?;
+        } else {
+            // Scenario template not found - this is optional, so just warn
+            eprintln!("Warning: Scenario template not found at {:?}", full_path);
+        }
+
+        Ok(())
     }
 
     /// Get available methodologies

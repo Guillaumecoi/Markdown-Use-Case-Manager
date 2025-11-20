@@ -19,44 +19,33 @@ impl TomlPersonaRepository {
         Self { config }
     }
 
-    /// Get the directory for persona TOML files
-    /// Stores in .mucm/personas alongside use case TOMLs
-    fn get_toml_dir(&self) -> String {
-        let base = self.config.directories.get_toml_dir();
-        format!("{}/../personas", base)
+    /// Get the directory for persona data files (TOML)
+    /// Stores in data_dir/personas alongside use case data
+    fn get_data_dir(&self) -> String {
+        format!("{}/personas", &self.config.directories.data_dir)
     }
 
     /// Get the directory for persona markdown files
-    /// Stores in docs/personas alongside use case docs
+    /// Stores in docs/personas (configured via persona_dir)
     fn get_markdown_dir(&self) -> String {
-        let base = &self.config.directories.use_case_dir;
-        // Extract the base path and replace use-cases with personas
-        // E.g., "/tmp/xyz/docs/use-cases" -> "/tmp/xyz/docs/personas"
-        if let Some(idx) = base.rfind("/use-cases") {
-            format!("{}/personas", &base[..idx])
-        } else if let Some(idx) = base.rfind("\\use-cases") {
-            format!("{}\\personas", &base[..idx])
-        } else {
-            // Fallback: just append personas
-            format!("{}/personas", base)
-        }
+        self.config.directories.persona_dir.clone()
     }
 }
 
 impl PersonaRepository for TomlPersonaRepository {
     fn save(&self, persona: &Persona) -> Result<()> {
-        // Create TOML directory structure
-        let toml_dir_str = self.get_toml_dir();
-        let toml_dir = Path::new(&toml_dir_str);
-        fs::create_dir_all(toml_dir)?;
+        // Create data directory structure
+        let data_dir_str = self.get_data_dir();
+        let data_dir = Path::new(&data_dir_str);
+        fs::create_dir_all(data_dir)?;
 
         // Filter out Null values from extra fields before serialization
         // TOML doesn't support null values like JSON does
         let mut persona_for_toml = persona.clone();
         persona_for_toml.extra.retain(|_, v| !v.is_null());
 
-        // Save TOML file (source of truth)
-        let toml_path = toml_dir.join(format!("{}.toml", persona.id));
+        // Save TOML file (source of truth in data directory)
+        let toml_path = data_dir.join(format!("{}.toml", persona.id));
         let toml_content = toml::to_string_pretty(&persona_for_toml)?;
         fs::write(&toml_path, toml_content)?;
 
@@ -64,15 +53,15 @@ impl PersonaRepository for TomlPersonaRepository {
     }
 
     fn load_all(&self) -> Result<Vec<Persona>> {
-        let toml_dir_str = self.get_toml_dir();
-        let toml_dir = Path::new(&toml_dir_str);
+        let data_dir_str = self.get_data_dir();
+        let data_dir = Path::new(&data_dir_str);
         let mut personas = Vec::new();
 
-        if !toml_dir.exists() {
+        if !data_dir.exists() {
             return Ok(personas); // No personas yet
         }
 
-        for entry in fs::read_dir(toml_dir)? {
+        for entry in fs::read_dir(data_dir)? {
             let entry = entry?;
             let path = entry.path();
 
@@ -92,7 +81,7 @@ impl PersonaRepository for TomlPersonaRepository {
     }
 
     fn load_by_id(&self, id: &str) -> Result<Option<Persona>> {
-        let toml_path = Path::new(&self.get_toml_dir()).join(format!("{}.toml", id));
+        let toml_path = Path::new(&self.get_data_dir()).join(format!("{}.toml", id));
 
         if !toml_path.exists() {
             return Ok(None);
@@ -107,8 +96,8 @@ impl PersonaRepository for TomlPersonaRepository {
     }
 
     fn delete(&self, id: &str) -> Result<()> {
-        // Delete TOML file
-        let toml_path = Path::new(&self.get_toml_dir()).join(format!("{}.toml", id));
+        // Delete TOML file from data directory
+        let toml_path = Path::new(&self.get_data_dir()).join(format!("{}.toml", id));
         if toml_path.exists() {
             fs::remove_file(&toml_path)?;
         }
@@ -123,7 +112,7 @@ impl PersonaRepository for TomlPersonaRepository {
     }
 
     fn exists(&self, id: &str) -> Result<bool> {
-        let toml_path = Path::new(&self.get_toml_dir()).join(format!("{}.toml", id));
+        let toml_path = Path::new(&self.get_data_dir()).join(format!("{}.toml", id));
         Ok(toml_path.exists())
     }
 
@@ -151,25 +140,17 @@ mod tests {
         let temp_path = temp_dir.path().to_str().unwrap();
 
         // Create a test config pointing to temp directory
-        // Important: use_case_dir must be in format "{base}/docs/use-cases"
-        // so that get_markdown_dir() can extract "{base}/docs/personas"
         let mut config = Config::default();
         config.directories.use_case_dir = format!("{}/docs/use-cases", temp_path);
-        config.directories.toml_dir = Some(format!("{}/.mucm", temp_path));
+        config.directories.data_dir = format!("{}/.mucm", temp_path);
+        config.directories.persona_dir = format!("{}/docs/personas", temp_path);
 
         let repo = TomlPersonaRepository::new(config);
         (repo, temp_dir)
     }
 
     fn create_test_persona() -> Persona {
-        Persona::new(
-            "test-persona".to_string(),
-            "Test User".to_string(),
-            "A test persona for unit testing".to_string(),
-            "Complete testing tasks efficiently".to_string(),
-        )
-        .with_tech_level(4)
-        .with_usage_frequency("daily".to_string())
+        Persona::new("test-persona".to_string(), "Test User".to_string())
     }
 
     #[test]
@@ -185,13 +166,6 @@ mod tests {
         let loaded_persona = loaded.unwrap();
         assert_eq!(loaded_persona.id, "test-persona");
         assert_eq!(loaded_persona.name, "Test User");
-        assert_eq!(
-            loaded_persona.description,
-            "A test persona for unit testing"
-        );
-        assert_eq!(loaded_persona.goal, "Complete testing tasks efficiently");
-        assert_eq!(loaded_persona.tech_level, Some(4));
-        assert_eq!(loaded_persona.usage_frequency, Some("daily".to_string()));
     }
 
     #[test]
@@ -201,12 +175,7 @@ mod tests {
         let persona1 = create_test_persona();
         repo.save(&persona1).unwrap();
 
-        let persona2 = Persona::new(
-            "admin-persona".to_string(),
-            "Admin User".to_string(),
-            "System administrator".to_string(),
-            "Manage system".to_string(),
-        );
+        let persona2 = Persona::new("admin-persona".to_string(), "Admin User".to_string());
         repo.save(&persona2).unwrap();
 
         let personas = repo.load_all().unwrap();
@@ -270,39 +239,6 @@ mod tests {
     }
 
     #[test]
-    fn test_persona_with_optional_fields() {
-        let (repo, _temp_dir) = create_test_repo();
-
-        let persona = Persona::new(
-            "minimal-persona".to_string(),
-            "Minimal User".to_string(),
-            "Minimal persona".to_string(),
-            "Do stuff".to_string(),
-        );
-        repo.save(&persona).unwrap();
-
-        let loaded = repo.load_by_id("minimal-persona").unwrap().unwrap();
-        assert_eq!(loaded.tech_level, None);
-        assert_eq!(loaded.usage_frequency, None);
-        assert_eq!(loaded.context, None);
-    }
-
-    #[test]
-    fn test_persona_with_context() {
-        let (repo, _temp_dir) = create_test_repo();
-
-        let persona =
-            create_test_persona().with_context("Works remotely from home office".to_string());
-        repo.save(&persona).unwrap();
-
-        let loaded = repo.load_by_id("test-persona").unwrap().unwrap();
-        assert_eq!(
-            loaded.context,
-            Some("Works remotely from home office".to_string())
-        );
-    }
-
-    #[test]
     fn test_update_persona() {
         let (repo, _temp_dir) = create_test_repo();
 
@@ -310,11 +246,9 @@ mod tests {
         repo.save(&persona).unwrap();
 
         persona.name = "Updated Test User".to_string();
-        persona.tech_level = Some(5);
         repo.save(&persona).unwrap();
 
         let loaded = repo.load_by_id("test-persona").unwrap().unwrap();
         assert_eq!(loaded.name, "Updated Test User");
-        assert_eq!(loaded.tech_level, Some(5));
     }
 }

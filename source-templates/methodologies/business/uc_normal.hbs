@@ -7,32 +7,19 @@
 {{description}}
 
 {{/if}}
-{{#if stakeholders.decision_makers}}
-## Stakeholder Overview
-### Key Decision Makers
-{{#each stakeholders.decision_makers}}
-- **{{this}}**
-{{/each}}
-
-{{/if}}
-{{#if stakeholders.primary_users}}
-### Primary Stakeholders
-{{#each stakeholders.primary_users}}
-- **{{this}}** - _Impact and involvement_
-{{/each}}
-
-{{/if}}
-{{#if business.value_proposition}}
+{{#if business_value}}
 ## Business Value
-### Value Proposition
-{{value_proposition}}
+{{business_value}}
 
 {{/if}}
-{{#if business.success_criteria}}
-### Success Criteria
-{{#each business.success_criteria}}
-- {{this}}
-{{/each}}
+{{#if roi_estimate}}
+### ROI Estimate
+{{roi_estimate}}
+
+{{/if}}
+{{#if strategic_priority}}
+### Strategic Priority
+{{strategic_priority}}
 
 {{/if}}
 
@@ -50,70 +37,12 @@
 {{/each}}
 
 {{/if}}
-{{#if scenarios}}
-## Actors and Personas
-
-### System Actors
-{{#each (unique_actors scenarios)}}
-- **{{this}}**
-{{/each}}
-
-{{#if (has_personas scenarios)}}
-### Target Personas
-{{#each (unique_personas scenarios)}}
-- 🙂 **{{this}}**
-{{/each}}
-{{/if}}
-
-## Scenario Analysis
-
-{{#each scenarios}}
-### {{scenario_type}}: {{title}}
-
-**Status:** {{status}}{{#if persona}} | **Persona:** 🙂 {{persona}}{{/if}}
-
-#### Business Flow
-{{#each steps}}
-{{order}}. **{{actor}}** {{action}} {{description}}
-{{/each}}
-
-{{/each}}
-{{/if}}
+{{> scenario}}
 {{#if use_case_references}}
 ## Related Use Cases
 {{#each use_case_references}}
 - **{{relationship}}:** {{target_id}}{{#if description}} - {{description}}{{/if}}
 {{/each}}
-
-{{/if}}
-{{#if business.roi_analysis}}
-## Financial Analysis
-{{roi_analysis}}
-
-{{/if}}
-{{#if business.timeline}}
-## Implementation Strategy
-### Timeline
-{{timeline}}
-
-{{/if}}
-{{#if business.resource_requirements}}
-### Resource Requirements
-{{resource_requirements}}
-
-{{/if}}
-{{#if business.risk_factors}}
-## Risk Assessment
-### Business Risks
-{{#each business.risk_factors}}
-- **{{this}}** - _Mitigation strategy_
-{{/each}}
-
-{{/if}}
-{{#if business.compliance_requirements}}
-## Compliance & Governance
-### Compliance Requirements
-{{compliance_requirements}}
 
 {{/if}}
 {{#if last_updated}}

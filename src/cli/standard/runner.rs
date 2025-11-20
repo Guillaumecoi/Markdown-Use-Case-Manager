@@ -56,30 +56,16 @@ impl CliRunner {
             .expect("controller was just initialized"))
     }
 
-    /// Initialize a new use case manager project (configuration phase).
+    /// Sanitize a string input by trimming whitespace.
     ///
-    /// Creates the initial project structure and configuration files.
-    /// This is the first step of initialization - templates are copied later
-    /// in `finalize_init()` to allow config review.
-    ///
-    /// # Arguments
-    /// * `language` - Optional programming language for code templates
-    /// * `methodology` - Optional default methodology (defaults to "feature")
-    ///
-    /// # Returns
-    /// Returns a DisplayResult with success message.
-    pub fn init_project(
-        &mut self,
-        language: Option<String>,
-        methodology: Option<String>,
-    ) -> Result<DisplayResult> {
-        // Sanitize inputs: trim whitespace and filter out empty strings
-        let sanitized_language = Self::sanitize_optional_string(language);
-        let sanitized_methodology =
-            Self::sanitize_optional_string(methodology).unwrap_or_else(|| "feature".to_string());
-
-        let result = ProjectController::init_project(sanitized_language, sanitized_methodology)?;
-        Ok(result)
+    /// Returns None if the input contains only whitespace, Some(trimmed_string) otherwise.
+    fn sanitize_string(input: String) -> Option<String> {
+        let trimmed = input.trim();
+        if trimmed.is_empty() {
+            None
+        } else {
+            Some(trimmed.to_string())
+        }
     }
 
     /// Initialize a new use case manager project with storage backend choice (configuration phase).
@@ -90,26 +76,39 @@ impl CliRunner {
     ///
     /// # Arguments
     /// * `language` - Optional programming language for code templates
-    /// * `methodology` - Optional default methodology (defaults to "feature")
+    /// * `methodologies` - List of methodologies to enable
     /// * `storage` - Storage backend to use (toml or sqlite)
     ///
     /// # Returns
     /// Returns a DisplayResult with success message.
-    pub fn init_project_with_storage(
+    pub fn init_project(
         &mut self,
         language: Option<String>,
-        methodology: Option<String>,
+        methodologies: Vec<String>,
         storage: String,
     ) -> Result<DisplayResult> {
         // Sanitize inputs: trim whitespace and filter out empty strings
         let sanitized_language = Self::sanitize_optional_string(language);
-        let sanitized_methodology =
-            Self::sanitize_optional_string(methodology).unwrap_or_else(|| "feature".to_string());
+        let sanitized_methodologies: Vec<String> = methodologies
+            .into_iter()
+            .filter_map(Self::sanitize_string)
+            .collect();
 
-        let result = ProjectController::init_project_with_storage(
+        // Use first methodology as default, or "feature" if none provided
+        let default_methodology = sanitized_methodologies
+            .first()
+            .cloned()
+            .unwrap_or_else(|| "feature".to_string());
+
+        let result = ProjectController::init_project(
             sanitized_language,
-            sanitized_methodology,
-            storage,
+            Some(sanitized_methodologies),
+            Some(storage),
+            Some(default_methodology),
+            None,
+            None,
+            None,
+            None,
         )?;
         Ok(result)
     }
@@ -150,6 +149,10 @@ impl CliRunner {
             Self::sanitize_required_string(title),
             Self::sanitize_required_string(category),
             Self::sanitize_optional_string(description),
+            None,
+            None,
+            None,
+            None,
         )
     }
 
@@ -174,11 +177,46 @@ impl CliRunner {
         methodology: String,
     ) -> Result<DisplayResult> {
         let controller = self.ensure_use_case_controller()?;
-        controller.create_use_case_with_methodology(
+        controller.create_use_case(
             Self::sanitize_required_string(title),
             Self::sanitize_required_string(category),
             Self::sanitize_optional_string(description),
-            Self::sanitize_required_string(methodology),
+            Some(Self::sanitize_required_string(methodology)),
+            None,
+            None,
+            None,
+        )
+    }
+
+    /// Create a new use case with multiple views.
+    ///
+    /// Creates a use case that can be rendered in multiple methodology/level combinations.
+    /// The views parameter should be a comma-separated list of methodology:level pairs.
+    ///
+    /// # Arguments
+    /// * `title` - The use case title
+    /// * `category` - The category to organize under
+    /// * `description` - Optional description
+    /// * `views` - Comma-separated methodology:level pairs (e.g., "feature:simple,business:normal")
+    ///
+    /// # Returns
+    /// Returns a DisplayResult with success message.
+    pub fn create_use_case_with_views(
+        &mut self,
+        title: String,
+        category: String,
+        description: Option<String>,
+        views: String,
+    ) -> Result<DisplayResult> {
+        let controller = self.ensure_use_case_controller()?;
+        controller.create_use_case(
+            Self::sanitize_required_string(title),
+            Self::sanitize_required_string(category),
+            Self::sanitize_optional_string(description),
+            None,
+            Some(Self::sanitize_required_string(views)),
+            None,
+            None,
         )
     }
 
@@ -549,250 +587,6 @@ impl CliRunner {
         )
     }
 
-    /// Add a scenario to a use case.
-    ///
-    /// Adds a new scenario to the specified use case.
-    ///
-    /// # Arguments
-    /// * `use_case_id` - The ID of the use case
-    /// * `title` - The title of the scenario
-    /// * `scenario_type` - The type of scenario (main, alternative, exception)
-    /// * `description` - Optional description of the scenario
-    ///
-    /// # Returns
-    /// DisplayResult with success message
-    ///
-    /// # Errors
-    /// Returns error if use case not found or scenario cannot be added
-    pub fn add_scenario(
-        &mut self,
-        use_case_id: String,
-        title: String,
-        scenario_type: String,
-        description: Option<String>,
-    ) -> Result<DisplayResult> {
-        let controller = self.ensure_use_case_controller()?;
-        controller.add_scenario(
-            Self::sanitize_required_string(use_case_id),
-            Self::sanitize_required_string(title),
-            Self::sanitize_required_string(scenario_type),
-            Self::sanitize_optional_string(description),
-        )
-    }
-
-    /// Add a step to a scenario.
-    ///
-    /// Adds a new step to the specified scenario.
-    ///
-    /// # Arguments
-    /// * `use_case_id` - The ID of the use case
-    /// * `scenario_title` - The title of the scenario
-    /// * `step` - The step description to add
-    /// * `order` - Optional 1-based order for the step
-    ///
-    /// # Returns
-    /// DisplayResult with success message
-    ///
-    /// # Errors
-    /// Returns error if use case or scenario not found or step cannot be added
-    pub fn add_scenario_step(
-        &mut self,
-        use_case_id: String,
-        scenario_title: String,
-        step: String,
-        order: Option<u32>,
-    ) -> Result<DisplayResult> {
-        let controller = self.ensure_use_case_controller()?;
-        controller.add_scenario_step(
-            Self::sanitize_required_string(use_case_id),
-            Self::sanitize_required_string(scenario_title),
-            Self::sanitize_required_string(step),
-            order,
-        )
-    }
-
-    /// Update scenario status.
-    ///
-    /// Updates the status of the specified scenario.
-    ///
-    /// # Arguments
-    /// * `use_case_id` - The ID of the use case
-    /// * `scenario_title` - The title of the scenario
-    /// * `status` - The new status for the scenario
-    ///
-    /// # Returns
-    /// DisplayResult with success message
-    ///
-    /// # Errors
-    /// Returns error if use case or scenario not found or status update fails
-    pub fn update_scenario_status(
-        &mut self,
-        use_case_id: String,
-        scenario_title: String,
-        status: String,
-    ) -> Result<DisplayResult> {
-        let controller = self.ensure_use_case_controller()?;
-        controller.update_scenario_status(
-            Self::sanitize_required_string(use_case_id),
-            Self::sanitize_required_string(scenario_title),
-            Self::sanitize_required_string(status),
-        )
-    }
-
-    /// List scenarios for a use case.
-    ///
-    /// Retrieves and displays all scenarios for the specified use case.
-    ///
-    /// # Arguments
-    /// * `use_case_id` - The ID of the use case
-    ///
-    /// # Returns
-    /// DisplayResult with scenarios list
-    ///
-    /// # Errors
-    /// Returns error if use case not found
-    pub fn list_scenarios(&mut self, use_case_id: String) -> Result<DisplayResult> {
-        let controller = self.ensure_use_case_controller()?;
-        controller.list_scenarios(Self::sanitize_required_string(use_case_id))
-    }
-
-    /// Remove a step from a scenario.
-    ///
-    /// Removes the step at the specified order from the scenario.
-    ///
-    /// # Arguments
-    /// * `use_case_id` - The ID of the use case
-    /// * `scenario_title` - The title of the scenario
-    /// * `order` - The 1-based order of the step to remove
-    ///
-    /// # Returns
-    /// DisplayResult with success message
-    ///
-    /// # Errors
-    /// Returns error if use case or scenario not found or step doesn't exist
-    pub fn remove_scenario_step(
-        &mut self,
-        use_case_id: String,
-        scenario_title: String,
-        order: u32,
-    ) -> Result<DisplayResult> {
-        let controller = self.ensure_use_case_controller()?;
-        controller.remove_scenario_step(
-            Self::sanitize_required_string(use_case_id),
-            Self::sanitize_required_string(scenario_title),
-            order,
-        )
-    }
-
-    // ========== Scenario Reference Operations (PR #7) ==========
-
-    /// Add a reference to a scenario
-    ///
-    /// # Arguments
-    /// * `use_case_id` - Use case containing the source scenario
-    /// * `scenario_title` - Title of the source scenario
-    /// * `target_id` - Target ID (scenario or use case)
-    /// * `ref_type` - Reference type ("scenario" or "usecase")
-    /// * `relationship` - Relationship type
-    /// * `description` - Optional description
-    ///
-    /// # Returns
-    /// DisplayResult with success or error message
-    ///
-    /// # Errors
-    /// Returns error if use case or scenario not found, or invalid reference type
-    pub fn add_scenario_reference(
-        &mut self,
-        use_case_id: String,
-        scenario_title: String,
-        target_id: String,
-        ref_type: String,
-        relationship: String,
-        description: Option<String>,
-    ) -> Result<DisplayResult> {
-        let controller = self.ensure_use_case_controller()?;
-        controller.add_scenario_reference(
-            Self::sanitize_required_string(use_case_id),
-            Self::sanitize_required_string(scenario_title),
-            Self::sanitize_required_string(target_id),
-            Self::sanitize_required_string(ref_type),
-            Self::sanitize_required_string(relationship),
-            Self::sanitize_optional_string(description),
-        )
-    }
-
-    /// Remove a reference from a scenario
-    ///
-    /// # Arguments
-    /// * `use_case_id` - Use case containing the scenario
-    /// * `scenario_title` - Title of the scenario
-    /// * `target_id` - Target ID to remove
-    /// * `relationship` - Relationship type
-    ///
-    /// # Returns
-    /// DisplayResult with success or error message
-    ///
-    /// # Errors
-    /// Returns error if use case, scenario, or reference not found
-    pub fn remove_scenario_reference(
-        &mut self,
-        use_case_id: String,
-        scenario_title: String,
-        target_id: String,
-        relationship: String,
-    ) -> Result<DisplayResult> {
-        let controller = self.ensure_use_case_controller()?;
-        controller.remove_scenario_reference(
-            Self::sanitize_required_string(use_case_id),
-            Self::sanitize_required_string(scenario_title),
-            Self::sanitize_required_string(target_id),
-            Self::sanitize_required_string(relationship),
-        )
-    }
-
-    /// List all references for a scenario
-    ///
-    /// # Arguments
-    /// * `use_case_id` - Use case containing the scenario
-    /// * `scenario_title` - Title of the scenario
-    ///
-    /// # Returns
-    /// DisplayResult with formatted list of references
-    ///
-    /// # Errors
-    /// Returns error if use case or scenario not found
-    pub fn list_scenario_references(
-        &mut self,
-        use_case_id: String,
-        scenario_title: String,
-    ) -> Result<DisplayResult> {
-        let controller = self.ensure_use_case_controller()?;
-        let references = controller.list_scenario_references(
-            Self::sanitize_required_string(use_case_id),
-            Self::sanitize_required_string(scenario_title),
-        )?;
-
-        // Format and display
-        if references.is_empty() {
-            Ok(DisplayResult::success(
-                "No references found for this scenario".to_string(),
-            ))
-        } else {
-            let mut output = String::new();
-            for (i, ref_data) in references.iter().enumerate() {
-                output.push_str(&format!(
-                    "{}. {} ({:?}) → {} [{}]\n",
-                    i + 1,
-                    ref_data.relationship,
-                    ref_data.ref_type,
-                    ref_data.target_id,
-                    ref_data.description.as_deref().unwrap_or("no description")
-                ));
-            }
-            Ok(DisplayResult::success(output))
-        }
-    }
-
     /// List use cases that use a specific persona
     ///
     /// # Arguments
@@ -831,6 +625,28 @@ impl CliRunner {
 
             Ok(DisplayResult::success(output))
         }
+    }
+
+    /// Clean up orphaned methodology fields from use cases
+    ///
+    /// Scans methodology_fields and removes entries for methodologies not used by any enabled view.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - Optional specific use case to clean. If None, cleans all use cases.
+    /// * `dry_run` - If true, shows what would be cleaned without making changes
+    ///
+    /// # Returns
+    /// DisplayResult with summary of cleanup operation
+    ///
+    /// # Errors
+    /// Returns error if use case not found or cleanup fails
+    pub fn cleanup_methodology_fields(
+        &mut self,
+        use_case_id: Option<String>,
+        dry_run: bool,
+    ) -> Result<DisplayResult> {
+        let controller = self.ensure_use_case_controller()?;
+        controller.cleanup_methodology_fields(use_case_id, dry_run)
     }
 }
 

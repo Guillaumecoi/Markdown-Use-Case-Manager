@@ -18,16 +18,20 @@
 /// type = "string"
 /// required = false
 /// default = "To be determined"
+/// description = "The business value this feature provides"
 ///
 /// [custom_fields.roi_estimate]
 /// label = "ROI Estimate"
 /// type = "string"
 /// required = false
+/// description = "Estimated return on investment"
 /// ```
 #[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
 pub struct CustomFieldConfig {
     /// Human-readable label displayed in prompts and documentation
-    pub label: String,
+    /// If not provided, the field name will be used (converted to title case)
+    #[serde(default)]
+    pub label: Option<String>,
     /// Data type of the field: "string", "array", "number", "boolean"
     #[serde(rename = "type")]
     pub field_type: String,
@@ -37,4 +41,7 @@ pub struct CustomFieldConfig {
     /// Default value if none provided (None means no default)
     #[serde(default)]
     pub default: Option<String>,
+    /// Description of the field (used for verbose output and documentation)
+    #[serde(default)]
+    pub description: Option<String>,
 }

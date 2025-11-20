@@ -69,20 +69,6 @@ impl UseCaseService {
             None
         }
     }
-
-    /// Create a new use case with custom fields from methodology
-    pub fn create_use_case_with_extra(
-        &self,
-        id: String,
-        title: String,
-        category: String,
-        description: String,
-        extra_fields: std::collections::HashMap<String, serde_json::Value>,
-    ) -> Result<UseCase, String> {
-        let mut use_case = UseCase::new(id, title, category, description, "Medium".to_string())?;
-        use_case.extra = extra_fields;
-        Ok(use_case)
-    }
 }
 
 impl Default for UseCaseService {

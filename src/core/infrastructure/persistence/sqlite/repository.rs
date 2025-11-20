@@ -415,10 +415,12 @@ impl SqliteUseCaseRepository {
                             )
                         })?,
                     },
-                    preconditions: Vec::new(),  // Will be populated below
+                    views: Vec::new(), // Will be populated below (multi-view support)
+                    preconditions: Vec::new(), // Will be populated below
                     postconditions: Vec::new(), // Will be populated below
-                    use_case_references: Vec::new(), // Will be populated below
-                    scenarios: Vec::new(),      // Will be loaded from relational tables
+                    methodology_fields: std::collections::HashMap::new(), // New field for methodology-specific fields
+                    use_case_references: Vec::new(),                      // Will be populated below
+                    scenarios: Vec::new(), // Will be loaded from relational tables
                     extra,
                 })
             })
@@ -505,9 +507,22 @@ impl UseCaseRepository for SqliteUseCaseRepository {
 
         let mut use_cases = Vec::new();
         for id in ids {
-            if let Some(use_case) = Self::load_by_id_internal_conn(&conn, &id)
+            if let Some(mut use_case) = Self::load_by_id_internal_conn(&conn, &id)
                 .with_context(|| format!("Failed to load use case {}", id))?
             {
+                // Migration: If use case has no views, add default view
+                if use_case.views.is_empty() {
+                    use crate::core::MethodologyView;
+                    let config = crate::config::Config::load()
+                        .unwrap_or_else(|_| crate::config::Config::default());
+                    let default_methodology = &config.templates.default_methodology;
+                    let default_view = MethodologyView::new(default_methodology, "normal");
+                    use_case.views.push(default_view);
+
+                    // Note: Auto-save happens via the application service layer
+                    // which will detect the change and persist it
+                }
+
                 use_cases.push(use_case);
             }
         }
@@ -529,6 +544,24 @@ impl UseCaseRepository for SqliteUseCaseRepository {
             .with_context(|| format!("Failed to create markdown directory {:?}", markdown_dir))?;
 
         let filename = format!("{}.md", use_case_id);
+        let filepath = markdown_dir.join(filename);
+        std::fs::write(&filepath, content)
+            .with_context(|| format!("Failed to write markdown file {:?}", filepath))?;
+
+        Ok(())
+    }
+
+    fn save_markdown_with_filename(
+        &self,
+        _use_case: &UseCase,
+        filename: &str,
+        content: &str,
+    ) -> Result<()> {
+        let db_dir = self.db_path.parent().unwrap_or(std::path::Path::new("."));
+        let markdown_dir = db_dir.join("markdown");
+        std::fs::create_dir_all(&markdown_dir)
+            .with_context(|| format!("Failed to create markdown directory {:?}", markdown_dir))?;
+
         let filepath = markdown_dir.join(filename);
         std::fs::write(&filepath, content)
             .with_context(|| format!("Failed to write markdown file {:?}", filepath))?;

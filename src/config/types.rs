@@ -10,9 +10,10 @@
 //! - `project`: Basic project information and metadata
 //! - `directories`: File system paths for use cases, tests, and templates
 //! - `templates`: Methodology and language template settings
-//! - `base_fields`: Standard fields available to all use cases
 //! - `metadata`: Auto-generated metadata settings
 //! - `generation`: Code generation preferences and settings
+//! - `storage`: Storage backend configuration (TOML or SQLite)
+//! - `persona`: Persona configuration with custom fields
 //!
 //! ## Configuration File
 //!
@@ -126,11 +127,10 @@ mod storage_backend_tests {
 /// - `project`: Basic project information (name, description)
 /// - `directories`: Paths for use cases, tests, templates, and TOML files
 /// - `templates`: Methodology and language template settings
-/// - `base_fields`: Standard fields available to all use cases
 /// - `metadata`: Auto-generated metadata settings (creation/update timestamps)
 /// - `generation`: Code generation preferences (test language, auto-generation flags)
 /// - `storage`: Storage backend configuration (TOML or SQLite)
-/// - `persona_fields`: Global custom fields for personas (optional)
+/// - `persona`: Global custom fields for personas (optional)
 ///
 /// # Example Configuration
 ///
@@ -142,7 +142,7 @@ mod storage_backend_tests {
 /// [directories]
 /// use_case_dir = "docs/use-cases"
 /// test_dir = "tests/use-cases"
-/// toml_dir = "use-cases-data"
+/// data_dir = "use-cases-data"
 ///
 /// [templates]
 /// methodologies = ["developer", "feature", "business", "tester"]
@@ -161,10 +161,10 @@ mod storage_backend_tests {
 /// created = true
 /// last_updated = true
 ///
-/// [persona_fields]
-/// department = { label = "Department", type = "string", required = false }
-/// experience_level = { label = "Experience Level", type = "string", required = false }
-/// pain_points = { label = "Pain Points", type = "array", required = false }
+/// [persona.fields]
+/// department = { type = "string", required = false }
+/// experience_level = { type = "string", required = false }
+/// pain_points = { type = "array", required = false }
 /// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -182,9 +182,9 @@ pub struct Config {
     /// Storage backend configuration
     #[serde(default)]
     pub storage: StorageConfig,
-    /// Global custom fields for personas (optional)
+    /// Persona configuration with custom fields
     #[serde(default)]
-    pub persona_fields: std::collections::HashMap<String, crate::core::CustomFieldConfig>,
+    pub persona: PersonaConfig,
 }
 
 /// Project-level configuration settings.
@@ -207,29 +207,13 @@ pub struct ProjectConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DirectoryConfig {
     /// Directory where generated markdown use case files are stored
-    /// Default: "docs/use-cases"
     pub use_case_dir: String,
     /// Directory where generated test files are stored
-    /// Default: "tests/use-cases"
     pub test_dir: String,
-    /// Optional custom template directory (uses built-in if not specified)
-    pub template_dir: Option<String>,
-    /// Directory for TOML source files (defaults to same as use_case_dir if not specified)
-    /// This is where the raw use case data is stored before markdown generation
-    pub toml_dir: Option<String>,
-}
-
-impl DirectoryConfig {
-    /// Get the effective TOML directory path.
-    ///
-    /// Returns the configured TOML directory if specified, otherwise falls back
-    /// to the use case directory for backward compatibility.
-    ///
-    /// # Returns
-    /// The directory path as a string slice where TOML files should be stored
-    pub fn get_toml_dir(&self) -> &str {
-        self.toml_dir.as_deref().unwrap_or(&self.use_case_dir)
-    }
+    /// Directory where persona markdown files are stored
+    pub persona_dir: String,
+    /// Directory for the source of truth files (TOML, SQLite database)
+    pub data_dir: String,
 }
 
 /// Template configuration settings.
@@ -248,9 +232,6 @@ pub struct TemplateConfig {
     /// If not specified, will be set to the first available methodology
     #[serde(default)]
     pub default_methodology: String,
-    /// Default programming language for test template generation
-    /// Must be one of the supported languages (rust, python, javascript)
-    pub test_language: String,
 }
 
 /// Configuration for code generation and test creation settings.
@@ -319,5 +300,36 @@ impl Default for StorageConfig {
         Self {
             backend: StorageBackend::default(),
         }
+    }
+}
+
+/// Persona configuration settings.
+///
+/// Defines custom fields that can be used when creating personas.
+/// These fields extend the base persona fields with project-specific
+/// attributes for better persona modeling.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct PersonaConfig {
+    /// Custom fields available for personas
+    /// Key is the field name, value is the field configuration
+    /// Serialized inline as: fields.fieldname = { ... }
+    #[serde(default, rename = "fields")]
+    pub fields: std::collections::HashMap<String, crate::core::CustomFieldConfig>,
+}
+
+impl PersonaConfig {
+    /// Get a custom field by name
+    pub fn get_field(&self, name: &str) -> Option<&crate::core::CustomFieldConfig> {
+        self.fields.get(name)
+    }
+
+    /// Check if a custom field exists
+    pub fn has_field(&self, name: &str) -> bool {
+        self.fields.contains_key(name)
+    }
+
+    /// Get all custom field names
+    pub fn field_names(&self) -> Vec<&String> {
+        self.fields.keys().collect()
     }
 }

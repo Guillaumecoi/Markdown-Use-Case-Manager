@@ -26,15 +26,11 @@ pub use runner::CliRunner;
 
 // Re-export command functions for the main CLI dispatcher
 pub use commands::{
-    handle_create_command, handle_init_command, handle_languages_command, handle_list_command,
-    handle_list_methodologies_command, handle_methodology_info_command, handle_persona_command,
-    handle_postcondition_add_command, handle_postcondition_list_command,
+    handle_cleanup_command, handle_create_command, handle_init_command, handle_languages_command,
+    handle_list_command, handle_list_methodologies_command, handle_methodology_info_command,
+    handle_persona_command, handle_postcondition_add_command, handle_postcondition_list_command,
     handle_postcondition_remove_command, handle_precondition_add_command,
     handle_precondition_list_command, handle_precondition_remove_command,
     handle_reference_add_command, handle_reference_list_command, handle_reference_remove_command,
-    handle_regenerate_command, handle_scenario_add_command, handle_scenario_add_step_command,
-    handle_scenario_list_command, handle_scenario_reference_add_command,
-    handle_scenario_reference_list_command, handle_scenario_reference_remove_command,
-    handle_scenario_remove_step_command, handle_scenario_update_status_command,
-    handle_status_command,
+    handle_regenerate_command, handle_status_command, handle_usecase_scenario_command,
 };

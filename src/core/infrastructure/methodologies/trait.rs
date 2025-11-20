@@ -45,8 +45,13 @@ pub trait Methodology {
 pub struct DocumentationLevel {
     /// Name of the level (e.g., "simple", "normal", "detailed")
     pub name: String,
+    /// Short abbreviation for file suffixes (e.g., "s", "n", "d")
+    pub abbreviation: String,
     /// Template filename for this level (e.g., "uc_simple.hbs")
     pub filename: String,
     /// Description of what this level provides
     pub description: String,
+    /// List of level names this level inherits from (for field resolution)
+    #[serde(default)]
+    pub inherits: Vec<String>,
 }

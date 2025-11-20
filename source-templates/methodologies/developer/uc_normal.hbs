@@ -7,9 +7,16 @@
 {{description}}
 
 {{/if}}
-{{#if architecture_overview}}
-### Architecture Approach
-{{architecture_overview}}
+{{#if api_endpoint}}
+### API Endpoint
+{{api_endpoint}}
+
+{{/if}}
+{{#if database_tables}}
+### Database Tables
+{{#each database_tables}}
+- {{this}}
+{{/each}}
 
 {{/if}}
 {{#if preconditions}}
@@ -26,98 +33,7 @@
 {{/each}}
 
 {{/if}}
-{{#if scenarios}}
-## Actors and Personas
-
-### System Actors
-{{#each (unique_actors scenarios)}}
-- **{{this}}**
-{{/each}}
-
-{{#if (has_personas scenarios)}}
-### User Personas
-{{#each (unique_personas scenarios)}}
-- 🙂 **{{this}}**
-{{/each}}
-{{/if}}
-
-## Technical Scenarios
-
-{{#each scenarios}}
-### {{scenario_type}}: {{title}}
-
-**Status:** {{status}}{{#if persona}} | **Persona:** 🙂 {{persona}}{{/if}}
-
-#### Technical Flow
-{{#each steps}}
-{{order}}. **{{actor}}** {{action}} {{description}}
-{{/each}}
-
-{{/each}}
-{{/if}}
-{{#if objectives}}
-## Functional Requirements
-{{#each objectives}}
-- {{this}}
-{{/each}}
-
-{{/if}}
-{{#if performance_requirements}}
-## Technical Requirements
-
-### Performance Requirements
-{{performance_requirements}}
-
-{{/if}}
-{{#if security_requirements}}
-### Security Requirements
-{{security_requirements}}
-
-{{/if}}
-{{#if development_approach}}
-## Implementation Details
-
-### Development Approach
-{{development_approach}}
-
-{{/if}}
-{{#if data_requirements}}
-### Data Requirements
-{{data_requirements}}
-
-{{/if}}
-{{#if test_scenarios}}
-## Testing Strategy
-
-### Test Scenarios
-{{#each test_scenarios}}
-- {{this}}
-{{/each}}
-
-{{/if}}
-{{#if acceptance_criteria}}
-### Acceptance Criteria
-{{#each acceptance_criteria}}
-- {{this}}
-{{/each}}
-
-{{/if}}
-{{#if deployment_strategy}}
-## Deployment & Operations
-
-### Deployment Strategy
-{{deployment_strategy}}
-
-{{/if}}
-{{#if technical_risks}}
-## Risk Mitigation
-
-### Technical Risks
-{{#each technical_risks}}
-- {{this}}
-{{/each}}
-
-{{/if}}
+{{> scenario}}
 {{#if use_case_references}}
 ## Related Use Cases
 {{#each use_case_references}}

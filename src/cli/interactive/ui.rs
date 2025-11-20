@@ -30,6 +30,10 @@ impl UI {
             Print("║                                                              ║\n"),
             Print("╚══════════════════════════════════════════════════════════════╝\n"),
             ResetColor,
+            Print("\n"),
+            SetForegroundColor(Color::DarkGrey),
+            Print("  Tip: Use arrow keys to navigate, Enter to select\n"),
+            ResetColor,
             Print("\n")
         )?;
 
@@ -134,6 +138,18 @@ impl UI {
             SetForegroundColor(Color::Yellow),
             Print(&format!("\n{}\n", message)),
             ResetColor
+        )?;
+        Ok(())
+    }
+
+    /// Show an info message
+    pub fn show_info(message: &str) -> Result<()> {
+        execute!(
+            stdout(),
+            SetForegroundColor(Color::Blue),
+            Print(message),
+            ResetColor,
+            Print("\n")
         )?;
         Ok(())
     }

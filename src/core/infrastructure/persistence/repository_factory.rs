@@ -35,11 +35,9 @@ impl RepositoryFactory {
                 Ok(Box::new(repo))
             }
             StorageBackend::Sqlite => {
-                // For SQLite, we need to determine the database path
-                // Use a default path in the project directory
-                let db_path = std::path::Path::new(".config")
-                    .join("mucm")
-                    .join("usecases.db");
+                // For SQLite, use the data directory (source of truth) for database storage
+                let db_path =
+                    std::path::Path::new(&config.directories.data_dir).join("usecases.db");
 
                 // Create parent directories if they don't exist
                 if let Some(parent) = db_path.parent() {
@@ -94,10 +92,9 @@ impl RepositoryFactory {
                 Ok(Box::new(repo))
             }
             StorageBackend::Sqlite => {
-                // For SQLite, we need to determine the database path
-                let db_path = std::path::Path::new(".config")
-                    .join("mucm")
-                    .join("usecases.db");
+                // For SQLite, use the data directory (source of truth) for database storage
+                let db_path =
+                    std::path::Path::new(&config.directories.data_dir).join("usecases.db");
 
                 // Create parent directories if they don't exist
                 if let Some(parent) = db_path.parent() {
@@ -224,12 +221,7 @@ mod tests {
 
         // Test basic operations
         use crate::core::domain::Persona;
-        let persona = Persona::new(
-            "test-persona".to_string(),
-            "Test User".to_string(),
-            "Test description".to_string(),
-            "Test goal".to_string(),
-        );
+        let persona = Persona::new("test-persona".to_string(), "Test User".to_string());
 
         repository.save(&persona)?;
         assert!(repository.exists("test-persona")?);
@@ -251,12 +243,7 @@ mod tests {
 
         // Test basic operations
         use crate::core::domain::Persona;
-        let persona = Persona::new(
-            "test-persona".to_string(),
-            "Test User".to_string(),
-            "Test description".to_string(),
-            "Test goal".to_string(),
-        );
+        let persona = Persona::new("test-persona".to_string(), "Test User".to_string());
 
         repository.save(&persona)?;
         assert!(repository.exists("test-persona")?);
@@ -280,12 +267,7 @@ mod tests {
 
         // Test basic operations
         use crate::core::domain::Persona;
-        let persona = Persona::new(
-            "test-persona".to_string(),
-            "Test User".to_string(),
-            "Test description".to_string(),
-            "Test goal".to_string(),
-        );
+        let persona = Persona::new("test-persona".to_string(), "Test User".to_string());
 
         repository.save(&persona)?;
         assert!(repository.exists("test-persona")?);

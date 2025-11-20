@@ -30,8 +30,22 @@ impl UseCaseRepository for TomlUseCaseRepository {
         self.save_markdown_only(use_case_id, markdown_content)
     }
 
+    fn save_markdown_with_filename(
+        &self,
+        use_case: &UseCase,
+        filename: &str,
+        content: &str,
+    ) -> Result<()> {
+        let category_snake = to_snake_case(&use_case.category);
+        let md_dir = Path::new(&self.config.directories.use_case_dir).join(&category_snake);
+        fs::create_dir_all(&md_dir)?;
+        let md_path = md_dir.join(filename);
+        fs::write(&md_path, content)?;
+        Ok(())
+    }
+
     fn load_all(&self) -> Result<Vec<UseCase>> {
-        let toml_dir = Path::new(self.config.directories.get_toml_dir());
+        let toml_dir = Path::new(&self.config.directories.data_dir);
         let mut use_cases = Vec::new();
 
         if !toml_dir.exists() {
@@ -54,7 +68,19 @@ impl UseCaseRepository for TomlUseCaseRepository {
                 // extra fields are serde_json::Value instead of toml::Value
                 let toml_value: toml::Value = toml::from_str(&content)?;
                 let json_str = serde_json::to_string(&toml_value)?;
-                let use_case: UseCase = serde_json::from_str(&json_str)?;
+                let mut use_case: UseCase = serde_json::from_str(&json_str)?;
+
+                // Migration: If use case has no views, add default view
+                if use_case.views.is_empty() {
+                    use crate::core::MethodologyView;
+                    let default_methodology = &self.config.templates.default_methodology;
+                    let default_view = MethodologyView::new(default_methodology, "normal");
+                    use_case.views.push(default_view);
+
+                    // Auto-save the migrated use case
+                    self.save_toml_only(&use_case)?;
+                }
+
                 use_cases.push(use_case);
             }
         }
@@ -73,7 +99,7 @@ impl TomlUseCaseRepository {
         let category_snake = to_snake_case(&use_case.category);
 
         // Create TOML directory structure (source files)
-        let toml_dir = Path::new(self.config.directories.get_toml_dir()).join(&category_snake);
+        let toml_dir = Path::new(&self.config.directories.data_dir).join(&category_snake);
         fs::create_dir_all(&toml_dir)?;
 
         // Filter out Null values from extra fields before serialization

@@ -11,6 +11,9 @@ documentation = "https://github.com/GuillaumeCOI/markdown-use-case-manager/docs"
 readme = "README.md"
 keywords = ["markdown", "use-case", "documentation", "cli", "git"]
 categories = ["command-line-utilities", "development-tools", "template-engine"]
+include = [
+    "source-templates/**/*",
+]
 
 [[bin]]
 name = "mucm"
@@ -28,14 +31,14 @@ clap = { version = "4.5", features = ["derive", "color"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 serde_yaml = "0.9"
-toml = "0.8"
+toml = "0.9.8"
 
 # Templating
-handlebars = "5.0"
+handlebars = "6.3.2"
 
 # File system and I/O
 walkdir = "2.5"
-directories = "5.0"
+directories = "6.0"
 
 # Date and time
 chrono = { version = "0.4", features = ["serde"] }
@@ -45,20 +48,20 @@ anyhow = "1.0"
 thiserror = "2.0"
 
 # Regular expressions
-regex = "1.10"
+regex = "1.12"
 
 # SQLite database
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.37", features = ["bundled"] }
 
 # Terminal UI
-console = "0.15"
-colored = "2.1"
-inquire = "0.7"
-crossterm = "0.28"
+console = "0.16.1"
+colored = "3.0"
+inquire = "0.9.1"
+crossterm = "0.29"
 
 [dev-dependencies]
-tempfile = "3.13"
-assert_cmd = "2.0"
+tempfile = "3.23"
+assert_cmd = "2.1"
 predicates = "3.1"
 serial_test = "3.2"
-criterion = { version = "0.5", features = ["html_reports"] }
+criterion = { version = "0.7.0", features = ["html_reports"] }

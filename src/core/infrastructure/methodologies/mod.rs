@@ -12,23 +12,25 @@
 //!
 //! ## Methodology Configuration
 //!
-//! Each methodology is defined in two TOML files in `source-templates/methodologies/{name}/`:
+//! Each methodology is defined in a single `methodology.toml` file in `source-templates/methodologies/{name}/`.
+//! This file contains all methodology information:
 //!
-//! - `info.toml`: Contains user-facing information for methodology selection and usage guidance
-//! - `config.toml`: Contains technical configuration and template settings
-//!
-//! The `info.toml` file provides detailed descriptions and usage information to help users
-//! choose the appropriate methodology, while `config.toml` contains the operational settings.
+//! - Methodology metadata (name, abbreviation, description)
+//! - Template configuration (preferred style, generation options)
+//! - Documentation levels with custom fields
+//! - Usage guidance (when to use, key features, best practices)
 //!
 //! The methodology directory also contains Handlebars templates for different documentation styles.
 
 mod definition;
+mod field_resolver;
 mod registry;
 mod r#trait;
 mod types;
 
 // Re-export public types
 pub use definition::MethodologyDefinition;
-pub use r#trait::Methodology;
+pub use field_resolver::FieldResolver;
+pub use r#trait::{DocumentationLevel, Methodology};
 pub use registry::MethodologyRegistry;
 pub use types::CustomFieldConfig;

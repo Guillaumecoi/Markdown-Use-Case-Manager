@@ -4,8 +4,11 @@
 //! Provides step-by-step assistance for multi-step tasks like use case creation.
 
 // Submodules
+pub mod conditions;
 pub mod config;
 pub mod initialization;
 pub mod methodology;
 pub mod persona;
+pub mod references;
+pub mod scenario;
 pub mod use_case;

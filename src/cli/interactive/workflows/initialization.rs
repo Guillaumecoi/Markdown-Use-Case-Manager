@@ -135,14 +135,93 @@ impl Initialization {
                 .to_lowercase()
         };
 
+        // Step 4: Configure directories
+        UI::show_step(
+            4,
+            "Directory Configuration",
+            "Configure where use cases, tests, personas, and data will be stored.\nPress Enter to use default values.",
+        )?;
+
+        let use_case_dir = inquire::Text::new("Use case directory:")
+            .with_default("docs/use-cases")
+            .with_help_message("Where markdown use case files will be stored")
+            .prompt()?;
+
+        let test_dir = inquire::Text::new("Test directory:")
+            .with_default("tests/use-cases")
+            .with_help_message("Where test files will be generated")
+            .prompt()?;
+
+        let persona_dir = inquire::Text::new("Persona directory:")
+            .with_default("docs/personas")
+            .with_help_message("Where persona markdown files will be stored")
+            .prompt()?;
+
+        let data_dir = inquire::Text::new("Data directory:")
+            .with_default("use-cases-data")
+            .with_help_message("Where TOML/SQLite data files will be stored")
+            .prompt()?;
+
+        // Step 5: Select storage backend
+        UI::show_step(
+            5,
+            "Storage Backend",
+            "Choose how use case data will be stored.\n\
+            TOML: Simple file-based storage, great for version control\n\
+            SQLite: Database storage, better for complex queries and large projects",
+        )?;
+
+        let storage_options = vec![
+            "toml - Simple file-based storage (recommended for most projects)",
+            "sqlite - Database storage (better for complex queries)",
+        ];
+
+        let storage_selection = Select::new("Storage backend:", storage_options)
+            .with_help_message("TOML is simpler and git-friendly, SQLite offers better querying")
+            .prompt()?;
+
+        let storage_backend = if storage_selection.starts_with("toml") {
+            "toml"
+        } else {
+            "sqlite"
+        };
+
         // Show summary
-        show_configuration_summary(&language, &selected_methodologies, &default_methodology)?;
+        show_configuration_summary(
+            &language,
+            &selected_methodologies,
+            &default_methodology,
+            storage_backend,
+            &use_case_dir,
+            &test_dir,
+            &persona_dir,
+            &data_dir,
+        )?;
 
-        // Create config
-        create_config(&mut runner, language, default_methodology)?;
+        // Confirm settings
+        let confirm = Confirm::new("Are these settings correct?")
+            .with_default(true)
+            .with_help_message(
+                "Choose 'Yes' to proceed (templates and directories will be created). Choose 'No' to start over.",
+            )
+            .prompt()?;
 
-        // Finalize
-        finalize_initialization(&mut runner)?;
+        if !confirm {
+            UI::show_warning("Restarting initialization wizard...\n")?;
+            return Self::run_initialization_wizard();
+        }
+
+        // Create config with directories
+        create_config_with_directories(
+            &mut runner,
+            language,
+            selected_methodologies,
+            storage_backend,
+            use_case_dir.clone(),
+            test_dir.clone(),
+            persona_dir.clone(),
+            data_dir.clone(),
+        )?;
 
         Ok(())
     }
@@ -153,6 +232,11 @@ fn show_configuration_summary(
     language: &Option<String>,
     selected_methodologies: &[String],
     default_methodology: &str,
+    storage_backend: &str,
+    use_case_dir: &str,
+    test_dir: &str,
+    persona_dir: &str,
+    data_dir: &str,
 ) -> Result<()> {
     println!("\n✨ Configuration Summary:");
     println!(
@@ -160,17 +244,35 @@ fn show_configuration_summary(
         language.as_ref().unwrap_or(&"none".to_string())
     );
     println!("   Methodologies: {}", selected_methodologies.join(", "));
-    println!("   Default: {}\n", default_methodology);
+    println!("   Default: {}", default_methodology);
+    println!("   Storage: {}", storage_backend);
+    println!("   Use case dir: {}", use_case_dir);
+    println!("   Test dir: {}", test_dir);
+    println!("   Persona dir: {}", persona_dir);
+    println!("   Data dir: {}\n", data_dir);
     Ok(())
 }
 
-/// Create project configuration
-fn create_config(
+/// Create project configuration with directories
+fn create_config_with_directories(
     runner: &mut InteractiveRunner,
     language: Option<String>,
-    default_methodology: String,
+    selected_methodologies: Vec<String>,
+    storage_backend: &str,
+    use_case_dir: String,
+    test_dir: String,
+    persona_dir: String,
+    data_dir: String,
 ) -> Result<()> {
-    match runner.initialize_project(language, default_methodology) {
+    match runner.initialize_project(
+        language,
+        selected_methodologies,
+        storage_backend.to_string(),
+        use_case_dir,
+        test_dir,
+        persona_dir,
+        data_dir,
+    ) {
         Ok(message) => {
             UI::show_success(&message)?;
             Ok(())
@@ -179,35 +281,5 @@ fn create_config(
             UI::show_error(&format!("Failed to initialize project: {}", e))?;
             Err(e)
         }
-    }
-}
-
-/// Finalize project initialization
-fn finalize_initialization(runner: &mut InteractiveRunner) -> Result<()> {
-    let auto_finalize = Confirm::new("Finalize initialization now?")
-        .with_default(true)
-        .with_help_message("This will copy templates. Choose 'No' to review the config file first")
-        .prompt()?;
-
-    if auto_finalize {
-        match runner.finalize_initialization() {
-            Ok(message) => {
-                UI::show_success(&message)?;
-                println!("\n💡 Note: All selected methodologies are now available!");
-                println!("   You can use any of them when creating use cases.\n");
-                UI::pause_for_input()?;
-                Ok(())
-            }
-            Err(e) => {
-                UI::show_error(&format!("Failed to finalize initialization: {}", e))?;
-                Err(e)
-            }
-        }
-    } else {
-        UI::show_warning(
-            "📝 Configuration created but not finalized.\n\
-            Review .config/.mucm/mucm.toml and run 'mucm init --finalize' when ready.",
-        )?;
-        Err(anyhow::anyhow!("Project initialization not finalized"))
     }
 }

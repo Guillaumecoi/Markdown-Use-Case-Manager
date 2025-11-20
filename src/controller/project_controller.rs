@@ -24,7 +24,7 @@ use anyhow::Result;
 
 use super::dto::{DisplayResult, MethodologyInfo, SelectionOptions};
 use crate::config::Config;
-use crate::core::{LanguageRegistry, Methodology, MethodologyRegistry};
+use crate::core::{DocumentationLevel, LanguageRegistry, Methodology, MethodologyRegistry};
 
 /// Controller for project initialization and management operations.
 ///
@@ -71,10 +71,12 @@ impl ProjectController {
     ///
     /// # Returns
     /// Vector of MethodologyInfo containing name, display name, and description
+    /// Get all available methodologies from source templates.
+    /// This is used during initialization to show what can be installed.
     pub fn get_available_methodologies() -> Result<Vec<MethodologyInfo>> {
         use crate::config::Config;
 
-        // Always load methodology metadata (info.toml) from source templates
+        // Load methodology metadata (info.toml) from source templates
         let templates_dir = Config::get_metadata_load_dir()?;
         let registry = MethodologyRegistry::new_dynamic(&templates_dir)?;
 
@@ -107,105 +109,121 @@ impl ProjectController {
         Ok(methodology_infos)
     }
 
-    /// Initialize a new project (Step 1: Create config).
-    ///
-    /// Creates the initial project configuration file with user-specified
-    /// language and methodology preferences. This is the first step in
-    /// project initialization.
-    ///
-    /// # Arguments
-    /// * `language` - Optional programming language for test generation
-    /// * `default_methodology` - Default methodology for use case creation
-    ///
-    /// # Returns
-    /// DisplayResult with success message and next steps guidance
-    ///
-    /// # Errors
-    /// Returns error if project is already initialized or configuration creation fails
-    pub fn init_project(
-        language: Option<String>,
-        default_methodology: String,
-    ) -> Result<DisplayResult> {
-        // Check if already initialized
-        if Self::is_initialized() {
-            return Ok(DisplayResult::error(
-                "A use case manager project already exists in this directory or a parent directory"
-                    .to_string(),
-            ));
+    /// Get installed/configured methodologies in the current project.
+    /// This is used when creating use cases to show only what's configured.
+    pub fn get_installed_methodologies() -> Result<Vec<MethodologyInfo>> {
+        use crate::config::Config;
+        use std::fs;
+
+        // Check what's actually installed in project templates directory
+        let project_templates_dir = Config::get_project_templates_dir()?;
+        let methodologies_dir = project_templates_dir.join("methodologies");
+
+        if !methodologies_dir.exists() {
+            anyhow::bail!(
+                "Project methodologies directory not found. Run 'mucm init --finalize' first."
+            );
         }
 
-        // Resolve language aliases to primary names
-        let resolved_language = if let Some(lang) = language {
-            use crate::config::Config;
+        // Read directory to find installed methodologies
+        let installed: Vec<String> = fs::read_dir(&methodologies_dir)?
+            .filter_map(|entry| {
+                entry.ok().and_then(|e| {
+                    let path = e.path();
+                    if path.is_dir() {
+                        path.file_name()
+                            .and_then(|n| n.to_str())
+                            .map(|s| s.to_string())
+                    } else {
+                        None
+                    }
+                })
+            })
+            .collect();
 
-            // Always load language metadata (info.toml) from source templates
-            let templates_dir = Config::get_metadata_load_dir()?;
-            let language_registry = LanguageRegistry::new_dynamic(&templates_dir)?;
-            if let Some(lang_def) = language_registry.get(&lang) {
-                lang_def.name().to_string()
-            } else {
-                lang
-            }
-        } else {
-            "rust".to_string()
-        };
+        if installed.is_empty() {
+            anyhow::bail!(
+                "No methodologies installed. Run 'mucm init --finalize' to copy methodology templates."
+            );
+        }
 
-        // Create minimal config
-        let config =
-            Config::for_template(Some(resolved_language), Some(default_methodology.clone()));
+        // Load methodology metadata (info.toml) from project templates
+        let registry = MethodologyRegistry::new_dynamic(&project_templates_dir)?;
 
-        // Save config file
-        Config::save_config_only(&config)?;
+        // Build info for installed methodologies
+        let methodology_infos: Vec<MethodologyInfo> = installed
+            .iter()
+            .filter_map(|name| {
+                registry.get(name).map(|methodology_def| {
+                    let display_name = name
+                        .chars()
+                        .enumerate()
+                        .map(|(i, c)| {
+                            if i == 0 {
+                                c.to_uppercase().next().unwrap()
+                            } else {
+                                c
+                            }
+                        })
+                        .collect::<String>();
 
-        let message = format!(
-            "✅ Configuration file created at .config/.mucm/mucm.toml\n\n\
-             📝 Please review and customize the configuration:\n\
-             - Programming language: {}\n\
-             - Default Methodology: {}\n\
-             - TOML directory: {}\n\
-             - Use case directory: {}\n\
-             - Test directory: {}\n\n\
-             ⚡ When ready, run: mucm init --finalize\n\n\
-             \n\
-             💡 The finalize step will:\n\
-             - Copy the used methodology templates\n\
-             - Copy the used language templates\n\
-             - You can use any methodology when creating use cases\n\
-             - Directories will be created when you create your first use case",
-            config.templates.test_language,
-            &config.templates.default_methodology,
-            config
-                .directories
-                .toml_dir
-                .as_deref()
-                .unwrap_or("docs/use-cases"),
-            config.directories.use_case_dir,
-            config.directories.test_dir,
-        );
+                    MethodologyInfo {
+                        name: name.clone(),
+                        display_name,
+                        description: methodology_def.description().to_string(),
+                    }
+                })
+            })
+            .collect();
 
-        Ok(DisplayResult::success(message))
+        Ok(methodology_infos)
     }
 
-    /// Initialize a new project with storage backend choice (Step 1: Create config).
+    /// Get available levels for a specific methodology
+    pub fn get_methodology_levels(methodology_name: &str) -> Result<Vec<DocumentationLevel>> {
+        use crate::config::Config;
+
+        // Load methodology metadata from project-installed templates
+        // This allows users to customize levels and templates per project
+        let templates_dir = Config::get_project_templates_dir()?;
+        let registry = MethodologyRegistry::new_dynamic(&templates_dir)?;
+
+        let methodology_def = registry
+            .get(methodology_name)
+            .ok_or_else(|| anyhow::anyhow!("Methodology '{}' not found", methodology_name))?;
+
+        Ok(methodology_def.levels().to_vec())
+    }
+
+    /// Initialize a new project (config + templates + directories).
     ///
-    /// Creates the initial project configuration file with user-specified
-    /// language, methodology, and storage backend preferences. This is the first step in
-    /// project initialization.
+    /// Creates the project configuration, copies templates, and creates directories in one step.
+    /// Uses defaults for any missing parameters (like the normal init process).
     ///
     /// # Arguments
-    /// * `language` - Optional programming language for test generation
-    /// * `default_methodology` - Default methodology for use case creation
-    /// * `storage` - Storage backend to use (toml or sqlite)
+    /// * `language` - Optional programming language for test generation (default: "none")
+    /// * `methodologies` - Optional list of methodologies to enable (default: all available)
+    /// * `storage` - Optional storage backend (default: "toml")
+    /// * `default_methodology` - Optional default methodology (default: first methodology or "feature")
+    /// * `use_case_dir` - Optional directory for use case files (default: "docs/use-cases")
+    /// * `test_dir` - Optional directory for test files (default: "tests/use-cases")
+    /// * `persona_dir` - Optional directory for persona files (default: "docs/personas")
+    /// * `data_dir` - Optional directory for data files (default: "use-cases-data")
     ///
     /// # Returns
-    /// DisplayResult with success message and next steps guidance
+    /// DisplayResult with completion message and usage guidance
     ///
     /// # Errors
-    /// Returns error if project is already initialized or configuration creation fails
-    pub fn init_project_with_storage(
+    /// Returns error if project is already initialized or initialization fails
+    pub fn init_project(
         language: Option<String>,
-        default_methodology: String,
-        storage: String,
+        methodologies: Option<Vec<String>>,
+        storage: Option<String>,
+        default_methodology: Option<String>,
+        use_case_dir: Option<String>,
+        test_dir: Option<String>,
+        persona_dir: Option<String>,
+        data_dir: Option<String>,
     ) -> Result<DisplayResult> {
         // Check if already initialized
         if Self::is_initialized() {
@@ -215,63 +233,112 @@ impl ProjectController {
             ));
         }
 
-        // Resolve language aliases to primary names
+        // Resolve language aliases to primary names (default: "none")
         let resolved_language = if let Some(lang) = language {
             use crate::config::Config;
 
-            // Always load language metadata (info.toml) from source templates
-            let templates_dir = Config::get_metadata_load_dir()?;
-            let language_registry = LanguageRegistry::new_dynamic(&templates_dir)?;
-            if let Some(lang_def) = language_registry.get(&lang) {
-                lang_def.name().to_string()
+            // Handle special case for "none"
+            if lang == "none" {
+                "none".to_string()
             } else {
-                lang
+                // Always load language metadata (info.toml) from source templates
+                let templates_dir = Config::get_metadata_load_dir()?;
+                let language_registry = LanguageRegistry::new_dynamic(&templates_dir)?;
+                if let Some(lang_def) = language_registry.get(&lang) {
+                    lang_def.name().to_string()
+                } else {
+                    lang
+                }
             }
         } else {
-            "rust".to_string()
+            "none".to_string()
         };
 
-        // Parse storage backend
-        let storage_backend = storage
-            .parse::<crate::config::StorageBackend>()
-            .map_err(anyhow::Error::msg)?;
+        // Get available methodologies if none specified
+        let resolved_methodologies = if let Some(meths) = methodologies {
+            meths
+        } else {
+            // Load all available methodologies as default
+            use crate::config::Config;
+            let templates_dir = Config::get_metadata_load_dir()?;
+            MethodologyRegistry::discover_available(&templates_dir).unwrap_or_default()
+        };
 
-        // Create config with storage backend
-        let config = Config::for_template_with_storage(
-            Some(resolved_language),
-            Some(default_methodology.clone()),
-            storage_backend,
+        // Default to "toml" if storage not specified
+        let resolved_storage = storage.unwrap_or_else(|| "toml".to_string());
+
+        // Default methodology: use provided, or first methodology, or "feature"
+        let resolved_default_methodology = if let Some(default) = default_methodology {
+            default
+        } else if !resolved_methodologies.is_empty() {
+            resolved_methodologies[0].clone()
+        } else {
+            "feature".to_string()
+        };
+
+        // Use defaults for directories
+        let resolved_use_case_dir = use_case_dir.unwrap_or_else(|| "docs/use-cases".to_string());
+        let resolved_test_dir = test_dir.unwrap_or_else(|| "tests/use-cases".to_string());
+        let resolved_persona_dir = persona_dir.unwrap_or_else(|| "docs/personas".to_string());
+        let resolved_data_dir = data_dir.unwrap_or_else(|| "use-cases-data".to_string());
+
+        // Create config with resolved parameters
+        let config = Config::for_template_with_methodologies_storage_and_directories(
+            Some(resolved_language.clone()),
+            resolved_methodologies.clone(),
+            Some(resolved_default_methodology.clone()),
+            resolved_storage.clone(),
+            resolved_use_case_dir.clone(),
+            resolved_test_dir.clone(),
+            resolved_persona_dir.clone(),
+            resolved_data_dir.clone(),
         );
 
         // Save config file
         Config::save_config_only(&config)?;
 
+        // Immediately finalize (copy templates) with force=true
+        Self::finalize_init_internal(true)?;
+
+        // Create all project directories
+        Config::create_project_directories()?;
+
+        // Get available methodologies for display
+        use crate::config::TemplateManager;
+        let templates_dir = TemplateManager::find_source_templates_dir()?;
+        let available = MethodologyRegistry::discover_available(&templates_dir).unwrap_or_default();
+        let methodologies_list = if available.is_empty() {
+            "Unable to detect".to_string()
+        } else {
+            available.join(", ")
+        };
+
         let message = format!(
-            "✅ Configuration file created at .config/.mucm/mucm.toml\n\n\
-             📝 Please review and customize the configuration:\n\
-             - Programming language: {}\n\
-             - Default Methodology: {}\n\
-             - Storage Backend: {}\n\
-             - TOML directory: {}\n\
-             - Use case directory: {}\n\
-             - Test directory: {}\n\n\
-             ⚡ When ready, run: mucm init --finalize\n\n\
-             \n\
-             💡 The finalize step will:\n\
-             - Copy the used methodology templates\n\
-             - Copy the used language templates\n\
-             - You can use any methodology when creating use cases\n\
-             - Directories will be created when you create your first use case",
-            config.templates.test_language,
-            &config.templates.default_methodology,
-            config.storage.backend,
-            config
-                .directories
-                .toml_dir
-                .as_deref()
-                .unwrap_or("docs/use-cases"),
-            config.directories.use_case_dir,
-            config.directories.test_dir,
+            "✅ Project setup complete!\n\n\
+             📁 Templates copied to: .config/.mucm/handlebars/\n\
+             🔧 Language: {}\n\
+             � Storage Backend: {}\n\
+             �📚 Default Methodology: {}\n\
+             📋 Available Methodologies: {}\n\n\
+             🚀 You're ready to create use cases!\n\
+             - Run: mucm create --category <category> \"<title>\" --methodology <name>\n\
+             - Run: mucm list to see all use cases\n\
+             - Run: mucm methodologies to see all available methodologies\n\
+             - Run: mucm --help for all available commands\n\n\
+             💡 Each methodology has its own settings (test generation, metadata, etc.)\n\n\
+             📁 Project directories created:\n\
+             - {} (use cases)\n\
+             - {} (tests)\n\
+             - {} (personas)\n\
+             - {} (data)",
+            resolved_language,
+            resolved_storage,
+            resolved_default_methodology,
+            methodologies_list,
+            resolved_use_case_dir,
+            resolved_test_dir,
+            resolved_persona_dir,
+            resolved_data_dir,
         );
 
         Ok(DisplayResult::success(message))
@@ -289,13 +356,20 @@ impl ProjectController {
     /// # Errors
     /// Returns error if configuration doesn't exist or template copying fails
     pub fn finalize_init() -> Result<DisplayResult> {
+        Self::finalize_init_internal(false)
+    }
+
+    /// Internal finalize with force option (public for use by interactive mode)
+    pub fn finalize_init_internal(force: bool) -> Result<DisplayResult> {
+        use std::fs;
+
         // Check if config exists
         let config = Config::load().map_err(|_| {
             anyhow::anyhow!("No configuration file found. Please run 'mucm init' first to create the configuration.")
         })?;
 
-        // Check if already finalized
-        if Config::check_templates_exist() {
+        // Check if already finalized (unless forced)
+        if !force && Config::check_templates_exist() {
             return Ok(DisplayResult::error(
                 "Project already finalized. Templates directory exists.\n\
                  If you want to re-copy templates, delete .config/.mucm/handlebars/ first."
@@ -303,9 +377,17 @@ impl ProjectController {
             ));
         }
 
+        // Delete existing templates if forcing recopy
+        if force && Config::check_templates_exist() {
+            let templates_path = std::path::Path::new(".config/.mucm/template-assets");
+            if templates_path.exists() {
+                fs::remove_dir_all(templates_path)?;
+            }
+        }
+
         // Copy templates
         Config::copy_templates_to_config_with_language(Some(
-            config.templates.test_language.clone(),
+            config.generation.test_language.clone(),
         ))?;
 
         // Get available methodologies
@@ -330,7 +412,7 @@ impl ProjectController {
              - Run: mucm methodologies to see all available methodologies\n\
              - Run: mucm --help for all available commands\n\n\
              💡 Each methodology has its own settings (test generation, metadata, etc.)",
-            config.templates.test_language,
+            config.generation.test_language,
             &config.templates.default_methodology,
             methodologies_list
         );

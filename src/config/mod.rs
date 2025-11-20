@@ -36,12 +36,13 @@ mod types;
 // Explicit public exports
 pub use file_manager::ConfigFileManager;
 pub use template_manager::TemplateManager;
-pub use types::{Config, StorageBackend, StorageConfig};
+pub use types::{Config, PersonaConfig, StorageBackend, StorageConfig};
 
 // Re-export from other modules
 use anyhow::{Context, Result};
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 
 impl Config {
     // Constants
@@ -61,36 +62,99 @@ impl Config {
     /// # Returns
     /// A minimal Config instance suitable for template processing
     pub fn for_template(test_language: Option<String>, methodology: Option<String>) -> Self {
-        let mut config = Self::default();
-        if let Some(lang) = test_language {
-            config.generation.test_language = lang.clone();
-            config.templates.test_language = lang;
-        }
-        if let Some(method) = methodology {
-            config.templates.default_methodology = method;
-        }
-        config
+        // Load default config to get the methodologies from source-templates/config.toml
+        let default_config = Self::default();
+
+        let methodologies = if let Some(ref method) = methodology.clone() {
+            vec![method.clone()]
+        } else {
+            // Use methodologies from default config (loaded from source-templates/config.toml)
+            default_config.templates.methodologies.clone()
+        };
+        Self::for_template_with_methodologies_and_storage(
+            test_language,
+            methodologies,
+            methodology.or(Some(default_config.templates.default_methodology)),
+            "toml".to_string(),
+        )
     }
 
-    /// Create a minimal config for template processing with storage backend.
+    /// Create a minimal config for template processing with multiple methodologies.
     ///
     /// This creates a basic configuration used only for template variable substitution.
     /// It's not a complete project configuration and should not be saved directly.
     ///
     /// # Arguments
     /// * `test_language` - The programming language for test templates
-    /// * `methodology` - Optional default methodology override
-    /// * `storage_backend` - The storage backend to use
+    /// * `methodologies` - List of methodologies to enable
+    /// * `default_methodology` - Optional default methodology override
     ///
     /// # Returns
     /// A minimal Config instance suitable for template processing
-    pub fn for_template_with_storage(
+    pub fn for_template_with_methodologies_and_storage(
         test_language: Option<String>,
-        methodology: Option<String>,
-        storage_backend: StorageBackend,
+        methodologies: Vec<String>,
+        default_methodology: Option<String>,
+        storage: String,
     ) -> Self {
-        let mut config = Self::for_template(test_language, methodology);
-        config.storage.backend = storage_backend;
+        let mut config = Self::default();
+        if let Some(lang) = test_language {
+            config.generation.test_language = lang.clone();
+        }
+        if !methodologies.is_empty() {
+            config.templates.methodologies = methodologies;
+        }
+        if let Some(method) = default_methodology {
+            config.templates.default_methodology = method;
+        }
+        // Set storage backend
+        use crate::config::types::StorageBackend;
+        if let Ok(backend) = StorageBackend::from_str(&storage) {
+            config.storage.backend = backend;
+        }
+        // If parsing fails, keep the default (Toml)
+        config
+    }
+
+    /// Create a minimal config with methodologies, storage, and directories.
+    ///
+    /// This creates a basic configuration with directory customization.
+    ///
+    /// # Arguments
+    /// * `test_language` - The programming language for test templates
+    /// * `methodologies` - List of methodologies to enable
+    /// * `default_methodology` - Optional default methodology override
+    /// * `storage` - Storage backend (toml or sqlite)
+    /// * `use_case_dir` - Directory for use case files
+    /// * `test_dir` - Directory for test files
+    /// * `persona_dir` - Directory for persona files
+    /// * `data_dir` - Directory for data files
+    ///
+    /// # Returns
+    /// A Config instance with custom directories
+    pub fn for_template_with_methodologies_storage_and_directories(
+        test_language: Option<String>,
+        methodologies: Vec<String>,
+        default_methodology: Option<String>,
+        storage: String,
+        use_case_dir: String,
+        test_dir: String,
+        persona_dir: String,
+        data_dir: String,
+    ) -> Self {
+        let mut config = Self::for_template_with_methodologies_and_storage(
+            test_language,
+            methodologies,
+            default_methodology,
+            storage,
+        );
+
+        // Update directories
+        config.directories.use_case_dir = use_case_dir;
+        config.directories.test_dir = test_dir;
+        config.directories.persona_dir = persona_dir;
+        config.directories.data_dir = data_dir;
+
         config
     }
 
@@ -115,6 +179,27 @@ impl Config {
     pub fn get_metadata_load_dir() -> Result<PathBuf> {
         use crate::config::TemplateManager;
         TemplateManager::find_source_templates_dir()
+    }
+
+    /// Get the directory for project-installed templates.
+    ///
+    /// Returns the path to .config/.mucm/template-assets/ where project-specific
+    /// customized templates are stored. This allows each project to have their own
+    /// custom templates and levels.
+    ///
+    /// # Returns
+    /// Result with PathBuf pointing to project template assets directory, or error if not initialized
+    pub fn get_project_templates_dir() -> Result<PathBuf> {
+        let base_path = Path::new(".");
+        let templates_dir = base_path.join(Self::CONFIG_DIR).join(Self::TEMPLATES_DIR);
+
+        if !templates_dir.exists() {
+            anyhow::bail!(
+                "Project templates directory not found. Run 'mucm init' first or 'mucm finalize-init' to complete initialization."
+            );
+        }
+
+        Ok(templates_dir)
     }
 
     /// Save configuration file only (without copying templates or creating directories).
@@ -203,6 +288,28 @@ impl Config {
         TemplateManager::copy_templates_to_config(base_dir)
     }
 
+    /// Create all project directories as specified in the configuration.
+    ///
+    /// Creates use case, test, persona, and data directories if they don't exist.
+    /// This is typically called after initialization to set up the project structure.
+    ///
+    /// # Returns
+    /// `Ok(())` on success, or an error if directory creation fails
+    pub fn create_project_directories() -> Result<()> {
+        let config = Self::load()?;
+
+        fs::create_dir_all(&config.directories.use_case_dir)
+            .context("Failed to create use case directory")?;
+        fs::create_dir_all(&config.directories.test_dir)
+            .context("Failed to create test directory")?;
+        fs::create_dir_all(&config.directories.persona_dir)
+            .context("Failed to create persona directory")?;
+        fs::create_dir_all(&config.directories.data_dir)
+            .context("Failed to create data directory")?;
+
+        Ok(())
+    }
+
     /// Load default configuration from source-templates/config.toml
     fn load_default_from_template() -> Result<Self> {
         use crate::config::template_manager::TemplateManager;
@@ -218,6 +325,7 @@ impl Config {
             Ok(dir) => dir,
             Err(_) => {
                 // Fallback: create a minimal default config when source-templates is not available
+                #[allow(deprecated)]
                 return Ok(Config {
                     project: ProjectConfig {
                         name: "Default Project".to_string(),
@@ -226,11 +334,10 @@ impl Config {
                     directories: DirectoryConfig {
                         use_case_dir: "use-cases".to_string(),
                         test_dir: "tests".to_string(),
-                        template_dir: None,
-                        toml_dir: None,
+                        persona_dir: "docs/personas".to_string(),
+                        data_dir: "use-cases-data".to_string(),
                     },
                     templates: TemplateConfig {
-                        test_language: "python".to_string(),
                         methodologies: vec![
                             "business".to_string(),
                             "developer".to_string(),
@@ -240,7 +347,7 @@ impl Config {
                         default_methodology: "feature".to_string(),
                     },
                     generation: GenerationConfig {
-                        test_language: "python".to_string(),
+                        test_language: "none".to_string(),
                         auto_generate_tests: false,
                         overwrite_test_documentation: false,
                     },
@@ -251,7 +358,7 @@ impl Config {
                         created: true,
                         last_updated: true,
                     },
-                    persona_fields: std::collections::HashMap::new(),
+                    persona: PersonaConfig::default(),
                 });
             }
         };
@@ -275,16 +382,19 @@ impl Config {
                 ]
             });
 
-        // Set methodologies and default methodology dynamically
+        // Set methodologies dynamically
         config.templates.methodologies = methodologies.clone();
-        config.templates.default_methodology = methodologies
-            .first()
-            .cloned()
-            .unwrap_or_else(|| "feature".to_string()); // Fallback to "feature" if no methodologies found
+        // Keep the default_methodology from config.toml unless it's empty
+        if config.templates.default_methodology.is_empty() {
+            config.templates.default_methodology = methodologies
+                .first()
+                .cloned()
+                .unwrap_or_else(|| "feature".to_string()); // Fallback to "feature" if no methodologies found
+        }
 
         // Set default generation config that matches the template defaults
         config.generation = GenerationConfig {
-            test_language: config.templates.test_language.clone(),
+            test_language: config.generation.test_language.clone(),
             auto_generate_tests: false,
             overwrite_test_documentation: false,
         };
@@ -363,15 +473,12 @@ mod tests {
                 if let Some(lang_def) = registry.get(lang) {
                     let primary_name = lang_def.name().to_string();
                     config.generation.test_language = primary_name.clone();
-                    config.templates.test_language = primary_name.clone();
                 } else {
                     config.generation.test_language = lang.clone();
-                    config.templates.test_language = lang.clone();
                 }
             } else {
                 // No registry available, just set the language directly
                 config.generation.test_language = lang.clone();
-                config.templates.test_language = lang.clone();
             }
         }
 
@@ -433,8 +540,12 @@ mod tests {
         if source_templates_available {
             // Only check for templates if source templates were available
             assert!(templates_dir.exists(), "Templates directory should exist");
-            assert!(templates_dir.join("developer/uc_simple.hbs").exists());
-            assert!(templates_dir.join("developer/uc_detailed.hbs").exists());
+            assert!(templates_dir
+                .join("methodologies/developer/uc_normal.hbs")
+                .exists());
+            assert!(templates_dir
+                .join("methodologies/developer/uc_advanced.hbs")
+                .exists());
             assert!(templates_dir.join("languages/rust/test.hbs").exists());
         }
         // If source templates not available, templates won't exist but that's okay for testing
@@ -469,13 +580,13 @@ mod tests {
             // If source templates not available, template won't exist but config should still work
         }
 
-        // Test with None (default language)
+        // Test with None (default language should be "none")
         {
             let temp_dir = TempDir::new()?;
             std::env::set_current_dir(&temp_dir)?;
 
             let config = init_project_with_language(None)?;
-            assert_eq!(config.generation.test_language, "python"); // Default from Config::default()
+            assert_eq!(config.generation.test_language, "none"); // Default from Config::default()
         }
 
         Ok(())
@@ -620,19 +731,23 @@ mod tests {
         fs::create_dir_all(&config.directories.use_case_dir)?;
         fs::create_dir_all(&config.directories.test_dir)?;
 
-        use crate::core::UseCaseApplicationService;
-        let mut coordinator = UseCaseApplicationService::load()?;
+        use crate::core::UseCaseCoordinator;
+        let mut coordinator = UseCaseCoordinator::load()?;
         let config = Config::load()?;
         let default_methodology = config.templates.default_methodology.clone();
 
-        let _uc_id = coordinator.create_use_case_with_methodology(
+        let _uc_id = coordinator.create_use_case_with_views(
             "Integration Test Use Case".to_string(),
             "integration".to_string(),
             Some("Testing integration between auto-init and settings".to_string()),
-            &default_methodology,
+            &format!("{}:normal", default_methodology),
         )?;
 
-        let custom_use_case_file = Path::new("docs/custom-use-cases/integration/UC-INT-001.md");
+        let filename = format!(
+            "docs/custom-use-cases/integration/UC-INT-001-{}-normal.md",
+            default_methodology
+        );
+        let custom_use_case_file = Path::new(&filename);
         assert!(
             custom_use_case_file.exists(),
             "Use case should be created in custom directory"
@@ -660,13 +775,11 @@ mod tests {
         // Test with both language and methodology set
         let config = Config::for_template(Some("python".to_string()), Some("feature".to_string()));
         assert_eq!(config.generation.test_language, "python");
-        assert_eq!(config.templates.test_language, "python");
         assert_eq!(config.templates.default_methodology, "feature");
 
         // Test with language set but methodology None (should keep default methodology)
         let config_lang_only = Config::for_template(Some("rust".to_string()), None);
         assert_eq!(config_lang_only.generation.test_language, "rust");
-        assert_eq!(config_lang_only.templates.test_language, "rust");
         // Should use default methodology from Config::default()
         assert!(!config_lang_only.templates.default_methodology.is_empty());
 
@@ -678,10 +791,6 @@ mod tests {
             default_config.generation.test_language
         );
         assert_eq!(
-            config_methodology_only.templates.test_language,
-            default_config.templates.test_language
-        );
-        assert_eq!(
             config_methodology_only.templates.default_methodology,
             "business"
         );
@@ -691,10 +800,6 @@ mod tests {
         assert_eq!(
             config_both_none.generation.test_language,
             default_config.generation.test_language
-        );
-        assert_eq!(
-            config_both_none.templates.test_language,
-            default_config.templates.test_language
         );
         assert_eq!(
             config_both_none.templates.default_methodology,
@@ -709,6 +814,16 @@ mod tests {
     fn test_save_config_only() -> Result<()> {
         let temp_dir = TempDir::new()?;
         std::env::set_current_dir(&temp_dir)?;
+
+        // Set CARGO_MANIFEST_DIR to the project root so source templates can be found
+        let exe_path = std::env::current_exe()?;
+        let project_root = exe_path
+            .parent() // deps
+            .and_then(|p| p.parent()) // debug
+            .and_then(|p| p.parent()) // target
+            .and_then(|p| p.parent()) // project root
+            .ok_or_else(|| anyhow::anyhow!("Could not determine project root"))?;
+        std::env::set_var("CARGO_MANIFEST_DIR", project_root);
 
         let mut config = Config::default();
         config.project.name = "Test Project".to_string();
@@ -728,6 +843,9 @@ mod tests {
         let loaded_config = Config::load()?;
         assert_eq!(loaded_config.project.name, "Test Project");
         assert_eq!(loaded_config.generation.test_language, "javascript");
+
+        // Clean up
+        std::env::remove_var("CARGO_MANIFEST_DIR");
 
         Ok(())
     }

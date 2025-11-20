@@ -30,7 +30,7 @@
 //!
 //! Templates are selected based on the project's configuration:
 //! - `config.templates.methodologies` determines which methodologies to copy
-//! - `config.templates.test_language` determines which language templates to copy
+//! - `config.generation.test_language` determines which language templates to copy
 
 use crate::config::types::Config;
 use anyhow::{Context, Result};
@@ -53,14 +53,89 @@ impl TemplateManager {
     /// * The configuration cannot be serialized to TOML
     /// * The configuration file cannot be written
     pub fn create_config_from_template(config: &Config) -> Result<()> {
-        // Serialize the config to TOML instead of copying the template
-        // This ensures the user's chosen language and methodology are saved
-        let config_content =
-            toml::to_string_pretty(config).context("Failed to serialize config to TOML")?;
+        // Load the template file to preserve comments and formatting
+        let source_templates_dir = Self::find_source_templates_dir()?;
+        let template_path = source_templates_dir.join("config.toml");
+
+        let mut template_content =
+            fs::read_to_string(&template_path).context("Failed to read config template")?;
+
+        // Update only the specific values that differ from defaults
+        // Project name and description
+        template_content = template_content.replace(
+            r#"name = "My Project""#,
+            &format!(r#"name = "{}""#, config.project.name),
+        );
+        template_content = template_content.replace(
+            r#"description = "A project managed with use case manager""#,
+            &format!(r#"description = "{}""#, config.project.description),
+        );
+
+        // Methodologies - use regex to replace any array content
+        let methodologies_str = config
+            .templates
+            .methodologies
+            .iter()
+            .map(|m| format!(r#""{}""#, m))
+            .collect::<Vec<_>>()
+            .join(", ");
+
+        // Use a more flexible replacement that handles any array content
+        // This regex matches: methodologies = [anything]
+        let re = regex::Regex::new(r#"methodologies = \[([^\]]*)\]"#).unwrap();
+        template_content = re
+            .replace(
+                &template_content,
+                format!("methodologies = [{}]", methodologies_str),
+            )
+            .to_string();
+
+        // Default methodology
+        template_content = template_content.replace(
+            r#"default_methodology = "feature""#,
+            &format!(
+                r#"default_methodology = "{}""#,
+                config.templates.default_methodology
+            ),
+        );
+
+        // Test language
+        template_content = template_content.replace(
+            r#"test_language = "none""#,
+            &format!(r#"test_language = "{}""#, config.generation.test_language),
+        );
+
+        // Storage backend
+        let backend_str = match config.storage.backend {
+            crate::config::StorageBackend::Toml => "toml",
+            crate::config::StorageBackend::Sqlite => "sqlite",
+        };
+        template_content = template_content.replace(
+            r#"backend = "toml""#,
+            &format!(r#"backend = "{}""#, backend_str),
+        );
+
+        // Directories
+        template_content = template_content.replace(
+            r#"use_case_dir = "docs/use-cases""#,
+            &format!(r#"use_case_dir = "{}""#, config.directories.use_case_dir),
+        );
+        template_content = template_content.replace(
+            r#"test_dir = "tests/use-cases""#,
+            &format!(r#"test_dir = "{}""#, config.directories.test_dir),
+        );
+        template_content = template_content.replace(
+            r#"persona_dir = "docs/personas""#,
+            &format!(r#"persona_dir = "{}""#, config.directories.persona_dir),
+        );
+        template_content = template_content.replace(
+            r#"data_dir = "use-cases-data""#,
+            &format!(r#"data_dir = "{}""#, config.directories.data_dir),
+        );
 
         // Write the config
         let config_path = Config::config_path();
-        fs::write(&config_path, config_content).context("Failed to write config file")?;
+        fs::write(&config_path, template_content).context("Failed to write config file")?;
 
         Ok(())
     }
@@ -68,9 +143,13 @@ impl TemplateManager {
     /// Locate the source templates directory.
     ///
     /// Searches for the source-templates directory in multiple locations:
-    /// 1. Current working directory
-    /// 2. CARGO_MANIFEST_DIR environment variable (for tests/builds)
-    /// 3. Relative to the current executable path
+    /// 1. User config directory (~/.config/mucm/templates/)
+    /// 2. Current working directory
+    /// 3. CARGO_MANIFEST_DIR environment variable (for tests/builds)
+    /// 4. Relative to the current executable path
+    ///
+    /// If templates are found in development locations (2-4) but not in user config,
+    /// they are automatically copied to ~/.config/mucm/templates/ for future use.
     ///
     /// # Returns
     /// The path to the source-templates directory, or an error if not found.
@@ -79,9 +158,30 @@ impl TemplateManager {
     /// Returns an error if the source-templates directory cannot be located
     /// in any of the expected locations.
     pub fn find_source_templates_dir() -> Result<PathBuf> {
-        // Try current directory first
+        use directories::ProjectDirs;
+
+        // Try user config directory first (~/.config/mucm/templates/)
+        if let Some(proj_dirs) = ProjectDirs::from("", "", "mucm") {
+            let user_templates = proj_dirs.config_dir().join("templates");
+            if user_templates.exists() {
+                return Ok(user_templates);
+            }
+        }
+
+        // Try current directory
         let local_templates = Path::new("source-templates");
         if local_templates.exists() {
+            // Found in dev location - install to user config for future use
+            Self::install_templates_to_user_config(&local_templates)?;
+
+            // Return user config path if installation succeeded
+            if let Some(proj_dirs) = ProjectDirs::from("", "", "mucm") {
+                let user_templates = proj_dirs.config_dir().join("templates");
+                if user_templates.exists() {
+                    return Ok(user_templates);
+                }
+            }
+
             return Ok(local_templates.to_path_buf());
         }
 
@@ -89,6 +189,17 @@ impl TemplateManager {
         if let Ok(manifest_dir) = std::env::var("CARGO_MANIFEST_DIR") {
             let cargo_templates = Path::new(&manifest_dir).join("source-templates");
             if cargo_templates.exists() {
+                // Found in dev location - install to user config for future use
+                Self::install_templates_to_user_config(&cargo_templates)?;
+
+                // Return user config path if installation succeeded
+                if let Some(proj_dirs) = ProjectDirs::from("", "", "mucm") {
+                    let user_templates = proj_dirs.config_dir().join("templates");
+                    if user_templates.exists() {
+                        return Ok(user_templates);
+                    }
+                }
+
                 return Ok(cargo_templates);
             }
         }
@@ -103,13 +214,64 @@ impl TemplateManager {
                     .map(|p| p.join("source-templates"));
                 if let Some(dev_templates) = dev_templates {
                     if dev_templates.exists() {
+                        // Found in dev location - install to user config for future use
+                        Self::install_templates_to_user_config(&dev_templates)?;
+
+                        // Return user config path if installation succeeded
+                        if let Some(proj_dirs) = ProjectDirs::from("", "", "mucm") {
+                            let user_templates = proj_dirs.config_dir().join("templates");
+                            if user_templates.exists() {
+                                return Ok(user_templates);
+                            }
+                        }
+
                         return Ok(dev_templates);
                     }
                 }
             }
         }
 
-        anyhow::bail!("Source templates directory not found. Run from project root or ensure source-templates/ exists.")
+        anyhow::bail!(
+            "Source templates directory not found. Run from project root or ensure source-templates/ exists.\n\
+             Tip: Templates should be installed to ~/.config/mucm/templates/ automatically on first run."
+        )
+    }
+
+    /// Install templates to user config directory (~/.config/mucm/templates/)
+    ///
+    /// This function copies the source templates from a development location
+    /// to the user's config directory for persistent use across runs.
+    ///
+    /// # Arguments
+    /// * `source_path` - Path to the source-templates directory to copy from
+    ///
+    /// # Returns
+    /// Ok(()) if successful, or an error if the copy fails
+    fn install_templates_to_user_config(source_path: &Path) -> Result<()> {
+        use directories::ProjectDirs;
+
+        let proj_dirs = ProjectDirs::from("", "", "mucm")
+            .ok_or_else(|| anyhow::anyhow!("Could not determine user config directory"))?;
+
+        let user_templates_dir = proj_dirs.config_dir().join("templates");
+
+        // Skip if already exists
+        if user_templates_dir.exists() {
+            return Ok(());
+        }
+
+        // Create parent directory
+        if let Some(parent) = user_templates_dir.parent() {
+            fs::create_dir_all(parent).context("Failed to create user config directory")?;
+        }
+
+        // Copy templates recursively
+        Self::copy_dir_recursive(source_path, &user_templates_dir)
+            .context("Failed to copy templates to user config directory")?;
+
+        eprintln!("✓ Installed templates to {}", user_templates_dir.display());
+
+        Ok(())
     }
 
     /// Copy all templates to the configuration directory.
@@ -156,6 +318,9 @@ impl TemplateManager {
         // Copy root template files
         Self::copy_root_templates(&source_templates_dir, &config_templates_dir)?;
 
+        // Copy scenarios directory
+        Self::copy_scenarios(&source_templates_dir, &config_templates_dir)?;
+
         // Copy methodologies
         Self::copy_methodologies(&source_templates_dir, &config, &config_templates_dir)?;
 
@@ -183,6 +348,28 @@ impl TemplateManager {
             let overview_dst = config_templates_dir.join("overview.hbs");
             fs::copy(&overview_src, &overview_dst)?;
             println!("✓ Copied overview template");
+        }
+
+        Ok(())
+    }
+
+    /// Copy shared scenario templates.
+    ///
+    /// Copies the scenarios directory containing shared scenario rendering templates
+    /// that can be used by multiple methodologies via Handlebars partials.
+    ///
+    /// # Arguments
+    /// * `source_templates_dir` - Path to the source templates directory
+    /// * `config_templates_dir` - Path to the destination templates directory
+    ///
+    /// # Errors
+    /// Returns an error if the scenarios directory exists but cannot be copied.
+    fn copy_scenarios(source_templates_dir: &Path, config_templates_dir: &Path) -> Result<()> {
+        let scenarios_src = source_templates_dir.join("scenarios");
+        if scenarios_src.exists() {
+            let scenarios_dst = config_templates_dir.join("scenarios");
+            Self::copy_dir_recursive(&scenarios_src, &scenarios_dst)?;
+            println!("✓ Copied scenario templates");
         }
 
         Ok(())
@@ -227,27 +414,20 @@ impl TemplateManager {
                 );
             }
 
-            // Validate that required files exist
-            let config_file = source_method_dir.join("config.toml");
-            if !config_file.exists() {
+            // Validate that required methodology.toml file exists
+            let methodology_file = source_method_dir.join("methodology.toml");
+            if !methodology_file.exists() {
                 anyhow::bail!(
-                    "Methodology '{}' is missing config.toml file in {:?}",
+                    "Methodology '{}' is missing methodology.toml file in {:?}",
                     methodology,
                     source_method_dir
                 );
             }
 
-            let info_file = source_method_dir.join("info.toml");
-            if !info_file.exists() {
-                anyhow::bail!(
-                    "Methodology '{}' is missing info.toml file in {:?}",
-                    methodology,
-                    source_method_dir
-                );
-            }
-
-            // Copy methodology templates to template-assets/{methodology}/
-            let target_method_templates = config_templates_dir.join(methodology);
+            // Copy methodology templates to template-assets/methodologies/{methodology}/
+            let methodologies_dir = config_templates_dir.join("methodologies");
+            fs::create_dir_all(&methodologies_dir)?;
+            let target_method_templates = methodologies_dir.join(methodology);
             Self::copy_dir_recursive(&source_method_dir, &target_method_templates)?;
 
             println!("✓ Copied methodology: {}", methodology);
@@ -274,24 +454,30 @@ impl TemplateManager {
         config: &Config,
         config_templates_dir: &Path,
     ) -> Result<()> {
+        // Skip language template copying if test_language is "none"
+        if config.generation.test_language == "none" {
+            println!("⊘ Skipping language templates (test_language = none)");
+            return Ok(());
+        }
+
         let source_languages = source_templates_dir.join("languages");
         if !source_languages.exists() {
             return Ok(()); // Languages are optional
         }
 
-        let source_lang_dir = source_languages.join(&config.templates.test_language);
+        let source_lang_dir = source_languages.join(&config.generation.test_language);
         if source_lang_dir.exists() {
             let target_languages = config_templates_dir.join("languages");
-            let target_lang_dir = target_languages.join(&config.templates.test_language);
+            let target_lang_dir = target_languages.join(&config.generation.test_language);
             Self::copy_dir_recursive(&source_lang_dir, &target_lang_dir)?;
             println!(
                 "✓ Copied language templates: {}",
-                config.templates.test_language
+                config.generation.test_language
             );
         } else {
             println!(
                 "⚠ Language '{}' not found in source-templates/languages/, skipping",
-                config.templates.test_language
+                config.generation.test_language
             );
         }
 
@@ -360,6 +546,8 @@ mod tests {
     #[test]
     #[serial]
     fn test_find_source_templates_dir_current_dir() -> Result<()> {
+        use directories::ProjectDirs;
+
         let temp_dir = TempDir::new()?;
         std::env::set_current_dir(&temp_dir)?;
 
@@ -367,7 +555,20 @@ mod tests {
         fs::create_dir("source-templates")?;
 
         let result = TemplateManager::find_source_templates_dir()?;
-        assert_eq!(result, Path::new("source-templates"));
+
+        // The function now auto-installs to user config, so check for either location
+        let is_valid = if let Some(proj_dirs) = ProjectDirs::from("", "", "mucm") {
+            let user_templates = proj_dirs.config_dir().join("templates");
+            result == user_templates || result == Path::new("source-templates")
+        } else {
+            result == Path::new("source-templates")
+        };
+
+        assert!(
+            is_valid,
+            "Expected templates in user config or local dir, got: {:?}",
+            result
+        );
 
         Ok(())
     }
@@ -375,6 +576,8 @@ mod tests {
     #[test]
     #[serial]
     fn test_find_source_templates_dir_manifest_dir() -> Result<()> {
+        use directories::ProjectDirs;
+
         let temp_dir = TempDir::new()?;
         std::env::set_current_dir(&temp_dir)?;
 
@@ -383,10 +586,23 @@ mod tests {
         let expected_path = manifest_dir.join("source-templates");
         fs::create_dir(&manifest_dir)?;
         fs::create_dir(&expected_path)?;
-        std::env::set_var("CARGO_MANIFEST_DIR", manifest_dir);
+        std::env::set_var("CARGO_MANIFEST_DIR", &manifest_dir);
 
         let result = TemplateManager::find_source_templates_dir()?;
-        assert_eq!(result, expected_path);
+
+        // The function now auto-installs to user config, so check for either location
+        let is_valid = if let Some(proj_dirs) = ProjectDirs::from("", "", "mucm") {
+            let user_templates = proj_dirs.config_dir().join("templates");
+            result == user_templates || result == expected_path
+        } else {
+            result == expected_path
+        };
+
+        assert!(
+            is_valid,
+            "Expected templates in user config or manifest dir, got: {:?}",
+            result
+        );
 
         // Clean up
         std::env::remove_var("CARGO_MANIFEST_DIR");
@@ -397,6 +613,8 @@ mod tests {
     #[test]
     #[serial]
     fn test_find_source_templates_dir_not_found() -> Result<()> {
+        use directories::ProjectDirs;
+
         let temp_dir = TempDir::new()?;
         std::env::set_current_dir(&temp_dir)?;
 
@@ -404,6 +622,22 @@ mod tests {
         std::env::remove_var("CARGO_MANIFEST_DIR");
 
         let result = TemplateManager::find_source_templates_dir();
+
+        // If user config directory exists from previous runs, the function will succeed
+        // Otherwise it should fail
+        if let Some(proj_dirs) = ProjectDirs::from("", "", "mucm") {
+            let user_templates = proj_dirs.config_dir().join("templates");
+            if user_templates.exists() {
+                // Templates exist in user config, so function should succeed
+                assert!(
+                    result.is_ok(),
+                    "Expected success when user config templates exist"
+                );
+                return Ok(());
+            }
+        }
+
+        // No templates anywhere, should fail
         assert!(result.is_err());
         assert!(result
             .unwrap_err()
@@ -551,7 +785,7 @@ mod tests {
         fs::create_dir_all(&method_dir)?;
         fs::create_dir(&dest_templates)?;
 
-        // Create a template file but no config.toml
+        // Create a template file but no methodology.toml
         fs::write(method_dir.join("template.hbs"), "template content")?;
 
         let mut config = Config::default();
@@ -562,7 +796,7 @@ mod tests {
         assert!(result
             .unwrap_err()
             .to_string()
-            .contains("missing config.toml file"));
+            .contains("missing methodology.toml file"));
 
         Ok(())
     }
@@ -599,7 +833,7 @@ mod tests {
         fs::create_dir(&dest_templates)?;
 
         let mut config = Config::default();
-        config.templates.test_language = "nonexistent_lang".to_string();
+        config.generation.test_language = "nonexistent_lang".to_string();
 
         // Should succeed but log a warning (language templates are optional)
         let result =

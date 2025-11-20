@@ -1,5 +1,7 @@
 # CLI Commands
 
+> **📝 NOTE**: For the most current and comprehensive CLI documentation, see [CLI Reference Guide](../guides/cli-reference.md).
+
 All the commands you can use with MUCM!
 
 ## The Basics
