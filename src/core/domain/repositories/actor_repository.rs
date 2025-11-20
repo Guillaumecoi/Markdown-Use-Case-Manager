@@ -7,7 +7,7 @@ use anyhow::Result;
 /// Implementations can use different storage backends (TOML, database, etc.)
 pub trait ActorRepository {
     // === ActorEntity operations (new unified actor system) ===
-    
+
     /// Save an actor (data file only)
     fn save_actor(&self, actor: &ActorEntity) -> Result<()>;
 
@@ -27,7 +27,7 @@ pub trait ActorRepository {
     fn save_actor_markdown(&self, actor_id: &str, markdown_content: &str) -> Result<()>;
 
     // === Persona compatibility operations (backward compatibility) ===
-    
+
     /// Save a persona (backward compatibility wrapper)
     /// Converts Persona to ActorEntity and delegates to save_actor
     fn save_persona(&self, persona: &Persona) -> Result<()>;

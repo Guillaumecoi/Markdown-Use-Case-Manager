@@ -25,8 +25,11 @@ impl FieldHelpers {
     /// Formatted help string combining description and example
     pub fn format_field_help(description: Option<&str>, example: Option<&str>) -> String {
         match (description, example) {
-            (Some(desc), Some(ex)) => format!("{}
-💡 Example: {}", desc, ex),
+            (Some(desc), Some(ex)) => format!(
+                "{}
+💡 Example: {}",
+                desc, ex
+            ),
             (Some(desc), None) => desc.to_string(),
             (None, Some(ex)) => format!("Example: {}", ex),
             (None, None) => String::new(),
@@ -201,10 +204,8 @@ impl FieldHelpers {
         current: &str,
         config: &CustomFieldConfig,
     ) -> Result<Option<String>> {
-        let help = Self::format_field_help(
-            config.description.as_deref(),
-            config.example.as_deref(),
-        );
+        let help =
+            Self::format_field_help(config.description.as_deref(), config.example.as_deref());
 
         let mut prompt = Text::new(label).with_default(current);
 
@@ -273,10 +274,8 @@ impl FieldHelpers {
         current_value: Option<&JsonValue>,
         config: &CustomFieldConfig,
     ) -> Result<Option<String>> {
-        let help = Self::format_field_help(
-            config.description.as_deref(),
-            config.example.as_deref(),
-        );
+        let help =
+            Self::format_field_help(config.description.as_deref(), config.example.as_deref());
 
         match config.field_type.as_str() {
             "array" => {

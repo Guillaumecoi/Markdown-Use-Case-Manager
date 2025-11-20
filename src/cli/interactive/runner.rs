@@ -225,7 +225,7 @@ impl InteractiveRunner {
         let config = Config::load()?;
         let command = PersonaCommands::Create { id, name };
 
-        handle_persona_command(command, &config)?;
+        handle_persona_command(command)?;
         Ok("Persona created successfully!".to_string())
     }
 
@@ -252,7 +252,7 @@ impl InteractiveRunner {
 
         let config = Config::load()?;
         let command = PersonaCommands::List;
-        handle_persona_command(command, &config)
+        handle_persona_command(command)
     }
 
     /// Show persona details
@@ -263,7 +263,7 @@ impl InteractiveRunner {
 
         let config = Config::load()?;
         let command = PersonaCommands::Show { id: id.to_string() };
-        handle_persona_command(command, &config)
+        handle_persona_command(command)
     }
 
     /// Delete a persona
@@ -274,7 +274,7 @@ impl InteractiveRunner {
 
         let config = Config::load()?;
         let command = PersonaCommands::Delete { id: id.to_string() };
-        handle_persona_command(command, &config)?;
+        handle_persona_command(command)?;
         Ok(format!("Persona '{}' deleted successfully!", id))
     }
 

@@ -133,10 +133,7 @@ impl ConfigWorkflow {
             config.directories.use_case_dir
         );
         println!("Test Dir: {}", config.directories.test_dir);
-        println!(
-            "Persona Dir: {} (generated)",
-            config.directories.actor_dir
-        );
+        println!("Persona Dir: {} (generated)", config.directories.actor_dir);
         println!(
             "Data Dir: {} (source of truth)",
             config.directories.data_dir

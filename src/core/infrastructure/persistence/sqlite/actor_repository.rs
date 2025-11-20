@@ -2,7 +2,9 @@
 //!
 //! Stores actors (personas and system actors) in a SQLite database with full CRUD operations.
 
-use crate::core::domain::{ActorEntity, ActorRepository, ActorType, Metadata, Persona, PersonaRepository};
+use crate::core::domain::{
+    ActorEntity, ActorRepository, ActorType, Metadata, Persona, PersonaRepository,
+};
 use anyhow::Result;
 use rusqlite::{params, Connection, OptionalExtension};
 use std::collections::HashMap;
@@ -137,8 +139,7 @@ impl ActorRepository for SqliteActorRepository {
                     .unwrap_or_else(|_| chrono::Utc::now());
 
                 let actor_type_str: String = row.get(2)?;
-                let actor_type = ActorType::from_str(&actor_type_str)
-                    .unwrap_or(ActorType::Custom);
+                let actor_type = ActorType::from_str(&actor_type_str).unwrap_or(ActorType::Custom);
 
                 Ok(ActorEntity {
                     id: row.get(0)?,
@@ -181,8 +182,8 @@ impl ActorRepository for SqliteActorRepository {
                         .unwrap_or_else(|_| chrono::Utc::now());
 
                     let actor_type_str: String = row.get(2)?;
-                    let actor_type = ActorType::from_str(&actor_type_str)
-                        .unwrap_or(ActorType::Custom);
+                    let actor_type =
+                        ActorType::from_str(&actor_type_str).unwrap_or(ActorType::Custom);
 
                     Ok(ActorEntity {
                         id: row.get(0)?,

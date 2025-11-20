@@ -9,9 +9,7 @@ use crate::core::domain::PersonaRepository;
 use crate::core::infrastructure::persistence::sqlite::{
     SqliteActorRepository, SqliteUseCaseRepository,
 };
-use crate::core::infrastructure::persistence::toml::{
-    TomlActorRepository, TomlUseCaseRepository,
-};
+use crate::core::infrastructure::persistence::toml::{TomlActorRepository, TomlUseCaseRepository};
 use crate::core::infrastructure::persistence::traits::UseCaseRepository;
 use anyhow::{Context, Result};
 use rusqlite::Connection;
