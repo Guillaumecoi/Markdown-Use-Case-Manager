@@ -19,12 +19,13 @@
 
 use anyhow::Result;
 
-use crate::controller::{ProjectController, UseCaseController};
+use crate::controller::{PersonaController, ProjectController, UseCaseController};
 use crate::core::{FieldCollection, MethodologyFieldCollector};
 
 /// Interactive runner that coordinates interactive CLI workflows
 pub struct InteractiveRunner {
     use_case_controller: Option<UseCaseController>,
+    persona_controller: Option<PersonaController>,
 }
 
 impl InteractiveRunner {
@@ -32,6 +33,7 @@ impl InteractiveRunner {
     pub fn new() -> Self {
         Self {
             use_case_controller: None,
+            persona_controller: None,
         }
     }
 
@@ -274,6 +276,70 @@ impl InteractiveRunner {
         let command = PersonaCommands::Delete { id: id.to_string() };
         handle_persona_command(command, &config)?;
         Ok(format!("Persona '{}' deleted successfully!", id))
+    }
+
+    // ========== Persona Editing Methods ==========
+
+    /// Ensure the persona controller is loaded
+    fn ensure_persona_controller(&mut self) -> Result<&mut PersonaController> {
+        if self.persona_controller.is_none() {
+            self.persona_controller = Some(PersonaController::new()?);
+        }
+        Ok(self
+            .persona_controller
+            .as_mut()
+            .expect("controller was just initialized"))
+    }
+
+    /// Get list of all persona IDs for selection
+    pub fn get_persona_ids(&mut self) -> Result<Vec<String>> {
+        let controller = self.ensure_persona_controller()?;
+        controller.get_persona_ids()
+    }
+
+    /// Get persona details for editing
+    pub fn get_persona_details(&mut self, persona_id: &str) -> Result<crate::core::Persona> {
+        let controller = self.ensure_persona_controller()?;
+        controller.get_persona(persona_id)
+    }
+
+    /// Update persona name
+    pub fn update_persona_name(
+        &mut self,
+        persona_id: String,
+        name: Option<String>,
+    ) -> Result<String> {
+        let controller = self.ensure_persona_controller()?;
+        let result = controller.update_persona(persona_id, name)?;
+        Ok(result.message)
+    }
+
+    /// Update persona custom fields
+    pub fn update_persona_fields(
+        &mut self,
+        persona_id: String,
+        fields: std::collections::HashMap<String, String>,
+    ) -> Result<String> {
+        let controller = self.ensure_persona_controller()?;
+        let result = controller.update_persona_fields(persona_id, fields)?;
+        Ok(result.message)
+    }
+
+    /// Get persona field configuration
+    pub fn get_persona_field_config(
+        &mut self,
+    ) -> Result<std::collections::HashMap<String, crate::core::CustomFieldConfig>> {
+        let controller = self.ensure_persona_controller()?;
+        Ok(controller.get_persona_field_config())
+    }
+
+    /// Get current persona field values
+    pub fn get_persona_field_values(
+        &mut self,
+        persona_id: &str,
+    ) -> Result<std::collections::HashMap<String, serde_json::Value>> {
+        let controller = self.ensure_persona_controller()?;
+        controller.get_persona_field_values(persona_id)
     }
 
     // ========== Use Case Editing Methods ==========

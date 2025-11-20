@@ -190,15 +190,15 @@ impl FieldHelpers {
         }
     }
 
-    /// Convert vector of strings to storage format (newline-separated)
+    /// Convert vector of strings to storage format (JSON array)
     ///
     /// # Arguments
     /// * `items` - Vector of string items
     ///
     /// # Returns
-    /// String with items joined by newlines
+    /// JSON-encoded array string (e.g., `["item1","item2"]`)
     pub fn array_to_storage(items: &[String]) -> String {
-        items.join("\n")
+        serde_json::to_string(items).unwrap_or_else(|_| "[]".to_string())
     }
 
     /// Edit a field based on its type definition
@@ -287,13 +287,20 @@ mod tests {
             "item3".to_string(),
         ];
         let result = FieldHelpers::array_to_storage(&items);
-        assert_eq!(result, "item1\nitem2\nitem3");
+        assert_eq!(result, r#"["item1","item2","item3"]"#);
     }
 
     #[test]
     fn test_array_to_storage_empty() {
         let items: Vec<String> = vec![];
         let result = FieldHelpers::array_to_storage(&items);
-        assert_eq!(result, "");
+        assert_eq!(result, "[]");
+    }
+
+    #[test]
+    fn test_array_to_storage_single_item() {
+        let items = vec!["single".to_string()];
+        let result = FieldHelpers::array_to_storage(&items);
+        assert_eq!(result, r#"["single"]"#);
     }
 }

@@ -163,14 +163,10 @@ impl PersonaController {
         // Update custom fields
         for (field_name, field_value) in fields {
             // Parse field value as JSON to support different types
-            let json_value: serde_json::Value = if field_value.contains('\n') {
-                // Array format (newline-separated)
-                let items: Vec<String> = field_value
-                    .split('\n')
-                    .map(|s| s.to_string())
-                    .filter(|s| !s.is_empty())
-                    .collect();
-                serde_json::json!(items)
+            let json_value: serde_json::Value = if field_value.is_empty() {
+                serde_json::Value::String(String::new())
+            } else if let Ok(val) = serde_json::from_str::<serde_json::Value>(&field_value) {
+                val  // Successfully parsed as JSON (arrays, objects, etc.)
             } else if let Ok(num) = field_value.parse::<f64>() {
                 // Number
                 serde_json::json!(num)
@@ -394,6 +390,73 @@ experience_level = { type = "string", required = false }
 
         let persona = controller.get_persona("test_user")?;
         assert_eq!(persona.name, "Updated Name");
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_update_persona_fields_single_item_array() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        
+        // Create config with an array field
+        let config_content = r#"
+[project]
+name = "Test Project"
+description = "Test project"
+
+[directories]
+use_case_dir = "docs/use-cases"
+test_dir = "tests"
+persona_dir = "docs/personas"
+data_dir = "data"
+
+[templates]
+methodologies = ["feature"]
+default_methodology = "feature"
+
+[generation]
+test_language = "rust"
+auto_generate_tests = false
+overwrite_test_documentation = false
+
+[storage]
+backend = "toml"
+
+[metadata]
+created = true
+last_updated = true
+
+[persona.fields]
+pain_points = { type = "array", required = false }
+"#;
+
+        fs::create_dir_all(temp_dir.path().join(".config/.mucm"))?;
+        fs::create_dir_all(temp_dir.path().join("data"))?;
+        fs::write(
+            temp_dir.path().join(".config/.mucm/mucm.toml"),
+            config_content,
+        )?;
+        std::env::set_current_dir(temp_dir.path())?;
+
+        let controller = PersonaController::new()?;
+        controller.create_persona("test_user".to_string(), "Test User".to_string())?;
+
+        // Update with single-item array (the bug case) - now sent as JSON
+        let mut fields = HashMap::new();
+        fields.insert("pain_points".to_string(), r#"["Single pain point"]"#.to_string());
+
+        let result = controller.update_persona_fields("test_user".to_string(), fields)?;
+        assert!(result.success);
+
+        // Verify it's stored as an array, not a string
+        let persona = controller.get_persona("test_user")?;
+        let pain_points = persona.extra.get("pain_points").unwrap();
+        
+        assert!(pain_points.is_array(), "Single item should be stored as array");
+        let arr = pain_points.as_array().unwrap();
+        assert_eq!(arr.len(), 1);
+        assert_eq!(arr[0].as_str().unwrap(), "Single pain point");
 
         Ok(())
     }
