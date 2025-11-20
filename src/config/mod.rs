@@ -127,7 +127,7 @@ impl Config {
     /// * `storage` - Storage backend (toml or sqlite)
     /// * `use_case_dir` - Directory for use case files
     /// * `test_dir` - Directory for test files
-    /// * `persona_dir` - Directory for persona files
+    /// * `actor_dir` - Directory for actor files (personas and system actors)
     /// * `data_dir` - Directory for data files
     ///
     /// # Returns
@@ -139,7 +139,7 @@ impl Config {
         storage: String,
         use_case_dir: String,
         test_dir: String,
-        persona_dir: String,
+        actor_dir: String,
         data_dir: String,
     ) -> Self {
         let mut config = Self::for_template_with_methodologies_and_storage(
@@ -152,7 +152,7 @@ impl Config {
         // Update directories
         config.directories.use_case_dir = use_case_dir;
         config.directories.test_dir = test_dir;
-        config.directories.actor_dir = persona_dir;
+        config.directories.actor_dir = actor_dir.clone();
         config.directories.data_dir = data_dir;
 
         config

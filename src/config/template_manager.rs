@@ -135,7 +135,7 @@ impl TemplateManager {
 
         // Write the config
         let config_path = Config::config_path();
-        fs::write(&config_path, template_content).context("Failed to write config file")?;
+        fs::write(&config_path, &template_content).context("Failed to write config file")?;
 
         Ok(())
     }

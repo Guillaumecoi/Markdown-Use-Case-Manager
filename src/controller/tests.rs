@@ -987,7 +987,7 @@ mod project_controller_tests {
         verify_project_directories(
             "docs/use-cases",
             "tests/use-cases",
-            "docs/personas",
+            "docs/actors",
             "use-cases-data",
         );
         verify_templates_copied(&["business"]);
@@ -1542,7 +1542,7 @@ mod project_controller_tests {
         verify_project_directories(
             "docs/use-cases",
             "tests/use-cases",
-            "docs/personas",
+            "docs/actors",
             "use-cases-data",
         );
     }
