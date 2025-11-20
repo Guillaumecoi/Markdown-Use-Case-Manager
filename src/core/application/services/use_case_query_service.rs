@@ -15,11 +15,6 @@ impl<'a> UseCaseQueryService<'a> {
         Self { use_cases }
     }
 
-    /// Get all use cases (for display)
-    pub fn get_all_use_cases(&self) -> &[UseCase] {
-        self.use_cases
-    }
-
     /// Find scenario ID by its title within a use case
     pub fn find_scenario_id_by_title(
         &self,
@@ -111,20 +106,6 @@ mod tests {
             scenarios: vec![],
             extra: std::collections::HashMap::new(),
         }
-    }
-
-    #[test]
-    fn test_get_all_use_cases() {
-        let use_cases = vec![
-            create_test_use_case("UC-001", "Test 1"),
-            create_test_use_case("UC-002", "Test 2"),
-        ];
-        let service = UseCaseQueryService::new(&use_cases);
-
-        let result = service.get_all_use_cases();
-        assert_eq!(result.len(), 2);
-        assert_eq!(result[0].id, "UC-001");
-        assert_eq!(result[1].id, "UC-002");
     }
 
     #[test]

@@ -98,9 +98,6 @@ impl UseCaseCoordinator {
         query_service.get_use_cases_for_persona(persona_id)
     }
 
-    // Deleted: get_all_use_case_ids() - never used (PR #13)
-    // Deleted: get_all_categories() - never used (PR #13)
-
     // ========== Use Case Creation ==========
 
     /// Create a use case with specific methodology
