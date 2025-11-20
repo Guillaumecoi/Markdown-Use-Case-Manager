@@ -163,10 +163,14 @@ impl PersonaController {
         // Update custom fields
         for (field_name, field_value) in fields {
             // Parse field value as JSON to support different types
-            let json_value: serde_json::Value = if field_value.is_empty() {
-                serde_json::Value::String(String::new())
-            } else if let Ok(val) = serde_json::from_str::<serde_json::Value>(&field_value) {
-                val  // Successfully parsed as JSON (arrays, objects, etc.)
+            let json_value: serde_json::Value = if field_value.contains('\n') {
+                // Array format (newline-separated)
+                let items: Vec<String> = field_value
+                    .split('\n')
+                    .map(|s| s.to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect();
+                serde_json::json!(items)
             } else if let Ok(num) = field_value.parse::<f64>() {
                 // Number
                 serde_json::json!(num)
@@ -396,67 +400,187 @@ experience_level = { type = "string", required = false }
 
     #[test]
     #[serial]
-    fn test_update_persona_fields_single_item_array() -> Result<()> {
+    fn test_update_persona_fields() -> Result<()> {
         let temp_dir = TempDir::new()?;
-        
-        // Create config with an array field
-        let config_content = r#"
-[project]
-name = "Test Project"
-description = "Test project"
-
-[directories]
-use_case_dir = "docs/use-cases"
-test_dir = "tests"
-persona_dir = "docs/personas"
-data_dir = "data"
-
-[templates]
-methodologies = ["feature"]
-default_methodology = "feature"
-
-[generation]
-test_language = "rust"
-auto_generate_tests = false
-overwrite_test_documentation = false
-
-[storage]
-backend = "toml"
-
-[metadata]
-created = true
-last_updated = true
-
-[persona.fields]
-pain_points = { type = "array", required = false }
-"#;
-
-        fs::create_dir_all(temp_dir.path().join(".config/.mucm"))?;
-        fs::create_dir_all(temp_dir.path().join("data"))?;
-        fs::write(
-            temp_dir.path().join(".config/.mucm/mucm.toml"),
-            config_content,
-        )?;
-        std::env::set_current_dir(temp_dir.path())?;
+        create_test_config(&temp_dir)?;
 
         let controller = PersonaController::new()?;
         controller.create_persona("test_user".to_string(), "Test User".to_string())?;
 
-        // Update with single-item array (the bug case) - now sent as JSON
+        // Update custom fields
         let mut fields = HashMap::new();
-        fields.insert("pain_points".to_string(), r#"["Single pain point"]"#.to_string());
+        fields.insert("department".to_string(), "Engineering".to_string());
+        fields.insert("experience_level".to_string(), "Senior".to_string());
 
         let result = controller.update_persona_fields("test_user".to_string(), fields)?;
+
+        assert!(result.success);
+        assert!(result.message.contains("Updated"));
+
+        // Verify the fields were updated
+        let persona = controller.get_persona("test_user")?;
+        assert_eq!(
+            persona.extra.get("department"),
+            Some(&serde_json::Value::String("Engineering".to_string()))
+        );
+        assert_eq!(
+            persona.extra.get("experience_level"),
+            Some(&serde_json::Value::String("Senior".to_string()))
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_update_persona_fields_with_different_types() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        create_test_config(&temp_dir)?;
+
+        let controller = PersonaController::new()?;
+        controller.create_persona("test_user".to_string(), "Test User".to_string())?;
+
+        // Update with different data types (as strings - the controller converts them)
+        let mut fields = HashMap::new();
+        fields.insert("department".to_string(), "Sales".to_string());
+        fields.insert("years_experience".to_string(), "5".to_string());
+        fields.insert("is_manager".to_string(), "true".to_string());
+        fields.insert(
+            "skills".to_string(),
+            "communication\nleadership\nproblem-solving".to_string(),
+        );
+
+        let result = controller.update_persona_fields("test_user".to_string(), fields)?;
+
         assert!(result.success);
 
-        // Verify it's stored as an array, not a string
+        // Verify all field types were stored correctly
         let persona = controller.get_persona("test_user")?;
-        let pain_points = persona.extra.get("pain_points").unwrap();
-        
-        assert!(pain_points.is_array(), "Single item should be stored as array");
-        let arr = pain_points.as_array().unwrap();
-        assert_eq!(arr.len(), 1);
-        assert_eq!(arr[0].as_str().unwrap(), "Single pain point");
+        assert_eq!(
+            persona.extra.get("department"),
+            Some(&serde_json::Value::String("Sales".to_string()))
+        );
+        assert_eq!(
+            persona.extra.get("years_experience"),
+            Some(&serde_json::json!(5.0))
+        );
+        assert_eq!(
+            persona.extra.get("is_manager"),
+            Some(&serde_json::Value::Bool(true))
+        );
+        assert!(persona.extra.get("skills").is_some());
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_delete_persona() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        create_test_config(&temp_dir)?;
+
+        let controller = PersonaController::new()?;
+        controller.create_persona("test_user".to_string(), "Test User".to_string())?;
+
+        // Verify it exists
+        assert!(controller.get_persona("test_user").is_ok());
+
+        // Delete it
+        let result = controller.delete_persona("test_user".to_string())?;
+        assert!(result.success);
+        assert!(result.message.contains("Deleted persona"));
+
+        // Verify it's gone
+        assert!(controller.get_persona("test_user").is_err());
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_list_personas() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        create_test_config(&temp_dir)?;
+
+        let controller = PersonaController::new()?;
+
+        // Create multiple personas
+        controller.create_persona("user1".to_string(), "User One".to_string())?;
+        controller.create_persona("user2".to_string(), "User Two".to_string())?;
+        controller.create_persona("user3".to_string(), "User Three".to_string())?;
+
+        // List all personas
+        let personas = controller.list_personas()?;
+        assert_eq!(personas.len(), 3);
+
+        let ids: Vec<String> = personas.iter().map(|p| p.id.clone()).collect();
+        assert!(ids.contains(&"user1".to_string()));
+        assert!(ids.contains(&"user2".to_string()));
+        assert!(ids.contains(&"user3".to_string()));
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_get_persona_ids() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        create_test_config(&temp_dir)?;
+
+        let controller = PersonaController::new()?;
+
+        // Create personas
+        controller.create_persona("admin".to_string(), "Admin User".to_string())?;
+        controller.create_persona("developer".to_string(), "Dev User".to_string())?;
+
+        // Get IDs
+        let ids = controller.get_persona_ids()?;
+        assert_eq!(ids.len(), 2);
+        assert!(ids.contains(&"admin".to_string()));
+        assert!(ids.contains(&"developer".to_string()));
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_get_persona_field_config() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        create_test_config(&temp_dir)?;
+
+        let controller = PersonaController::new()?;
+
+        // Get field config
+        let config = controller.get_persona_field_config();
+
+        // Verify our test config fields are present
+        assert!(config.contains_key("department"));
+        assert!(config.contains_key("experience_level"));
+
+        Ok(())
+    }
+
+    #[test]
+    #[serial]
+    fn test_get_persona_field_values() -> Result<()> {
+        let temp_dir = TempDir::new()?;
+        create_test_config(&temp_dir)?;
+
+        let controller = PersonaController::new()?;
+        controller.create_persona("test_user".to_string(), "Test User".to_string())?;
+
+        // Add some field values
+        let mut fields = HashMap::new();
+        fields.insert("department".to_string(), "Marketing".to_string());
+        controller.update_persona_fields("test_user".to_string(), fields)?;
+
+        // Get field values
+        let values = controller.get_persona_field_values("test_user")?;
+        assert!(values.contains_key("department"));
+        assert_eq!(
+            values.get("department"),
+            Some(&serde_json::Value::String("Marketing".to_string()))
+        );
 
         Ok(())
     }

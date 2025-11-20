@@ -97,7 +97,9 @@ impl UseCaseController {
         };
 
         // All use cases now use the views-based API
-        let result = if let (Some(prio), Some(fields)) = (priority, extra_fields) {
+        let result = if priority.is_some() || extra_fields.is_some() {
+            let prio = priority.unwrap_or_else(|| "medium".to_string());
+            let fields = extra_fields.unwrap_or_else(|| std::collections::HashMap::new());
             self.app_service.create_use_case_with_views_and_fields(
                 title,
                 category,

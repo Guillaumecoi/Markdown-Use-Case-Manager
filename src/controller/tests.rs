@@ -600,6 +600,220 @@ mod use_case_controller_tests {
     // TODO: Add tests for regenerate_all_use_cases
     // TODO: Add tests for show_status
     // TODO: Add tests for get_categories
+
+    // ===== Tests for Use Case Editing Functionality (Sprint 1) =====
+
+    #[test]
+    #[serial]
+    fn test_update_use_case_basic_fields() {
+        let (_temp_dir, mut controller) = setup_test_env();
+
+        let create_result = controller
+            .create_use_case(
+                "Original Title".to_string(),
+                "test".to_string(),
+                Some("Original description".to_string()),
+                Some("business".to_string()),
+                None,
+                None,
+                None,
+            )
+            .unwrap();
+
+        let use_case_id = extract_use_case_id(&create_result.message);
+
+        let result = controller.update_use_case(
+            use_case_id.clone(),
+            Some("Updated Title".to_string()),
+            None,
+            Some("Updated description".to_string()),
+            Some("high".to_string()),
+        );
+
+        assert!(result.is_ok());
+        let display = result.unwrap();
+        assert!(display.is_success());
+        assert!(display.message.contains("Updated use case"));
+
+        let use_case = controller.get_use_case(&use_case_id).unwrap();
+        assert_eq!(use_case.title, "Updated Title");
+        assert_eq!(use_case.description, "Updated description");
+        assert_eq!(use_case.priority.to_string(), "HIGH");
+    }
+
+    #[test]
+    #[serial]
+    fn test_update_use_case_partial_fields() {
+        let (_temp_dir, mut controller) = setup_test_env();
+
+        let create_result = controller
+            .create_use_case(
+                "Original Title".to_string(),
+                "test".to_string(),
+                Some("Original description".to_string()),
+                Some("business".to_string()),
+                None,
+                Some("medium".to_string()),
+                None,
+            )
+            .unwrap();
+
+        let use_case_id = extract_use_case_id(&create_result.message);
+
+        let result = controller.update_use_case(
+            use_case_id.clone(),
+            Some("New Title".to_string()),
+            None,
+            None,
+            None,
+        );
+
+        assert!(result.is_ok());
+        let display = result.unwrap();
+        assert!(display.is_success());
+
+        let use_case = controller.get_use_case(&use_case_id).unwrap();
+        assert_eq!(use_case.title, "New Title");
+        assert_eq!(use_case.description, "Original description");
+        assert_eq!(use_case.priority.to_string(), "MEDIUM");
+    }
+
+    #[test]
+    #[serial]
+    fn test_update_methodology_fields() {
+        let (_temp_dir, mut controller) = setup_test_env();
+
+        let create_result = controller
+            .create_use_case(
+                "Test UC".to_string(),
+                "test".to_string(),
+                None,
+                Some("business".to_string()),
+                None,
+                None,
+                None,
+            )
+            .unwrap();
+
+        let use_case_id = extract_use_case_id(&create_result.message);
+
+        let mut fields = std::collections::HashMap::new();
+        fields.insert("estimated_effort".to_string(), "5".to_string());
+        fields.insert("complexity".to_string(), "medium".to_string());
+
+        let result = controller.update_use_case_methodology_fields(
+            use_case_id.clone(),
+            "business".to_string(),
+            fields,
+        );
+
+        assert!(result.is_ok());
+        let display = result.unwrap();
+        assert!(display.is_success());
+        assert!(display.message.contains("Updated business methodology fields"));
+    }
+
+    #[test]
+    #[serial]
+    fn test_add_view_to_use_case() {
+        let (_temp_dir, mut controller) = setup_test_env();
+
+        let create_result = controller
+            .create_use_case(
+                "Test UC".to_string(),
+                "test".to_string(),
+                None,
+                Some("business".to_string()),
+                None,
+                None,
+                None,
+            )
+            .unwrap();
+
+        let use_case_id = extract_use_case_id(&create_result.message);
+
+        let result = controller.add_view(
+            use_case_id.clone(),
+            "developer".to_string(),
+            "normal".to_string(),
+        );
+
+        assert!(result.is_ok());
+        let display = result.unwrap();
+        assert!(display.is_success());
+        assert!(display.message.contains("Added developer:normal view"));
+
+        let use_case = controller.get_use_case(&use_case_id).unwrap();
+        assert!(use_case
+            .views
+            .iter()
+            .any(|v| v.methodology == "developer" && v.level == "normal"));
+    }
+
+    #[test]
+    #[serial]
+    fn test_remove_view_from_use_case() {
+        let (_temp_dir, mut controller) = setup_test_env();
+
+        let create_result = controller
+            .create_use_case(
+                "Test UC".to_string(),
+                "test".to_string(),
+                None,
+                Some("business".to_string()),
+                None,
+                None,
+                None,
+            )
+            .unwrap();
+
+        let use_case_id = extract_use_case_id(&create_result.message);
+
+        controller
+            .add_view(
+                use_case_id.clone(),
+                "developer".to_string(),
+                "normal".to_string(),
+            )
+            .unwrap();
+
+        let result = controller.remove_view(use_case_id.clone(), "business".to_string());
+
+        assert!(result.is_ok());
+        let display = result.unwrap();
+        assert!(display.is_success());
+        assert!(display.message.contains("Removed business view"));
+
+        let use_case = controller.get_use_case(&use_case_id).unwrap();
+        assert!(!use_case.views.iter().any(|v| v.methodology == "business"));
+        assert!(use_case.views.iter().any(|v| v.methodology == "developer"));
+    }
+
+    #[test]
+    #[serial]
+    fn test_remove_last_view_fails() {
+        let (_temp_dir, mut controller) = setup_test_env();
+
+        let create_result = controller
+            .create_use_case(
+                "Test UC".to_string(),
+                "test".to_string(),
+                None,
+                Some("business".to_string()),
+                None,
+                None,
+                None,
+            )
+            .unwrap();
+
+        let use_case_id = extract_use_case_id(&create_result.message);
+
+        let result = controller.remove_view(use_case_id.clone(), "business".to_string());
+
+        assert!(result.is_ok());
+        let display = result.unwrap();
+        assert!(!display.is_success());
+    }
 }
 
 #[cfg(test)]
