@@ -342,6 +342,92 @@ impl UseCaseController {
         }
     }
 
+    /// Edit a precondition in a use case.
+    ///
+    /// Updates the text of an existing precondition at the specified index.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `index` - The 1-based index of the precondition to edit
+    /// * `new_text` - The new text for the precondition
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or index is invalid
+    pub fn edit_precondition(
+        &mut self,
+        use_case_id: String,
+        index: usize,
+        new_text: String,
+    ) -> Result<DisplayResult> {
+        match self
+            .app_service
+            .edit_precondition(&use_case_id, index, new_text)
+        {
+            Ok(_) => Ok(DisplayResult::success(format!(
+                "Updated precondition {} in use case: {}",
+                index, use_case_id
+            ))),
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Reorder preconditions in a use case.
+    ///
+    /// Moves a precondition from one position to another.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `from_index` - The 1-based index of the precondition to move
+    /// * `to_index` - The 1-based index of the destination position
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or indices are invalid
+    pub fn reorder_preconditions(
+        &mut self,
+        use_case_id: String,
+        from_index: usize,
+        to_index: usize,
+    ) -> Result<DisplayResult> {
+        match self
+            .app_service
+            .reorder_preconditions(&use_case_id, from_index, to_index)
+        {
+            Ok(_) => Ok(DisplayResult::success(format!(
+                "Reordered preconditions in use case: {}",
+                use_case_id
+            ))),
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Clear all preconditions from a use case.
+    ///
+    /// Removes all preconditions from the specified use case.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found
+    pub fn clear_preconditions(&mut self, use_case_id: String) -> Result<DisplayResult> {
+        match self.app_service.clear_preconditions(&use_case_id) {
+            Ok(_) => Ok(DisplayResult::success(format!(
+                "Cleared all preconditions from use case: {}",
+                use_case_id
+            ))),
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
     /// Add a postcondition to a use case.
     ///
     /// Adds a new postcondition to the specified use case.
@@ -423,6 +509,92 @@ impl UseCaseController {
             Ok(_) => Ok(DisplayResult::success(format!(
                 "Removed postcondition {} from use case: {}",
                 index, use_case_id
+            ))),
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Edit a postcondition in a use case.
+    ///
+    /// Updates the text of an existing postcondition at the specified index.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `index` - The 1-based index of the postcondition to edit
+    /// * `new_text` - The new text for the postcondition
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or index is invalid
+    pub fn edit_postcondition(
+        &mut self,
+        use_case_id: String,
+        index: usize,
+        new_text: String,
+    ) -> Result<DisplayResult> {
+        match self
+            .app_service
+            .edit_postcondition(&use_case_id, index, new_text)
+        {
+            Ok(_) => Ok(DisplayResult::success(format!(
+                "Updated postcondition {} in use case: {}",
+                index, use_case_id
+            ))),
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Reorder postconditions in a use case.
+    ///
+    /// Moves a postcondition from one position to another.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `from_index` - The 1-based index of the postcondition to move
+    /// * `to_index` - The 1-based index of the destination position
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found or indices are invalid
+    pub fn reorder_postconditions(
+        &mut self,
+        use_case_id: String,
+        from_index: usize,
+        to_index: usize,
+    ) -> Result<DisplayResult> {
+        match self
+            .app_service
+            .reorder_postconditions(&use_case_id, from_index, to_index)
+        {
+            Ok(_) => Ok(DisplayResult::success(format!(
+                "Reordered postconditions in use case: {}",
+                use_case_id
+            ))),
+            Err(e) => Ok(DisplayResult::error(e.to_string())),
+        }
+    }
+
+    /// Clear all postconditions from a use case.
+    ///
+    /// Removes all postconditions from the specified use case.
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if use case not found
+    pub fn clear_postconditions(&mut self, use_case_id: String) -> Result<DisplayResult> {
+        match self.app_service.clear_postconditions(&use_case_id) {
+            Ok(_) => Ok(DisplayResult::success(format!(
+                "Cleared all postconditions from use case: {}",
+                use_case_id
             ))),
             Err(e) => Ok(DisplayResult::error(e.to_string())),
         }

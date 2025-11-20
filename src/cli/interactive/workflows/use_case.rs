@@ -457,6 +457,8 @@ impl UseCaseWorkflow {
                 "Edit Basic Info (title, category, description, priority)",
                 "Edit Methodology Fields",
                 "Manage Views (add/remove)",
+                "Manage Preconditions",
+                "Manage Postconditions",
                 "Manage Scenarios",
                 "Back to Menu",
             ];
@@ -472,6 +474,12 @@ impl UseCaseWorkflow {
                 }
                 "Manage Views (add/remove)" => {
                     Self::manage_views(&mut runner, &selected_id, &use_case)?
+                }
+                "Manage Preconditions" => {
+                    super::conditions::ConditionsWorkflow::manage_preconditions(&selected_id)?
+                }
+                "Manage Postconditions" => {
+                    super::conditions::ConditionsWorkflow::manage_postconditions(&selected_id)?
                 }
                 "Manage Scenarios" => {
                     super::scenario::ScenarioWorkflow::manage_scenarios(&selected_id)?

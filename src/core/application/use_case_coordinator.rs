@@ -395,6 +395,68 @@ impl UseCaseCoordinator {
         service.remove_postcondition(use_case_id, index)
     }
 
+    /// Edit a precondition in a use case
+    pub fn edit_precondition(
+        &mut self,
+        use_case_id: &str,
+        index: usize,
+        new_text: String,
+    ) -> Result<()> {
+        let mut service =
+            services::PreconditionPostconditionService::new(&self.repository, &mut self.use_cases);
+        service.edit_precondition(use_case_id, index, new_text)
+    }
+
+    /// Edit a postcondition in a use case
+    pub fn edit_postcondition(
+        &mut self,
+        use_case_id: &str,
+        index: usize,
+        new_text: String,
+    ) -> Result<()> {
+        let mut service =
+            services::PreconditionPostconditionService::new(&self.repository, &mut self.use_cases);
+        service.edit_postcondition(use_case_id, index, new_text)
+    }
+
+    /// Reorder preconditions in a use case
+    pub fn reorder_preconditions(
+        &mut self,
+        use_case_id: &str,
+        from_index: usize,
+        to_index: usize,
+    ) -> Result<()> {
+        let mut service =
+            services::PreconditionPostconditionService::new(&self.repository, &mut self.use_cases);
+        service.reorder_preconditions(use_case_id, from_index, to_index)
+    }
+
+    /// Reorder postconditions in a use case
+    pub fn reorder_postconditions(
+        &mut self,
+        use_case_id: &str,
+        from_index: usize,
+        to_index: usize,
+    ) -> Result<()> {
+        let mut service =
+            services::PreconditionPostconditionService::new(&self.repository, &mut self.use_cases);
+        service.reorder_postconditions(use_case_id, from_index, to_index)
+    }
+
+    /// Clear all preconditions from a use case
+    pub fn clear_preconditions(&mut self, use_case_id: &str) -> Result<()> {
+        let mut service =
+            services::PreconditionPostconditionService::new(&self.repository, &mut self.use_cases);
+        service.clear_preconditions(use_case_id)
+    }
+
+    /// Clear all postconditions from a use case
+    pub fn clear_postconditions(&mut self, use_case_id: &str) -> Result<()> {
+        let mut service =
+            services::PreconditionPostconditionService::new(&self.repository, &mut self.use_cases);
+        service.clear_postconditions(use_case_id)
+    }
+
     /// Add a reference to a use case
     pub fn add_reference(
         &mut self,
