@@ -11,7 +11,6 @@ mod language;
 mod methodology;
 mod persona;
 mod project;
-mod scenarios;
 mod usecase;
 
 // Explicit public exports
@@ -28,10 +27,4 @@ pub use methodology::{
 };
 pub use persona::handle_persona_command;
 pub use project::{handle_init_command, handle_status_command};
-pub use scenarios::{
-    handle_scenario_add_command, handle_scenario_add_step_command, handle_scenario_list_command,
-    handle_scenario_reference_add_command, handle_scenario_reference_list_command,
-    handle_scenario_reference_remove_command, handle_scenario_remove_step_command,
-    handle_scenario_update_status_command,
-};
-pub use usecase::{handle_create_command, handle_list_command};
+pub use usecase::{handle_create_command, handle_list_command, handle_usecase_scenario_command};

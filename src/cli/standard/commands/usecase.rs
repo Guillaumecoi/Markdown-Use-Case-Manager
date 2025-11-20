@@ -72,3 +72,206 @@ pub fn handle_create_command(
 pub fn handle_list_command(runner: &mut CliRunner) -> Result<()> {
     runner.list_use_cases()
 }
+
+/// Handle use case scenario commands
+///
+/// Dispatches to the appropriate scenario management function based on the command.
+/// This is the new nested command structure: `mucm usecase scenario <subcommand>`
+pub fn handle_usecase_scenario_command(
+    _runner: &mut CliRunner,
+    command: crate::cli::args::UseCaseScenarioCommands,
+) -> Result<()> {
+    use crate::cli::args::UseCaseScenarioCommands;
+    use crate::controller::ScenarioController;
+
+    let mut controller = ScenarioController::new()?;
+
+    match command {
+        UseCaseScenarioCommands::Add {
+            use_case_id,
+            title,
+            scenario_type,
+            description,
+            persona,
+        } => {
+            let result = controller.create_scenario(
+                use_case_id,
+                title,
+                scenario_type,
+                description,
+                persona,
+            )?;
+            DisplayResultFormatter::display(&result);
+        }
+        UseCaseScenarioCommands::Edit {
+            use_case_id,
+            scenario_id,
+            title,
+            description,
+            scenario_type,
+            status,
+        } => {
+            let result = controller.edit_scenario(
+                use_case_id,
+                scenario_id,
+                title,
+                description,
+                scenario_type,
+                status,
+            )?;
+            DisplayResultFormatter::display(&result);
+        }
+        UseCaseScenarioCommands::Delete {
+            use_case_id,
+            scenario_id,
+        } => {
+            let result = controller.delete_scenario(use_case_id, scenario_id)?;
+            DisplayResultFormatter::display(&result);
+        }
+        UseCaseScenarioCommands::List { use_case_id } => {
+            let result = controller.list_scenarios(use_case_id)?;
+            DisplayResultFormatter::display(&result);
+        }
+        UseCaseScenarioCommands::Step { command } => {
+            handle_scenario_step_command(&mut controller, command)?;
+        }
+        UseCaseScenarioCommands::AssignPersona {
+            use_case_id,
+            scenario_id,
+            persona_id,
+        } => {
+            let result = controller.assign_persona(use_case_id, scenario_id, persona_id)?;
+            DisplayResultFormatter::display(&result);
+        }
+        UseCaseScenarioCommands::UnassignPersona {
+            use_case_id,
+            scenario_id,
+        } => {
+            let result = controller.unassign_persona(use_case_id, scenario_id)?;
+            DisplayResultFormatter::display(&result);
+        }
+        UseCaseScenarioCommands::Reference { command } => {
+            handle_scenario_reference_command(&mut controller, command)?;
+        }
+    }
+
+    Ok(())
+}
+
+/// Handle scenario step commands
+fn handle_scenario_step_command(
+    controller: &mut crate::controller::ScenarioController,
+    command: crate::cli::args::ScenarioStepCommands,
+) -> Result<()> {
+    use crate::cli::args::ScenarioStepCommands;
+
+    match command {
+        ScenarioStepCommands::Add {
+            use_case_id,
+            scenario_id,
+            description,
+            order,
+        } => {
+            let result = controller.add_step(use_case_id, scenario_id, description, order)?;
+            DisplayResultFormatter::display(&result);
+        }
+        ScenarioStepCommands::Edit {
+            use_case_id,
+            scenario_id,
+            order,
+            description,
+        } => {
+            let result = controller.edit_step(use_case_id, scenario_id, order, description)?;
+            DisplayResultFormatter::display(&result);
+        }
+        ScenarioStepCommands::Remove {
+            use_case_id,
+            scenario_id,
+            order,
+        } => {
+            let result = controller.remove_step(use_case_id, scenario_id, order)?;
+            DisplayResultFormatter::display(&result);
+        }
+    }
+
+    Ok(())
+}
+
+/// Handle scenario reference commands
+fn handle_scenario_reference_command(
+    controller: &mut crate::controller::ScenarioController,
+    command: crate::cli::args::UseCaseScenarioReferenceCommands,
+) -> Result<()> {
+    use crate::cli::args::UseCaseScenarioReferenceCommands;
+    use crate::core::{ReferenceType, ScenarioReference};
+
+    match command {
+        UseCaseScenarioReferenceCommands::Add {
+            use_case_id,
+            scenario_id,
+            target_id,
+            ref_type,
+            relationship,
+            description,
+        } => {
+            // Parse reference type
+            let parsed_type = match ref_type.to_lowercase().as_str() {
+                "scenario" => ReferenceType::Scenario,
+                "usecase" => ReferenceType::UseCase,
+                _ => {
+                    let result = DisplayResult::error(format!(
+                        "Invalid reference type: '{}'. Must be 'scenario' or 'usecase'",
+                        ref_type
+                    ));
+                    DisplayResultFormatter::display(&result);
+                    return Ok(());
+                }
+            };
+
+            let reference = ScenarioReference {
+                ref_type: parsed_type,
+                target_id,
+                relationship,
+                description,
+            };
+
+            // Add reference via controller
+            let result = controller.add_reference(use_case_id, scenario_id, reference)?;
+            DisplayResultFormatter::display(&result);
+        }
+        UseCaseScenarioReferenceCommands::Remove {
+            use_case_id,
+            scenario_id,
+            target_id,
+            relationship,
+        } => {
+            let result =
+                controller.remove_reference(use_case_id, scenario_id, target_id, relationship)?;
+            DisplayResultFormatter::display(&result);
+        }
+        UseCaseScenarioReferenceCommands::List {
+            use_case_id,
+            scenario_id,
+        } => {
+            let references = controller.list_references(use_case_id, scenario_id.clone())?;
+
+            if references.is_empty() {
+                println!("\nNo references found for scenario {}\n", scenario_id);
+            } else {
+                println!("\nReferences for scenario {}:", scenario_id);
+                for reference in references {
+                    println!(
+                        "  • {} → {} ({})",
+                        reference.relationship, reference.target_id, reference.ref_type
+                    );
+                    if let Some(desc) = reference.description {
+                        println!("    {}", desc);
+                    }
+                }
+                println!();
+            }
+        }
+    }
+
+    Ok(())
+}

@@ -361,6 +361,77 @@ impl ScenarioController {
             scenario_id
         )))
     }
+
+    /// Add a reference to a scenario
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `scenario_id` - The ID of the scenario
+    /// * `reference` - The reference to add
+    ///
+    /// # Returns
+    /// DisplayResult indicating success
+    pub fn add_reference(
+        &mut self,
+        use_case_id: String,
+        scenario_id: String,
+        reference: crate::core::ScenarioReference,
+    ) -> Result<DisplayResult> {
+        self.app_service
+            .add_scenario_reference(&use_case_id, &scenario_id, reference)?;
+
+        Ok(DisplayResult::success(format!(
+            "✅ Added reference to scenario {}",
+            scenario_id
+        )))
+    }
+
+    /// Remove a reference from a scenario
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `scenario_id` - The ID of the scenario
+    /// * `target_id` - The target ID of the reference
+    /// * `relationship` - The relationship type
+    ///
+    /// # Returns
+    /// DisplayResult indicating success
+    pub fn remove_reference(
+        &mut self,
+        use_case_id: String,
+        scenario_id: String,
+        target_id: String,
+        relationship: String,
+    ) -> Result<DisplayResult> {
+        self.app_service.remove_scenario_reference(
+            &use_case_id,
+            &scenario_id,
+            &target_id,
+            &relationship,
+        )?;
+
+        Ok(DisplayResult::success(format!(
+            "✅ Removed reference from scenario {}",
+            scenario_id
+        )))
+    }
+
+    /// List references for a scenario
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `scenario_id` - The ID of the scenario
+    ///
+    /// # Returns
+    /// Vector of scenario references
+    pub fn list_references(
+        &mut self,
+        use_case_id: String,
+        scenario_id: String,
+    ) -> Result<Vec<crate::core::ScenarioReference>> {
+        self.app_service
+            .get_scenario_references(&use_case_id, &scenario_id)
+    }
 }
 
 #[cfg(test)]
