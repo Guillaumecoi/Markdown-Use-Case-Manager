@@ -1,7 +1,7 @@
 use crate::core::application::creators::ScenarioCreator;
 use crate::core::utils::suggest_alternatives;
 use crate::core::{
-    domain::{Scenario, ScenarioReference, ScenarioType},
+    domain::{ScenarioReference, ScenarioType},
     ReferenceType, ScenarioReferenceValidator, Status, UseCase, UseCaseRepository,
 };
 use anyhow::Result;
@@ -59,12 +59,6 @@ impl<'a> ScenarioManagementService<'a> {
         self.use_cases[index] = updated_use_case;
 
         Ok(scenario.id)
-    }
-
-    /// Get all scenarios for a use case
-    pub fn get_scenarios(&self, use_case_id: &str) -> Result<Vec<Scenario>> {
-        let use_case = self.find_use_case_by_id(use_case_id)?;
-        Ok(use_case.scenarios.clone())
     }
 
     /// Update the status of a scenario
@@ -373,27 +367,6 @@ impl<'a> ScenarioManagementService<'a> {
         Ok(())
     }
 
-    /// Get all scenarios referenced by a scenario
-    pub fn get_scenario_references(
-        &self,
-        use_case_id: &str,
-        scenario_id: &str,
-    ) -> Result<Vec<ScenarioReference>> {
-        let use_case = self.find_use_case_by_id(use_case_id)?;
-        let scenario = use_case
-            .scenarios
-            .iter()
-            .find(|s| s.id == scenario_id)
-            .ok_or_else(|| {
-                let available_ids: Vec<String> =
-                    use_case.scenarios.iter().map(|s| s.id.clone()).collect();
-                let error_msg = suggest_alternatives(scenario_id, &available_ids, "Scenario");
-                anyhow::anyhow!("{}", error_msg)
-            })?;
-
-        Ok(scenario.references.clone())
-    }
-
     // Helper methods
     fn find_use_case_index(&self, use_case_id: &str) -> Result<usize> {
         self.use_cases
@@ -405,10 +378,5 @@ impl<'a> ScenarioManagementService<'a> {
                 let error_msg = suggest_alternatives(use_case_id, &available_ids, "Use case");
                 anyhow::anyhow!("{}", error_msg)
             })
-    }
-
-    fn find_use_case_by_id(&self, use_case_id: &str) -> Result<&UseCase> {
-        let index = self.find_use_case_index(use_case_id)?;
-        Ok(&self.use_cases[index])
     }
 }
