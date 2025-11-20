@@ -860,7 +860,7 @@ mod project_controller_tests {
     fn verify_project_directories(
         use_case_dir: &str,
         test_dir: &str,
-        persona_dir: &str,
+        actor_dir: &str,
         data_dir: &str,
     ) {
         let cwd = env::current_dir().unwrap();
@@ -868,7 +868,7 @@ mod project_controller_tests {
         // Verify project directories
         assert_dir_exists(&cwd.join(use_case_dir));
         assert_dir_exists(&cwd.join(test_dir));
-        assert_dir_exists(&cwd.join(persona_dir));
+        assert_dir_exists(&cwd.join(actor_dir));
         assert_dir_exists(&cwd.join(data_dir));
     }
 

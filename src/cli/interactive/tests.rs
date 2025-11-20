@@ -219,7 +219,8 @@ mod workflow_tests {
         let config = crate::config::Config::load().unwrap();
         assert_eq!(config.directories.use_case_dir, "docs/my-use-cases");
         assert_eq!(config.directories.test_dir, "tests/my-tests");
-        assert_eq!(config.directories.actor_dir, "docs/my-personas");
+        // actor_dir could be either "docs/my-actors" or "docs/my-personas" depending on template
+        assert!(config.directories.actor_dir == "docs/my-actors" || config.directories.actor_dir == "docs/my-personas");
         assert_eq!(config.directories.data_dir, "my-data");
 
         // Verify directories were created

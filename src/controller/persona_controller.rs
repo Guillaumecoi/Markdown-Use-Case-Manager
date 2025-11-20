@@ -310,7 +310,7 @@ description = "Test project"
 [directories]
 use_case_dir = "docs/use-cases"
 test_dir = "tests"
-persona_dir = "docs/personas"
+actor_dir = "docs/actors"
 data_dir = "data"
 
 [templates]
@@ -329,7 +329,7 @@ backend = "toml"
 created = true
 last_updated = true
 
-[persona.fields]
+[actor.persona_fields]
 department = { type = "string", required = false }
 experience_level = { type = "string", required = false }
 "#;
