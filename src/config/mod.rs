@@ -334,7 +334,7 @@ impl Config {
                     directories: DirectoryConfig {
                         use_case_dir: "use-cases".to_string(),
                         test_dir: "tests".to_string(),
-                        persona_dir: "docs/personas".to_string(),
+                        actor_dir: "docs/actors".to_string(),
                         data_dir: "use-cases-data".to_string(),
                     },
                     templates: TemplateConfig {

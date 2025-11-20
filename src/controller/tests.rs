@@ -1315,7 +1315,7 @@ mod project_controller_tests {
         let config = Config::load().unwrap();
         assert_eq!(config.directories.use_case_dir, "custom/use-cases");
         assert_eq!(config.directories.test_dir, "custom/tests");
-        assert_eq!(config.directories.persona_dir, "custom/personas");
+        assert_eq!(config.directories.actor_dir, "custom/personas");
         assert_eq!(config.directories.data_dir, "custom/data");
     }
 

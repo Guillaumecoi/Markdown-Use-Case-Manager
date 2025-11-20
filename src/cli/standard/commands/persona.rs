@@ -23,12 +23,12 @@ pub fn handle_persona_command(command: PersonaCommands, config: &Config) -> Resu
 /// by editing the generated TOML file or SQL record directly.
 fn create_persona(id: String, name: String, config: &Config) -> Result<()> {
     // Create persona with config-driven fields
-    let persona = if config.persona.fields.is_empty() {
+    let persona = if config.actor.persona_fields.is_empty() {
         // No custom fields defined, just create minimal persona
         Persona::new(id.clone(), name)
     } else {
         // Initialize persona with empty/default values for all config fields
-        Persona::from_config_fields(id.clone(), name, &config.persona.fields)
+        Persona::from_config_fields(id.clone(), name, &config.actor.persona_fields)
     };
 
     // Save to repository
@@ -42,15 +42,15 @@ fn create_persona(id: String, name: String, config: &Config) -> Result<()> {
 
     repo.save(&persona).context("Failed to save persona")?;
 
-    if !config.persona.fields.is_empty() {
+    if !config.actor.persona_fields.is_empty() {
         println!("✓ Created persona: {} ({})", persona.name, persona.id);
         println!("  Edit the generated file to fill in these fields:");
-        for field_name in config.persona.field_names() {
+        for field_name in config.actor.persona_field_names() {
             println!("    - {}", field_name);
         }
     } else {
         println!("✓ Created persona: {} ({})", persona.name, persona.id);
-        println!("  Tip: Add custom fields in .config/.mucm/mucm.toml under [persona.fields]");
+        println!("  Tip: Add custom fields in .config/.mucm/mucm.toml under [actor.persona_fields]");
     }
 
     Ok(())

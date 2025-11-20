@@ -89,7 +89,7 @@ impl PersonaController {
         }
 
         // Create persona with config fields
-        let persona = Persona::from_config_fields(id.clone(), name, &self.config.persona.fields);
+        let persona = Persona::from_config_fields(id.clone(), name, &self.config.actor.persona_fields);
 
         // Save the persona
         self.repository.save(&persona)?;
@@ -265,7 +265,7 @@ impl PersonaController {
         Ok(personas.into_iter().map(|p| p.id).collect())
     }
 
-    /// Get persona custom field definitions from config.
+    /// Get persona field configuration.
     ///
     /// Returns the custom field definitions configured for personas
     /// in the project, useful for dynamic form generation.
@@ -273,7 +273,7 @@ impl PersonaController {
     /// # Returns
     /// Map of field name to field configuration
     pub fn get_persona_field_config(&self) -> HashMap<String, crate::core::CustomFieldConfig> {
-        self.config.persona.fields.clone()
+        self.config.actor.persona_fields.clone()
     }
 
     /// Get current custom field values for a persona.

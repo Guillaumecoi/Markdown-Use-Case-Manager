@@ -125,7 +125,7 @@ impl TemplateManager {
             &format!(r#"test_dir = "{}""#, config.directories.test_dir),
         );
         template_content = template_content.replace(
-            r#"persona_dir = "docs/personas""#,
+            r#"actor_dir = "docs/actors""#,
             &format!(r#"actor_dir = "{}""#, config.directories.actor_dir),
         );
         template_content = template_content.replace(

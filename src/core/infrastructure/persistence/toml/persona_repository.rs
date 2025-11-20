@@ -26,9 +26,9 @@ impl TomlPersonaRepository {
     }
 
     /// Get the directory for persona markdown files
-    /// Stores in docs/personas (configured via persona_dir)
+    /// Stores in docs/actors (configured via actor_dir)
     fn get_markdown_dir(&self) -> String {
-        self.config.directories.persona_dir.clone()
+        self.config.directories.actor_dir.clone()
     }
 }
 
@@ -143,7 +143,7 @@ mod tests {
         let mut config = Config::default();
         config.directories.use_case_dir = format!("{}/docs/use-cases", temp_path);
         config.directories.data_dir = format!("{}/.mucm", temp_path);
-        config.directories.persona_dir = format!("{}/docs/personas", temp_path);
+        config.directories.actor_dir = format!("{}/docs/actors", temp_path);
 
         let repo = TomlPersonaRepository::new(config);
         (repo, temp_dir)
