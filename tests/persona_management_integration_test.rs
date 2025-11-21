@@ -1,12 +1,17 @@
 //! Integration tests for persona management workflows
 //!
-//! Tests the complete end-to-end flow of persona CRUD operations, including:
+//! Tests the complete end-to-end flow of persona CRUD operations using the
+//! unified actor system. Personas are now a specialized actor type stored
+//! in the actors repository.
+//!
+//! Tests cover:
 //! - Creating personas with minimal and full field sets
 //! - Updating persona names and custom fields
 //! - Listing and retrieving personas
 //! - Deleting personas
-//! - TOML persistence verification
+//! - TOML persistence verification in data/actors/ directory
 //! - Custom field type handling (string, number, boolean, array)
+//! - Sommerville-aligned persona fields (via config)
 
 use markdown_use_case_manager::controller::PersonaController;
 use serial_test::serial;
@@ -46,7 +51,7 @@ backend = "toml"
 created = true
 last_updated = true
 
-[persona.fields]
+[actor.persona_fields]
 department = { type = "string", required = false }
 role = { type = "string", required = false }
 experience_level = { type = "string", required = false }
@@ -75,11 +80,11 @@ pain_points = { type = "array", required = false }
 
 /// Test helper: Read persona TOML file
 fn read_persona_toml(temp_dir: &TempDir, persona_id: &str) -> String {
-    // Personas are stored in {data_dir}/personas/{persona_id}.toml
+    // With unified actor system, personas are stored in {data_dir}/actors/{persona_id}.toml
     let toml_path = temp_dir
         .path()
         .join("data")
-        .join("personas")
+        .join("actors")
         .join(format!("{}.toml", persona_id));
     fs::read_to_string(toml_path).expect("Failed to read persona TOML file")
 }
