@@ -322,27 +322,10 @@ impl InteractiveRunner {
         controller.get_actor_ids()
     }
 
-    /// Get list of persona IDs only for selection (for editing)
-    pub fn get_persona_ids(&mut self) -> Result<Vec<String>> {
-        let controller = self.ensure_persona_controller()?;
-        controller.get_persona_ids()
-    }
-
-    /// Get actor details for editing
+    /// Get actor details for editing (persona-specific, includes custom fields)
     pub fn get_actor_details(&mut self, actor_id: &str) -> Result<crate::core::Persona> {
         let controller = self.ensure_persona_controller()?;
         controller.get_persona(actor_id)
-    }
-
-    /// Update actor name
-    pub fn update_actor_name(
-        &mut self,
-        actor_id: String,
-        name: Option<String>,
-    ) -> Result<String> {
-        let controller = self.ensure_persona_controller()?;
-        let result = controller.update_persona(actor_id, name)?;
-        Ok(result.message)
     }
 
     /// Update actor custom fields
@@ -371,6 +354,36 @@ impl InteractiveRunner {
     ) -> Result<std::collections::HashMap<String, serde_json::Value>> {
         let controller = self.ensure_persona_controller()?;
         controller.get_persona_field_values(actor_id)
+    }
+
+    // ========== Actor Editing Methods (All Types) ==========
+
+    /// Get actor entity details (works for all actor types)
+    pub fn get_actor_entity(&mut self, actor_id: &str) -> Result<crate::core::ActorEntity> {
+        let controller = self.ensure_actor_controller()?;
+        controller.get_actor(actor_id)
+    }
+
+    /// Update actor name (works for all actor types)
+    pub fn update_actor_entity_name(
+        &mut self,
+        actor_id: String,
+        name: String,
+    ) -> Result<String> {
+        let controller = self.ensure_actor_controller()?;
+        let result = controller.update_actor_name(actor_id, name)?;
+        Ok(result.message)
+    }
+
+    /// Update actor emoji (works for all actor types)
+    pub fn update_actor_entity_emoji(
+        &mut self,
+        actor_id: String,
+        emoji: String,
+    ) -> Result<String> {
+        let controller = self.ensure_actor_controller()?;
+        let result = controller.update_emoji(actor_id, emoji)?;
+        Ok(result.message)
     }
 
     // ========== Use Case Editing Methods ==========

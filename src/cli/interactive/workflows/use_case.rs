@@ -595,7 +595,7 @@ impl UseCaseWorkflow {
         let mut runner = InteractiveRunner::new();
 
         // Get list of use cases
-        let use_case_ids = runner.get_use_case_ids()?;
+        let mut use_case_ids = runner.get_use_case_ids()?;
 
         if use_case_ids.is_empty() {
             UI::show_error("No use cases found. Please create a use case first.")?;
@@ -603,10 +603,17 @@ impl UseCaseWorkflow {
             return Ok(());
         }
 
+        // Add cancel option
+        use_case_ids.push("[Cancel]".to_string());
+
         // Let user select which use case to edit
         let selected_id = Select::new("Select use case to edit:", use_case_ids)
             .with_help_message("Choose the use case you want to modify")
             .prompt()?;
+
+        if selected_id == "[Cancel]" {
+            return Ok(());
+        }
 
         // Load use case details
         let use_case = runner.get_use_case_details(&selected_id)?;
@@ -653,7 +660,6 @@ impl UseCaseWorkflow {
             let _use_case = runner.get_use_case_details(&selected_id)?;
         }
 
-        UI::pause_for_input()?;
         Ok(())
     }
 

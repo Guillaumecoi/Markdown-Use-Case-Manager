@@ -121,12 +121,12 @@ impl ActorWorkflow {
 
     /// Show actor details
     pub fn show_actor() -> Result<()> {
-        UI::show_section_header("Show Actor", "🔍")?;
+        UI::show_section_header("Show Actor Details", "👁️")?;
 
         let mut runner = InteractiveRunner::new();
 
         // Get list of actors
-        let actor_ids = runner.get_actor_ids()?;
+        let mut actor_ids = runner.get_actor_ids()?;
 
         if actor_ids.is_empty() {
             UI::show_error("No actors found.")?;
@@ -134,10 +134,17 @@ impl ActorWorkflow {
             return Ok(());
         }
 
+        // Add cancel option
+        actor_ids.push("[Cancel]".to_string());
+
         // Let user select which actor to view
         let selected_id = Select::new("Select actor to view:", actor_ids)
             .with_help_message("Choose the actor you want to see details for")
             .prompt()?;
+
+        if selected_id == "[Cancel]" {
+            return Ok(());
+        }
 
         runner.show_actor(selected_id)?;
 
@@ -152,7 +159,7 @@ impl ActorWorkflow {
         let mut runner = InteractiveRunner::new();
 
         // Get list of actors
-        let actor_ids = runner.get_actor_ids()?;
+        let mut actor_ids = runner.get_actor_ids()?;
 
         if actor_ids.is_empty() {
             UI::show_error("No actors found.")?;
@@ -160,10 +167,17 @@ impl ActorWorkflow {
             return Ok(());
         }
 
+        // Add cancel option
+        actor_ids.push("[Cancel]".to_string());
+
         // Let user select which actor to delete
         let selected_id = Select::new("Select actor to delete:", actor_ids)
             .with_help_message("Choose the actor you want to delete")
             .prompt()?;
+
+        if selected_id == "[Cancel]" {
+            return Ok(());
+        }
 
         // Confirm deletion
         let confirm = Select::new(
@@ -189,55 +203,72 @@ impl ActorWorkflow {
 
         let mut runner = InteractiveRunner::new();
 
-        // Get list of personas only (system actors don't have editable custom fields yet)
-        let actor_ids = runner.get_persona_ids()?;
+        // Get list of all actors (personas and system actors)
+        let mut actor_ids = runner.get_actor_ids()?;
 
         if actor_ids.is_empty() {
-            UI::show_error("No personas found. Please create a persona first.")?;
+            UI::show_error("No actors found. Please create an actor first.")?;
             UI::pause_for_input()?;
             return Ok(());
         }
+
+        // Add cancel option
+        actor_ids.push("[Cancel]".to_string());
 
         // Let user select which actor to edit
         let selected_id = Select::new("Select actor to edit:", actor_ids)
             .with_help_message("Choose the actor you want to modify")
             .prompt()?;
 
+        if selected_id == "[Cancel]" {
+            return Ok(());
+        }
+
         // Load actor details
-        let actor = runner.get_actor_details(&selected_id)?;
+        let actor = runner.get_actor_entity(&selected_id)?;
 
         // Show edit menu
         loop {
             UI::clear_screen()?;
             UI::show_section_header(&format!("Editing: {}", actor.name), "✏️")?;
-            UI::show_info(&format!("ID: {}", actor.id))?;
+            UI::show_info(&format!("ID: {} ({})", actor.id, actor.actor_type))?;
 
-            let edit_options = vec!["Edit Name", "Edit Custom Fields", "Back to Menu"];
+            // Build menu based on actor type
+            let mut edit_options = vec!["Edit Name", "Edit Emoji"];
+            
+            // Only personas have custom fields
+            if actor.actor_type == crate::core::ActorType::Persona {
+                edit_options.push("Edit Custom Fields");
+            }
+            
+            edit_options.push("Back to Menu");
 
             let choice = Select::new("What would you like to edit?", edit_options).prompt()?;
 
             match choice {
-                "Edit Name" => Self::edit_actor_name(&mut runner, &selected_id, &actor)?,
+                "Edit Name" => Self::edit_actor_entity_name(&mut runner, &selected_id, &actor)?,
+                "Edit Emoji" => Self::edit_actor_entity_emoji(&mut runner, &selected_id, &actor)?,
                 "Edit Custom Fields" => {
-                    Self::edit_actor_fields(&mut runner, &selected_id, &actor)?
+                    // Only for personas - get persona details and edit fields
+                    let persona = runner.get_actor_details(&selected_id)?;
+                    Self::edit_actor_fields(&mut runner, &selected_id, &persona)?
                 }
                 "Back to Menu" => break,
                 _ => {}
             }
 
             // Reload actor after edits
-            let _actor = runner.get_actor_details(&selected_id)?;
+            let _actor = runner.get_actor_entity(&selected_id)?;
         }
 
-        UI::pause_for_input()?;
         Ok(())
     }
 
-    /// Edit actor name
-    fn edit_actor_name(
+    /// Edit actor entity name (works for all actor types)
+    fn edit_actor_entity_name(
         runner: &mut InteractiveRunner,
         actor_id: &str,
-        actor: &crate::core::Persona,
+        actor: &crate::core::ActorEntity,
     ) -> Result<()> {
         UI::show_section_header("Edit Actor Name", "📝")?;
 
@@ -251,7 +282,32 @@ impl ActorWorkflow {
             return Ok(());
         }
 
-        let result = runner.update_actor_name(actor_id.to_string(), Some(new_name))?;
+        let result = runner.update_actor_entity_name(actor_id.to_string(), new_name)?;
+
+        UI::show_success(&result)?;
+        UI::pause_for_input()?;
+        Ok(())
+    }
+
+    /// Edit actor entity emoji (works for all actor types)
+    fn edit_actor_entity_emoji(
+        runner: &mut InteractiveRunner,
+        actor_id: &str,
+        actor: &crate::core::ActorEntity,
+    ) -> Result<()> {
+        UI::show_section_header("Edit Actor Emoji", "🎭")?;
+
+        let new_emoji = Text::new("Emoji:")
+            .with_default(&actor.emoji)
+            .with_help_message("Enter a single emoji character")
+            .prompt()?;
+
+        if new_emoji == actor.emoji {
+            UI::show_info("No changes made.")?;
+            return Ok(());
+        }
+
+        let result = runner.update_actor_entity_emoji(actor_id.to_string(), new_emoji)?;
 
         UI::show_success(&result)?;
         UI::pause_for_input()?;

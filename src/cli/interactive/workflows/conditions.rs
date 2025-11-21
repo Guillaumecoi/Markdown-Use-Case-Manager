@@ -291,8 +291,14 @@ impl ConditionsWorkflow {
         UI::show_section_header("Edit Precondition", "✏️")?;
 
         // Select precondition to edit
+        let mut preconditions_with_cancel = preconditions.clone();
+        preconditions_with_cancel.push("[Cancel]".to_string());
         let selection =
-            Select::new("Select precondition to edit:", preconditions.clone()).prompt()?;
+            Select::new("Select precondition to edit:", preconditions_with_cancel).prompt()?;
+
+        if selection == "[Cancel]" {
+            return Ok(());
+        }
 
         // Find index (extract number from "1. text")
         let index = preconditions
@@ -354,8 +360,14 @@ impl ConditionsWorkflow {
         UI::show_section_header("Remove Precondition", "🗑️")?;
 
         // Select precondition to remove
+        let mut preconditions_with_cancel = preconditions.clone();
+        preconditions_with_cancel.push("[Cancel]".to_string());
         let selection =
-            Select::new("Select precondition to remove:", preconditions.clone()).prompt()?;
+            Select::new("Select precondition to remove:", preconditions_with_cancel).prompt()?;
+
+        if selection == "[Cancel]" {
+            return Ok(());
+        }
 
         // Find index
         let index = preconditions
@@ -596,8 +608,14 @@ impl ConditionsWorkflow {
         UI::show_section_header("Edit Postcondition", "✏️")?;
 
         // Select postcondition to edit
+        let mut postconditions_with_cancel = postconditions.clone();
+        postconditions_with_cancel.push("[Cancel]".to_string());
         let selection =
-            Select::new("Select postcondition to edit:", postconditions.clone()).prompt()?;
+            Select::new("Select postcondition to edit:", postconditions_with_cancel).prompt()?;
+
+        if selection == "[Cancel]" {
+            return Ok(());
+        }
 
         // Find index
         let index = postconditions
@@ -659,8 +677,14 @@ impl ConditionsWorkflow {
         UI::show_section_header("Remove Postcondition", "🗑️")?;
 
         // Select postcondition to remove
+        let mut postconditions_with_cancel = postconditions.clone();
+        postconditions_with_cancel.push("[Cancel]".to_string());
         let selection =
-            Select::new("Select postcondition to remove:", postconditions.clone()).prompt()?;
+            Select::new("Select postcondition to remove:", postconditions_with_cancel).prompt()?;
+
+        if selection == "[Cancel]" {
+            return Ok(());
+        }
 
         // Find index
         let index = postconditions

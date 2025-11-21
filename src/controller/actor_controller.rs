@@ -275,6 +275,38 @@ impl ActorController {
         )))
     }
 
+    /// Update an actor's name (works for all actor types).
+    ///
+    /// Updates the actor's display name. This works for any actor type
+    /// (personas, systems, databases, etc.).
+    ///
+    /// # Arguments
+    /// * `id` - The actor ID to update
+    /// * `name` - New name for the actor
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if actor not found or update fails
+    pub fn update_actor_name(&self, id: String, name: String) -> Result<DisplayResult> {
+        // Load existing actor
+        let mut actor = self
+            .actor_repository
+            .load_actor_by_id(&id)?
+            .context(format!("Actor '{}' not found", id))?;
+
+        actor.name = name;
+
+        // Save updated actor
+        self.actor_repository.save_actor(&actor)?;
+
+        Ok(DisplayResult::success(format!(
+            "✅ Updated name for actor: {}",
+            id
+        )))
+    }
+
     /// Update a persona's basic information.
     ///
     /// Updates the persona's name. Custom fields are updated separately

@@ -339,12 +339,20 @@ impl ScenarioWorkflow {
         }
 
         // Select scenario to edit
-        let scenario_options: Vec<String> = scenarios
+        let mut scenario_options: Vec<String> = scenarios
             .iter()
             .map(|s| format!("{} - {}", s.id, s.title))
             .collect();
 
+        // Add cancel option
+        scenario_options.push("[Cancel]".to_string());
+
         let selected = Select::new("Select scenario to edit:", scenario_options).prompt()?;
+        
+        if selected == "[Cancel]" {
+            return Ok(());
+        }
+
         let scenario_id = selected.split(" - ").next().unwrap();
 
         // Get current scenario
@@ -480,7 +488,6 @@ impl ScenarioWorkflow {
             }
         }
 
-        UI::pause_for_input()?;
         Ok(())
     }
 
@@ -498,12 +505,20 @@ impl ScenarioWorkflow {
         }
 
         // Select scenario to delete
-        let scenario_options: Vec<String> = scenarios
+        let mut scenario_options: Vec<String> = scenarios
             .iter()
             .map(|s| format!("{} - {}", s.id, s.title))
             .collect();
 
+        // Add cancel option
+        scenario_options.push("[Cancel]".to_string());
+
         let selected = Select::new("Select scenario to delete:", scenario_options).prompt()?;
+        
+        if selected == "[Cancel]" {
+            return Ok(());
+        }
+
         let scenario_id = selected.split(" - ").next().unwrap();
 
         // Confirm deletion
