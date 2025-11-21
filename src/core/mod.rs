@@ -21,7 +21,6 @@ pub use domain::{
 };
 
 // Exported for integration tests (appear unused to lib but required by tests/)
-#[allow(unused_imports)]
 pub use domain::Scenario;
 
 // Re-export infrastructure types (from infrastructure's public interface)
@@ -32,7 +31,6 @@ pub use infrastructure::{
 };
 
 // Exported for integration tests (appear unused to lib but required by tests/)
-#[allow(unused_imports)]
 pub use infrastructure::{
     SqliteActorRepository, SqliteUseCaseRepository, TomlActorRepository, TomlUseCaseRepository,
 };

@@ -17,8 +17,6 @@ impl Metadata {
     }
 
     /// Update the updated_at timestamp to current time
-    /// TODO: Call this when use case content is modified (scenarios added, status changed, etc.)
-    #[allow(dead_code)]
     pub fn touch(&mut self) {
         self.updated_at = Utc::now();
     }
