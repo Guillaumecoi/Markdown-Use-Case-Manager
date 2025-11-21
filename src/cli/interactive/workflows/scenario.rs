@@ -606,7 +606,7 @@ impl ScenarioWorkflow {
             }
             println!();
 
-            let actions = vec!["Add step", "Edit step", "Remove step", "Back"];
+            let actions = vec!["Add step", "Insert step", "Edit step", "Remove step", "Reorder step", "Back"];
             let choice = Select::new("What would you like to do?", actions).prompt()?;
 
             match choice {
@@ -669,9 +669,99 @@ impl ScenarioWorkflow {
 
                     UI::show_success(&result.message)?;
                 }
+                "Insert step" => {
+                    if scenario.steps.is_empty() {
+                        println!("\n  No steps yet. Use 'Add step' to create the first step.\n");
+                        continue;
+                    }
+
+                    // Ask for position to insert
+                    let mut position_options: Vec<String> = Vec::new();
+                    position_options.push("At beginning (before step 1)".to_string());
+                    for step in &scenario.steps {
+                        position_options.push(format!("After step {} ({})", step.order, step.action));
+                    }
+
+                    let position_choice = Select::new("Where to insert the new step?", position_options).prompt()?;
+
+                    let insert_order: u32 = if position_choice.starts_with("At beginning") {
+                        1
+                    } else {
+                        // Extract step number and add 1
+                        let after_step: u32 = position_choice
+                            .split("step ")
+                            .nth(1)
+                            .and_then(|s| s.split(' ').next())
+                            .and_then(|n| n.parse().ok())
+                            .unwrap_or(1);
+                        after_step + 1
+                    };
+
+                    let actor = Self::select_actor_for_step()?;
+
+                    let add_receiver = Confirm::new("Add a receiving actor?")
+                        .with_default(false)
+                        .with_help_message("Does this action have a target/receiver?")
+                        .prompt()?;
+
+                    let receiver = if add_receiver {
+                        Self::select_actor_for_step()?
+                    } else {
+                        None
+                    };
+
+                    let description = Text::new("Step description:")
+                        .with_help_message(
+                            "Describe the action (e.g., 'enters credentials', 'validates input')",
+                        )
+                        .prompt()?;
+
+                    // Add step at specified position
+                    let result = controller.add_step(
+                        use_case_id.to_string(),
+                        scenario_id.to_string(),
+                        description,
+                        Some(insert_order),
+                        actor,
+                        receiver,
+                    )?;
+
+                    UI::show_success(&result.message)?;
+                }
                 "Remove step" => {
                     if scenario.steps.is_empty() {
                         println!("\n  No steps to remove.\n");
+                        continue;
+                    }
+
+                    let mut step_choices: Vec<String> = scenario
+                        .steps
+                        .iter()
+                        .map(|s| format!("{}. {}", s.order, s.action))
+                        .collect();
+                    step_choices.push("[Cancel]".to_string());
+
+                    let selected_step =
+                        Select::new("Select step to remove:", step_choices).prompt()?;
+
+                    if selected_step == "[Cancel]" {
+                        continue;
+                    }
+
+                    let step_order: u32 =
+                        selected_step.split('.').next().unwrap().trim().parse()?;
+
+                    let result = controller.remove_step(
+                        use_case_id.to_string(),
+                        scenario_id.to_string(),
+                        step_order,
+                    )?;
+
+                    UI::show_success(&result.message)?;
+                }
+                "Reorder step" => {
+                    if scenario.steps.len() < 2 {
+                        println!("\n  Need at least 2 steps to reorder.\n");
                         continue;
                     }
 
@@ -682,14 +772,81 @@ impl ScenarioWorkflow {
                         .collect();
 
                     let selected_step =
-                        Select::new("Select step to remove:", step_choices).prompt()?;
+                        Select::new("Select step to move:", step_choices).prompt()?;
                     let step_order: u32 =
                         selected_step.split('.').next().unwrap().trim().parse()?;
 
-                    let result = controller.remove_step(
+                    let move_options = vec!["Move up", "Move down", "Move to specific position"];
+                    let move_choice = Select::new("How to move this step?", move_options).prompt()?;
+
+                    let new_order: u32 = match move_choice {
+                        "Move up" => {
+                            if step_order == 1 {
+                                println!("\n  Step is already at the top.\n");
+                                continue;
+                            }
+                            step_order - 1
+                        }
+                        "Move down" => {
+                            if step_order >= scenario.steps.len() as u32 {
+                                println!("\n  Step is already at the bottom.\n");
+                                continue;
+                            }
+                            step_order + 1
+                        }
+                        "Move to specific position" => {
+                            let position_input = Text::new("New position (1-based):")
+                                .with_help_message(&format!(
+                                    "Enter a number between 1 and {}",
+                                    scenario.steps.len()
+                                ))
+                                .prompt()?;
+
+                            let new_pos: u32 = position_input.trim().parse().unwrap_or(step_order);
+
+                            if new_pos < 1 || new_pos > scenario.steps.len() as u32 {
+                                println!("\n  Invalid position.\n");
+                                continue;
+                            }
+                            new_pos
+                        }
+                        _ => step_order,
+                    };
+
+                    if new_order == step_order {
+                        println!("\n  No change in position.\n");
+                        continue;
+                    }
+
+                    // Build reordering map
+                    let mut reorderings = std::collections::HashMap::new();
+
+                    // Simple swap or shift logic
+                    if (new_order as i32 - step_order as i32).abs() == 1 {
+                        // Simple adjacent swap
+                        reorderings.insert(step_order, new_order);
+                        reorderings.insert(new_order, step_order);
+                    } else {
+                        // Complex reordering - move step and shift others
+                        if new_order < step_order {
+                            // Moving up
+                            for i in new_order..step_order {
+                                reorderings.insert(i, i + 1);
+                            }
+                            reorderings.insert(step_order, new_order);
+                        } else {
+                            // Moving down
+                            for i in (step_order + 1)..=new_order {
+                                reorderings.insert(i, i - 1);
+                            }
+                            reorderings.insert(step_order, new_order);
+                        }
+                    }
+
+                    let result = controller.reorder_steps(
                         use_case_id.to_string(),
                         scenario_id.to_string(),
-                        step_order,
+                        reorderings,
                     )?;
 
                     UI::show_success(&result.message)?;
