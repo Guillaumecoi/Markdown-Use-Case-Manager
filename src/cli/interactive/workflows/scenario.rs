@@ -385,10 +385,7 @@ impl ScenarioWorkflow {
                 "Edit type",
                 "Edit status",
                 "Manage steps",
-                "Manage preconditions",
-                "Manage postconditions",
-                "Assign persona",
-                "Manage actors",
+                "Manage conditions",
                 "Done editing",
             ];
 
@@ -461,27 +458,8 @@ impl ScenarioWorkflow {
                 "Manage steps" => {
                     Self::manage_steps_inline(use_case_id, scenario_id, &mut controller)?;
                 }
-                "Manage preconditions" => {
-                    Self::manage_conditions_inline(
-                        use_case_id,
-                        scenario_id,
-                        "preconditions",
-                        &mut controller,
-                    )?;
-                }
-                "Manage postconditions" => {
-                    Self::manage_conditions_inline(
-                        use_case_id,
-                        scenario_id,
-                        "postconditions",
-                        &mut controller,
-                    )?;
-                }
-                "Assign persona" => {
-                    Self::assign_persona_inline(use_case_id, scenario_id, &mut controller)?;
-                }
-                "Manage actors" => {
-                    Self::manage_actors_inline(use_case_id, scenario_id, &mut controller)?;
+                "Manage conditions" => {
+                    Self::manage_all_conditions_inline(use_case_id, scenario_id, &mut controller)?;
                 }
                 "Done editing" => break,
                 _ => {}
@@ -666,78 +644,143 @@ impl ScenarioWorkflow {
     }
 
     /// Inline helper to manage conditions (pre/post) within the edit scenario context
-    fn manage_conditions_inline(
+    /// Manage both preconditions and postconditions in a unified interface
+    fn manage_all_conditions_inline(
         use_case_id: &str,
         scenario_id: &str,
-        condition_type: &str,
         controller: &mut ScenarioController,
     ) -> Result<()> {
         loop {
             let scenario = controller.get_scenario(use_case_id, scenario_id)?;
-            let conditions = match condition_type {
-                "preconditions" => &scenario.preconditions,
-                "postconditions" => &scenario.postconditions,
-                _ => return Err(anyhow::anyhow!("Invalid condition type")),
-            };
 
-            println!("\n  Current {}:", condition_type);
-            if conditions.is_empty() {
+            UI::clear_screen()?;
+            println!("\n  📋 Conditions for: {}\n", scenario.title);
+
+            // Show preconditions
+            println!("  ⬇️  Preconditions:");
+            if scenario.preconditions.is_empty() {
                 println!("    (none)");
             } else {
-                for (i, cond) in conditions.iter().enumerate() {
+                for (i, cond) in scenario.preconditions.iter().enumerate() {
                     println!("    {}. {}", i + 1, cond);
                 }
             }
             println!();
 
-            let actions = vec!["Add condition", "Remove condition", "Back"];
+            // Show postconditions
+            println!("  ⬆️  Postconditions:");
+            if scenario.postconditions.is_empty() {
+                println!("    (none)");
+            } else {
+                for (i, cond) in scenario.postconditions.iter().enumerate() {
+                    println!("    {}. {}", i + 1, cond);
+                }
+            }
+            println!();
+
+            let actions = vec![
+                "Add Precondition",
+                "Remove Precondition",
+                "Add Postcondition",
+                "Remove Postcondition",
+                "Back",
+            ];
             let choice = Select::new("What would you like to do?", actions).prompt()?;
 
             match choice {
-                "Add condition" => {
-                    let condition =
-                        Text::new(&format!("Enter {}:", condition_type.trim_end_matches('s')))
-                            .with_help_message("You can reference other use cases with 'UC-XXX'")
-                            .prompt()?;
+                "Add Precondition" => {
+                    let condition = Text::new("Enter precondition:")
+                        .with_help_message("Describe what must be true before this scenario starts")
+                        .prompt()?;
 
-                    let result = if condition_type == "preconditions" {
-                        controller.add_precondition(
-                            use_case_id.to_string(),
-                            scenario_id.to_string(),
-                            condition,
-                        )?
-                    } else {
-                        controller.add_postcondition(
-                            use_case_id.to_string(),
-                            scenario_id.to_string(),
-                            condition,
-                        )?
-                    };
+                    let result = controller.add_precondition(
+                        use_case_id.to_string(),
+                        scenario_id.to_string(),
+                        condition,
+                    )?;
 
                     UI::show_success(&result.message)?;
                 }
-                "Remove condition" => {
-                    if conditions.is_empty() {
-                        println!("\n  No conditions to remove.\n");
+                "Remove Precondition" => {
+                    if scenario.preconditions.is_empty() {
+                        println!("\n  No preconditions to remove.\n");
+                        UI::pause_for_input()?;
                         continue;
                     }
 
-                    let selected =
-                        Select::new("Select condition to remove:", conditions.clone()).prompt()?;
+                    let mut options: Vec<String> = scenario
+                        .preconditions
+                        .iter()
+                        .map(|c| c.to_string())
+                        .collect();
+                    options.push("[Cancel]".to_string());
+                    let selected = Select::new("Select precondition to remove:", options).prompt()?;
 
-                    let result = if condition_type == "preconditions" {
-                        controller.remove_precondition(
-                            use_case_id.to_string(),
-                            scenario_id.to_string(),
-                            selected.text.clone(),
-                        )?
-                    } else {
-                        controller.remove_postcondition(
-                            use_case_id.to_string(),
-                            scenario_id.to_string(),
-                            selected.text.clone(),
-                        )?
-                    };
+                    if selected == "[Cancel]" {
+                        continue;
+                    }
+
+                    // Find the matching condition by text
+                    let condition_text = scenario
+                        .preconditions
+                        .iter()
+                        .find(|c| c.to_string() == selected)
+                        .map(|c| c.text.clone())
+                        .unwrap_or_else(|| selected.clone());
+
+                    let result = controller.remove_precondition(
+                        use_case_id.to_string(),
+                        scenario_id.to_string(),
+                        condition_text,
+                    )?;
+
+                    UI::show_success(&result.message)?;
+                }
+                "Add Postcondition" => {
+                    let condition = Text::new("Enter postcondition:")
+                        .with_help_message("Describe what must be true after this scenario completes")
+                        .prompt()?;
+
+                    let result = controller.add_postcondition(
+                        use_case_id.to_string(),
+                        scenario_id.to_string(),
+                        condition,
+                    )?;
+
+                    UI::show_success(&result.message)?;
+                }
+                "Remove Postcondition" => {
+                    if scenario.postconditions.is_empty() {
+                        println!("\n  No postconditions to remove.\n");
+                        UI::pause_for_input()?;
+                        continue;
+                    }
+
+                    let mut options: Vec<String> = scenario
+                        .postconditions
+                        .iter()
+                        .map(|c| c.to_string())
+                        .collect();
+                    options.push("[Cancel]".to_string());
+                    let selected = Select::new("Select postcondition to remove:", options).prompt()?;
+
+                    if selected == "[Cancel]" {
+                        continue;
+                    }
+
+                    // Find the matching condition by text
+                    let condition_text = scenario
+                        .postconditions
+                        .iter()
+                        .find(|c| c.to_string() == selected)
+                        .map(|c| c.text.clone())
+                        .unwrap_or_else(|| selected.clone());
+
+                    let result = controller.remove_postcondition(
+                        use_case_id.to_string(),
+                        scenario_id.to_string(),
+                        condition_text,
+                    )?;
 
                     UI::show_success(&result.message)?;
                 }
@@ -749,50 +792,4 @@ impl ScenarioWorkflow {
         Ok(())
     }
 
-    /// Inline helper to assign a persona within the edit scenario context
-    fn assign_persona_inline(
-        use_case_id: &str,
-        scenario_id: &str,
-        controller: &mut ScenarioController,
-    ) -> Result<()> {
-        let mut runner = InteractiveRunner::new();
-        let persona_ids = runner.get_actor_ids()?;
-
-        if persona_ids.is_empty() {
-            println!("\n  No personas available.\n");
-            UI::pause_for_input()?;
-            return Ok(());
-        }
-
-        let mut options = vec!["(Clear persona assignment)"];
-        options.extend(persona_ids.iter().map(|s| s.as_str()));
-
-        let choice = Select::new("Select persona:", options).prompt()?;
-
-        let result = if choice == "(Clear persona assignment)" {
-            controller.unassign_persona(use_case_id.to_string(), scenario_id.to_string())?
-        } else {
-            controller.assign_persona(
-                use_case_id.to_string(),
-                scenario_id.to_string(),
-                choice.to_string(),
-            )?
-        };
-
-        UI::show_success(&result.message)?;
-        Ok(())
-    }
-
-    /// Inline helper to manage actors within the edit scenario context
-    fn manage_actors_inline(
-        _use_case_id: &str,
-        _scenario_id: &str,
-        _controller: &mut ScenarioController,
-    ) -> Result<()> {
-        // TODO: Implement actors management when Scenario.actors field is available
-        println!("\n  ⚠️  Actor management not yet implemented.");
-        println!("     Actors are currently managed during scenario creation.\n");
-        UI::pause_for_input()?;
-        Ok(())
-    }
 }
