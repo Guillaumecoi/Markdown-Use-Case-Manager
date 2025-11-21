@@ -23,9 +23,9 @@ pub struct Condition {
 
 impl Condition {
     /// Create a simple condition with just text (no reference)
-    pub fn new(text: String) -> Self {
+    pub fn new(text: impl Into<String>) -> Self {
         Self {
-            text,
+            text: text.into(),
             target_type: None,
             target_id: None,
             relationship: None,
@@ -33,22 +33,30 @@ impl Condition {
     }
 
     /// Create a condition with a use case reference
-    pub fn with_use_case(text: String, target_id: String, relationship: Option<String>) -> Self {
+    pub fn with_use_case(
+        text: impl Into<String>,
+        target_id: impl Into<String>,
+        relationship: impl Into<Option<String>>,
+    ) -> Self {
         Self {
-            text,
+            text: text.into(),
             target_type: Some(ReferenceType::UseCase),
-            target_id: Some(target_id),
-            relationship,
+            target_id: Some(target_id.into()),
+            relationship: relationship.into(),
         }
     }
 
     /// Create a condition with a scenario reference
-    pub fn with_scenario(text: String, target_id: String, relationship: Option<String>) -> Self {
+    pub fn with_scenario(
+        text: impl Into<String>,
+        target_id: impl Into<String>,
+        relationship: impl Into<Option<String>>,
+    ) -> Self {
         Self {
-            text,
+            text: text.into(),
             target_type: Some(ReferenceType::Scenario),
-            target_id: Some(target_id),
-            relationship,
+            target_id: Some(target_id.into()),
+            relationship: relationship.into(),
         }
     }
 
