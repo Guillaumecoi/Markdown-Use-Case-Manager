@@ -207,7 +207,7 @@ impl ProjectController {
     /// * `default_methodology` - Optional default methodology (default: first methodology or "feature")
     /// * `use_case_dir` - Optional directory for use case files (default: "docs/use-cases")
     /// * `test_dir` - Optional directory for test files (default: "tests/use-cases")
-    /// * `persona_dir` - Optional directory for persona files (default: "docs/personas")
+    /// * `actor_dir` - Optional directory for actor files (default: "docs/actors")
     /// * `data_dir` - Optional directory for data files (default: "use-cases-data")
     ///
     /// # Returns
@@ -222,7 +222,7 @@ impl ProjectController {
         default_methodology: Option<String>,
         use_case_dir: Option<String>,
         test_dir: Option<String>,
-        persona_dir: Option<String>,
+        actor_dir: Option<String>,
         data_dir: Option<String>,
     ) -> Result<DisplayResult> {
         // Check if already initialized
@@ -279,7 +279,7 @@ impl ProjectController {
         // Use defaults for directories
         let resolved_use_case_dir = use_case_dir.unwrap_or_else(|| "docs/use-cases".to_string());
         let resolved_test_dir = test_dir.unwrap_or_else(|| "tests/use-cases".to_string());
-        let resolved_persona_dir = persona_dir.unwrap_or_else(|| "docs/personas".to_string());
+        let resolved_actor_dir = actor_dir.unwrap_or_else(|| "docs/actors".to_string());
         let resolved_data_dir = data_dir.unwrap_or_else(|| "use-cases-data".to_string());
 
         // Create config with resolved parameters
@@ -290,7 +290,7 @@ impl ProjectController {
             resolved_storage.clone(),
             resolved_use_case_dir.clone(),
             resolved_test_dir.clone(),
-            resolved_persona_dir.clone(),
+            resolved_actor_dir.clone(),
             resolved_data_dir.clone(),
         );
 
@@ -329,7 +329,7 @@ impl ProjectController {
              📁 Project directories created:\n\
              - {} (use cases)\n\
              - {} (tests)\n\
-             - {} (personas)\n\
+             - {} (actors)\n\
              - {} (data)",
             resolved_language,
             resolved_storage,
@@ -337,7 +337,7 @@ impl ProjectController {
             methodologies_list,
             resolved_use_case_dir,
             resolved_test_dir,
-            resolved_persona_dir,
+            resolved_actor_dir,
             resolved_data_dir,
         );
 

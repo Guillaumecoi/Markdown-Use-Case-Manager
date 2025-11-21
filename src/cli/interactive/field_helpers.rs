@@ -207,7 +207,7 @@ impl FieldHelpers {
     /// input method based on the field type.
     ///
     /// # Arguments
-    /// * `field_type` - Type of the field ("string", "number", "boolean", "array")
+    /// * `field_type` - Type of the field ("string", "number", "boolean", "array", "text")
     /// * `label` - Display name for the field
     /// * `current_value` - Current JSON value of the field (if any)
     /// * `help` - Help message to display
@@ -243,8 +243,8 @@ impl FieldHelpers {
 
                 Self::edit_boolean(&format!("{}: ", label), current_bool, help)
             }
-            _ => {
-                // Default to string
+            "text" | _ => {
+                // "text" and default to string
                 let current = current_value.and_then(|v| v.as_str()).unwrap_or("");
 
                 Self::edit_string(&format!("{}: ", label), current, help)

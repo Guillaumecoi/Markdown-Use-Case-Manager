@@ -26,9 +26,9 @@ impl TomlPersonaRepository {
     }
 
     /// Get the directory for persona markdown files
-    /// Stores in docs/personas (configured via persona_dir)
+    /// Stores in docs/actors (configured via actor_dir)
     fn get_markdown_dir(&self) -> String {
-        self.config.directories.persona_dir.clone()
+        self.config.directories.actor_dir.clone()
     }
 }
 
@@ -143,14 +143,14 @@ mod tests {
         let mut config = Config::default();
         config.directories.use_case_dir = format!("{}/docs/use-cases", temp_path);
         config.directories.data_dir = format!("{}/.mucm", temp_path);
-        config.directories.persona_dir = format!("{}/docs/personas", temp_path);
+        config.directories.actor_dir = format!("{}/docs/actors", temp_path);
 
         let repo = TomlPersonaRepository::new(config);
         (repo, temp_dir)
     }
 
     fn create_test_persona() -> Persona {
-        Persona::new("test-persona".to_string(), "Test User".to_string())
+        Persona::new("test-persona".to_string(), "Test User".to_string(), "Test Function".to_string())
     }
 
     #[test]
@@ -175,7 +175,7 @@ mod tests {
         let persona1 = create_test_persona();
         repo.save(&persona1).unwrap();
 
-        let persona2 = Persona::new("admin-persona".to_string(), "Admin User".to_string());
+        let persona2 = Persona::new("admin-persona".to_string(), "Admin User".to_string(), "Test Function".to_string());
         repo.save(&persona2).unwrap();
 
         let personas = repo.load_all().unwrap();

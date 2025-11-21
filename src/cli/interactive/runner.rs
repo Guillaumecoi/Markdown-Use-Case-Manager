@@ -144,7 +144,7 @@ impl InteractiveRunner {
     }
 
     /// Create a multi-view use case
-    #[allow(dead_code)]
+    #[cfg(test)]
     pub fn create_use_case_with_views(
         &mut self,
         title: String,
@@ -217,16 +217,10 @@ impl InteractiveRunner {
     }
 
     /// Create a persona interactively
-    pub fn create_persona_interactive(&mut self, id: String, name: String) -> Result<String> {
-        use crate::cli::args::PersonaCommands;
-        use crate::cli::standard::handle_persona_command;
-        use crate::config::Config;
-
-        let config = Config::load()?;
-        let command = PersonaCommands::Create { id, name };
-
-        handle_persona_command(command, &config)?;
-        Ok("Persona created successfully!".to_string())
+    pub fn create_persona_interactive(&mut self, id: String, name: String, function: String) -> Result<String> {
+        let controller = self.ensure_persona_controller()?;
+        let result = controller.create_persona(id, name, function)?;
+        Ok(result.message)
     }
 
     /// Create a persona with additional fields
@@ -248,34 +242,25 @@ impl InteractiveRunner {
     pub fn list_personas(&self) -> Result<()> {
         use crate::cli::args::PersonaCommands;
         use crate::cli::standard::handle_persona_command;
-        use crate::config::Config;
-
-        let config = Config::load()?;
         let command = PersonaCommands::List;
-        handle_persona_command(command, &config)
+        handle_persona_command(command)
     }
 
     /// Show persona details
-    pub fn show_persona(&self, id: &str) -> Result<()> {
+    pub fn show_persona(&self, id: String) -> Result<()> {
         use crate::cli::args::PersonaCommands;
         use crate::cli::standard::handle_persona_command;
-        use crate::config::Config;
-
-        let config = Config::load()?;
         let command = PersonaCommands::Show { id: id.to_string() };
-        handle_persona_command(command, &config)
+        handle_persona_command(command)
     }
 
     /// Delete a persona
-    pub fn delete_persona(&self, id: &str) -> Result<String> {
+    pub fn delete_persona(&self, id: &str) -> Result<()> {
         use crate::cli::args::PersonaCommands;
         use crate::cli::standard::handle_persona_command;
-        use crate::config::Config;
-
-        let config = Config::load()?;
         let command = PersonaCommands::Delete { id: id.to_string() };
-        handle_persona_command(command, &config)?;
-        Ok(format!("Persona '{}' deleted successfully!", id))
+        handle_persona_command(command)?;
+        Ok(())
     }
 
     // ========== Persona Editing Methods ==========

@@ -12,7 +12,7 @@ pub use methodologies::{
     MethodologyRegistry,
 };
 pub use persistence::{
-    file_operations, RepositoryFactory, SqlitePersonaRepository, SqliteUseCaseRepository,
-    TomlPersonaRepository, TomlUseCaseRepository, UseCaseRepository,
+    file_operations, RepositoryFactory, SqliteActorRepository, SqliteUseCaseRepository,
+    TomlActorRepository, TomlUseCaseRepository, UseCaseRepository,
 };
 pub use template_engine::TemplateEngine;

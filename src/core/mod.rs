@@ -4,7 +4,7 @@
 mod application;
 mod domain;
 mod infrastructure;
-mod utils; // Internal only
+pub mod utils; // Public utilities
 
 // Explicit public exports from private modules
 // Public exports - Explicit API surface
@@ -15,8 +15,8 @@ pub use application::{
 
 // Re-export domain types (from domain's public interface)
 pub use domain::{
-    MethodologyView, Persona, PersonaRepository, ReferenceType, ScenarioReference,
-    ScenarioReferenceValidator, ScenarioType, Status, UseCase,
+    ActorEntity, ActorRepository, ActorType, MethodologyView, Persona, PersonaRepository,
+    ReferenceType, ScenarioReference, ScenarioReferenceValidator, ScenarioType, Status, UseCase,
 };
 
 // Exported for integration tests (appear unused to lib but required by tests/)
@@ -33,7 +33,7 @@ pub use infrastructure::{
 // Exported for integration tests (appear unused to lib but required by tests/)
 #[allow(unused_imports)]
 pub use infrastructure::{
-    SqlitePersonaRepository, SqliteUseCaseRepository, TomlPersonaRepository, TomlUseCaseRepository,
+    SqliteActorRepository, SqliteUseCaseRepository, TomlActorRepository, TomlUseCaseRepository,
 };
 
 // Re-export utility functions

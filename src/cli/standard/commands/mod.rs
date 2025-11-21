@@ -5,15 +5,16 @@
 /// business logic to the CliRunner. This separation keeps the CLI layer
 /// focused on user interaction while the runner manages domain operations.
 // Private modules
+mod actor;
 mod cleanup;
 mod fields;
 mod language;
 mod methodology;
-mod persona;
 mod project;
 mod usecase;
 
 // Explicit public exports
+pub use actor::{handle_actor_command, handle_persona_command};
 pub use cleanup::handle_cleanup_command;
 pub use fields::{
     handle_postcondition_add_command, handle_postcondition_list_command,
@@ -25,6 +26,5 @@ pub use language::handle_languages_command;
 pub use methodology::{
     handle_list_methodologies_command, handle_methodology_info_command, handle_regenerate_command,
 };
-pub use persona::handle_persona_command;
 pub use project::{handle_init_command, handle_status_command};
 pub use usecase::{handle_create_command, handle_list_command, handle_usecase_scenario_command};

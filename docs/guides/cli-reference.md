@@ -594,61 +594,179 @@ When adding scenario references, use one of these relationship types:
 - `depends-on`: The scenario depends on the target being completed first
 - `alternative-to`: The scenario provides an alternative path to the target
 
-### `persona`
+### `actor`
 
-Manage personas (user archetypes for scenarios).
+Manage actors (personas and system actors).
 
-#### `persona create`
+> **New in v0.1.0**: Unified actor management replacing separate persona commands. The `persona` command is still available for backward compatibility.
 
-Create a new persona.
+#### `actor create-persona`
+
+Create a new persona (human user).
 
 ```bash
-mucm persona create [OPTIONS] <NAME>
+mucm actor create-persona <ID> <NAME>
 ```
 
 **Arguments:**
-- `<NAME>`: Persona name
-
-**Options:**
-- `-d, --description <DESCRIPTION>`: Persona description
-- `-g, --goals <GOALS>`: Comma-separated list of goals
-- `-t, --tech-level <TECH_LEVEL>`: Technical level (0-10)
-- `-c, --context <CONTEXT>`: Usage context
+- `<ID>`: Unique identifier (kebab-case, e.g., senior-developer)
+- `<NAME>`: Display name (quoted if contains spaces)
 
 **Examples:**
 ```bash
-mucm persona create "Power User Sarah"
-mucm persona create "Developer Dan" --description "Senior backend developer" --tech-level 9
-mucm persona create "Business User Bob" --goals "Reduce costs,Improve efficiency" --tech-level 3
+mucm actor create-persona teacher "Sarah Williams"
+mucm actor create-persona admin-user "Admin User"
+```
+
+Personas are initialized with Sommerville-aligned fields (background, job role, education, technical experience, motivation) that can be filled in by editing the TOML/SQLite data.
+
+#### `actor create-system`
+
+Create a new system actor (database, API, service).
+
+```bash
+mucm actor create-system <ID> <NAME> <TYPE> [--emoji <EMOJI>]
+```
+
+**Arguments:**
+- `<ID>`: Unique identifier (kebab-case)
+- `<NAME>`: Display name
+- `<TYPE>`: Actor type (System, Database, ExternalService)
+
+**Options:**
+- `--emoji <EMOJI>`: Custom emoji (defaults provided per type)
+
+**Examples:**
+```bash
+# Database with default emoji (💾)
+mucm actor create-system user-db "User Database" Database
+
+# API with custom emoji
+mucm actor create-system payment-api "Payment API" ExternalService --emoji 💳
+
+# Web server with default emoji (🖥️)
+mucm actor create-system web "Web Server" System
+```
+
+#### `actor init-standard`
+
+Initialize a set of standard system actors.
+
+```bash
+mucm actor init-standard
+```
+
+Creates 10 commonly used actors: Database 💾, Web Server 🖥️, API 🌐, Payment Gateway 💳, Email Service 📧, Cache ⚡, Message Queue 📬, Auth Service 🔐, Storage 📦, Load Balancer ⚖️.
+
+Existing actors are skipped (not overwritten).
+
+**Examples:**
+```bash
+mucm actor init-standard
+# ✅ Initialized 10 standard system actors
+```
+
+#### `actor update-emoji`
+
+Update an actor's emoji.
+
+```bash
+mucm actor update-emoji <ID> <EMOJI>
+```
+
+**Arguments:**
+- `<ID>`: Actor ID to update
+- `<EMOJI>`: New emoji
+
+**Examples:**
+```bash
+mucm actor update-emoji teacher 👩‍🏫
+mucm actor update-emoji api 🚀
+```
+
+#### `actor list`
+
+List all actors or filter by type.
+
+```bash
+mucm actor list [--actor-type <TYPE>]
+```
+
+**Options:**
+- `--actor-type <TYPE>`: Filter by type (Persona, System, Database, ExternalService)
+
+**Examples:**
+```bash
+mucm actor list                          # All actors
+mucm actor list --actor-type Persona     # Only personas
+mucm actor list --actor-type System      # Only system actors
+```
+
+#### `actor show`
+
+Show detailed information about a specific actor.
+
+```bash
+mucm actor show <ID>
+```
+
+**Arguments:**
+- `<ID>`: Actor ID
+
+**Examples:**
+```bash
+mucm actor show teacher
+mucm actor show database
+```
+
+#### `actor delete`
+
+Delete an actor.
+
+```bash
+mucm actor delete <ID>
+```
+
+**Arguments:**
+- `<ID>`: Actor ID to delete
+
+**Examples:**
+```bash
+mucm actor delete old-service
+```
+
+⚠️ **Warning**: This permanently removes the actor data.
+
+---
+
+### `persona`
+
+Legacy persona management (backward compatibility).
+
+> **Deprecated**: Use `mucm actor` commands instead. These commands will continue to work but may be removed in future versions.
+
+#### `persona create`
+
+Create a new persona (same as `actor create-persona`).
+
+```bash
+mucm persona create <ID> <NAME>
 ```
 
 #### `persona list`
 
-List all personas in the project.
+List all personas (same as `actor list --actor-type Persona`).
 
-```bash
-mucm persona list
-```
-
-**Examples:**
 ```bash
 mucm persona list
 ```
 
 #### `persona show`
 
-Show detailed information about a specific persona.
+Show persona details (same as `actor show`).
 
 ```bash
-mucm persona show <PERSONA_ID>
-```
-
-**Arguments:**
-- `<PERSONA_ID>`: Persona ID (e.g., power-user-sarah)
-
-**Examples:**
-```bash
-mucm persona show power-user-sarah
+mucm persona show <ID>
 ```
 
 #### `persona use-cases`

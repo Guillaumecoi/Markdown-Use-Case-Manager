@@ -3,13 +3,13 @@
 
 ### System Actors
 {{#each (unique_actors scenarios)}}
-- **{{this}}**
+- {{actor_emoji this}} **{{this}}**
 {{/each}}
 
 {{#if (has_personas scenarios)}}
 ### Target Personas
 {{#each (unique_personas scenarios)}}
-- 🙂 **{{this}}**
+- {{actor_emoji this}} **{{this}}**
 {{/each}}
 {{/if}}
 
@@ -18,11 +18,11 @@
 {{#each scenarios}}
 ### {{scenario_type}}: {{title}}
 
-**Status:** {{status}}{{#if persona}} | **Persona:** 🙂 {{persona}}{{/if}}
+**Status:** {{status}}{{#if persona}} | **Persona:** {{actor_emoji persona}} {{persona}}{{/if}}
 
 #### Business Flow
 {{#each steps}}
-{{order}}. **{{actor}}** {{action}} {{description}}
+{{order}}. {{actor_emoji actor}} **{{actor}}** {{action}} {{description}}
 {{/each}}
 
 {{/each}}

@@ -125,8 +125,8 @@ impl TemplateManager {
             &format!(r#"test_dir = "{}""#, config.directories.test_dir),
         );
         template_content = template_content.replace(
-            r#"persona_dir = "docs/personas""#,
-            &format!(r#"persona_dir = "{}""#, config.directories.persona_dir),
+            r#"actor_dir = "docs/actors""#,
+            &format!(r#"actor_dir = "{}""#, config.directories.actor_dir),
         );
         template_content = template_content.replace(
             r#"data_dir = "use-cases-data""#,
@@ -135,7 +135,7 @@ impl TemplateManager {
 
         // Write the config
         let config_path = Config::config_path();
-        fs::write(&config_path, template_content).context("Failed to write config file")?;
+        fs::write(&config_path, &template_content).context("Failed to write config file")?;
 
         Ok(())
     }

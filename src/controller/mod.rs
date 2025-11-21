@@ -24,8 +24,8 @@
 //! - `SelectionOptions`: Available options for user selection prompts
 //! - `MethodologyInfo`: Methodology metadata for display and selection
 
-mod dto;
-mod persona_controller;
+mod actor_controller;
+pub mod dto;
 mod project_controller;
 mod scenario_controller;
 mod use_case_controller;
@@ -34,7 +34,7 @@ mod use_case_controller;
 mod tests;
 
 // Re-export commonly used controllers
-pub use persona_controller::PersonaController;
+pub use actor_controller::{ActorController, PersonaController};
 pub use project_controller::ProjectController;
 pub use scenario_controller::ScenarioController;
 pub use use_case_controller::UseCaseController;

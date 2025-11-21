@@ -1,68 +1,92 @@
-//! # Persona Controller
+//! # Actor Controller
 //!
-//! This module provides the controller for persona management operations.
-//! It handles the coordination between CLI commands and persona application
-//! services, providing a clean interface for creating, updating, listing,
-//! and deleting personas.
+//! This module provides the controller for actor management operations.
+//! It handles the coordination between CLI commands and actor application
+//! services, providing a unified interface for managing both personas and
+//! system actors.
 //!
 //! ## Responsibilities
 //!
-//! - Persona creation with custom fields
-//! - Persona updating (name and custom fields)
-//! - Persona listing and retrieval
-//! - Persona deletion
+//! - Persona creation with Sommerville-aligned custom fields
+//! - System actor creation with emojis (Database, API, etc.)
+//! - Standard actor initialization
+//! - Actor updating (name, emoji, and custom fields)
+//! - Actor listing and retrieval
+//! - Actor deletion
 //! - Data retrieval for interactive selection prompts
 
 use crate::config::Config;
 use crate::controller::dto::DisplayResult;
-use crate::core::{Persona, PersonaRepository, SqlitePersonaRepository, TomlPersonaRepository};
+use crate::core::{
+    ActorEntity, ActorRepository, ActorType, Persona, PersonaRepository, SqliteActorRepository,
+    TomlActorRepository,
+};
 use anyhow::{Context, Result};
 use std::collections::HashMap;
+use std::str::FromStr;
 
-/// Controller for persona operations and management.
+/// Controller for actor operations and management.
 ///
-/// Manages all persona-related operations including creation, updating,
-/// listing, and deletion. Acts as the coordination layer between CLI
-/// commands and persona persistence.
-pub struct PersonaController {
-    /// Repository for persona persistence
-    repository: Box<dyn PersonaRepository>,
+/// Manages both persona and system actor operations including creation,
+/// updating, listing, and deletion. Acts as the coordination layer between
+/// CLI commands and actor persistence.
+pub struct ActorController {
+    /// Repository for actor persistence
+    actor_repository: Box<dyn ActorRepository>,
+    /// Repository for persona backward compatibility
+    persona_repository: Box<dyn PersonaRepository>,
     /// Project configuration
     config: Config,
 }
 
-impl PersonaController {
-    /// Create a new persona controller instance.
+/// Legacy controller name for backward compatibility
+pub type PersonaController = ActorController;
+
+impl ActorController {
+    /// Create a new actor controller instance.
     ///
     /// Initializes the controller with the appropriate repository backend
     /// based on the project configuration (TOML or SQLite).
     ///
     /// # Returns
-    /// A new PersonaController instance ready for use
+    /// A new ActorController instance ready for use
     ///
     /// # Errors
     /// Returns error if the configuration cannot be loaded or repository creation fails
     pub fn new() -> Result<Self> {
         let config = Config::load()?;
 
-        let repository: Box<dyn PersonaRepository> = match config.storage.backend {
+        let (actor_repository, persona_repository): (
+            Box<dyn ActorRepository>,
+            Box<dyn PersonaRepository>,
+        ) = match config.storage.backend {
             crate::config::StorageBackend::Sqlite => {
                 use rusqlite::Connection;
                 use std::sync::{Arc, Mutex};
 
                 let db_path = format!("{}/mucm.db", config.directories.data_dir);
-                let conn = Connection::open(&db_path)?;
-                SqlitePersonaRepository::initialize(&conn)?;
-                let repo = SqlitePersonaRepository::new(Arc::new(Mutex::new(conn)));
-                Box::new(repo)
+                let conn = Arc::new(Mutex::new(Connection::open(&db_path)?));
+                SqliteActorRepository::initialize(&conn.lock().unwrap())?;
+
+                // Create separate instances sharing the same connection
+                let actor_repo = SqliteActorRepository::new(Arc::clone(&conn));
+                let persona_repo = SqliteActorRepository::new(conn);
+
+                (Box::new(actor_repo), Box::new(persona_repo))
             }
             crate::config::StorageBackend::Toml => {
-                let repo = TomlPersonaRepository::new(config.clone());
-                Box::new(repo)
+                // For TOML, create two separate instances with the same config
+                let actor_repo = TomlActorRepository::new(config.clone());
+                let persona_repo = TomlActorRepository::new(config.clone());
+                (Box::new(actor_repo), Box::new(persona_repo))
             }
         };
 
-        Ok(Self { repository, config })
+        Ok(Self {
+            actor_repository,
+            persona_repository,
+            config,
+        })
     }
 
     /// Create a new persona with basic information.
@@ -79,24 +103,166 @@ impl PersonaController {
     ///
     /// # Errors
     /// Returns error if persona creation fails or ID already exists
-    pub fn create_persona(&self, id: String, name: String) -> Result<DisplayResult> {
-        // Check if persona already exists
-        if self.repository.exists(&id)? {
+    pub fn create_persona(&self, id: String, name: String, function: String) -> Result<DisplayResult> {
+        // Validate ID format
+        if let Err(e) = ActorEntity::validate_id(&id) {
+            return Ok(DisplayResult::error(e));
+        }
+
+        // Check if actor already exists
+        if self.actor_repository.actor_exists(&id)? {
             return Ok(DisplayResult::error(format!(
-                "Persona with ID '{}' already exists",
+                "Actor with ID '{}' already exists",
                 id
             )));
         }
 
         // Create persona with config fields
-        let persona = Persona::from_config_fields(id.clone(), name, &self.config.persona.fields);
+        let persona =
+            Persona::from_config_fields(id.clone(), name, function, &self.config.actor.persona_fields);
 
         // Save the persona
-        self.repository.save(&persona)?;
+        self.persona_repository.save(&persona)?;
 
         Ok(DisplayResult::success(format!(
-            "Created persona: {} ({})",
-            persona.name, persona.id
+            "✅ Created persona: {} {} ({})",
+            persona
+                .extra
+                .get("emoji")
+                .and_then(|v| v.as_str())
+                .unwrap_or("🙂"),
+            persona.name,
+            persona.id
+        )))
+    }
+
+    /// Create a new system actor.
+    ///
+    /// Creates a system actor (Database, API, etc.) with an emoji for visual identification.
+    ///
+    /// # Arguments
+    /// * `id` - Unique identifier (e.g., "payment-api", "auth-database")
+    /// * `name` - Display name
+    /// * `actor_type` - Type of system actor
+    /// * `emoji` - Optional emoji (uses defaults if not specified)
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if actor creation fails or ID already exists
+    pub fn create_system_actor(
+        &self,
+        id: String,
+        name: String,
+        actor_type: String,
+        emoji: Option<String>,
+    ) -> Result<DisplayResult> {
+        // Validate ID format
+        if let Err(e) = ActorEntity::validate_id(&id) {
+            return Ok(DisplayResult::error(e));
+        }
+
+        // Check if actor already exists
+        if self.actor_repository.actor_exists(&id)? {
+            return Ok(DisplayResult::error(format!(
+                "Actor with ID '{}' already exists",
+                id
+            )));
+        }
+
+        // Parse actor type
+        let parsed_type = ActorType::from_str(&actor_type).map_err(|e| anyhow::anyhow!(e))?;
+
+        // Use default emoji if not specified
+        let final_emoji = emoji.unwrap_or_else(|| match parsed_type {
+            ActorType::Database => "💾".to_string(),
+            ActorType::System => "🖥️".to_string(),
+            ActorType::ExternalService => "🌐".to_string(),
+            _ => "⚙️".to_string(),
+        });
+
+        // Create actor entity
+        let actor = ActorEntity::new(id.clone(), name.clone(), parsed_type, final_emoji.clone());
+
+        // Save the actor
+        self.actor_repository.save_actor(&actor)?;
+
+        Ok(DisplayResult::success(format!(
+            "✅ Created system actor: {} {} ({})",
+            final_emoji, name, id
+        )))
+    }
+
+    /// Initialize standard system actors.
+    ///
+    /// Creates a set of commonly used system actors with default emojis:
+    /// - Database 💾
+    /// - Web Server 🖥️
+    /// - API 🌐
+    /// - Payment Gateway 💳
+    /// - Email Service 📧
+    /// - Cache ⚡
+    ///
+    /// # Returns
+    /// DisplayResult with count of created actors
+    ///
+    /// # Errors
+    /// Returns error if creation fails
+    pub fn init_standard_actors(&self) -> Result<DisplayResult> {
+        let standard_actors = ActorEntity::standard_actors();
+        let mut created_count = 0;
+        let mut skipped = Vec::new();
+
+        for actor in standard_actors {
+            if self.actor_repository.actor_exists(&actor.id)? {
+                skipped.push(format!("{} {}", actor.emoji, actor.name));
+            } else {
+                self.actor_repository.save_actor(&actor)?;
+                created_count += 1;
+            }
+        }
+
+        let mut message = format!("✅ Initialized {} standard system actors", created_count);
+        if !skipped.is_empty() {
+            message.push_str(&format!(
+                "\n⏭️  Skipped {} existing: {}",
+                skipped.len(),
+                skipped.join(", ")
+            ));
+        }
+
+        Ok(DisplayResult::success(message))
+    }
+
+    /// Update an actor's emoji.
+    ///
+    /// Changes the emoji used for visual identification of an actor.
+    ///
+    /// # Arguments
+    /// * `id` - The actor ID to update
+    /// * `emoji` - New emoji
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if actor not found or update fails
+    pub fn update_emoji(&self, id: String, emoji: String) -> Result<DisplayResult> {
+        // Load existing actor
+        let mut actor = self
+            .actor_repository
+            .load_actor_by_id(&id)?
+            .context(format!("Actor '{}' not found", id))?;
+
+        actor.emoji = emoji.clone();
+
+        // Save updated actor
+        self.actor_repository.save_actor(&actor)?;
+
+        Ok(DisplayResult::success(format!(
+            "✅ Updated emoji for {}: {} {}",
+            id, emoji, actor.name
         )))
     }
 
@@ -117,7 +283,7 @@ impl PersonaController {
     pub fn update_persona(&self, id: String, name: Option<String>) -> Result<DisplayResult> {
         // Load existing persona
         let mut persona = self
-            .repository
+            .persona_repository
             .load_by_id(&id)?
             .context(format!("Persona '{}' not found", id))?;
 
@@ -127,7 +293,7 @@ impl PersonaController {
         }
 
         // Save updated persona
-        self.repository.save(&persona)?;
+        self.persona_repository.save(&persona)?;
 
         Ok(DisplayResult::success(format!(
             "Updated persona: {}",
@@ -156,7 +322,7 @@ impl PersonaController {
     ) -> Result<DisplayResult> {
         // Load existing persona
         let mut persona = self
-            .repository
+            .persona_repository
             .load_by_id(&id)?
             .context(format!("Persona '{}' not found", id))?;
 
@@ -186,7 +352,7 @@ impl PersonaController {
         }
 
         // Save updated persona
-        self.repository.save(&persona)?;
+        self.persona_repository.save(&persona)?;
 
         Ok(DisplayResult::success(format!(
             "Updated custom fields for persona: {}",
@@ -194,7 +360,32 @@ impl PersonaController {
         )))
     }
 
-    /// Delete a persona.
+    /// Delete an actor (persona or system actor).
+    ///
+    /// Removes an actor from the project, including its data file and
+    /// any generated markdown documentation.
+    ///
+    /// # Arguments
+    /// * `id` - The actor ID to delete
+    ///
+    /// # Returns
+    /// DisplayResult with success message
+    ///
+    /// # Errors
+    /// Returns error if actor not found or deletion fails
+    pub fn delete_actor(&self, id: String) -> Result<DisplayResult> {
+        // Check if actor exists
+        if !self.actor_repository.actor_exists(&id)? {
+            return Ok(DisplayResult::error(format!("Actor '{}' not found", id)));
+        }
+
+        // Delete the actor
+        self.actor_repository.delete_actor(&id)?;
+
+        Ok(DisplayResult::success(format!("🗑️  Deleted actor: {}", id)))
+    }
+
+    /// Delete a persona (legacy method for backward compatibility).
     ///
     /// Removes a persona from the project, including its data file and
     /// any generated markdown documentation.
@@ -209,12 +400,12 @@ impl PersonaController {
     /// Returns error if persona not found or deletion fails
     pub fn delete_persona(&self, id: String) -> Result<DisplayResult> {
         // Check if persona exists
-        if !self.repository.exists(&id)? {
+        if !self.persona_repository.exists(&id)? {
             return Ok(DisplayResult::error(format!("Persona '{}' not found", id)));
         }
 
         // Delete the persona
-        self.repository.delete(&id)?;
+        self.persona_repository.delete(&id)?;
 
         Ok(DisplayResult::success(format!("Deleted persona: {}", id)))
     }
@@ -232,9 +423,27 @@ impl PersonaController {
     /// # Errors
     /// Returns error if persona not found
     pub fn get_persona(&self, id: &str) -> Result<Persona> {
-        self.repository
+        self.persona_repository
             .load_by_id(id)?
             .context(format!("Persona '{}' not found", id))
+    }
+
+    /// Get a single actor by ID.
+    ///
+    /// Retrieves an actor for viewing or editing.
+    ///
+    /// # Arguments
+    /// * `id` - The actor ID to retrieve
+    ///
+    /// # Returns
+    /// The actor entity
+    ///
+    /// # Errors
+    /// Returns error if actor not found
+    pub fn get_actor(&self, id: &str) -> Result<ActorEntity> {
+        self.actor_repository
+            .load_actor_by_id(id)?
+            .context(format!("Actor '{}' not found", id))
     }
 
     /// List all personas in the project.
@@ -247,7 +456,32 @@ impl PersonaController {
     /// # Errors
     /// Returns error if persona retrieval fails
     pub fn list_personas(&self) -> Result<Vec<Persona>> {
-        self.repository.load_all()
+        self.persona_repository.load_all()
+    }
+
+    /// List all actors in the project.
+    ///
+    /// Retrieves all actors for display or selection, optionally filtered by type.
+    ///
+    /// # Arguments
+    /// * `actor_type_filter` - Optional actor type to filter by
+    ///
+    /// # Returns
+    /// Vector of all actors
+    ///
+    /// # Errors
+    /// Returns error if actor retrieval fails
+    pub fn list_actors(&self, actor_type_filter: Option<ActorType>) -> Result<Vec<ActorEntity>> {
+        let all_actors = self.actor_repository.load_all_actors()?;
+
+        if let Some(filter) = actor_type_filter {
+            Ok(all_actors
+                .into_iter()
+                .filter(|a| a.actor_type == filter)
+                .collect())
+        } else {
+            Ok(all_actors)
+        }
     }
 
     /// Get list of persona IDs for selection prompts.
@@ -261,11 +495,25 @@ impl PersonaController {
     /// # Errors
     /// Returns error if persona retrieval fails
     pub fn get_persona_ids(&self) -> Result<Vec<String>> {
-        let personas = self.repository.load_all()?;
+        let personas = self.persona_repository.load_all()?;
         Ok(personas.into_iter().map(|p| p.id).collect())
     }
 
-    /// Get persona custom field definitions from config.
+    /// Get list of actor IDs for selection prompts.
+    ///
+    /// Returns a simple list of IDs suitable for dropdown menus.
+    ///
+    /// # Returns
+    /// Vector of actor IDs
+    ///
+    /// # Errors
+    /// Returns error if actor retrieval fails
+    pub fn get_actor_ids(&self) -> Result<Vec<String>> {
+        let actors = self.actor_repository.load_all_actors()?;
+        Ok(actors.into_iter().map(|a| a.id).collect())
+    }
+
+    /// Get persona field configuration.
     ///
     /// Returns the custom field definitions configured for personas
     /// in the project, useful for dynamic form generation.
@@ -273,7 +521,7 @@ impl PersonaController {
     /// # Returns
     /// Map of field name to field configuration
     pub fn get_persona_field_config(&self) -> HashMap<String, crate::core::CustomFieldConfig> {
-        self.config.persona.fields.clone()
+        self.config.actor.persona_fields.clone()
     }
 
     /// Get current custom field values for a persona.
@@ -291,6 +539,20 @@ impl PersonaController {
     pub fn get_persona_field_values(&self, id: &str) -> Result<HashMap<String, serde_json::Value>> {
         let persona = self.get_persona(id)?;
         Ok(persona.extra.clone())
+    }
+
+    /// Check if the controller is using SQLite backend.
+    ///
+    /// Returns true if the storage backend is SQLite, false if TOML.
+    /// Used to show SQLite WIP disclaimers.
+    ///
+    /// # Returns
+    /// true if using SQLite, false if using TOML
+    pub fn is_using_sqlite(&self) -> bool {
+        matches!(
+            self.config.storage.backend,
+            crate::config::StorageBackend::Sqlite
+        )
     }
 }
 
@@ -310,7 +572,7 @@ description = "Test project"
 [directories]
 use_case_dir = "docs/use-cases"
 test_dir = "tests"
-persona_dir = "docs/personas"
+actor_dir = "docs/actors"
 data_dir = "data"
 
 [templates]
@@ -329,7 +591,7 @@ backend = "toml"
 created = true
 last_updated = true
 
-[persona.fields]
+[actor.persona_fields]
 department = { type = "string", required = false }
 experience_level = { type = "string", required = false }
 "#;
@@ -352,7 +614,7 @@ experience_level = { type = "string", required = false }
         create_test_config(&temp_dir)?;
 
         let controller = PersonaController::new()?;
-        let result = controller.create_persona("test_user".to_string(), "Test User".to_string())?;
+        let result = controller.create_persona("test_user".to_string(), "Test User".to_string(), "Test Role".to_string())?;
 
         assert!(result.success);
         assert!(result.message.contains("Created persona"));
@@ -367,10 +629,10 @@ experience_level = { type = "string", required = false }
         create_test_config(&temp_dir)?;
 
         let controller = PersonaController::new()?;
-        controller.create_persona("test_user".to_string(), "Test User".to_string())?;
+        controller.create_persona("test_user".to_string(), "Test User".to_string(), "Test Role".to_string())?;
 
         let result =
-            controller.create_persona("test_user".to_string(), "Another User".to_string())?;
+            controller.create_persona("test_user".to_string(), "Another User".to_string(), "Test Role".to_string())?;
 
         assert!(!result.success);
         assert!(result.message.contains("already exists"));
@@ -385,7 +647,7 @@ experience_level = { type = "string", required = false }
         create_test_config(&temp_dir)?;
 
         let controller = PersonaController::new()?;
-        controller.create_persona("test_user".to_string(), "Test User".to_string())?;
+        controller.create_persona("test_user".to_string(), "Test User".to_string(), "Test Role".to_string())?;
 
         let result =
             controller.update_persona("test_user".to_string(), Some("Updated Name".to_string()))?;
@@ -405,7 +667,7 @@ experience_level = { type = "string", required = false }
         create_test_config(&temp_dir)?;
 
         let controller = PersonaController::new()?;
-        controller.create_persona("test_user".to_string(), "Test User".to_string())?;
+        controller.create_persona("test_user".to_string(), "Test User".to_string(), "Test Role".to_string())?;
 
         // Update custom fields
         let mut fields = HashMap::new();
@@ -438,7 +700,7 @@ experience_level = { type = "string", required = false }
         create_test_config(&temp_dir)?;
 
         let controller = PersonaController::new()?;
-        controller.create_persona("test_user".to_string(), "Test User".to_string())?;
+        controller.create_persona("test_user".to_string(), "Test User".to_string(), "Test Role".to_string())?;
 
         // Update with different data types (as strings - the controller converts them)
         let mut fields = HashMap::new();
@@ -480,7 +742,7 @@ experience_level = { type = "string", required = false }
         create_test_config(&temp_dir)?;
 
         let controller = PersonaController::new()?;
-        controller.create_persona("test_user".to_string(), "Test User".to_string())?;
+        controller.create_persona("test_user".to_string(), "Test User".to_string(), "Test Role".to_string())?;
 
         // Verify it exists
         assert!(controller.get_persona("test_user").is_ok());
@@ -505,9 +767,9 @@ experience_level = { type = "string", required = false }
         let controller = PersonaController::new()?;
 
         // Create multiple personas
-        controller.create_persona("user1".to_string(), "User One".to_string())?;
-        controller.create_persona("user2".to_string(), "User Two".to_string())?;
-        controller.create_persona("user3".to_string(), "User Three".to_string())?;
+        controller.create_persona("user1".to_string(), "User One".to_string(), "Test Role".to_string())?;
+        controller.create_persona("user2".to_string(), "User Two".to_string(), "Test Role".to_string())?;
+        controller.create_persona("user3".to_string(), "User Three".to_string(), "Test Role".to_string())?;
 
         // List all personas
         let personas = controller.list_personas()?;
@@ -530,8 +792,8 @@ experience_level = { type = "string", required = false }
         let controller = PersonaController::new()?;
 
         // Create personas
-        controller.create_persona("admin".to_string(), "Admin User".to_string())?;
-        controller.create_persona("developer".to_string(), "Dev User".to_string())?;
+        controller.create_persona("admin".to_string(), "Admin User".to_string(), "Test Role".to_string())?;
+        controller.create_persona("developer".to_string(), "Dev User".to_string(), "Test Role".to_string())?;
 
         // Get IDs
         let ids = controller.get_persona_ids()?;
@@ -567,7 +829,7 @@ experience_level = { type = "string", required = false }
         create_test_config(&temp_dir)?;
 
         let controller = PersonaController::new()?;
-        controller.create_persona("test_user".to_string(), "Test User".to_string())?;
+        controller.create_persona("test_user".to_string(), "Test User".to_string(), "Test Role".to_string())?;
 
         // Add some field values
         let mut fields = HashMap::new();

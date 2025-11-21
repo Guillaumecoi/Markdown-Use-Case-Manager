@@ -4,6 +4,11 @@ use std::fmt;
 use std::str::FromStr;
 
 /// Technical actor that performs actions in scenario steps
+///
+/// Actors in scenario steps can be either:
+/// - Built-in technical actors (User, System, Database, etc.)
+/// - References to managed actors (ActorRef) - personas or system actors created via ActorEntity
+/// - Custom inline actors for one-off use
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Actor {
     /// End user interacting with the system
@@ -16,7 +21,10 @@ pub enum Actor {
     ExternalAPI,
     /// Database system
     Database,
-    /// Custom actor type
+    /// Reference to a managed actor by ID (persona or system actor)
+    /// The ID should match an ActorEntity in the project
+    ActorRef(String),
+    /// Custom actor type for inline use
     Custom(String),
 }
 
@@ -34,13 +42,15 @@ impl Actor {
             Actor::Server => "Server",
             Actor::ExternalAPI => "ExternalAPI",
             Actor::Database => "Database",
+            Actor::ActorRef(id) => id,
             Actor::Custom(name) => name,
         }
     }
 
     /// Check if this is a human actor
+    /// Note: ActorRef requires lookup to determine if human or system
     pub fn is_human(&self) -> bool {
-        matches!(self, Actor::User | Actor::Custom(_))
+        matches!(self, Actor::User | Actor::Custom(_) | Actor::ActorRef(_))
     }
 
     /// Check if this is a system actor
@@ -62,6 +72,14 @@ impl FromStr for Actor {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // Check for actor reference format: "ref:actor-id" or "@actor-id"
+        if let Some(id) = s.strip_prefix("ref:") {
+            return Ok(Actor::ActorRef(id.to_string()));
+        }
+        if let Some(id) = s.strip_prefix('@') {
+            return Ok(Actor::ActorRef(id.to_string()));
+        }
+
         match s.to_lowercase().as_str() {
             "user" => Ok(Actor::User),
             "system" => Ok(Actor::System),
@@ -128,6 +146,14 @@ mod tests {
         assert_eq!(Actor::from_str("api").unwrap(), Actor::ExternalAPI);
         assert_eq!(Actor::from_str("database").unwrap(), Actor::Database);
         assert_eq!(Actor::from_str("db").unwrap(), Actor::Database);
+        assert_eq!(
+            Actor::from_str("ref:admin-user").unwrap(),
+            Actor::ActorRef("admin-user".to_string())
+        );
+        assert_eq!(
+            Actor::from_str("@payment-gateway").unwrap(),
+            Actor::ActorRef("payment-gateway".to_string())
+        );
         assert_eq!(
             Actor::from_str("CustomActor").unwrap(),
             Actor::Custom("CustomActor".to_string())

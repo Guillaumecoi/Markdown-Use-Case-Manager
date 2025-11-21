@@ -102,6 +102,11 @@ pub enum Commands {
         #[command(subcommand)]
         command: PersonaCommands,
     },
+    /// Manage actors (personas and system actors)
+    Actor {
+        #[command(subcommand)]
+        command: ActorCommands,
+    },
     /// Clean up orphaned methodology fields from TOML files
     ///
     /// Scans all use case TOML files and removes methodology sections that are no longer
@@ -196,7 +201,7 @@ pub enum ReferenceCommands {
 pub enum PersonaCommands {
     /// Create a new persona with fields from config
     ///
-    /// Creates a persona with the required id and name fields.
+    /// Creates a persona with the required id, name, and function fields.
     /// Additional fields are determined by your persona configuration
     /// in .config/.mucm/mucm.toml and can be filled in by editing the
     /// generated TOML file or SQL record directly.
@@ -205,6 +210,8 @@ pub enum PersonaCommands {
         id: String,
         /// Persona name
         name: String,
+        /// Persona function/role (e.g., "System Administrator", "End User")
+        function: String,
     },
     /// List all personas
     List,
@@ -221,6 +228,60 @@ pub enum PersonaCommands {
     /// Delete a persona
     Delete {
         /// Persona ID
+        id: String,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+pub enum ActorCommands {
+    /// Create a new persona
+    CreatePersona {
+        /// Persona ID (e.g., "primary-teacher", "admin-user")
+        id: String,
+        /// Persona name
+        name: String,
+        /// Persona function/role (e.g., "System Administrator", "End User")
+        function: String,
+    },
+    /// Create a new system actor
+    CreateSystem {
+        /// Actor ID (e.g., "payment-api", "auth-database")
+        id: String,
+        /// Actor name
+        name: String,
+        /// Actor type (system, external_service, database, custom)
+        #[arg(short = 't', long)]
+        actor_type: String,
+        /// Emoji for visual identification (optional)
+        #[arg(short, long)]
+        emoji: Option<String>,
+    },
+    /// Initialize standard system actors
+    ///
+    /// Creates commonly used system actors: Database, Web Server, API,
+    /// Payment Gateway, Email Service, and Cache with default emojis.
+    InitStandard,
+    /// Update an actor's emoji
+    UpdateEmoji {
+        /// Actor ID
+        id: String,
+        /// New emoji
+        emoji: String,
+    },
+    /// List all actors
+    List {
+        /// Filter by actor type (persona, system, external_service, database)
+        #[arg(short = 't', long)]
+        actor_type: Option<String>,
+    },
+    /// Show actor details
+    Show {
+        /// Actor ID
+        id: String,
+    },
+    /// Delete an actor
+    Delete {
+        /// Actor ID
         id: String,
     },
 }

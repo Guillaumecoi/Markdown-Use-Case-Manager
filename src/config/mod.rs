@@ -36,7 +36,7 @@ mod types;
 // Explicit public exports
 pub use file_manager::ConfigFileManager;
 pub use template_manager::TemplateManager;
-pub use types::{Config, PersonaConfig, StorageBackend, StorageConfig};
+pub use types::{ActorConfig, Config, StorageBackend, StorageConfig};
 
 // Re-export from other modules
 use anyhow::{Context, Result};
@@ -127,7 +127,7 @@ impl Config {
     /// * `storage` - Storage backend (toml or sqlite)
     /// * `use_case_dir` - Directory for use case files
     /// * `test_dir` - Directory for test files
-    /// * `persona_dir` - Directory for persona files
+    /// * `actor_dir` - Directory for actor files (personas and system actors)
     /// * `data_dir` - Directory for data files
     ///
     /// # Returns
@@ -139,7 +139,7 @@ impl Config {
         storage: String,
         use_case_dir: String,
         test_dir: String,
-        persona_dir: String,
+        actor_dir: String,
         data_dir: String,
     ) -> Self {
         let mut config = Self::for_template_with_methodologies_and_storage(
@@ -152,7 +152,7 @@ impl Config {
         // Update directories
         config.directories.use_case_dir = use_case_dir;
         config.directories.test_dir = test_dir;
-        config.directories.persona_dir = persona_dir;
+        config.directories.actor_dir = actor_dir.clone();
         config.directories.data_dir = data_dir;
 
         config
@@ -302,8 +302,8 @@ impl Config {
             .context("Failed to create use case directory")?;
         fs::create_dir_all(&config.directories.test_dir)
             .context("Failed to create test directory")?;
-        fs::create_dir_all(&config.directories.persona_dir)
-            .context("Failed to create persona directory")?;
+        fs::create_dir_all(&config.directories.actor_dir)
+            .context("Failed to create actor directory")?;
         fs::create_dir_all(&config.directories.data_dir)
             .context("Failed to create data directory")?;
 
@@ -334,7 +334,7 @@ impl Config {
                     directories: DirectoryConfig {
                         use_case_dir: "use-cases".to_string(),
                         test_dir: "tests".to_string(),
-                        persona_dir: "docs/personas".to_string(),
+                        actor_dir: "docs/actors".to_string(),
                         data_dir: "use-cases-data".to_string(),
                     },
                     templates: TemplateConfig {
@@ -358,7 +358,7 @@ impl Config {
                         created: true,
                         last_updated: true,
                     },
-                    persona: PersonaConfig::default(),
+                    actor: ActorConfig::default(),
                 });
             }
         };

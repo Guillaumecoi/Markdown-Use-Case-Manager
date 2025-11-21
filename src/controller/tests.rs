@@ -860,7 +860,7 @@ mod project_controller_tests {
     fn verify_project_directories(
         use_case_dir: &str,
         test_dir: &str,
-        persona_dir: &str,
+        actor_dir: &str,
         data_dir: &str,
     ) {
         let cwd = env::current_dir().unwrap();
@@ -868,7 +868,7 @@ mod project_controller_tests {
         // Verify project directories
         assert_dir_exists(&cwd.join(use_case_dir));
         assert_dir_exists(&cwd.join(test_dir));
-        assert_dir_exists(&cwd.join(persona_dir));
+        assert_dir_exists(&cwd.join(actor_dir));
         assert_dir_exists(&cwd.join(data_dir));
     }
 
@@ -987,7 +987,7 @@ mod project_controller_tests {
         verify_project_directories(
             "docs/use-cases",
             "tests/use-cases",
-            "docs/personas",
+            "docs/actors",
             "use-cases-data",
         );
         verify_templates_copied(&["business"]);
@@ -1315,7 +1315,7 @@ mod project_controller_tests {
         let config = Config::load().unwrap();
         assert_eq!(config.directories.use_case_dir, "custom/use-cases");
         assert_eq!(config.directories.test_dir, "custom/tests");
-        assert_eq!(config.directories.persona_dir, "custom/personas");
+        assert_eq!(config.directories.actor_dir, "custom/personas");
         assert_eq!(config.directories.data_dir, "custom/data");
     }
 
@@ -1542,7 +1542,7 @@ mod project_controller_tests {
         verify_project_directories(
             "docs/use-cases",
             "tests/use-cases",
-            "docs/personas",
+            "docs/actors",
             "use-cases-data",
         );
     }
