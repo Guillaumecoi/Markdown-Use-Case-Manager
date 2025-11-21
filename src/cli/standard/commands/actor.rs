@@ -1,6 +1,6 @@
 //! CLI commands for managing actors (personas and system actors)
 
-use crate::cli::args::{ActorCommands, PersonaCommands};
+use crate::cli::args::ActorCommands;
 use crate::controller::ActorController;
 use crate::core::{ActorType, Persona};
 use crate::presentation::DisplayResultFormatter;
@@ -28,12 +28,6 @@ pub fn handle_actor_command(command: ActorCommands) -> Result<()> {
             Ok(())
         }
         ActorCommands::InitStandard => {
-            // Show SQLite disclaimer if using SQLite backend
-            if controller.is_using_sqlite() {
-                println!("⚠️  WARNING: SQLite backend is currently WORK IN PROGRESS and may be buggy. Use at your own risk!");
-                println!();
-            }
-
             let result = controller.init_standard_actors()?;
             DisplayResultFormatter::display(&result);
             Ok(())
@@ -52,6 +46,7 @@ pub fn handle_actor_command(command: ActorCommands) -> Result<()> {
             list_actors_with_controller(&controller, type_filter)
         }
         ActorCommands::Show { id } => show_actor_with_controller(&controller, &id),
+        ActorCommands::UseCases { id } => list_use_cases_for_actor(&id),
         ActorCommands::Delete { id } => {
             let result = controller.delete_actor(id)?;
             DisplayResultFormatter::display(&result);
@@ -144,33 +139,74 @@ fn show_actor_with_controller(controller: &ActorController, id: &str) -> Result<
     Ok(())
 }
 
-/// Handle persona commands (legacy support)
-pub fn handle_persona_command(command: PersonaCommands) -> Result<()> {
-    let controller = ActorController::new()?;
-
-    match command {
-        PersonaCommands::Create { id, name, function } => {
-            let result = controller.create_persona(id, name, function)?;
-            DisplayResultFormatter::display(&result);
-            Ok(())
-        }
-        PersonaCommands::List => {
-            let personas = controller.list_personas()?;
-            list_personas_legacy(&personas);
-            Ok(())
-        }
-        PersonaCommands::Show { id } => show_persona(&id, controller),
-        PersonaCommands::UseCases { id } => list_use_cases_for_persona(&id),
-        PersonaCommands::Delete { id } => {
-            let result = controller.delete_persona(id)?;
-            DisplayResultFormatter::display(&result);
-            Ok(())
-        }
+/// Helper function to check if an Actor matches an ID
+fn actor_matches(actor: &crate::core::Actor, id: &str) -> bool {
+    use crate::core::Actor;
+    match actor {
+        Actor::ActorRef(actor_id) => actor_id == id,
+        _ => false,
     }
 }
 
-/// List personas (legacy format)
-fn list_personas_legacy(personas: &[Persona]) {
+/// List use cases that reference an actor
+fn list_use_cases_for_actor(id: &str) -> Result<()> {
+    use crate::controller::UseCaseController;
+
+    let uc_controller = UseCaseController::new()?;
+    let use_cases = uc_controller.get_all_use_cases()?;
+
+    let filtered: Vec<_> = use_cases
+        .iter()
+        .filter(|uc| {
+            // Check if actor is referenced in any scenario step (as actor or receiver)
+            uc.scenarios.iter().any(|s| {
+                s.steps.iter().any(|step| {
+                    actor_matches(&step.actor, id)
+                        || step
+                            .receiver
+                            .as_ref()
+                            .map_or(false, |r| actor_matches(r, id))
+                })
+            })
+        })
+        .collect();
+
+    if filtered.is_empty() {
+        println!("No use cases reference actor '{}'", id);
+        return Ok(());
+    }
+
+    println!(
+        "Use cases referencing actor '{}' ({}):\n",
+        id,
+        filtered.len()
+    );
+    for uc in filtered {
+        println!("  {} - {}", uc.id, uc.title);
+        // Show which scenarios reference this actor
+        let referencing_scenarios: Vec<_> = uc
+            .scenarios
+            .iter()
+            .filter(|s| {
+                s.steps.iter().any(|step| {
+                    actor_matches(&step.actor, id)
+                        || step
+                            .receiver
+                            .as_ref()
+                            .map_or(false, |r| actor_matches(r, id))
+                })
+            })
+            .collect();
+        for scenario in referencing_scenarios {
+            println!("    └─ {}", scenario.title);
+        }
+    }
+
+    Ok(())
+}
+
+/// List personas (legacy format - for internal use)
+fn _list_personas_legacy(personas: &[Persona]) {
     if personas.is_empty() {
         println!("No personas found.");
         return;
@@ -195,57 +231,5 @@ fn list_personas_legacy(personas: &[Persona]) {
     }
 }
 
-/// Show persona details (legacy support)
-fn show_persona(id: &str, controller: ActorController) -> Result<()> {
-    let persona = controller.get_persona(id)?;
-
-    println!("{} {}", persona.emoji(), persona.name);
-    println!("ID: {}", persona.id);
-    println!("Created: {}", persona.metadata.created_at);
-    println!("Last Updated: {}", persona.metadata.updated_at);
-
-    if !persona.extra.is_empty() {
-        println!("\nFields:");
-        for (key, value) in &persona.extra {
-            match value {
-                serde_json::Value::String(s) if !s.is_empty() => {
-                    println!("  {}: {}", key, s);
-                }
-                serde_json::Value::Array(arr) if !arr.is_empty() => {
-                    println!("  {}:", key);
-                    for item in arr {
-                        if let Some(s) = item.as_str() {
-                            println!("    - {}", s);
-                        }
-                    }
-                }
-                serde_json::Value::Number(n) => {
-                    println!("  {}: {}", key, n);
-                }
-                serde_json::Value::Bool(b) => {
-                    println!("  {}: {}", key, b);
-                }
-                _ => {} // Skip empty or null values
-            }
-        }
-    } else {
-        println!("\n(No additional fields defined)");
-    }
-
-    Ok(())
-}
-
-/// List use cases that use a specific persona
-fn list_use_cases_for_persona(persona_id: &str) -> Result<()> {
-    use crate::cli::standard::CliRunner;
-    use crate::presentation::DisplayResultFormatter;
-
-    let mut runner = CliRunner::new();
-
-    let result = runner.list_use_cases_for_persona(persona_id.to_string())?;
-    DisplayResultFormatter::display(&result);
-
-    Ok(())
-}
 // Note: Tests for actor commands are in integration tests
 // See tests/persona_management_integration_test.rs and related

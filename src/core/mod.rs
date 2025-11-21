@@ -15,7 +15,7 @@ pub use application::{
 
 // Re-export domain types (from domain's public interface)
 pub use domain::{
-    ActorEntity, ActorRepository, ActorType, Condition, MethodologyView, Persona,
+    Actor, ActorEntity, ActorRepository, ActorType, Condition, MethodologyView, Persona,
     PersonaRepository, ReferenceType, ScenarioReference, ScenarioReferenceValidator, ScenarioType,
     Status, UseCase,
 };

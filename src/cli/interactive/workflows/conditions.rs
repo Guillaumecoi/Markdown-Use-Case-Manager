@@ -13,6 +13,37 @@ use crate::controller::UseCaseController;
 pub struct ConditionsWorkflow;
 
 impl ConditionsWorkflow {
+    /// Unified conditions management entry point
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case to manage conditions for
+    pub fn manage_conditions(use_case_id: &str) -> Result<()> {
+        loop {
+            UI::show_section_header(&format!("Conditions - {}", use_case_id), "✓")?;
+
+            let options = vec![
+                "Manage Preconditions",
+                "Manage Postconditions",
+                "Back to Use Case Menu",
+            ];
+
+            let choice = Select::new("What would you like to do?", options).prompt()?;
+
+            match choice {
+                "Manage Preconditions" => {
+                    Self::manage_preconditions(use_case_id)?;
+                }
+                "Manage Postconditions" => {
+                    Self::manage_postconditions(use_case_id)?;
+                }
+                "Back to Use Case Menu" => break,
+                _ => {}
+            }
+        }
+
+        Ok(())
+    }
+
     /// Main preconditions management entry point
     ///
     /// # Arguments
@@ -167,15 +198,19 @@ impl ConditionsWorkflow {
 
         // Ask if this references another use case or scenario
         let reference_options = vec!["None - Just text", "Use Case", "Scenario"];
-        let reference_type = Select::new("Does this reference another use case or scenario?", reference_options)
-            .with_help_message("Choose if this condition depends on another use case or scenario")
-            .prompt()?;
+        let reference_type = Select::new(
+            "Does this reference another use case or scenario?",
+            reference_options,
+        )
+        .with_help_message("Choose if this condition depends on another use case or scenario")
+        .prompt()?;
 
         let condition_str = match reference_type {
             "Use Case" => {
                 // Get list of use cases
                 let uc_controller = UseCaseController::new()?;
-                let use_case_ids = uc_controller.get_all_use_cases()?
+                let use_case_ids = uc_controller
+                    .get_all_use_cases()?
                     .iter()
                     .map(|uc| format!("{} - {}", uc.id, uc.title))
                     .collect::<Vec<_>>();
@@ -187,17 +222,24 @@ impl ConditionsWorkflow {
                     let selected = Select::new("Select use case:", use_case_ids)
                         .with_help_message("Choose which use case this condition references")
                         .prompt()?;
-                    
-                    let target_id = selected.split(" - ").next().unwrap_or(&selected).to_string();
 
-                    let relationship_options = vec!["requires", "depends_on", "must_complete", "extends"];
+                    let target_id = selected
+                        .split(" - ")
+                        .next()
+                        .unwrap_or(&selected)
+                        .to_string();
+
+                    let relationship_options =
+                        vec!["requires", "depends_on", "must_complete", "extends"];
                     let relationship = Select::new("Relationship type:", relationship_options)
-                        .with_help_message("How does this condition relate to the referenced use case?")
+                        .with_help_message(
+                            "How does this condition relate to the referenced use case?",
+                        )
                         .prompt()?;
 
                     format!("{}||UC:{}:{}", precondition, target_id, relationship)
                 }
-            },
+            }
             "Scenario" => {
                 let scenario_id = Text::new("Enter scenario ID (e.g., UC-XXX-S01):")
                     .with_help_message("The full scenario ID including the use case prefix")
@@ -209,7 +251,7 @@ impl ConditionsWorkflow {
                     .prompt()?;
 
                 format!("{}||SC:{}:{}", precondition, scenario_id, relationship)
-            },
+            }
             _ => precondition,
         };
 
@@ -461,15 +503,19 @@ impl ConditionsWorkflow {
 
         // Ask if this references another use case or scenario
         let reference_options = vec!["None - Just text", "Use Case", "Scenario"];
-        let reference_type = Select::new("Does this reference another use case or scenario?", reference_options)
-            .with_help_message("Choose if this condition depends on another use case or scenario")
-            .prompt()?;
+        let reference_type = Select::new(
+            "Does this reference another use case or scenario?",
+            reference_options,
+        )
+        .with_help_message("Choose if this condition depends on another use case or scenario")
+        .prompt()?;
 
         let condition_str = match reference_type {
             "Use Case" => {
                 // Get list of use cases
                 let uc_controller = UseCaseController::new()?;
-                let use_case_ids = uc_controller.get_all_use_cases()?
+                let use_case_ids = uc_controller
+                    .get_all_use_cases()?
                     .iter()
                     .map(|uc| format!("{} - {}", uc.id, uc.title))
                     .collect::<Vec<_>>();
@@ -481,17 +527,24 @@ impl ConditionsWorkflow {
                     let selected = Select::new("Select use case:", use_case_ids)
                         .with_help_message("Choose which use case this condition references")
                         .prompt()?;
-                    
-                    let target_id = selected.split(" - ").next().unwrap_or(&selected).to_string();
 
-                    let relationship_options = vec!["requires", "depends_on", "must_complete", "extends"];
+                    let target_id = selected
+                        .split(" - ")
+                        .next()
+                        .unwrap_or(&selected)
+                        .to_string();
+
+                    let relationship_options =
+                        vec!["requires", "depends_on", "must_complete", "extends"];
                     let relationship = Select::new("Relationship type:", relationship_options)
-                        .with_help_message("How does this condition relate to the referenced use case?")
+                        .with_help_message(
+                            "How does this condition relate to the referenced use case?",
+                        )
                         .prompt()?;
 
                     format!("{}||UC:{}:{}", postcondition, target_id, relationship)
                 }
-            },
+            }
             "Scenario" => {
                 let scenario_id = Text::new("Enter scenario ID (e.g., UC-XXX-S01):")
                     .with_help_message("The full scenario ID including the use case prefix")
@@ -503,7 +556,7 @@ impl ConditionsWorkflow {
                     .prompt()?;
 
                 format!("{}||SC:{}:{}", postcondition, scenario_id, relationship)
-            },
+            }
             _ => postcondition,
         };
 

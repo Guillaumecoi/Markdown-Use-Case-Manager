@@ -237,6 +237,19 @@ impl InteractiveRunner {
         Ok(result.message)
     }
 
+    /// Create a system actor interactively
+    pub fn create_system_actor_interactive(
+        &mut self,
+        id: String,
+        name: String,
+        actor_type: String,
+        emoji: Option<String>,
+    ) -> Result<String> {
+        let controller = self.ensure_persona_controller()?;
+        let result = controller.create_system_actor(id, name, actor_type, emoji)?;
+        Ok(result.message)
+    }
+
     /// Create a persona with additional fields
     // pub fn create_persona_with_fields(
     //     &mut self,
@@ -254,26 +267,26 @@ impl InteractiveRunner {
 
     /// List all personas
     pub fn list_personas(&self) -> Result<()> {
-        use crate::cli::args::PersonaCommands;
-        use crate::cli::standard::handle_persona_command;
-        let command = PersonaCommands::List;
-        handle_persona_command(command)
+        use crate::cli::args::ActorCommands;
+        use crate::cli::standard::handle_actor_command;
+        let command = ActorCommands::List { actor_type: None };
+        handle_actor_command(command)
     }
 
     /// Show persona details
     pub fn show_persona(&self, id: String) -> Result<()> {
-        use crate::cli::args::PersonaCommands;
-        use crate::cli::standard::handle_persona_command;
-        let command = PersonaCommands::Show { id: id.to_string() };
-        handle_persona_command(command)
+        use crate::cli::args::ActorCommands;
+        use crate::cli::standard::handle_actor_command;
+        let command = ActorCommands::Show { id: id.to_string() };
+        handle_actor_command(command)
     }
 
     /// Delete a persona
     pub fn delete_persona(&self, id: &str) -> Result<()> {
-        use crate::cli::args::PersonaCommands;
-        use crate::cli::standard::handle_persona_command;
-        let command = PersonaCommands::Delete { id: id.to_string() };
-        handle_persona_command(command)?;
+        use crate::cli::args::ActorCommands;
+        use crate::cli::standard::handle_actor_command;
+        let command = ActorCommands::Delete { id: id.to_string() };
+        handle_actor_command(command)?;
         Ok(())
     }
 

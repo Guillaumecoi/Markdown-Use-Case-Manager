@@ -316,6 +316,15 @@ pub struct ActorConfig {
     /// Serialized as: persona_fields.fieldname = { ... }
     #[serde(default, rename = "persona_fields")]
     pub persona_fields: std::collections::HashMap<String, crate::core::CustomFieldConfig>,
+    /// Whether to automatically create standard system actors during project initialization
+    /// Default is true for new projects
+    #[serde(default = "default_auto_create_standard_actors")]
+    pub auto_create_standard_actors: bool,
+}
+
+/// Default value for auto_create_standard_actors
+fn default_auto_create_standard_actors() -> bool {
+    true
 }
 
 impl ActorConfig {
