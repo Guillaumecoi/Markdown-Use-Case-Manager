@@ -523,6 +523,74 @@ impl ScenarioController {
         )))
     }
 
+    /// Remove a precondition from a scenario
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `scenario_id` - The ID of the scenario
+    /// * `condition` - The precondition text to remove
+    ///
+    /// # Returns
+    /// DisplayResult indicating success
+    pub fn remove_precondition(
+        &mut self,
+        use_case_id: String,
+        scenario_id: String,
+        condition: String,
+    ) -> Result<DisplayResult> {
+        let mut scenario = self.get_scenario(&use_case_id, &scenario_id)?;
+        scenario.remove_precondition(&condition);
+
+        // Save via coordinator
+        self.app_service.edit_scenario(
+            &use_case_id,
+            &scenario_id,
+            Some(scenario.title),
+            Some(scenario.description),
+            Some(scenario.scenario_type),
+            Some(scenario.status),
+        )?;
+
+        Ok(DisplayResult::success(format!(
+            "✅ Removed precondition from scenario {}",
+            scenario_id
+        )))
+    }
+
+    /// Remove a postcondition from a scenario
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `scenario_id` - The ID of the scenario
+    /// * `condition` - The postcondition text to remove
+    ///
+    /// # Returns
+    /// DisplayResult indicating success
+    pub fn remove_postcondition(
+        &mut self,
+        use_case_id: String,
+        scenario_id: String,
+        condition: String,
+    ) -> Result<DisplayResult> {
+        let mut scenario = self.get_scenario(&use_case_id, &scenario_id)?;
+        scenario.remove_postcondition(&condition);
+
+        // Save via coordinator
+        self.app_service.edit_scenario(
+            &use_case_id,
+            &scenario_id,
+            Some(scenario.title),
+            Some(scenario.description),
+            Some(scenario.scenario_type),
+            Some(scenario.status),
+        )?;
+
+        Ok(DisplayResult::success(format!(
+            "✅ Removed postcondition from scenario {}",
+            scenario_id
+        )))
+    }
+
     /// Get available actors (personas + system actors) for selection
     ///
     /// # Returns

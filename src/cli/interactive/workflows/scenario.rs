@@ -647,9 +647,29 @@ impl ScenarioWorkflow {
                     UI::show_success(&result.message)?;
                 }
                 "Remove condition" => {
-                    // TODO: Implement remove_precondition and remove_postcondition methods
-                    println!("\n  ⚠️  Removing conditions not yet implemented.\n");
-                    println!("     You can edit the use case file manually for now.\n");
+                    if conditions.is_empty() {
+                        println!("\n  No conditions to remove.\n");
+                        continue;
+                    }
+
+                    let selected =
+                        Select::new("Select condition to remove:", conditions.clone()).prompt()?;
+
+                    let result = if condition_type == "preconditions" {
+                        controller.remove_precondition(
+                            use_case_id.to_string(),
+                            scenario_id.to_string(),
+                            selected,
+                        )?
+                    } else {
+                        controller.remove_postcondition(
+                            use_case_id.to_string(),
+                            scenario_id.to_string(),
+                            selected,
+                        )?
+                    };
+
+                    UI::show_success(&result.message)?;
                 }
                 "Back" => break,
                 _ => {}

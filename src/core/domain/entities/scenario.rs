@@ -85,6 +85,18 @@ impl Scenario {
         }
     }
 
+    /// Remove a precondition
+    pub fn remove_precondition(&mut self, condition: &str) {
+        self.preconditions.retain(|c| c != condition);
+        self.metadata.touch();
+    }
+
+    /// Remove a postcondition
+    pub fn remove_postcondition(&mut self, condition: &str) {
+        self.postconditions.retain(|c| c != condition);
+        self.metadata.touch();
+    }
+
     /// Update scenario status
     pub fn set_status(&mut self, status: Status) {
         self.status = status;
