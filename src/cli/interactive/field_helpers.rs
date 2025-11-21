@@ -9,33 +9,11 @@ use inquire::{Confirm, Select, Text};
 use serde_json::Value as JsonValue;
 
 use super::ui::UI;
-use crate::core::CustomFieldConfig;
 
 /// Helper functions for interactive field editing
 pub struct FieldHelpers;
 
 impl FieldHelpers {
-    /// Format field help message combining description and example
-    ///
-    /// # Arguments
-    /// * `description` - Optional field description
-    /// * `example` - Optional example value
-    ///
-    /// # Returns
-    /// Formatted help string combining description and example
-    pub fn format_field_help(description: Option<&str>, example: Option<&str>) -> String {
-        match (description, example) {
-            (Some(desc), Some(ex)) => format!(
-                "{}
-💡 Example: {}",
-                desc, ex
-            ),
-            (Some(desc), None) => desc.to_string(),
-            (None, Some(ex)) => format!("Example: {}", ex),
-            (None, None) => String::new(),
-        }
-    }
-
     /// Edit an array field interactively with add/edit/remove/clear options
     ///
     /// # Arguments
@@ -189,39 +167,6 @@ impl FieldHelpers {
         }
     }
 
-    /// Prompt for a string value using CustomFieldConfig for guidance
-    ///
-    /// # Arguments
-    /// * `label` - Display text for the prompt
-    /// * `current` - Current string value
-    /// * `config` - Field configuration with description and example
-    ///
-    /// # Returns
-    /// * `Ok(Some(value))` - New string if changed
-    /// * `Ok(None)` - No change (kept original)
-    pub fn edit_string_with_config(
-        label: &str,
-        current: &str,
-        config: &CustomFieldConfig,
-    ) -> Result<Option<String>> {
-        let help =
-            Self::format_field_help(config.description.as_deref(), config.example.as_deref());
-
-        let mut prompt = Text::new(label).with_default(current);
-
-        if !help.is_empty() {
-            prompt = prompt.with_help_message(&help);
-        }
-
-        let new_value = prompt.prompt()?;
-
-        if new_value != current {
-            Ok(Some(new_value))
-        } else {
-            Ok(None)
-        }
-    }
-
     /// Parse JSON value as array of strings
     ///
     /// # Arguments
@@ -254,58 +199,6 @@ impl FieldHelpers {
     /// String with items joined by newlines
     pub fn array_to_storage(items: &[String]) -> String {
         items.join("\n")
-    }
-
-    /// Edit a field based on its CustomFieldConfig
-    ///
-    /// This is a high-level helper that automatically chooses the appropriate
-    /// input method based on the field type, with description and example guidance.
-    ///
-    /// # Arguments
-    /// * `label` - Display name for the field
-    /// * `current_value` - Current JSON value of the field (if any)
-    /// * `config` - Field configuration with type, description, and example
-    ///
-    /// # Returns
-    /// * `Ok(Some(value))` - New value as string if changed
-    /// * `Ok(None)` - No change made
-    pub fn edit_with_config(
-        label: &str,
-        current_value: Option<&JsonValue>,
-        config: &CustomFieldConfig,
-    ) -> Result<Option<String>> {
-        let help =
-            Self::format_field_help(config.description.as_deref(), config.example.as_deref());
-
-        match config.field_type.as_str() {
-            "array" => {
-                let current_items = current_value
-                    .map(|v| Self::parse_json_array(v))
-                    .unwrap_or_default();
-
-                if let Some(items) = Self::edit_array(label, current_items)? {
-                    Ok(Some(Self::array_to_storage(&items)))
-                } else {
-                    Ok(None)
-                }
-            }
-            "number" => {
-                let current = current_value.map(|v| format!("{}", v)).unwrap_or_default();
-
-                Self::edit_number(&format!("{}: ", label), &current, &help)
-            }
-            "boolean" => {
-                let current_bool = current_value.and_then(|v| v.as_bool()).unwrap_or(false);
-
-                Self::edit_boolean(&format!("{}: ", label), current_bool, &help)
-            }
-            "text" | _ => {
-                // "text" and default to string
-                let current = current_value.and_then(|v| v.as_str()).unwrap_or("");
-
-                Self::edit_string(&format!("{}: ", label), current, &help)
-            }
-        }
     }
 
     /// Edit a field based on its type definition

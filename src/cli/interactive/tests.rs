@@ -12,7 +12,7 @@ mod interactive_runner_tests {
     use crate::cli::interactive::InteractiveRunner;
     use crate::config::{Config, ConfigFileManager};
     use serial_test::serial;
-    use std::{env, fs};
+    use std::env;
     use tempfile::TempDir;
 
     /// Helper to create a test environment with initialized config
@@ -448,7 +448,7 @@ mod persona_workflow_tests {
             .create_persona_interactive("show-test".to_string(), "Show Test User".to_string())
             .unwrap();
 
-        let result = runner.show_persona("show-test");
+        let result = runner.show_persona("show-test".to_string());
         assert!(result.is_ok());
     }
 
@@ -499,7 +499,7 @@ mod persona_workflow_tests {
         assert!(result.is_ok());
 
         // 3. Show persona
-        let result = runner.show_persona("cycle-test");
+        let result = runner.show_persona("cycle-test".to_string());
         assert!(result.is_ok());
 
         // 4. Verify in repository

@@ -1,6 +1,6 @@
 // TOML-based implementation of ActorRepository
 use crate::config::Config;
-use crate::core::domain::{ActorEntity, ActorRepository, ActorType, Persona, PersonaRepository};
+use crate::core::domain::{ActorEntity, ActorRepository, Persona, PersonaRepository};
 use anyhow::Result;
 use std::fs;
 use std::path::Path;
@@ -197,6 +197,7 @@ impl PersonaRepository for TomlActorRepository {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::core::domain::ActorType;
     use tempfile::TempDir;
 
     fn create_test_repo() -> (TomlActorRepository, TempDir) {

@@ -144,7 +144,7 @@ impl InteractiveRunner {
     }
 
     /// Create a multi-view use case
-    #[allow(dead_code)]
+    #[cfg(test)]
     pub fn create_use_case_with_views(
         &mut self,
         title: String,
@@ -220,9 +220,6 @@ impl InteractiveRunner {
     pub fn create_persona_interactive(&mut self, id: String, name: String) -> Result<String> {
         use crate::cli::args::PersonaCommands;
         use crate::cli::standard::handle_persona_command;
-        use crate::config::Config;
-
-        let config = Config::load()?;
         let command = PersonaCommands::Create { id, name };
 
         handle_persona_command(command)?;
@@ -248,34 +245,25 @@ impl InteractiveRunner {
     pub fn list_personas(&self) -> Result<()> {
         use crate::cli::args::PersonaCommands;
         use crate::cli::standard::handle_persona_command;
-        use crate::config::Config;
-
-        let config = Config::load()?;
         let command = PersonaCommands::List;
         handle_persona_command(command)
     }
 
     /// Show persona details
-    pub fn show_persona(&self, id: &str) -> Result<()> {
+    pub fn show_persona(&self, id: String) -> Result<()> {
         use crate::cli::args::PersonaCommands;
         use crate::cli::standard::handle_persona_command;
-        use crate::config::Config;
-
-        let config = Config::load()?;
         let command = PersonaCommands::Show { id: id.to_string() };
         handle_persona_command(command)
     }
 
     /// Delete a persona
-    pub fn delete_persona(&self, id: &str) -> Result<String> {
+    pub fn delete_persona(&self, id: &str) -> Result<()> {
         use crate::cli::args::PersonaCommands;
         use crate::cli::standard::handle_persona_command;
-        use crate::config::Config;
-
-        let config = Config::load()?;
         let command = PersonaCommands::Delete { id: id.to_string() };
         handle_persona_command(command)?;
-        Ok(format!("Persona '{}' deleted successfully!", id))
+        Ok(())
     }
 
     // ========== Persona Editing Methods ==========

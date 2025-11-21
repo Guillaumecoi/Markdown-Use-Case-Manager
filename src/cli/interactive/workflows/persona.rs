@@ -58,7 +58,7 @@ impl PersonaWorkflow {
             .prompt()?;
 
         let runner = InteractiveRunner::new();
-        runner.show_persona(&id)?;
+        runner.show_persona(id)?;
 
         UI::pause_for_input()?;
         Ok(())
@@ -81,8 +81,8 @@ impl PersonaWorkflow {
 
         if confirm == "Yes" {
             let runner = InteractiveRunner::new();
-            let result = runner.delete_persona(&id)?;
-            UI::show_success(&result)?;
+            runner.delete_persona(&id)?;
+            UI::show_success("Persona deleted successfully")?;
         } else {
             println!("\n✓ Deletion cancelled.");
         }
