@@ -231,6 +231,7 @@ impl Schema {
                 scenario_id TEXT NOT NULL,
                 step_order INTEGER NOT NULL,
                 actor TEXT NOT NULL,
+                receiver TEXT,
                 action TEXT NOT NULL,
                 description TEXT NOT NULL,
                 notes TEXT,

@@ -137,15 +137,16 @@ impl SqliteUseCaseRepository {
 
             // Load steps
             let mut steps_stmt = conn.prepare(
-                "SELECT step_order, actor, action, description, notes FROM scenario_steps WHERE scenario_id = ? ORDER BY step_order"
+                "SELECT step_order, actor, receiver, action, description, notes FROM scenario_steps WHERE scenario_id = ? ORDER BY step_order"
             )?;
             let step_rows = steps_stmt.query_map([&scenario_id], |row| {
                 Ok(ScenarioStep {
                     order: row.get(0)?,
                     actor: row.get(1)?,
-                    action: row.get(2)?,
-                    description: row.get(3)?,
-                    notes: row.get(4)?,
+                    receiver: row.get(2)?,
+                    action: row.get(3)?,
+                    description: row.get(4)?,
+                    notes: row.get(5)?,
                 })
             })?;
             let steps: Vec<ScenarioStep> = step_rows.collect::<Result<Vec<_>, _>>()?;
@@ -315,9 +316,9 @@ impl SqliteUseCaseRepository {
             // Insert scenario steps
             for step in &scenario.steps {
                 tx.execute(
-                    "INSERT INTO scenario_steps (scenario_id, step_order, actor, action, description, notes)
-                     VALUES (?, ?, ?, ?, ?, ?)",
-                    params![scenario.id, step.order, step.actor, step.action, step.description, step.notes],
+                    "INSERT INTO scenario_steps (scenario_id, step_order, actor, receiver, action, description, notes)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    params![scenario.id, step.order, step.actor, step.receiver, step.action, step.description, step.notes],
                 )
                 .context("Failed to save scenario step")?;
             }
