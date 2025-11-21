@@ -174,6 +174,7 @@ impl InteractiveRunner {
     }
 
     /// Create use case with multiple views and additional fields
+    /// Returns (use_case_id, message)
     pub fn create_use_case_with_views_and_fields(
         &mut self,
         title: String,
@@ -182,7 +183,7 @@ impl InteractiveRunner {
         priority: String,
         views: Vec<(String, String)>, // Vec of (methodology, level) pairs
         extra_fields: std::collections::HashMap<String, String>,
-    ) -> Result<String> {
+    ) -> Result<(String, String)> {
         let controller = self.ensure_use_case_controller()?;
 
         // Format views as "methodology:level,methodology:level"
@@ -193,7 +194,7 @@ impl InteractiveRunner {
             .join(",");
 
         let result = controller.create_use_case(
-            title,
+            title.clone(),
             category,
             description,
             None,
@@ -201,7 +202,15 @@ impl InteractiveRunner {
             Some(priority),
             Some(extra_fields),
         )?;
-        Ok(result.message)
+
+        // Extract use case ID from message (format: "Created use case: UC-XXX-XXX with views: ...")
+        let use_case_id = if let Some(id_part) = result.message.split("Created use case: ").nth(1) {
+            id_part.split(" with").next().unwrap_or(&title).to_string()
+        } else {
+            title
+        };
+
+        Ok((use_case_id, result.message))
     }
 
     /// List use cases
