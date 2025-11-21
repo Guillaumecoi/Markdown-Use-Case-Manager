@@ -265,24 +265,24 @@ impl InteractiveRunner {
     //     Ok(format!("Created persona with custom fields: {} ({})", name, id))
     // }
 
-    /// List all personas
-    pub fn list_personas(&self) -> Result<()> {
+    /// List all actors
+    pub fn list_actors(&self) -> Result<()> {
         use crate::cli::args::ActorCommands;
         use crate::cli::standard::handle_actor_command;
         let command = ActorCommands::List { actor_type: None };
         handle_actor_command(command)
     }
 
-    /// Show persona details
-    pub fn show_persona(&self, id: String) -> Result<()> {
+    /// Show actor details
+    pub fn show_actor(&self, id: String) -> Result<()> {
         use crate::cli::args::ActorCommands;
         use crate::cli::standard::handle_actor_command;
         let command = ActorCommands::Show { id: id.to_string() };
         handle_actor_command(command)
     }
 
-    /// Delete a persona
-    pub fn delete_persona(&self, id: &str) -> Result<()> {
+    /// Delete an actor
+    pub fn delete_actor(&self, id: &str) -> Result<()> {
         use crate::cli::args::ActorCommands;
         use crate::cli::standard::handle_actor_command;
         let command = ActorCommands::Delete { id: id.to_string() };
@@ -303,55 +303,55 @@ impl InteractiveRunner {
             .expect("controller was just initialized"))
     }
 
-    /// Get list of all persona IDs for selection
-    pub fn get_persona_ids(&mut self) -> Result<Vec<String>> {
+    /// Get list of all actor IDs for selection
+    pub fn get_actor_ids(&mut self) -> Result<Vec<String>> {
         let controller = self.ensure_persona_controller()?;
         controller.get_persona_ids()
     }
 
-    /// Get persona details for editing
-    pub fn get_persona_details(&mut self, persona_id: &str) -> Result<crate::core::Persona> {
+    /// Get actor details for editing
+    pub fn get_actor_details(&mut self, actor_id: &str) -> Result<crate::core::Persona> {
         let controller = self.ensure_persona_controller()?;
-        controller.get_persona(persona_id)
+        controller.get_persona(actor_id)
     }
 
-    /// Update persona name
-    pub fn update_persona_name(
+    /// Update actor name
+    pub fn update_actor_name(
         &mut self,
-        persona_id: String,
+        actor_id: String,
         name: Option<String>,
     ) -> Result<String> {
         let controller = self.ensure_persona_controller()?;
-        let result = controller.update_persona(persona_id, name)?;
+        let result = controller.update_persona(actor_id, name)?;
         Ok(result.message)
     }
 
-    /// Update persona custom fields
-    pub fn update_persona_fields(
+    /// Update actor custom fields
+    pub fn update_actor_fields(
         &mut self,
-        persona_id: String,
+        actor_id: String,
         fields: std::collections::HashMap<String, String>,
     ) -> Result<String> {
         let controller = self.ensure_persona_controller()?;
-        let result = controller.update_persona_fields(persona_id, fields)?;
+        let result = controller.update_persona_fields(actor_id, fields)?;
         Ok(result.message)
     }
 
-    /// Get persona field configuration
-    pub fn get_persona_field_config(
+    /// Get actor field configuration
+    pub fn get_actor_field_config(
         &mut self,
     ) -> Result<std::collections::HashMap<String, crate::core::CustomFieldConfig>> {
         let controller = self.ensure_persona_controller()?;
         Ok(controller.get_persona_field_config())
     }
 
-    /// Get current persona field values
-    pub fn get_persona_field_values(
+    /// Get current actor field values
+    pub fn get_actor_field_values(
         &mut self,
-        persona_id: &str,
+        actor_id: &str,
     ) -> Result<std::collections::HashMap<String, serde_json::Value>> {
         let controller = self.ensure_persona_controller()?;
-        controller.get_persona_field_values(persona_id)
+        controller.get_persona_field_values(actor_id)
     }
 
     // ========== Use Case Editing Methods ==========

@@ -741,7 +741,7 @@ impl ScenarioWorkflow {
         controller: &mut ScenarioController,
     ) -> Result<()> {
         let mut runner = InteractiveRunner::new();
-        let persona_ids = runner.get_persona_ids()?;
+        let persona_ids = runner.get_actor_ids()?;
 
         if persona_ids.is_empty() {
             println!("\n  No personas available.\n");
