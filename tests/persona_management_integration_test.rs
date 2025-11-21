@@ -96,7 +96,7 @@ fn test_complete_persona_lifecycle() {
 
     // Step 1: Create persona with minimal fields
     let create_result = controller
-        .create_persona("john_dev".to_string(), "John Developer".to_string())
+        .create_persona("john_dev".to_string(), "John Developer".to_string(), "Software Developer".to_string())
         .unwrap();
 
     assert!(create_result.success);
@@ -177,15 +177,15 @@ fn test_multiple_personas_management() {
 
     // Create multiple personas
     controller
-        .create_persona("alice_pm".to_string(), "Alice Manager".to_string())
+        .create_persona("alice_pm".to_string(), "Alice Manager".to_string(), "Project Manager".to_string())
         .unwrap();
 
     controller
-        .create_persona("bob_dev".to_string(), "Bob Developer".to_string())
+        .create_persona("bob_dev".to_string(), "Bob Developer".to_string(), "Backend Developer".to_string())
         .unwrap();
 
     controller
-        .create_persona("carol_test".to_string(), "Carol Tester".to_string())
+        .create_persona("carol_test".to_string(), "Carol Tester".to_string(), "QA Tester".to_string())
         .unwrap();
 
     // List all personas
@@ -227,7 +227,7 @@ fn test_custom_field_type_handling() {
     let (_temp_dir, controller) = setup_test_env();
 
     controller
-        .create_persona("type_test".to_string(), "Type Test User".to_string())
+        .create_persona("type_test".to_string(), "Type Test User".to_string(), "Test User".to_string())
         .unwrap();
 
     // Test all field types
@@ -310,7 +310,7 @@ fn test_persona_field_config_and_values() {
 
     // Create persona with some fields
     controller
-        .create_persona("config_test".to_string(), "Config Test".to_string())
+        .create_persona("config_test".to_string(), "Config Test".to_string(), "Test Role".to_string())
         .unwrap();
 
     let mut fields = HashMap::new();
@@ -350,13 +350,13 @@ fn test_persona_duplicate_prevention() {
 
     // Create first persona
     let result1 = controller
-        .create_persona("duplicate_test".to_string(), "First User".to_string())
+        .create_persona("duplicate_test".to_string(), "First User".to_string(), "User Role".to_string())
         .unwrap();
     assert!(result1.success);
 
     // Try to create duplicate
     let result2 = controller
-        .create_persona("duplicate_test".to_string(), "Second User".to_string())
+        .create_persona("duplicate_test".to_string(), "Second User".to_string(), "Another Role".to_string())
         .unwrap();
     assert!(!result2.success);
     assert!(result2.message.contains("already exists") || result2.message.contains("duplicate"));
@@ -379,7 +379,7 @@ fn test_persona_field_updates_preserve_existing() {
     let (_temp_dir, controller) = setup_test_env();
 
     controller
-        .create_persona("update_test".to_string(), "Update Test".to_string())
+        .create_persona("update_test".to_string(), "Update Test".to_string(), "Update Role".to_string())
         .unwrap();
 
     // Add initial fields

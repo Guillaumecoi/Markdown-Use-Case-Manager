@@ -215,7 +215,7 @@ mod tests {
     }
 
     fn create_test_persona() -> Persona {
-        Persona::new("test-persona".to_string(), "Test User".to_string())
+        Persona::new("test-persona".to_string(), "Test User".to_string(), "Test Function".to_string())
     }
 
     fn create_test_actor() -> ActorEntity {
@@ -249,7 +249,7 @@ mod tests {
         let persona1 = create_test_persona();
         repo.save(&persona1).unwrap();
 
-        let persona2 = Persona::new("admin-persona".to_string(), "Admin User".to_string());
+        let persona2 = Persona::new("admin-persona".to_string(), "Admin User".to_string(), "Test Function".to_string());
         repo.save(&persona2).unwrap();
 
         let personas = repo.load_all().unwrap();

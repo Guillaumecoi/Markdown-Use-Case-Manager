@@ -338,7 +338,7 @@ mod persona_workflow_tests {
         let (_temp_dir, mut runner, config) = setup_test_env();
 
         let result =
-            runner.create_persona_interactive("dev-user".to_string(), "Developer User".to_string());
+            runner.create_persona_interactive("dev-user".to_string(), "Developer User".to_string(), "Test Function".to_string());
 
         assert!(
             result.is_ok(),
@@ -346,7 +346,8 @@ mod persona_workflow_tests {
             result.err()
         );
         let message = result.unwrap();
-        assert_eq!(message, "Persona created successfully!");
+        assert!(message.contains("Created persona"), "Message was: {}", message);
+        assert!(message.contains("Developer User"), "Message was: {}", message);
 
         // Verify persona was created
         let repo = RepositoryFactory::create_persona_repository(&config).unwrap();
@@ -365,7 +366,7 @@ mod persona_workflow_tests {
         let (_temp_dir, mut runner, config) = setup_test_env_with_backend(StorageBackend::Sqlite);
 
         let result =
-            runner.create_persona_interactive("test-user".to_string(), "Test User".to_string());
+            runner.create_persona_interactive("test-user".to_string(), "Test User".to_string(), "Test Function".to_string());
 
         assert!(result.is_ok());
 
@@ -383,13 +384,13 @@ mod persona_workflow_tests {
 
         // Create first persona
         let result =
-            runner.create_persona_interactive("duplicate".to_string(), "First User".to_string());
+            runner.create_persona_interactive("duplicate".to_string(), "First User".to_string(), "Test Function".to_string());
         assert!(result.is_ok());
 
         // Try to create duplicate - with unified actor system, this shows error but returns Ok
         // The duplicate detection is in the controller and returns a DisplayResult with success=false
         let result =
-            runner.create_persona_interactive("duplicate".to_string(), "Second User".to_string());
+            runner.create_persona_interactive("duplicate".to_string(), "Second User".to_string(), "Test Function".to_string());
         assert!(result.is_ok(), "Duplicate detection now shows error message via DisplayResult");
 
         // Verify only one persona exists
@@ -415,7 +416,7 @@ mod persona_workflow_tests {
 
         // Create one persona
         runner
-            .create_persona_interactive("user1".to_string(), "User One".to_string())
+            .create_persona_interactive("user1".to_string(), "User One".to_string(), "Test Function".to_string())
             .unwrap();
 
         let result = runner.list_personas();
@@ -430,7 +431,7 @@ mod persona_workflow_tests {
         // Create multiple personas
         for i in 1..=5 {
             runner
-                .create_persona_interactive(format!("user{}", i), format!("User {}", i))
+                .create_persona_interactive(format!("user{}", i), format!("User {}", i), "Test Function".to_string())
                 .unwrap();
         }
 
@@ -445,7 +446,7 @@ mod persona_workflow_tests {
 
         // Create persona
         runner
-            .create_persona_interactive("show-test".to_string(), "Show Test User".to_string())
+            .create_persona_interactive("show-test".to_string(), "Show Test User".to_string(), "Test Function".to_string())
             .unwrap();
 
         let result = runner.show_persona("show-test".to_string());
@@ -459,7 +460,7 @@ mod persona_workflow_tests {
 
         // Create persona
         runner
-            .create_persona_interactive("to-delete".to_string(), "Delete Test".to_string())
+            .create_persona_interactive("to-delete".to_string(), "Delete Test".to_string(), "Test Function".to_string())
             .unwrap();
 
         // Verify it exists
@@ -491,7 +492,7 @@ mod persona_workflow_tests {
 
         // 1. Create persona
         let result = runner
-            .create_persona_interactive("cycle-test".to_string(), "Cycle Test User".to_string());
+            .create_persona_interactive("cycle-test".to_string(), "Cycle Test User".to_string(), "Test Function".to_string());
         assert!(result.is_ok());
 
         // 2. List personas
@@ -523,7 +524,7 @@ mod persona_workflow_tests {
             let (_temp_dir, mut runner, config) = setup_test_env_with_backend(StorageBackend::Toml);
 
             runner
-                .create_persona_interactive("toml-user".to_string(), "TOML User".to_string())
+                .create_persona_interactive("toml-user".to_string(), "TOML User".to_string(), "Test Function".to_string())
                 .unwrap();
 
             let repo = RepositoryFactory::create_persona_repository(&config).unwrap();
@@ -537,7 +538,7 @@ mod persona_workflow_tests {
         //         setup_test_env_with_backend(StorageBackend::Sqlite);
         //
         //     runner
-        //         .create_persona_interactive("sqlite-user".to_string(), "SQLite User".to_string())
+        //         .create_persona_interactive("sqlite-user".to_string(), "SQLite User".to_string(), "Test Function".to_string())
         //         .unwrap();
         //
         //     let repo = RepositoryFactory::create_persona_repository(&config).unwrap();

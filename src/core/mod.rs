@@ -4,7 +4,7 @@
 mod application;
 mod domain;
 mod infrastructure;
-mod utils; // Internal only
+pub mod utils; // Public utilities
 
 // Explicit public exports from private modules
 // Public exports - Explicit API surface

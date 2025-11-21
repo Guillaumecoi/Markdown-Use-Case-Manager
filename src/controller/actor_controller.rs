@@ -103,7 +103,7 @@ impl ActorController {
     ///
     /// # Errors
     /// Returns error if persona creation fails or ID already exists
-    pub fn create_persona(&self, id: String, name: String) -> Result<DisplayResult> {
+    pub fn create_persona(&self, id: String, name: String, function: String) -> Result<DisplayResult> {
         // Validate ID format
         if let Err(e) = ActorEntity::validate_id(&id) {
             return Ok(DisplayResult::error(e));
@@ -119,7 +119,7 @@ impl ActorController {
 
         // Create persona with config fields
         let persona =
-            Persona::from_config_fields(id.clone(), name, &self.config.actor.persona_fields);
+            Persona::from_config_fields(id.clone(), name, function, &self.config.actor.persona_fields);
 
         // Save the persona
         self.persona_repository.save(&persona)?;
@@ -614,7 +614,7 @@ experience_level = { type = "string", required = false }
         create_test_config(&temp_dir)?;
 
         let controller = PersonaController::new()?;
-        let result = controller.create_persona("test_user".to_string(), "Test User".to_string())?;
+        let result = controller.create_persona("test_user".to_string(), "Test User".to_string(), "Test Role".to_string())?;
 
         assert!(result.success);
         assert!(result.message.contains("Created persona"));
@@ -629,10 +629,10 @@ experience_level = { type = "string", required = false }
         create_test_config(&temp_dir)?;
 
         let controller = PersonaController::new()?;
-        controller.create_persona("test_user".to_string(), "Test User".to_string())?;
+        controller.create_persona("test_user".to_string(), "Test User".to_string(), "Test Role".to_string())?;
 
         let result =
-            controller.create_persona("test_user".to_string(), "Another User".to_string())?;
+            controller.create_persona("test_user".to_string(), "Another User".to_string(), "Test Role".to_string())?;
 
         assert!(!result.success);
         assert!(result.message.contains("already exists"));
@@ -647,7 +647,7 @@ experience_level = { type = "string", required = false }
         create_test_config(&temp_dir)?;
 
         let controller = PersonaController::new()?;
-        controller.create_persona("test_user".to_string(), "Test User".to_string())?;
+        controller.create_persona("test_user".to_string(), "Test User".to_string(), "Test Role".to_string())?;
 
         let result =
             controller.update_persona("test_user".to_string(), Some("Updated Name".to_string()))?;
@@ -667,7 +667,7 @@ experience_level = { type = "string", required = false }
         create_test_config(&temp_dir)?;
 
         let controller = PersonaController::new()?;
-        controller.create_persona("test_user".to_string(), "Test User".to_string())?;
+        controller.create_persona("test_user".to_string(), "Test User".to_string(), "Test Role".to_string())?;
 
         // Update custom fields
         let mut fields = HashMap::new();
@@ -700,7 +700,7 @@ experience_level = { type = "string", required = false }
         create_test_config(&temp_dir)?;
 
         let controller = PersonaController::new()?;
-        controller.create_persona("test_user".to_string(), "Test User".to_string())?;
+        controller.create_persona("test_user".to_string(), "Test User".to_string(), "Test Role".to_string())?;
 
         // Update with different data types (as strings - the controller converts them)
         let mut fields = HashMap::new();
@@ -742,7 +742,7 @@ experience_level = { type = "string", required = false }
         create_test_config(&temp_dir)?;
 
         let controller = PersonaController::new()?;
-        controller.create_persona("test_user".to_string(), "Test User".to_string())?;
+        controller.create_persona("test_user".to_string(), "Test User".to_string(), "Test Role".to_string())?;
 
         // Verify it exists
         assert!(controller.get_persona("test_user").is_ok());
@@ -767,9 +767,9 @@ experience_level = { type = "string", required = false }
         let controller = PersonaController::new()?;
 
         // Create multiple personas
-        controller.create_persona("user1".to_string(), "User One".to_string())?;
-        controller.create_persona("user2".to_string(), "User Two".to_string())?;
-        controller.create_persona("user3".to_string(), "User Three".to_string())?;
+        controller.create_persona("user1".to_string(), "User One".to_string(), "Test Role".to_string())?;
+        controller.create_persona("user2".to_string(), "User Two".to_string(), "Test Role".to_string())?;
+        controller.create_persona("user3".to_string(), "User Three".to_string(), "Test Role".to_string())?;
 
         // List all personas
         let personas = controller.list_personas()?;
@@ -792,8 +792,8 @@ experience_level = { type = "string", required = false }
         let controller = PersonaController::new()?;
 
         // Create personas
-        controller.create_persona("admin".to_string(), "Admin User".to_string())?;
-        controller.create_persona("developer".to_string(), "Dev User".to_string())?;
+        controller.create_persona("admin".to_string(), "Admin User".to_string(), "Test Role".to_string())?;
+        controller.create_persona("developer".to_string(), "Dev User".to_string(), "Test Role".to_string())?;
 
         // Get IDs
         let ids = controller.get_persona_ids()?;
@@ -829,7 +829,7 @@ experience_level = { type = "string", required = false }
         create_test_config(&temp_dir)?;
 
         let controller = PersonaController::new()?;
-        controller.create_persona("test_user".to_string(), "Test User".to_string())?;
+        controller.create_persona("test_user".to_string(), "Test User".to_string(), "Test Role".to_string())?;
 
         // Add some field values
         let mut fields = HashMap::new();

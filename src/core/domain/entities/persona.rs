@@ -19,6 +19,9 @@ pub struct Persona {
     /// Display name (required)
     pub name: String,
 
+    /// Function/role of the persona (e.g., "System Administrator", "End User")
+    pub function: String,
+
     pub metadata: Metadata,
 
     /// All other persona fields are stored as flexible extra fields
@@ -29,10 +32,11 @@ pub struct Persona {
 
 impl Persona {
     /// Create a new persona with minimal required fields
-    pub fn new(id: String, name: String) -> Self {
+    pub fn new(id: String, name: String, function: String) -> Self {
         Self {
             id,
             name,
+            function,
             metadata: Metadata::new(),
             extra: HashMap::new(),
         }
@@ -43,9 +47,10 @@ impl Persona {
     pub fn from_config_fields(
         id: String,
         name: String,
+        function: String,
         config_fields: &HashMap<String, crate::core::CustomFieldConfig>,
     ) -> Self {
-        let mut persona = Self::new(id, name);
+        let mut persona = Self::new(id, name, function);
 
         // Initialize extra fields with empty/default values based on config
         for (field_name, field_config) in config_fields {
@@ -84,13 +89,17 @@ impl Persona {
 
     /// Convert Persona to ActorEntity (for unified actor system)
     pub fn to_actor(&self) -> super::ActorEntity {
+        let mut extra = self.extra.clone();
+        // Store function in extra fields for ActorEntity compatibility
+        extra.insert("function".to_string(), serde_json::json!(self.function));
+        
         super::ActorEntity {
             id: self.id.clone(),
             name: self.name.clone(),
             actor_type: super::ActorType::Persona,
             emoji: self.emoji().to_string(),
             metadata: self.metadata.clone(),
-            extra: self.extra.clone(),
+            extra,
         }
     }
 
@@ -98,9 +107,17 @@ impl Persona {
     /// Returns None if the actor is not a Persona type
     pub fn from_actor(actor: &super::ActorEntity) -> Option<Self> {
         if matches!(actor.actor_type, super::ActorType::Persona) {
+            let function = actor
+                .extra
+                .get("function")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            
             Some(Self {
                 id: actor.id.clone(),
                 name: actor.name.clone(),
+                function,
                 metadata: actor.metadata.clone(),
                 extra: actor.extra.clone(),
             })
@@ -116,36 +133,45 @@ mod tests {
 
     #[test]
     fn test_persona_creation() {
-        let persona = Persona::new("customer".to_string(), "Regular Customer".to_string());
+        let persona = Persona::new(
+            "customer".to_string(),
+            "Regular Customer".to_string(),
+            "End User".to_string(),
+        );
 
         assert_eq!(persona.id, "customer");
         assert_eq!(persona.name, "Regular Customer");
+        assert_eq!(persona.function, "End User");
         assert!(persona.extra.is_empty());
     }
 
     #[test]
     fn test_persona_emoji() {
         assert_eq!(
-            Persona::new("admin".to_string(), "Admin".to_string()).emoji(),
+            Persona::new("admin".to_string(), "Admin".to_string(), "System Admin".to_string()).emoji(),
             "👨‍💼"
         );
         assert_eq!(
-            Persona::new("customer".to_string(), "Customer".to_string()).emoji(),
+            Persona::new("customer".to_string(), "Customer".to_string(), "End User".to_string()).emoji(),
             "👤"
         );
         assert_eq!(
-            Persona::new("guest".to_string(), "Guest".to_string()).emoji(),
+            Persona::new("guest".to_string(), "Guest".to_string(), "Visitor".to_string()).emoji(),
             "🚶"
         );
         assert_eq!(
-            Persona::new("developer".to_string(), "Developer".to_string()).emoji(),
+            Persona::new("developer".to_string(), "Developer".to_string(), "Software Engineer".to_string()).emoji(),
             "👨‍💻"
         );
     }
 
     #[test]
     fn test_persona_with_extra_fields() {
-        let mut persona = Persona::new("test".to_string(), "Test User".to_string());
+        let mut persona = Persona::new(
+            "test".to_string(),
+            "Test User".to_string(),
+            "Tester".to_string(),
+        );
 
         persona
             .extra
@@ -163,7 +189,11 @@ mod tests {
 
     #[test]
     fn test_persona_serialization() {
-        let mut persona = Persona::new("test".to_string(), "Test".to_string());
+        let mut persona = Persona::new(
+            "test".to_string(),
+            "Test".to_string(),
+            "Test Role".to_string(),
+        );
         persona
             .extra
             .insert("role".to_string(), serde_json::json!("Developer"));

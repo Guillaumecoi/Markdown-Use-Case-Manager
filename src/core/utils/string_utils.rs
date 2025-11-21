@@ -1,5 +1,34 @@
 // String utility functions
 
+/// Converts a name to a slug suitable for use as an ID.
+///
+/// This function takes a name and converts it to a URL-safe slug by:
+/// 1. Converting to lowercase
+/// 2. Replacing spaces and special characters with hyphens
+/// 3. Removing consecutive hyphens
+/// 4. Removing leading/trailing hyphens
+///
+/// # Examples
+///
+/// - `"System Administrator"` → `"system-administrator"`
+/// - `"End User"` → `"end-user"`
+/// - `"Customer Service Agent"` → `"customer-service-agent"`
+pub fn slugify_for_id(s: &str) -> String {
+    // First convert to lowercase and replace special characters with hyphens
+    let cleaned = s
+        .to_lowercase()
+        .chars()
+        .map(|c| if c.is_alphanumeric() { c } else { '-' })
+        .collect::<String>();
+
+    // Remove multiple consecutive hyphens and clean up
+    cleaned
+        .split('-')
+        .filter(|part| !part.is_empty())
+        .collect::<Vec<_>>()
+        .join("-")
+}
+
 /// Converts a string to snake_case format.
 ///
 /// This function takes any string and converts it to snake_case by:
@@ -32,6 +61,34 @@ pub fn to_snake_case(s: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_slugify_for_id_simple() {
+        assert_eq!(slugify_for_id("System Administrator"), "system-administrator");
+        assert_eq!(slugify_for_id("End User"), "end-user");
+    }
+
+    #[test]
+    fn test_slugify_for_id_multiple_words() {
+        assert_eq!(slugify_for_id("Customer Service Agent"), "customer-service-agent");
+        assert_eq!(slugify_for_id("Senior Software Developer"), "senior-software-developer");
+    }
+
+    #[test]
+    fn test_slugify_for_id_with_special_chars() {
+        assert_eq!(slugify_for_id("Admin (System)"), "admin-system");
+        assert_eq!(slugify_for_id("User@Company"), "user-company");
+    }
+
+    #[test]
+    fn test_slugify_for_id_consecutive_spaces() {
+        assert_eq!(slugify_for_id("Multiple   Spaces"), "multiple-spaces");
+    }
+
+    #[test]
+    fn test_slugify_for_id_already_slugified() {
+        assert_eq!(slugify_for_id("already-slugified"), "already-slugified");
+    }
 
     #[test]
     fn test_to_snake_case_simple() {

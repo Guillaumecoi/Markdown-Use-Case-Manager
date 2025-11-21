@@ -12,8 +12,8 @@ pub fn handle_actor_command(command: ActorCommands) -> Result<()> {
     let controller = ActorController::new()?;
 
     match command {
-        ActorCommands::CreatePersona { id, name } => {
-            let result = controller.create_persona(id, name)?;
+        ActorCommands::CreatePersona { id, name, function } => {
+            let result = controller.create_persona(id, name, function)?;
             DisplayResultFormatter::display(&result);
             Ok(())
         }
@@ -149,8 +149,8 @@ pub fn handle_persona_command(command: PersonaCommands) -> Result<()> {
     let controller = ActorController::new()?;
 
     match command {
-        PersonaCommands::Create { id, name } => {
-            let result = controller.create_persona(id, name)?;
+        PersonaCommands::Create { id, name, function } => {
+            let result = controller.create_persona(id, name, function)?;
             DisplayResultFormatter::display(&result);
             Ok(())
         }

@@ -201,7 +201,7 @@ pub enum ReferenceCommands {
 pub enum PersonaCommands {
     /// Create a new persona with fields from config
     ///
-    /// Creates a persona with the required id and name fields.
+    /// Creates a persona with the required id, name, and function fields.
     /// Additional fields are determined by your persona configuration
     /// in .config/.mucm/mucm.toml and can be filled in by editing the
     /// generated TOML file or SQL record directly.
@@ -210,6 +210,8 @@ pub enum PersonaCommands {
         id: String,
         /// Persona name
         name: String,
+        /// Persona function/role (e.g., "System Administrator", "End User")
+        function: String,
     },
     /// List all personas
     List,
@@ -238,6 +240,8 @@ pub enum ActorCommands {
         id: String,
         /// Persona name
         name: String,
+        /// Persona function/role (e.g., "System Administrator", "End User")
+        function: String,
     },
     /// Create a new system actor
     CreateSystem {
