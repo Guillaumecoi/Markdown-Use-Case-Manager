@@ -74,14 +74,14 @@ impl ScenarioWorkflow {
         UI::show_section_header("Create Scenario", "➕")?;
 
         let title = Text::new("Scenario title:")
-            .with_help_message("Brief title for the scenario")
+            .with_help_message("Brief, descriptive title (e.g., 'User successfully logs in', 'Invalid password error')")
             .prompt()?;
 
         let scenario_types = vec!["main", "alternative", "exception"];
         let scenario_type = Select::new("Scenario type:", scenario_types).prompt()?;
 
         let description = Text::new("Description (optional):")
-            .with_help_message("Detailed description of the scenario")
+            .with_help_message("Describe what this scenario covers. Press Enter to skip.")
             .prompt()
             .ok();
 
@@ -152,7 +152,10 @@ impl ScenarioWorkflow {
         let mut conditions = Vec::new();
         loop {
             let condition = Text::new(&format!("  {} (or press Enter to finish):", condition_type))
-                .with_help_message(&format!("Enter a {}", condition_type.trim_end_matches('s')))
+                .with_help_message(&format!(
+                    "Enter a {}. You can reference use cases like 'UC-XXX must be complete'",
+                    condition_type.trim_end_matches('s')
+                ))
                 .prompt()?;
 
             if condition.trim().is_empty() {
@@ -520,7 +523,9 @@ impl ScenarioWorkflow {
                     };
 
                     let description = Text::new("Step description:")
-                        .with_help_message("What happens in this step")
+                        .with_help_message(
+                            "Describe the action (e.g., 'enters credentials', 'validates input')",
+                        )
                         .prompt()?;
 
                     let result = controller.add_step(
@@ -784,7 +789,9 @@ impl ScenarioWorkflow {
                     };
 
                     let description = Text::new("Step description:")
-                        .with_help_message("What happens in this step")
+                        .with_help_message(
+                            "Describe the action (e.g., 'enters credentials', 'validates input')",
+                        )
                         .prompt()?;
 
                     let result = controller.add_step(
