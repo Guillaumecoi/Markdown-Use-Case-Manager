@@ -98,57 +98,41 @@ impl ConfigWorkflow {
         Ok(())
     }
 
-    /// Change programming language setting
-    pub fn change_programming_language() -> Result<()> {
-        UI::show_section_header("Change Programming Language", "🔧")?;
-
-        let languages = crate::controller::ProjectController::get_available_languages()?;
-        let mut language_options = vec!["none".to_string()];
-        language_options.extend(languages.items);
-
-        let language = Select::new("Select new programming language:", language_options)
-            .with_help_message("Choose 'none' to disable test scaffolding")
-            .prompt()?;
-
-        // Update config
-        let mut config = Config::load()?;
-        config.generation.test_language = language;
-
-        config.save_in_dir(".")?;
-        UI::show_success("✅ Programming language updated successfully!")?;
-
-        Ok(())
-    }
-
     /// View current configuration
     pub fn view_config(config: &Config) -> Result<()> {
+        UI::clear_screen()?;
         println!("\n📄 Current Configuration");
-        println!("═══════════════════════════");
-        println!(
-            "Project: {} - {}",
-            config.project.name, config.project.description
-        );
-        println!(
-            "Use Case Dir: {} (generated)",
-            config.directories.use_case_dir
-        );
-        println!("Test Dir: {}", config.directories.test_dir);
-        println!("Persona Dir: {} (generated)", config.directories.actor_dir);
-        println!(
-            "Data Dir: {} (source of truth)",
-            config.directories.data_dir
-        );
-        println!("Test Language: {}", config.generation.test_language);
-        println!(
-            "Auto Generate Tests: {}",
-            config.generation.auto_generate_tests
-        );
-        println!("Auto-set 'created': {}", config.metadata.created);
-        println!(
-            "Auto-update 'last_updated': {}",
-            config.metadata.last_updated
-        );
-        println!("Storage Backend: {}", config.storage.backend);
+        println!("═══════════════════════════\n");
+        
+        println!("📋 Project Information");
+        println!("  Name: {}", config.project.name);
+        println!("  Description: {}\n", config.project.description);
+        
+        println!("📁 Directory Settings");
+        println!("  Use Cases: {} (generated)", config.directories.use_case_dir);
+        println!("  Tests: {}", config.directories.test_dir);
+        println!("  Actors: {} (generated)", config.directories.actor_dir);
+        println!("  Data: {} (source of truth)\n", config.directories.data_dir);
+        
+        println!("🔧 Generation Settings");
+        println!("  Test Language: {}", config.generation.test_language);
+        println!("  Auto-generate Tests: {}\n", config.generation.auto_generate_tests);
+        
+        println!("📚 Methodologies");
+        println!("  Default: {}", config.templates.default_methodology);
+        if config.templates.methodologies.is_empty() {
+            println!("  Available: (none configured)");
+        } else {
+            println!("  Available: {}", config.templates.methodologies.join(", "));
+        }
+        println!();
+        
+        println!("📊 Metadata Configuration");
+        println!("  Auto-set 'created': {}", config.metadata.created);
+        println!("  Auto-update 'last_updated': {}\n", config.metadata.last_updated);
+        
+        println!("💾 Storage");
+        println!("  Backend: {}\n", config.storage.backend);
 
         UI::pause_for_input()?;
         Ok(())
@@ -157,7 +141,21 @@ impl ConfigWorkflow {
     /// Save configuration
     pub fn save_config(config: &Config) -> Result<()> {
         config.save_in_dir(".")?;
-        UI::show_success("✅ Configuration saved successfully!")?;
+        
+        println!("\n💾 Syncing template files with configuration...");
+        
+        // Sync template files with current config (copy new, remove old)
+        use crate::controller::ProjectController;
+        match ProjectController::sync_templates() {
+            Ok(_) => {
+                UI::show_success("✅ Configuration saved and templates synced!")?;
+            }
+            Err(e) => {
+                eprintln!("⚠️  Warning: Templates sync failed: {}", e);
+                println!("Configuration was saved but templates may be out of sync.\n");
+            }
+        }
+        
         Ok(())
     }
 }

@@ -26,6 +26,8 @@ pub enum Commands {
         #[arg(long, short = 's', default_value = "toml")]
         storage: String,
         /// Finalize initialization by copying templates (run after reviewing config)
+        /// Note: Finalize also syncs templates with config - if you manually edit mucm.toml
+        /// to add/remove methodologies, run 'mucm init --finalize' to sync template files
         #[arg(long)]
         finalize: bool,
     },

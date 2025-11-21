@@ -10,7 +10,6 @@ use crate::config::Config;
 
 use crate::cli::interactive::workflows::config::ConfigWorkflow;
 use crate::cli::interactive::workflows::methodology::MethodologyWorkflow;
-use crate::cli::interactive::workflows::use_case::UseCaseWorkflow;
 
 use super::common::{display_menu, MenuOption};
 
@@ -56,31 +55,45 @@ impl Settings {
                 ConfigWorkflow::configure_metadata(config)?;
                 Ok(false) // Continue menu
             }),
-            MenuOption::new("Change Programming Language", |_| {
-                ConfigWorkflow::change_programming_language()?;
+            MenuOption::new("Methodology Management", |config| {
+                Self::manage_methodologies()?;
+                // Reload config to pick up methodology changes saved by controller
+                *config = Config::load()?;
                 Ok(false) // Continue menu
             }),
-            MenuOption::new("Add Methodologies", |_| {
-                MethodologyWorkflow::add_methodologies()?;
-                Ok(false) // Continue menu
-            }),
-            MenuOption::new("Remove Methodologies", |_| {
-                MethodologyWorkflow::remove_methodologies()?;
-                Ok(false) // Continue menu
-            }),
-            MenuOption::new("Use Case Management", |_| {
-                UseCaseWorkflow::manage_use_cases()?;
-                Ok(false) // Continue menu
-            }),
-            MenuOption::new("View Current Config", |config| {
+            MenuOption::new("View Configuration", |config| {
                 ConfigWorkflow::view_config(config)?;
                 Ok(false) // Continue menu
             }),
             MenuOption::new("Save & Exit", |config| {
                 ConfigWorkflow::save_config(config)?;
-                UI::pause_for_input()?;
                 Ok(true) // Exit the settings menu
             }),
         ]
+    }
+
+    /// Handle methodology management submenu
+    fn manage_methodologies() -> Result<()> {
+        loop {
+            UI::show_section_header("Methodology Management", "📚")?;
+
+            let options = vec!["Add Methodologies", "Remove Methodologies", "Back"];
+            let choice = inquire::Select::new("What would you like to do?", options).prompt()?;
+
+            match choice {
+                "Add Methodologies" => {
+                    MethodologyWorkflow::add_methodologies()?;
+                    UI::pause_for_input()?;
+                }
+                "Remove Methodologies" => {
+                    MethodologyWorkflow::remove_methodologies()?;
+                    UI::pause_for_input()?;
+                }
+                "Back" => break,
+                _ => {}
+            }
+        }
+
+        Ok(())
     }
 }

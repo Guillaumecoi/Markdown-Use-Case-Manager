@@ -1508,10 +1508,10 @@ mod project_controller_tests {
         )
         .unwrap();
 
-        // Force finalize again (should overwrite templates)
-        let result = ProjectController::finalize_init_internal(true);
+        // Test sync_templates (should preserve existing files)
+        let result = ProjectController::sync_templates();
 
-        assert!(result.is_ok(), "Force finalize should succeed");
+        assert!(result.is_ok(), "Sync templates should succeed");
         let display = result.unwrap();
         assert!(display.is_success(), "Result should be success");
 
@@ -1797,5 +1797,549 @@ mod project_controller_tests {
 
         let result = ProjectController::get_methodology_levels("nonexistent_methodology");
         assert!(result.is_err(), "Should fail for invalid methodology");
+    }
+
+    #[test]
+    #[serial]
+    fn test_add_methodologies_success() {
+        let _temp_dir = setup_empty_dir();
+
+        // Initialize with just developer methodology
+        ProjectController::init_project(
+            Some("rust".to_string()),
+            Some(vec!["developer".to_string()]),
+            None,
+            Some("developer".to_string()),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        // Verify initial state
+        let installed = ProjectController::get_installed_methodologies().unwrap();
+        assert_eq!(installed.len(), 1);
+        assert_eq!(installed[0].name, "developer");
+
+        // Add business and feature methodologies
+        let result = ProjectController::add_methodologies(vec![
+            "business".to_string(),
+            "feature".to_string(),
+        ]);
+
+        assert!(result.is_ok(), "Should successfully add methodologies");
+        let display = result.unwrap();
+        assert!(display.is_success(), "Result should indicate success");
+        assert!(display.message.contains("Added 2 methodology(ies)"));
+        assert!(display.message.contains("business"));
+        assert!(display.message.contains("feature"));
+
+        // Verify config was updated
+        let config = Config::load().unwrap();
+        assert_eq!(config.templates.methodologies.len(), 3);
+        assert!(config.templates.methodologies.contains(&"developer".to_string()));
+        assert!(config.templates.methodologies.contains(&"business".to_string()));
+        assert!(config.templates.methodologies.contains(&"feature".to_string()));
+    }
+
+    #[test]
+    #[serial]
+    fn test_add_methodologies_skip_duplicates() {
+        let _temp_dir = setup_empty_dir();
+
+        // Initialize with developer and business
+        ProjectController::init_project(
+            Some("rust".to_string()),
+            Some(vec!["developer".to_string(), "business".to_string()]),
+            None,
+            Some("developer".to_string()),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        // Try to add business again (duplicate) and feature (new)
+        let result = ProjectController::add_methodologies(vec![
+            "business".to_string(),
+            "feature".to_string(),
+        ]);
+
+        assert!(result.is_ok(), "Should handle duplicates gracefully");
+        let display = result.unwrap();
+        assert!(display.is_success());
+        assert!(display.message.contains("Added 1 methodology(ies)"));
+        assert!(display.message.contains("feature"));
+        assert!(display.message.contains("Skipped 1"));
+        assert!(display.message.contains("business"));
+
+        // Verify only feature was added
+        let config = Config::load().unwrap();
+        assert_eq!(config.templates.methodologies.len(), 3);
+    }
+
+    #[test]
+    #[serial]
+    fn test_add_methodologies_empty_list() {
+        let _temp_dir = setup_empty_dir();
+
+        ProjectController::init_project(
+            Some("rust".to_string()),
+            Some(vec!["developer".to_string()]),
+            None,
+            Some("developer".to_string()),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        let result = ProjectController::add_methodologies(vec![]);
+
+        assert!(result.is_ok());
+        let display = result.unwrap();
+        assert!(!display.is_success(), "Should indicate error");
+        assert!(display.message.contains("No methodologies provided"));
+    }
+
+    #[test]
+    #[serial]
+    fn test_add_methodologies_not_initialized() {
+        let _temp_dir = setup_empty_dir();
+
+        let result = ProjectController::add_methodologies(vec!["business".to_string()]);
+
+        assert!(result.is_err(), "Should fail if project not initialized");
+    }
+
+    #[test]
+    #[serial]
+    fn test_remove_methodologies_success() {
+        let _temp_dir = setup_empty_dir();
+
+        // Initialize with multiple methodologies
+        ProjectController::init_project(
+            Some("rust".to_string()),
+            Some(vec![
+                "developer".to_string(),
+                "business".to_string(),
+                "feature".to_string(),
+            ]),
+            None,
+            Some("developer".to_string()),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        // Verify initial state
+        let config = Config::load().unwrap();
+        assert_eq!(config.templates.methodologies.len(), 3);
+
+        // Remove business and feature
+        let result = ProjectController::remove_methodologies(vec![
+            "business".to_string(),
+            "feature".to_string(),
+        ]);
+
+        assert!(result.is_ok(), "Should successfully remove methodologies");
+        let display = result.unwrap();
+        assert!(display.is_success());
+        assert!(display.message.contains("Removed 2 methodology(ies)"));
+        assert!(display.message.contains("business"));
+        assert!(display.message.contains("feature"));
+
+        // Verify config was updated
+        let config = Config::load().unwrap();
+        assert_eq!(config.templates.methodologies.len(), 1);
+        assert!(config.templates.methodologies.contains(&"developer".to_string()));
+    }
+
+    #[test]
+    #[serial]
+    fn test_remove_methodologies_prevent_default_removal() {
+        let _temp_dir = setup_empty_dir();
+
+        // Initialize with developer as default
+        ProjectController::init_project(
+            Some("rust".to_string()),
+            Some(vec!["developer".to_string(), "business".to_string()]),
+            None,
+            Some("developer".to_string()),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        // Try to remove the default methodology
+        let result = ProjectController::remove_methodologies(vec!["developer".to_string()]);
+
+        assert!(result.is_ok(), "Should return a result");
+        let display = result.unwrap();
+        assert!(!display.is_success(), "Should indicate error");
+        assert!(display.message.contains("Cannot remove 'developer'"));
+        assert!(display.message.contains("default methodology"));
+
+        // Verify nothing was removed
+        let config = Config::load().unwrap();
+        assert_eq!(config.templates.methodologies.len(), 2);
+    }
+
+    #[test]
+    #[serial]
+    fn test_remove_methodologies_empty_list() {
+        let _temp_dir = setup_empty_dir();
+
+        ProjectController::init_project(
+            Some("rust".to_string()),
+            Some(vec!["developer".to_string()]),
+            None,
+            Some("developer".to_string()),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        let result = ProjectController::remove_methodologies(vec![]);
+
+        assert!(result.is_ok());
+        let display = result.unwrap();
+        assert!(!display.is_success());
+        assert!(display.message.contains("No methodologies provided"));
+    }
+
+    #[test]
+    #[serial]
+    fn test_remove_methodologies_not_initialized() {
+        let _temp_dir = setup_empty_dir();
+
+        let result = ProjectController::remove_methodologies(vec!["business".to_string()]);
+
+        assert!(result.is_err(), "Should fail if project not initialized");
+    }
+
+    #[test]
+    #[serial]
+    fn test_add_then_remove_methodology_workflow() {
+        let _temp_dir = setup_empty_dir();
+
+        // Initialize with minimal setup
+        ProjectController::init_project(
+            Some("rust".to_string()),
+            Some(vec!["developer".to_string()]),
+            None,
+            Some("developer".to_string()),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        // Add methodologies
+        let add_result = ProjectController::add_methodologies(vec![
+            "business".to_string(),
+            "feature".to_string(),
+            "tester".to_string(),
+        ]);
+        assert!(add_result.is_ok());
+        assert!(add_result.unwrap().is_success());
+
+        // Verify all were added
+        let config = Config::load().unwrap();
+        assert_eq!(config.templates.methodologies.len(), 4);
+
+        // Remove some of them
+        let remove_result =
+            ProjectController::remove_methodologies(vec!["business".to_string(), "tester".to_string()]);
+        assert!(remove_result.is_ok());
+        assert!(remove_result.unwrap().is_success());
+
+        // Verify correct ones remain
+        let config = Config::load().unwrap();
+        assert_eq!(config.templates.methodologies.len(), 2);
+        assert!(config.templates.methodologies.contains(&"developer".to_string()));
+        assert!(config.templates.methodologies.contains(&"feature".to_string()));
+    }
+
+    #[test]
+    #[serial]
+    fn test_methodology_management_preserves_other_config() {
+        let _temp_dir = setup_empty_dir();
+
+        // Initialize with specific settings
+        ProjectController::init_project(
+            Some("python".to_string()),
+            Some(vec!["developer".to_string()]),
+            None,
+            Some("developer".to_string()),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        // Get initial config values
+        let initial_config = Config::load().unwrap();
+        let initial_project_name = initial_config.project.name.clone();
+        let initial_test_language = initial_config.generation.test_language.clone();
+
+        // Add methodology
+        ProjectController::add_methodologies(vec!["business".to_string()]).unwrap();
+
+        // Verify other config settings weren't changed
+        let config_after_add = Config::load().unwrap();
+        assert_eq!(config_after_add.project.name, initial_project_name);
+        assert_eq!(config_after_add.generation.test_language, initial_test_language);
+
+        // Remove methodology
+        ProjectController::remove_methodologies(vec!["business".to_string()]).unwrap();
+
+        // Verify again
+        let config_after_remove = Config::load().unwrap();
+        assert_eq!(config_after_remove.project.name, initial_project_name);
+        assert_eq!(config_after_remove.generation.test_language, initial_test_language);
+    }
+
+    #[test]
+    #[serial]
+    fn test_sync_templates_preserves_existing_files() {
+        use std::fs;
+        let _temp_dir = setup_empty_dir();
+
+        // Initialize project
+        ProjectController::init_project(
+            Some("rust".to_string()),
+            Some(vec!["developer".to_string()]),
+            None,
+            Some("developer".to_string()),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        // Verify templates were created
+        let template_dir = std::path::Path::new(".config/.mucm/template-assets/methodologies/developer");
+        assert!(template_dir.exists(), "Developer methodology templates should exist");
+
+        // Modify a template file to simulate user customization
+        let test_file = template_dir.join("uc_advanced.hbs");
+        if test_file.exists() {
+            let custom_content = "CUSTOM USER MODIFICATION - DO NOT OVERWRITE";
+            fs::write(&test_file, custom_content).unwrap();
+
+            // Verify our modification
+            let content_before = fs::read_to_string(&test_file).unwrap();
+            assert_eq!(content_before, custom_content);
+
+            // Sync templates again
+            let result = ProjectController::sync_templates();
+            assert!(result.is_ok(), "Sync should succeed");
+
+            // Verify our customization was preserved
+            let content_after = fs::read_to_string(&test_file).unwrap();
+            assert_eq!(
+                content_after, custom_content,
+                "User customization should be preserved after sync"
+            );
+        }
+    }
+
+    #[test]
+    #[serial]
+    fn test_sync_templates_adds_new_methodology() {
+        use std::fs;
+        let _temp_dir = setup_empty_dir();
+
+        // Initialize with just developer
+        ProjectController::init_project(
+            Some("rust".to_string()),
+            Some(vec!["developer".to_string()]),
+            None,
+            Some("developer".to_string()),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        // Verify only developer exists
+        let methodologies_dir = std::path::Path::new(".config/.mucm/template-assets/methodologies");
+        let developer_dir = methodologies_dir.join("developer");
+        let business_dir = methodologies_dir.join("business");
+        
+        assert!(developer_dir.exists(), "Developer should exist");
+        assert!(!business_dir.exists(), "Business should not exist yet");
+
+        // Modify a developer template
+        let dev_file = developer_dir.join("uc_advanced.hbs");
+        if dev_file.exists() {
+            let custom_content = "MY CUSTOM DEVELOPER TEMPLATE";
+            fs::write(&dev_file, custom_content).unwrap();
+        }
+
+        // Add business methodology via controller
+        ProjectController::add_methodologies(vec!["business".to_string()]).unwrap();
+
+        // Sync templates
+        let result = ProjectController::sync_templates();
+        assert!(result.is_ok(), "Sync should succeed");
+
+        // Verify business was added
+        assert!(business_dir.exists(), "Business templates should now exist");
+        assert!(
+            business_dir.join("methodology.toml").exists(),
+            "Business methodology.toml should exist"
+        );
+
+        // Verify developer customization was preserved
+        if dev_file.exists() {
+            let content = fs::read_to_string(&dev_file).unwrap();
+            assert_eq!(
+                content, "MY CUSTOM DEVELOPER TEMPLATE",
+                "Developer customization should be preserved"
+            );
+        }
+    }
+
+    #[test]
+    #[serial]
+    fn test_sync_templates_multiple_times_idempotent() {
+        use std::fs;
+        let _temp_dir = setup_empty_dir();
+
+        // Initialize
+        ProjectController::init_project(
+            Some("rust".to_string()),
+            Some(vec!["developer".to_string(), "business".to_string()]),
+            None,
+            Some("developer".to_string()),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        // Customize a file
+        let test_file = std::path::Path::new(
+            ".config/.mucm/template-assets/methodologies/developer/uc_advanced.hbs"
+        );
+        if test_file.exists() {
+            let custom_content = "IDEMPOTENCY TEST - PRESERVE THIS";
+            fs::write(test_file, custom_content).unwrap();
+
+            // Sync multiple times
+            for i in 1..=5 {
+                let result = ProjectController::sync_templates();
+                assert!(result.is_ok(), "Sync #{} should succeed", i);
+
+                // Verify content is still preserved
+                let content = fs::read_to_string(test_file).unwrap();
+                assert_eq!(
+                    content, custom_content,
+                    "Content should be preserved after sync #{}", i
+                );
+            }
+        }
+    }
+
+    #[test]
+    #[serial]
+    fn test_sync_templates_after_removing_methodology_from_config() {
+        use std::fs;
+        let _temp_dir = setup_empty_dir();
+
+        // Initialize with multiple methodologies
+        ProjectController::init_project(
+            Some("rust".to_string()),
+            Some(vec!["developer".to_string(), "business".to_string()]),
+            None,
+            Some("developer".to_string()),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        let business_dir = std::path::Path::new(".config/.mucm/template-assets/methodologies/business");
+        assert!(business_dir.exists(), "Business should exist initially");
+
+        // Customize business template
+        let business_file = business_dir.join("uc_advanced.hbs");
+        if business_file.exists() {
+            fs::write(&business_file, "BUSINESS CUSTOMIZATION").unwrap();
+        }
+
+        // Remove business from config
+        ProjectController::remove_methodologies(vec!["business".to_string()]).unwrap();
+
+        // Sync templates
+        ProjectController::sync_templates().unwrap();
+
+        // Verify business templates still exist (not deleted by sync)
+        // This preserves user customizations even when methodology is removed from config
+        assert!(
+            business_dir.exists(),
+            "Business templates should still exist after removal from config (preserves customizations)"
+        );
+
+        // User customization should be preserved
+        if business_file.exists() {
+            let content = fs::read_to_string(&business_file).unwrap();
+            assert_eq!(content, "BUSINESS CUSTOMIZATION", "Customization should be preserved");
+        }
+    }
+
+    #[test]
+    #[serial]
+    fn test_sync_templates_overview_preservation() {
+        use std::fs;
+        let _temp_dir = setup_empty_dir();
+
+        // Initialize
+        ProjectController::init_project(
+            Some("rust".to_string()),
+            Some(vec!["developer".to_string()]),
+            None,
+            Some("developer".to_string()),
+            None,
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+
+        let overview_file = std::path::Path::new(".config/.mucm/template-assets/overview.hbs");
+        assert!(overview_file.exists(), "Overview template should exist");
+
+        // Customize overview
+        let custom_overview = "# MY CUSTOM OVERVIEW TEMPLATE\nDo not overwrite!";
+        fs::write(overview_file, custom_overview).unwrap();
+
+        // Add another methodology and sync
+        ProjectController::add_methodologies(vec!["business".to_string()]).unwrap();
+        ProjectController::sync_templates().unwrap();
+
+        // Verify overview customization preserved
+        let content = fs::read_to_string(overview_file).unwrap();
+        assert_eq!(
+            content, custom_overview,
+            "Overview customization should be preserved"
+        );
     }
 }

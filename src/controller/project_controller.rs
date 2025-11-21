@@ -297,8 +297,8 @@ impl ProjectController {
         // Save config file
         Config::save_config_only(&config)?;
 
-        // Immediately finalize (copy templates) with force=true
-        Self::finalize_init_internal(true)?;
+        // Immediately finalize (copy templates) with force=true and clean=true
+        Self::finalize_init_internal(true, true)?;
 
         // Create all project directories
         Config::create_project_directories()?;
@@ -356,11 +356,24 @@ impl ProjectController {
     /// # Errors
     /// Returns error if configuration doesn't exist or template copying fails
     pub fn finalize_init() -> Result<DisplayResult> {
-        Self::finalize_init_internal(false)
+        Self::finalize_init_internal(false, false)
     }
 
-    /// Internal finalize with force option (public for use by interactive mode)
-    pub fn finalize_init_internal(force: bool) -> Result<DisplayResult> {
+    /// Sync templates with current config without deleting existing files.
+    /// 
+    /// This is used by the interactive settings menu to update templates
+    /// when methodologies are added/removed, while preserving any user
+    /// customizations to existing template files.
+    pub fn sync_templates() -> Result<DisplayResult> {
+        Self::finalize_init_internal(true, false)
+    }
+
+    /// Internal finalize with force and clean options (public for use by interactive mode)
+    /// 
+    /// # Arguments
+    /// * `force` - Skip the "already finalized" check
+    /// * `clean` - Delete existing templates before copying (use with caution!)
+    fn finalize_init_internal(force: bool, clean: bool) -> Result<DisplayResult> {
         use std::fs;
 
         // Check if config exists
@@ -377,8 +390,8 @@ impl ProjectController {
             ));
         }
 
-        // Delete existing templates if forcing recopy
-        if force && Config::check_templates_exist() {
+        // Delete existing templates if clean flag is set
+        if clean && Config::check_templates_exist() {
             let templates_path = std::path::Path::new(".config/.mucm/template-assets");
             if templates_path.exists() {
                 fs::remove_dir_all(templates_path)?;
@@ -481,5 +494,107 @@ impl ProjectController {
         }
 
         Ok(output)
+    }
+
+    /// Add methodologies to the project configuration.
+    /// 
+    /// Updates the mucm.toml config file to include the specified methodologies.
+    /// Template files should be synced separately using finalize_init.
+    ///
+    /// # Arguments
+    /// * `methodologies` - List of methodology names to add
+    ///
+    /// # Returns
+    /// DisplayResult with success/error message
+    pub fn add_methodologies(methodologies: Vec<String>) -> Result<DisplayResult> {
+        if methodologies.is_empty() {
+            return Ok(DisplayResult::error("No methodologies provided".to_string()));
+        }
+
+        let mut config = Config::load()?;
+        let mut added = Vec::new();
+        let mut skipped = Vec::new();
+
+        for methodology in methodologies {
+            if config.templates.methodologies.contains(&methodology) {
+                skipped.push(methodology);
+            } else {
+                config.templates.methodologies.push(methodology.clone());
+                added.push(methodology);
+            }
+        }
+
+        config.save_in_dir(".")?;
+
+        let mut message = String::new();
+        if !added.is_empty() {
+            message.push_str(&format!("✅ Added {} methodology(ies) to configuration:\n", added.len()));
+            for m in &added {
+                message.push_str(&format!("   • {}\n", m));
+            }
+        }
+        if !skipped.is_empty() {
+            if !added.is_empty() {
+                message.push('\n');
+            }
+            message.push_str(&format!("ℹ️  Skipped {} (already configured):\n", skipped.len()));
+            for m in &skipped {
+                message.push_str(&format!("   • {}\n", m));
+            }
+        }
+        
+        if !added.is_empty() {
+            message.push_str("\n💡 Template files will be synced when you Save & Exit.\n");
+        }
+
+        Ok(DisplayResult::success(message))
+    }
+
+    /// Remove methodologies from the project configuration.
+    /// 
+    /// Updates the mucm.toml config file to remove the specified methodologies.
+    /// Template files should be synced separately using finalize_init.
+    ///
+    /// # Arguments
+    /// * `methodologies` - List of methodology names to remove
+    ///
+    /// # Returns
+    /// DisplayResult with success/error message, or error if trying to remove default
+    pub fn remove_methodologies(methodologies: Vec<String>) -> Result<DisplayResult> {
+        if methodologies.is_empty() {
+            return Ok(DisplayResult::error("No methodologies provided".to_string()));
+        }
+
+        let mut config = Config::load()?;
+
+        // Check if trying to remove the default methodology
+        for methodology in &methodologies {
+            if methodology == &config.templates.default_methodology {
+                return Ok(DisplayResult::error(format!(
+                    "⚠️  Cannot remove '{}' as it is the default methodology.\n   Change the default first in Generation Settings.",
+                    methodology
+                )));
+            }
+        }
+
+        let mut removed = Vec::new();
+        let original_count = config.templates.methodologies.len();
+
+        for methodology in &methodologies {
+            config.templates.methodologies.retain(|m| m != methodology);
+            if config.templates.methodologies.len() < original_count {
+                removed.push(methodology.clone());
+            }
+        }
+
+        config.save_in_dir(".")?;
+
+        let mut message = format!("✅ Removed {} methodology(ies) from configuration:\n", removed.len());
+        for m in removed {
+            message.push_str(&format!("   • {}\n", m));
+        }
+        message.push_str("\n💡 Template files will be removed when you Save & Exit.\n");
+
+        Ok(DisplayResult::success(message))
     }
 }
