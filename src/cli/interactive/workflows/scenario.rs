@@ -489,6 +489,18 @@ impl ScenarioWorkflow {
                     // Select actor for the step
                     let actor = Self::select_actor_for_step()?;
 
+                    // Ask for optional receiver
+                    let add_receiver = Confirm::new("Add a receiving actor?")
+                        .with_default(false)
+                        .with_help_message("Does this action have a target/receiver?")
+                        .prompt()?;
+
+                    let receiver = if add_receiver {
+                        Self::select_actor_for_step()?
+                    } else {
+                        None
+                    };
+
                     let description = Text::new("Step description:")
                         .with_help_message("What happens in this step")
                         .prompt()?;
@@ -499,6 +511,7 @@ impl ScenarioWorkflow {
                         description,
                         None, // Will append
                         actor,
+                        receiver,
                     )?;
 
                     UI::show_success(&result.message)?;

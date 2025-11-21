@@ -85,15 +85,20 @@ impl<'a> ScenarioManagementService<'a> {
         scenario_id: &str,
         order: u32,
         actor: String,
+        receiver: Option<String>,
         action: String,
         expected_result: Option<String>,
     ) -> Result<()> {
         let index = self.find_use_case_index(use_case_id)?;
         let mut use_case = self.use_cases[index].clone();
 
-        let step =
-            self.scenario_creator
-                .create_scenario_step(order, actor, action, expected_result);
+        let step = self.scenario_creator.create_scenario_step(
+            order,
+            actor,
+            receiver,
+            action,
+            expected_result,
+        );
 
         use_case.add_step_to_scenario(scenario_id, step)?;
         self.repository.save(&use_case)?;

@@ -519,6 +519,7 @@ impl UseCaseCoordinator {
         scenario_id: &str,
         order: u32,
         actor: String,
+        receiver: Option<String>,
         action: String,
         expected_result: Option<String>,
     ) -> Result<()> {
@@ -532,6 +533,7 @@ impl UseCaseCoordinator {
             scenario_id,
             order,
             actor,
+            receiver,
             action,
             expected_result,
         )

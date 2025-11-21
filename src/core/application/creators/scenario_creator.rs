@@ -39,17 +39,30 @@ impl ScenarioCreator {
         scenario
     }
 
-    /// Create a scenario step
+    /// Create a scenario step with optional receiver
     pub fn create_scenario_step(
         &self,
         order: u32,
         actor: String,
+        receiver: Option<String>,
         action: String,
         expected_result: Option<String>,
     ) -> ScenarioStep {
         let actor_enum: Actor = actor.into(); // Convert String to Actor using From<String>
-        let description =
-            expected_result.unwrap_or_else(|| format!("{} {}", actor_enum.name(), action));
-        ScenarioStep::new(order as usize, actor_enum, action, description)
+        let receiver_enum: Option<Actor> = receiver.map(|r| r.into());
+
+        let description = expected_result.unwrap_or_else(|| {
+            if let Some(ref recv) = receiver_enum {
+                format!("{} {} to {}", actor_enum.name(), action, recv.name())
+            } else {
+                format!("{} {}", actor_enum.name(), action)
+            }
+        });
+
+        let mut step = ScenarioStep::new(order as usize, actor_enum, action, description);
+        if let Some(recv) = receiver_enum {
+            step.set_receiver(recv);
+        }
+        step
     }
 }

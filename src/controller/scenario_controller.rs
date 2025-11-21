@@ -212,6 +212,7 @@ impl ScenarioController {
     /// * `step_description` - Description of the step
     /// * `order` - Optional order (will append if not specified)
     /// * `actor` - Optional actor for the step (defaults to "Actor")
+    /// * `receiver` - Optional receiving actor
     ///
     /// # Returns
     /// DisplayResult indicating success
@@ -222,6 +223,7 @@ impl ScenarioController {
         step_description: String,
         order: Option<u32>,
         actor: Option<String>,
+        receiver: Option<String>,
     ) -> Result<DisplayResult> {
         let order = order.unwrap_or_else(|| {
             // Get current step count to append
@@ -238,14 +240,24 @@ impl ScenarioController {
             &scenario_id,
             order,
             actor_name.clone(),
+            receiver.clone(),
             step_description.clone(),
             None, // No expected result by default
         )?;
 
-        Ok(DisplayResult::success(format!(
-            "✅ Added step {} to scenario {} (actor: {})",
-            order, scenario_id, actor_name
-        )))
+        let message = if let Some(ref recv) = receiver {
+            format!(
+                "✅ Added step {} to scenario {} ({} → {})",
+                order, scenario_id, actor_name, recv
+            )
+        } else {
+            format!(
+                "✅ Added step {} to scenario {} (actor: {})",
+                order, scenario_id, actor_name
+            )
+        };
+
+        Ok(DisplayResult::success(message))
     }
 
     /// Edit a scenario step
@@ -698,6 +710,7 @@ mod tests {
                 "User clicks login button".to_string(),
                 None,
                 None,
+                None, // receiver
             )
             .unwrap();
 
@@ -739,6 +752,7 @@ mod tests {
                 "Step to remove".to_string(),
                 None,
                 None,
+                None, // receiver
             )
             .unwrap();
 

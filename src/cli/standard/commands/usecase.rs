@@ -175,7 +175,8 @@ fn handle_scenario_step_command(
             description,
             order,
         } => {
-            let result = controller.add_step(use_case_id, scenario_id, description, order, None)?;
+            let result =
+                controller.add_step(use_case_id, scenario_id, description, order, None, None)?;
             DisplayResultFormatter::display(&result);
         }
         ScenarioStepCommands::Edit {
