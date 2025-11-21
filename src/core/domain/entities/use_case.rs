@@ -1,4 +1,4 @@
-use super::{Metadata, MethodologyView, Scenario, Status, UseCaseReference};
+use super::{Condition, Metadata, MethodologyView, Scenario, Status, UseCaseReference};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
@@ -50,13 +50,13 @@ pub struct UseCase {
     #[serde(default)]
     pub views: Vec<MethodologyView>,
 
-    // NEW: Preconditions - what must be true before executing
+    // NEW: Preconditions - what must be true before executing (can optionally reference use cases/scenarios)
     #[serde(default)]
-    pub preconditions: Vec<String>,
+    pub preconditions: Vec<Condition>,
 
-    // NEW: Postconditions - what will be true after executing
+    // NEW: Postconditions - what will be true after executing (can optionally reference use cases/scenarios)
     #[serde(default)]
-    pub postconditions: Vec<String>,
+    pub postconditions: Vec<Condition>,
 
     // NEW: References to other use cases
     #[serde(default)]
@@ -117,19 +117,41 @@ impl UseCase {
     }
 
     /// Add a precondition to this use case
-    pub fn add_precondition(&mut self, condition: String) {
-        if !self.preconditions.contains(&condition) {
+    pub fn add_precondition(&mut self, condition: Condition) {
+        // Check for duplicates based on text and target
+        if !self.preconditions.iter().any(|c| {
+            c.text == condition.text
+                && c.target_id == condition.target_id
+                && c.target_type == condition.target_type
+        }) {
             self.preconditions.push(condition);
             self.metadata.touch();
         }
     }
 
     /// Add a postcondition to this use case
-    pub fn add_postcondition(&mut self, condition: String) {
-        if !self.postconditions.contains(&condition) {
+    pub fn add_postcondition(&mut self, condition: Condition) {
+        // Check for duplicates based on text and target
+        if !self.postconditions.iter().any(|c| {
+            c.text == condition.text
+                && c.target_id == condition.target_id
+                && c.target_type == condition.target_type
+        }) {
             self.postconditions.push(condition);
             self.metadata.touch();
         }
+    }
+
+    /// Remove a precondition by text
+    pub fn remove_precondition(&mut self, text: &str) {
+        self.preconditions.retain(|c| c.text != text);
+        self.metadata.touch();
+    }
+
+    /// Remove a postcondition by text
+    pub fn remove_postcondition(&mut self, text: &str) {
+        self.postconditions.retain(|c| c.text != text);
+        self.metadata.touch();
     }
 
     /// Add a reference to another use case
@@ -656,12 +678,12 @@ mod use_case_tests {
         )
         .unwrap();
 
-        use_case.add_precondition("User is logged in".to_string());
+        use_case.add_precondition(Condition::new("User is logged in".to_string()));
         assert_eq!(use_case.preconditions.len(), 1);
-        assert_eq!(use_case.preconditions[0], "User is logged in");
+        assert_eq!(use_case.preconditions[0].text, "User is logged in");
 
         // Duplicate should not be added
-        use_case.add_precondition("User is logged in".to_string());
+        use_case.add_precondition(Condition::new("User is logged in".to_string()));
         assert_eq!(use_case.preconditions.len(), 1);
     }
 
@@ -677,12 +699,12 @@ mod use_case_tests {
         )
         .unwrap();
 
-        use_case.add_postcondition("Session is created".to_string());
+        use_case.add_postcondition(Condition::new("Session is created".to_string()));
         assert_eq!(use_case.postconditions.len(), 1);
-        assert_eq!(use_case.postconditions[0], "Session is created");
+        assert_eq!(use_case.postconditions[0].text, "Session is created");
 
         // Duplicate should not be added
-        use_case.add_postcondition("Session is created".to_string());
+        use_case.add_postcondition(Condition::new("Session is created".to_string()));
         assert_eq!(use_case.postconditions.len(), 1);
     }
 
@@ -727,9 +749,9 @@ mod use_case_tests {
         .unwrap();
 
         // Add new fields
-        use_case.add_precondition("User authenticated".to_string());
-        use_case.add_precondition("Cart not empty".to_string());
-        use_case.add_postcondition("Order created".to_string());
+        use_case.add_precondition(Condition::new("User authenticated".to_string()));
+        use_case.add_precondition(Condition::new("Cart not empty".to_string()));
+        use_case.add_postcondition(Condition::new("Order created".to_string()));
         use_case.add_reference(
             UseCaseReference::new("UC-AUTH-001".to_string(), "depends_on".to_string())
                 .with_description("Authentication required".to_string()),
@@ -743,11 +765,11 @@ mod use_case_tests {
 
         // Verify all fields
         assert_eq!(deserialized.preconditions.len(), 2);
-        assert_eq!(deserialized.preconditions[0], "User authenticated");
-        assert_eq!(deserialized.preconditions[1], "Cart not empty");
+        assert_eq!(deserialized.preconditions[0].text, "User authenticated");
+        assert_eq!(deserialized.preconditions[1].text, "Cart not empty");
 
         assert_eq!(deserialized.postconditions.len(), 1);
-        assert_eq!(deserialized.postconditions[0], "Order created");
+        assert_eq!(deserialized.postconditions[0].text, "Order created");
 
         assert_eq!(deserialized.use_case_references.len(), 1);
         assert_eq!(deserialized.use_case_references[0].target_id, "UC-AUTH-001");

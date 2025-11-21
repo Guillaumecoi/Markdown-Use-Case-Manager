@@ -30,10 +30,10 @@ impl ScenarioCreator {
 
         // Add preconditions and postconditions
         for precondition in preconditions {
-            scenario.add_precondition(precondition);
+            scenario.add_precondition(precondition.into());
         }
         for postcondition in postconditions {
-            scenario.add_postcondition(postcondition);
+            scenario.add_postcondition(postcondition.into());
         }
 
         scenario

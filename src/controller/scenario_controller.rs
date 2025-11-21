@@ -471,7 +471,7 @@ impl ScenarioController {
         condition: String,
     ) -> Result<DisplayResult> {
         let mut scenario = self.get_scenario(&use_case_id, &scenario_id)?;
-        scenario.add_precondition(condition.clone());
+        scenario.add_precondition(condition.clone().into());
 
         // Save via coordinator
         self.app_service.edit_scenario(
@@ -505,7 +505,7 @@ impl ScenarioController {
         condition: String,
     ) -> Result<DisplayResult> {
         let mut scenario = self.get_scenario(&use_case_id, &scenario_id)?;
-        scenario.add_postcondition(condition.clone());
+        scenario.add_postcondition(condition.clone().into());
 
         // Save via coordinator
         self.app_service.edit_scenario(

@@ -664,13 +664,13 @@ impl ScenarioWorkflow {
                         controller.remove_precondition(
                             use_case_id.to_string(),
                             scenario_id.to_string(),
-                            selected,
+                            selected.text.clone(),
                         )?
                     } else {
                         controller.remove_postcondition(
                             use_case_id.to_string(),
                             scenario_id.to_string(),
-                            selected,
+                            selected.text.clone(),
                         )?
                     };
 
