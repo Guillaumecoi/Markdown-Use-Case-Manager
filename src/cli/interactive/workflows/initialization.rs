@@ -275,6 +275,25 @@ fn create_config_with_directories(
     ) {
         Ok(message) => {
             UI::show_success(&message)?;
+            
+            // Ask if they want to create standard system actors
+            let create_actors = Confirm::new("Create standard system actors (Database, API, Web Server, etc.)?")
+                .with_default(true)
+                .with_help_message("These are commonly used external systems that interact with your use cases")
+                .prompt()?;
+
+            if create_actors {
+                use crate::controller::ActorController;
+                let actor_controller = ActorController::new()?;
+                let result = actor_controller.init_standard_actors()?;
+                
+                if result.success {
+                    UI::show_success(&result.message)?;
+                } else {
+                    UI::show_warning(&format!("Could not create standard actors: {}", result.message))?;
+                }
+            }
+            
             Ok(())
         }
         Err(e) => {

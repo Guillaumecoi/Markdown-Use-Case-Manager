@@ -69,6 +69,11 @@ impl ScenarioWorkflow {
         Ok(())
     }
 
+    /// Create a scenario for a specific use case (called after use case creation)
+    pub fn create_scenario_for_use_case(use_case_id: &str) -> Result<()> {
+        Self::create_scenario(use_case_id)
+    }
+
     /// Create a new scenario interactively
     fn create_scenario(use_case_id: &str) -> Result<()> {
         UI::show_section_header("Create Scenario", "➕")?;
@@ -85,30 +90,11 @@ impl ScenarioWorkflow {
             .prompt()
             .ok();
 
-        // Ask if they want to assign a persona
-        let assign_persona_choice =
-            Select::new("Assign a persona to this scenario?", vec!["No", "Yes"]).prompt()?;
-
-        let persona_id = if assign_persona_choice == "Yes" {
-            let mut runner = InteractiveRunner::new();
-            let persona_ids = runner.get_persona_ids()?;
-
-            if persona_ids.is_empty() {
-                println!("\n  No personas available. Skipping persona assignment.\n");
-                None
-            } else {
-                let persona = Select::new("Select persona:", persona_ids).prompt()?;
-                Some(persona)
-            }
-        } else {
-            None
-        };
-
         // Collect preconditions
-        let preconditions = Self::collect_conditions("preconditions")?;
+        let preconditions = Self::collect_conditions("preconditions", use_case_id)?;
 
         // Collect postconditions
-        let postconditions = Self::collect_conditions("postconditions")?;
+        let postconditions = Self::collect_conditions("postconditions", use_case_id)?;
 
         // Ask if they want to assign actors
         let assign_actors_choice =
@@ -127,7 +113,7 @@ impl ScenarioWorkflow {
             title,
             scenario_type.to_string(),
             description,
-            persona_id,
+            None, // persona_id removed from interactive workflow
             preconditions,
             postconditions,
             actors,
@@ -140,7 +126,7 @@ impl ScenarioWorkflow {
     }
 
     /// Helper to collect preconditions or postconditions interactively
-    fn collect_conditions(condition_type: &str) -> Result<Option<Vec<String>>> {
+    fn collect_conditions(condition_type: &str, current_use_case_id: &str) -> Result<Option<Vec<String>>> {
         let add_conditions = Confirm::new(&format!("Add {}?", condition_type))
             .with_default(false)
             .prompt()?;
@@ -151,12 +137,58 @@ impl ScenarioWorkflow {
 
         let mut conditions = Vec::new();
         loop {
-            let condition = Text::new(&format!("  {} (or press Enter to finish):", condition_type))
-                .with_help_message(&format!(
-                    "Enter a {}. You can reference use cases like 'UC-XXX must be complete'",
-                    condition_type.trim_end_matches('s')
-                ))
+            // Ask how to add the condition
+            let input_options = vec!["Type text manually", "Reference a use case"];
+            let input_method = Select::new(&format!("How do you want to add this {}?", condition_type.trim_end_matches('s')), input_options)
+                .with_help_message("Choose to type text or select from existing use cases")
                 .prompt()?;
+
+            let condition = match input_method {
+                "Reference a use case" => {
+                    // Get list of use cases
+                    use crate::controller::UseCaseController;
+                    let uc_controller = UseCaseController::new()?;
+                    let all_use_cases = uc_controller.get_all_use_cases()?;
+                    
+                    let use_case_ids = all_use_cases
+                        .iter()
+                        .filter(|uc| uc.id != current_use_case_id) // Exclude current use case
+                        .map(|uc| format!("{} - {}", uc.id, uc.title))
+                        .collect::<Vec<_>>();
+
+                    if use_case_ids.is_empty() {
+                        UI::show_warning("No other use cases found. Please type manually.")?;
+                        Text::new(&format!("  {} (or press Enter to finish):", condition_type))
+                            .with_help_message("Enter condition text")
+                            .prompt()?
+                    } else {
+                        let selected = Select::new("Select use case:", use_case_ids)
+                            .with_help_message("Choose which use case this condition references")
+                            .prompt()?;
+                        
+                        let target_id = selected.split(" - ").next().unwrap_or(&selected).to_string();
+
+                        let condition_text = Text::new("Condition text:")
+                            .with_help_message(&format!("Describe the {} related to {}", condition_type.trim_end_matches('s'), target_id))
+                            .prompt()?;
+
+                        let relationship_options = vec!["requires", "depends_on", "must_complete", "extends"];
+                        let relationship = Select::new("Relationship type:", relationship_options)
+                            .with_help_message("How does this condition relate to the referenced use case?")
+                            .prompt()?;
+
+                        format!("{}||UC:{}:{}", condition_text, target_id, relationship)
+                    }
+                },
+                _ => {
+                    Text::new(&format!("  {} (or press Enter to finish):", condition_type))
+                        .with_help_message(&format!(
+                            "Enter a {}. You can also reference use cases.",
+                            condition_type.trim_end_matches('s')
+                        ))
+                        .prompt()?
+                }
+            };
 
             if condition.trim().is_empty() {
                 break;

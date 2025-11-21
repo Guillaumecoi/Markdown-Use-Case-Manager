@@ -393,6 +393,16 @@ impl UseCaseWorkflow {
                 println!("   • {}-{}.md", methodology, level);
             }
 
+            // Ask if they want to create a scenario
+            let create_scenario = Confirm::new("Create a scenario for this use case?")
+                .with_default(false)
+                .with_help_message("You can add scenarios to describe specific workflows")
+                .prompt()?;
+
+            if create_scenario {
+                super::scenario::ScenarioWorkflow::create_scenario_for_use_case(&use_case_id)?;
+            }
+
             UI::show_info("\n💡 You can edit the TOML files directly to add additional fields like author, reviewer, and custom methodology fields.")?;
             return Ok(());
         }
@@ -541,6 +551,16 @@ impl UseCaseWorkflow {
         UI::show_info("\n📄 Generated files:")?;
         for (methodology, level) in &views {
             println!("   • {}-{}.md", methodology, level);
+        }
+
+        // Ask if they want to create a scenario
+        let create_scenario = Confirm::new("Create a scenario for this use case?")
+            .with_default(false)
+            .with_help_message("You can add scenarios to describe specific workflows")
+            .prompt()?;
+
+        if create_scenario {
+            super::scenario::ScenarioWorkflow::create_scenario_for_use_case(&use_case_id)?;
         }
 
         Ok(())
