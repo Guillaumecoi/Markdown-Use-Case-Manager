@@ -110,7 +110,7 @@ impl ScenarioWorkflow {
         let mut controller = ScenarioController::new()?;
         let result = controller.create_scenario(
             use_case_id.to_string(),
-            title,
+            title.clone(),
             scenario_type.to_string(),
             description,
             None, // persona_id removed from interactive workflow
@@ -120,6 +120,65 @@ impl ScenarioWorkflow {
         )?;
 
         UI::show_success(&result.message)?;
+
+        // Extract scenario_id from success message (format: "✅ Created scenario: UC-XXX-S## - Title")
+        let scenario_id = result
+            .message
+            .split(':')
+            .nth(1)
+            .and_then(|part| part.trim().split(" - ").next())
+            .map(|id| id.trim())
+            .unwrap_or("");
+
+        // Prompt to add steps immediately after creation
+        let add_steps = Confirm::new("Add steps to this scenario now?")
+            .with_default(true)
+            .with_help_message("You can also add steps later via Edit Scenario")
+            .prompt()?;
+
+        if add_steps && !scenario_id.is_empty() {
+            println!("\n  📝 Adding steps to: {}\n", title);
+            loop {
+                let actor = Self::select_actor_for_step()?;
+
+                let add_receiver = Confirm::new("Add a receiving actor?")
+                    .with_default(false)
+                    .with_help_message("Does this action have a target/receiver?")
+                    .prompt()?;
+
+                let receiver = if add_receiver {
+                    Self::select_actor_for_step()?
+                } else {
+                    None
+                };
+
+                let description = Text::new("Step description:")
+                    .with_help_message(
+                        "Describe the action (e.g., 'enters credentials', 'validates input')",
+                    )
+                    .prompt()?;
+
+                let step_result = controller.add_step(
+                    use_case_id.to_string(),
+                    scenario_id.to_string(),
+                    description,
+                    None,
+                    actor,
+                    receiver,
+                )?;
+
+                UI::show_success(&step_result.message)?;
+
+                let add_more = Confirm::new("Add another step?")
+                    .with_default(true)
+                    .prompt()?;
+
+                if !add_more {
+                    break;
+                }
+            }
+        }
+
         UI::pause_for_input()?;
 
         Ok(())
