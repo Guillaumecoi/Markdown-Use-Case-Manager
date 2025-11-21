@@ -4,7 +4,7 @@
 //! Provides guided workflows for scenario operations.
 
 use anyhow::Result;
-use inquire::{Select, Text};
+use inquire::{Confirm, Select, Text};
 
 use crate::cli::interactive::{runner::InteractiveRunner, ui::UI};
 use crate::controller::ScenarioController;
@@ -47,6 +47,7 @@ impl ScenarioWorkflow {
                 "Edit scenario",
                 "Delete scenario",
                 "Manage scenario steps",
+                "Manage conditions (pre/post)",
                 "Assign persona to scenario",
                 "Back to use case menu",
             ];
@@ -65,6 +66,9 @@ impl ScenarioWorkflow {
                 }
                 "Manage scenario steps" => {
                     Self::manage_steps(use_case_id)?;
+                }
+                "Manage conditions (pre/post)" => {
+                    Self::manage_conditions(use_case_id)?;
                 }
                 "Assign persona to scenario" => {
                     Self::assign_persona(use_case_id)?;
@@ -112,6 +116,22 @@ impl ScenarioWorkflow {
             None
         };
 
+        // Collect preconditions
+        let preconditions = Self::collect_conditions("preconditions")?;
+
+        // Collect postconditions
+        let postconditions = Self::collect_conditions("postconditions")?;
+
+        // Ask if they want to assign actors
+        let assign_actors_choice =
+            Select::new("Assign actors to this scenario?", vec!["No", "Yes"]).prompt()?;
+
+        let actors = if assign_actors_choice == "Yes" {
+            Self::select_multiple_actors()?
+        } else {
+            None
+        };
+
         // Create the scenario
         let mut controller = ScenarioController::new()?;
         let result = controller.create_scenario(
@@ -120,12 +140,145 @@ impl ScenarioWorkflow {
             scenario_type.to_string(),
             description,
             persona_id,
+            preconditions,
+            postconditions,
+            actors,
         )?;
 
         UI::show_success(&result.message)?;
         UI::pause_for_input()?;
 
         Ok(())
+    }
+
+    /// Helper to collect preconditions or postconditions interactively
+    fn collect_conditions(condition_type: &str) -> Result<Option<Vec<String>>> {
+        let add_conditions = Confirm::new(&format!("Add {}?", condition_type))
+            .with_default(false)
+            .prompt()?;
+
+        if !add_conditions {
+            return Ok(None);
+        }
+
+        let mut conditions = Vec::new();
+        loop {
+            let condition = Text::new(&format!("  {} (or press Enter to finish):", condition_type))
+                .with_help_message(&format!("Enter a {}", condition_type.trim_end_matches('s')))
+                .prompt()?;
+
+            if condition.trim().is_empty() {
+                break;
+            }
+
+            conditions.push(condition);
+
+            let add_more = Confirm::new(&format!("Add another {}?", condition_type.trim_end_matches('s')))
+                .with_default(true)
+                .prompt()?;
+
+            if !add_more {
+                break;
+            }
+        }
+
+        if conditions.is_empty() {
+            Ok(None)
+        } else {
+            Ok(Some(conditions))
+        }
+    }
+
+    /// Helper to select multiple actors interactively
+    fn select_multiple_actors() -> Result<Option<Vec<String>>> {
+        let runner = InteractiveRunner::new();
+        let available_actors = runner.get_available_actors()?;
+
+        if available_actors.is_empty() {
+            println!("\n  No actors available. Create personas or system actors first.\n");
+            return Ok(None);
+        }
+
+        let mut selected_actors = Vec::new();
+
+        loop {
+            let mut options = available_actors
+                .iter()
+                .filter(|a| {
+                    // Extract ID from format "emoji name (id)"
+                    let id = a.split('(').nth(1).and_then(|s| s.strip_suffix(')'));
+                    !selected_actors.iter().any(|selected: &String| {
+                        Some(selected.as_str()) == id
+                    })
+                })
+                .cloned()
+                .collect::<Vec<_>>();
+
+            if options.is_empty() {
+                break;
+            }
+
+            options.push("Done selecting".to_string());
+
+            let choice = Select::new("Select actor:", options).prompt()?;
+
+            if choice == "Done selecting" {
+                break;
+            }
+
+            // Extract actor ID from the display string
+            if let Some(id) = choice.split('(').nth(1).and_then(|s| s.strip_suffix(')')) {
+                selected_actors.push(id.to_string());
+                println!("  ✓ Added: {}", choice);
+            }
+
+            if selected_actors.is_empty() {
+                let add_more = Confirm::new("Add another actor?")
+                    .with_default(true)
+                    .prompt()?;
+
+                if !add_more {
+                    break;
+                }
+            }
+        }
+
+        if selected_actors.is_empty() {
+            Ok(None)
+        } else {
+            Ok(Some(selected_actors))
+        }
+    }
+
+    /// Helper to select a single actor for a step
+    fn select_actor_for_step() -> Result<Option<String>> {
+        let runner = InteractiveRunner::new();
+        let mut available_actors = runner.get_available_actors()?;
+
+        if available_actors.is_empty() {
+            println!("\n  No actors available. Using default 'Actor'.\n");
+            return Ok(None);
+        }
+
+        // Add built-in actors
+        available_actors.insert(0, "User".to_string());
+        available_actors.insert(1, "System".to_string());
+        available_actors.insert(2, "Default (Actor)".to_string());
+
+        let choice = Select::new("Select actor for this step:", available_actors).prompt()?;
+
+        if choice == "Default (Actor)" {
+            Ok(None)
+        } else if choice == "User" || choice == "System" {
+            Ok(Some(choice))
+        } else {
+            // Extract actor ID from display string
+            if let Some(id) = choice.split('(').nth(1).and_then(|s| s.strip_suffix(')')) {
+                Ok(Some(format!("ref:{}", id)))
+            } else {
+                Ok(Some(choice))
+            }
+        }
     }
 
     /// Edit an existing scenario
@@ -330,6 +483,9 @@ impl ScenarioWorkflow {
 
             match choice {
                 "Add step" => {
+                    // Select actor for the step
+                    let actor = Self::select_actor_for_step()?;
+
                     let description = Text::new("Step description:")
                         .with_help_message("What happens in this step")
                         .prompt()?;
@@ -339,6 +495,7 @@ impl ScenarioWorkflow {
                         scenario_id.to_string(),
                         description,
                         None, // Will append
+                        actor,
                     )?;
 
                     UI::show_success(&result.message)?;
@@ -395,6 +552,138 @@ impl ScenarioWorkflow {
                     )?;
 
                     UI::show_success(&result.message)?;
+                }
+                "Back" => break,
+                _ => {}
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Manage preconditions and postconditions for scenarios
+    fn manage_conditions(use_case_id: &str) -> Result<()> {
+        UI::show_section_header("Manage Scenario Conditions", "📋")?;
+
+        let mut controller = ScenarioController::new()?;
+        let scenarios = controller.get_scenarios(use_case_id)?;
+
+        if scenarios.is_empty() {
+            println!("\n  No scenarios available.\n");
+            UI::pause_for_input()?;
+            return Ok(());
+        }
+
+        // Select scenario
+        let scenario_options: Vec<String> = scenarios
+            .iter()
+            .map(|s| format!("{} - {}", s.id, s.title))
+            .collect();
+
+        let selected = Select::new("Select scenario:", scenario_options).prompt()?;
+        let scenario_id = selected.split(" - ").next().unwrap();
+
+        loop {
+            // Get current scenario
+            let scenario = controller.get_scenario(use_case_id, scenario_id)?;
+
+            println!("\n  Current preconditions:");
+            if scenario.preconditions.is_empty() {
+                println!("    (none)");
+            } else {
+                for (idx, condition) in scenario.preconditions.iter().enumerate() {
+                    println!("    {}. {}", idx + 1, condition);
+                }
+            }
+
+            println!("\n  Current postconditions:");
+            if scenario.postconditions.is_empty() {
+                println!("    (none)");
+            } else {
+                for (idx, condition) in scenario.postconditions.iter().enumerate() {
+                    println!("    {}. {}", idx + 1, condition);
+                }
+            }
+            println!();
+
+            let actions = vec![
+                "Add precondition",
+                "Add postcondition",
+                "Remove precondition",
+                "Remove postcondition",
+                "Back",
+            ];
+
+            let choice = Select::new("What would you like to do?", actions).prompt()?;
+
+            match choice {
+                "Add precondition" => {
+                    let condition = Text::new("Precondition:")
+                        .with_help_message("Enter the precondition text")
+                        .prompt()?;
+
+                    let result = controller.add_precondition(
+                        use_case_id.to_string(),
+                        scenario_id.to_string(),
+                        condition,
+                    )?;
+
+                    UI::show_success(&result.message)?;
+                }
+                "Add postcondition" => {
+                    let condition = Text::new("Postcondition:")
+                        .with_help_message("Enter the postcondition text")
+                        .prompt()?;
+
+                    let result = controller.add_postcondition(
+                        use_case_id.to_string(),
+                        scenario_id.to_string(),
+                        condition,
+                    )?;
+
+                    UI::show_success(&result.message)?;
+                }
+                "Remove precondition" => {
+                    if scenario.preconditions.is_empty() {
+                        println!("\n  No preconditions to remove.\n");
+                        continue;
+                    }
+
+                    let condition_choices: Vec<String> = scenario
+                        .preconditions
+                        .iter()
+                        .enumerate()
+                        .map(|(idx, c)| format!("{}. {}", idx + 1, c))
+                        .collect();
+
+                    let _selected_condition =
+                        Select::new("Select precondition to remove:", condition_choices)
+                            .prompt()?;
+
+                    // For now, we need to implement remove methods
+                    // This is a placeholder - would need controller support
+                    UI::show_warning("Remove precondition not yet implemented")?;
+                }
+                "Remove postcondition" => {
+                    if scenario.postconditions.is_empty() {
+                        println!("\n  No postconditions to remove.\n");
+                        continue;
+                    }
+
+                    let condition_choices: Vec<String> = scenario
+                        .postconditions
+                        .iter()
+                        .enumerate()
+                        .map(|(idx, c)| format!("{}. {}", idx + 1, c))
+                        .collect();
+
+                    let _selected_condition =
+                        Select::new("Select postcondition to remove:", condition_choices)
+                            .prompt()?;
+
+                    // For now, we need to implement remove methods
+                    // This is a placeholder - would need controller support
+                    UI::show_warning("Remove postcondition not yet implemented")?;
                 }
                 "Back" => break,
                 _ => {}

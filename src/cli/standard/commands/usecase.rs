@@ -100,6 +100,9 @@ pub fn handle_usecase_scenario_command(
                 scenario_type,
                 description,
                 persona,
+                None, // preconditions
+                None, // postconditions
+                None, // actors
             )?;
             DisplayResultFormatter::display(&result);
         }
@@ -172,7 +175,7 @@ fn handle_scenario_step_command(
             description,
             order,
         } => {
-            let result = controller.add_step(use_case_id, scenario_id, description, order)?;
+            let result = controller.add_step(use_case_id, scenario_id, description, order, None)?;
             DisplayResultFormatter::display(&result);
         }
         ScenarioStepCommands::Edit {

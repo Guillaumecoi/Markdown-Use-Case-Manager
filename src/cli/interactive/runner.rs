@@ -420,6 +420,40 @@ impl InteractiveRunner {
             .cloned()
             .unwrap_or_default())
     }
+
+    // ========== Actor Selection Methods ==========
+
+    /// Get available actors for selection (personas + system actors)
+    ///
+    /// # Returns
+    /// Vector of actor display strings with emoji, name, and ID
+    pub fn get_available_actors(&self) -> Result<Vec<String>> {
+        use crate::controller::ActorController;
+        
+        let actor_controller = ActorController::new()?;
+        
+        // Get personas
+        let personas = actor_controller.list_personas()?;
+        let mut actors: Vec<String> = personas
+            .iter()
+            .map(|p| {
+                let emoji = p
+                    .extra
+                    .get("emoji")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("🙂");
+                format!("{} {} ({})", emoji, p.name, p.id)
+            })
+            .collect();
+
+        // Get system actors
+        let system_actors = actor_controller.list_actors(None)?;
+        actors.extend(system_actors.iter().map(|a| {
+            format!("{} {} ({})", a.emoji, a.name, a.id)
+        }));
+
+        Ok(actors)
+    }
 }
 
 // Re-export for convenience
