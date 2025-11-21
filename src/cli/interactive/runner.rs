@@ -26,6 +26,7 @@ use crate::core::{FieldCollection, MethodologyFieldCollector};
 pub struct InteractiveRunner {
     use_case_controller: Option<UseCaseController>,
     persona_controller: Option<PersonaController>,
+    actor_controller: Option<crate::controller::ActorController>,
 }
 
 impl InteractiveRunner {
@@ -34,6 +35,7 @@ impl InteractiveRunner {
         Self {
             use_case_controller: None,
             persona_controller: None,
+            actor_controller: None,
         }
     }
 
@@ -303,8 +305,25 @@ impl InteractiveRunner {
             .expect("controller was just initialized"))
     }
 
-    /// Get list of all actor IDs for selection
+    /// Ensure the actor controller is loaded
+    fn ensure_actor_controller(&mut self) -> Result<&mut crate::controller::ActorController> {
+        if self.actor_controller.is_none() {
+            self.actor_controller = Some(crate::controller::ActorController::new()?);
+        }
+        Ok(self
+            .actor_controller
+            .as_mut()
+            .expect("controller was just initialized"))
+    }
+
+    /// Get list of all actor IDs for selection (both personas and system actors)
     pub fn get_actor_ids(&mut self) -> Result<Vec<String>> {
+        let controller = self.ensure_actor_controller()?;
+        controller.get_actor_ids()
+    }
+
+    /// Get list of persona IDs only for selection (for editing)
+    pub fn get_persona_ids(&mut self) -> Result<Vec<String>> {
         let controller = self.ensure_persona_controller()?;
         controller.get_persona_ids()
     }

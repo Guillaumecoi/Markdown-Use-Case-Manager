@@ -189,11 +189,11 @@ impl ActorWorkflow {
 
         let mut runner = InteractiveRunner::new();
 
-        // Get list of actors
-        let actor_ids = runner.get_actor_ids()?;
+        // Get list of personas only (system actors don't have editable custom fields yet)
+        let actor_ids = runner.get_persona_ids()?;
 
         if actor_ids.is_empty() {
-            UI::show_error("No actors found. Please create an actor first.")?;
+            UI::show_error("No personas found. Please create a persona first.")?;
             UI::pause_for_input()?;
             return Ok(());
         }
