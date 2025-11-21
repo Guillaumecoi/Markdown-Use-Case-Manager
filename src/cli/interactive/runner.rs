@@ -217,7 +217,12 @@ impl InteractiveRunner {
     }
 
     /// Create a persona interactively
-    pub fn create_persona_interactive(&mut self, id: String, name: String, function: String) -> Result<String> {
+    pub fn create_persona_interactive(
+        &mut self,
+        id: String,
+        name: String,
+        function: String,
+    ) -> Result<String> {
         let controller = self.ensure_persona_controller()?;
         let result = controller.create_persona(id, name, function)?;
         Ok(result.message)
@@ -429,9 +434,9 @@ impl InteractiveRunner {
     /// Vector of actor display strings with emoji, name, and ID
     pub fn get_available_actors(&self) -> Result<Vec<String>> {
         use crate::controller::ActorController;
-        
+
         let actor_controller = ActorController::new()?;
-        
+
         // Get personas
         let personas = actor_controller.list_personas()?;
         let mut actors: Vec<String> = personas
@@ -448,9 +453,11 @@ impl InteractiveRunner {
 
         // Get system actors
         let system_actors = actor_controller.list_actors(None)?;
-        actors.extend(system_actors.iter().map(|a| {
-            format!("{} {} ({})", a.emoji, a.name, a.id)
-        }));
+        actors.extend(
+            system_actors
+                .iter()
+                .map(|a| format!("{} {} ({})", a.emoji, a.name, a.id)),
+        );
 
         Ok(actors)
     }

@@ -460,7 +460,7 @@ impl ScenarioController {
     ) -> Result<DisplayResult> {
         let mut scenario = self.get_scenario(&use_case_id, &scenario_id)?;
         scenario.add_precondition(condition.clone());
-        
+
         // Save via coordinator
         self.app_service.edit_scenario(
             &use_case_id,
@@ -494,7 +494,7 @@ impl ScenarioController {
     ) -> Result<DisplayResult> {
         let mut scenario = self.get_scenario(&use_case_id, &scenario_id)?;
         scenario.add_postcondition(condition.clone());
-        
+
         // Save via coordinator
         self.app_service.edit_scenario(
             &use_case_id,
@@ -517,9 +517,9 @@ impl ScenarioController {
     /// Vector of actor display strings (emoji + name + id)
     pub fn get_available_actors(&self) -> Result<Vec<String>> {
         use crate::controller::ActorController;
-        
+
         let actor_controller = ActorController::new()?;
-        
+
         // Get personas
         let personas = actor_controller.list_personas()?;
         let mut actors: Vec<String> = personas
@@ -536,9 +536,11 @@ impl ScenarioController {
 
         // Get system actors
         let system_actors = actor_controller.list_actors(None)?;
-        actors.extend(system_actors.iter().map(|a| {
-            format!("{} {} ({})", a.emoji, a.name, a.id)
-        }));
+        actors.extend(
+            system_actors
+                .iter()
+                .map(|a| format!("{} {} ({})", a.emoji, a.name, a.id)),
+        );
 
         Ok(actors)
     }
@@ -549,15 +551,15 @@ impl ScenarioController {
     /// Vector of actor IDs
     pub fn get_actor_ids(&self) -> Result<Vec<String>> {
         use crate::controller::ActorController;
-        
+
         let actor_controller = ActorController::new()?;
-        
+
         // Get persona IDs
         let mut ids = actor_controller.get_persona_ids()?;
-        
+
         // Get system actor IDs
         ids.extend(actor_controller.get_actor_ids()?);
-        
+
         Ok(ids)
     }
 }

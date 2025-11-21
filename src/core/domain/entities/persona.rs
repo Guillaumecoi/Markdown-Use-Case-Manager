@@ -92,7 +92,7 @@ impl Persona {
         let mut extra = self.extra.clone();
         // Store function in extra fields for ActorEntity compatibility
         extra.insert("function".to_string(), serde_json::json!(self.function));
-        
+
         super::ActorEntity {
             id: self.id.clone(),
             name: self.name.clone(),
@@ -113,7 +113,7 @@ impl Persona {
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
-            
+
             Some(Self {
                 id: actor.id.clone(),
                 name: actor.name.clone(),
@@ -148,19 +148,39 @@ mod tests {
     #[test]
     fn test_persona_emoji() {
         assert_eq!(
-            Persona::new("admin".to_string(), "Admin".to_string(), "System Admin".to_string()).emoji(),
+            Persona::new(
+                "admin".to_string(),
+                "Admin".to_string(),
+                "System Admin".to_string()
+            )
+            .emoji(),
             "👨‍💼"
         );
         assert_eq!(
-            Persona::new("customer".to_string(), "Customer".to_string(), "End User".to_string()).emoji(),
+            Persona::new(
+                "customer".to_string(),
+                "Customer".to_string(),
+                "End User".to_string()
+            )
+            .emoji(),
             "👤"
         );
         assert_eq!(
-            Persona::new("guest".to_string(), "Guest".to_string(), "Visitor".to_string()).emoji(),
+            Persona::new(
+                "guest".to_string(),
+                "Guest".to_string(),
+                "Visitor".to_string()
+            )
+            .emoji(),
             "🚶"
         );
         assert_eq!(
-            Persona::new("developer".to_string(), "Developer".to_string(), "Software Engineer".to_string()).emoji(),
+            Persona::new(
+                "developer".to_string(),
+                "Developer".to_string(),
+                "Software Engineer".to_string()
+            )
+            .emoji(),
             "👨‍💻"
         );
     }

@@ -28,7 +28,9 @@ impl PersonaWorkflow {
             .prompt()?;
 
         let function = Text::new("Function/Role:")
-            .with_help_message("Role or function (e.g., 'System Administrator', 'End User', 'Customer')")
+            .with_help_message(
+                "Role or function (e.g., 'System Administrator', 'End User', 'Customer')",
+            )
             .prompt()?;
 
         // Auto-generate ID from name

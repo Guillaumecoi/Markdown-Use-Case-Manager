@@ -173,9 +173,12 @@ impl ScenarioWorkflow {
 
             conditions.push(condition);
 
-            let add_more = Confirm::new(&format!("Add another {}?", condition_type.trim_end_matches('s')))
-                .with_default(true)
-                .prompt()?;
+            let add_more = Confirm::new(&format!(
+                "Add another {}?",
+                condition_type.trim_end_matches('s')
+            ))
+            .with_default(true)
+            .prompt()?;
 
             if !add_more {
                 break;
@@ -207,9 +210,9 @@ impl ScenarioWorkflow {
                 .filter(|a| {
                     // Extract ID from format "emoji name (id)"
                     let id = a.split('(').nth(1).and_then(|s| s.strip_suffix(')'));
-                    !selected_actors.iter().any(|selected: &String| {
-                        Some(selected.as_str()) == id
-                    })
+                    !selected_actors
+                        .iter()
+                        .any(|selected: &String| Some(selected.as_str()) == id)
                 })
                 .cloned()
                 .collect::<Vec<_>>();
