@@ -38,13 +38,11 @@ pub struct MethodologyDefinition {
     /// Custom fields specific to this methodology (flattened from all levels for backward compatibility)
     custom_fields: HashMap<String, CustomFieldConfig>,
     /// Per-level configuration (for field resolution with inheritance)
-    #[allow(dead_code)]
     pub(crate) level_configs: HashMap<String, LevelConfig>,
 }
 
 /// Configuration for a specific documentation level
 #[derive(Debug, Clone, serde::Deserialize)]
-#[allow(dead_code)]
 pub(crate) struct LevelConfig {
     /// Custom fields specific to this level
     #[serde(default)]
@@ -88,8 +86,6 @@ impl MethodologyDefinition {
         #[derive(serde::Deserialize)]
         struct MethodologyMeta {
             name: String,
-            #[allow(dead_code)]
-            abbreviation: String,
             description: String,
         }
 

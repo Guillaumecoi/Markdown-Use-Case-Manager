@@ -64,14 +64,23 @@ mod tests {
 
     #[test]
     fn test_slugify_for_id_simple() {
-        assert_eq!(slugify_for_id("System Administrator"), "system-administrator");
+        assert_eq!(
+            slugify_for_id("System Administrator"),
+            "system-administrator"
+        );
         assert_eq!(slugify_for_id("End User"), "end-user");
     }
 
     #[test]
     fn test_slugify_for_id_multiple_words() {
-        assert_eq!(slugify_for_id("Customer Service Agent"), "customer-service-agent");
-        assert_eq!(slugify_for_id("Senior Software Developer"), "senior-software-developer");
+        assert_eq!(
+            slugify_for_id("Customer Service Agent"),
+            "customer-service-agent"
+        );
+        assert_eq!(
+            slugify_for_id("Senior Software Developer"),
+            "senior-software-developer"
+        );
     }
 
     #[test]

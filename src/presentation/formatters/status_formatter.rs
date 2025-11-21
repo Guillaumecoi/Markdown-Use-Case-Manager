@@ -25,12 +25,4 @@ impl StatusFormatter {
             println!("{}: {}", status, count.to_string().cyan());
         }
     }
-
-    /// Display a simple status message
-    /// Display a general status message
-    /// TODO: Use this for non-error informational messages in status commands
-    #[allow(dead_code)]
-    pub fn display_message(message: &str) {
-        println!("{}", message);
-    }
 }

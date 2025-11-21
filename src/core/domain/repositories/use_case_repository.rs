@@ -5,8 +5,13 @@ use anyhow::Result;
 /// Repository abstraction for use case persistence
 /// This trait defines the contract for storing and retrieving use cases
 /// Implementations can use different storage backends (TOML, database, etc.)
-/// Note: Methods appear unused to lib but are used by integration tests via trait objects
-#[allow(dead_code)]
+///
+/// Note: Compiler reports this as unused due to trait object usage pattern.
+/// This trait is extensively used via `Box<dyn UseCaseRepository>` throughout the codebase:
+/// - RepositoryFactory returns trait objects
+/// - UseCaseCoordinator stores it as a field
+/// - All service layers use it via trait objects
+#[allow(unused)]
 pub trait UseCaseRepository {
     /// Save only the TOML file (source of truth)
     /// Use this when you want to save the use case data without generating markdown yet

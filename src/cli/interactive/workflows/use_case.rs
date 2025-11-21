@@ -311,7 +311,7 @@ impl UseCaseWorkflow {
 
         if !fill_additional {
             // Create use case with just the basic fields and default priority
-            let result = runner.create_use_case_with_views_and_fields(
+            let (use_case_id, message) = runner.create_use_case_with_views_and_fields(
                 title,
                 category,
                 description,
@@ -320,7 +320,72 @@ impl UseCaseWorkflow {
                 HashMap::new(),
             )?;
 
-            UI::show_success(&result)?;
+            UI::show_success(&message)?;
+
+            // Ask if they want to add preconditions/postconditions
+            let add_conditions = Confirm::new("Add preconditions or postconditions?")
+                .with_default(false)
+                .with_help_message(
+                    "You can add conditions that must be true before/after this use case",
+                )
+                .prompt()?;
+
+            if add_conditions {
+                use crate::controller::UseCaseController;
+                let mut uc_controller = UseCaseController::new()?;
+
+                // Collect preconditions
+                let add_preconditions = Confirm::new("Add preconditions?")
+                    .with_default(false)
+                    .prompt()?;
+
+                if add_preconditions {
+                    loop {
+                        let condition_text =
+                            Text::new("  Precondition (or press Enter to finish):").prompt()?;
+
+                        if condition_text.trim().is_empty() {
+                            break;
+                        }
+
+                        uc_controller.add_precondition(use_case_id.clone(), condition_text)?;
+
+                        let add_more = Confirm::new("Add another precondition?")
+                            .with_default(true)
+                            .prompt()?;
+
+                        if !add_more {
+                            break;
+                        }
+                    }
+                }
+
+                // Collect postconditions
+                let add_postconditions = Confirm::new("Add postconditions?")
+                    .with_default(false)
+                    .prompt()?;
+
+                if add_postconditions {
+                    loop {
+                        let condition_text =
+                            Text::new("  Postcondition (or press Enter to finish):").prompt()?;
+
+                        if condition_text.trim().is_empty() {
+                            break;
+                        }
+
+                        uc_controller.add_postcondition(use_case_id.clone(), condition_text)?;
+
+                        let add_more = Confirm::new("Add another postcondition?")
+                            .with_default(true)
+                            .prompt()?;
+
+                        if !add_more {
+                            break;
+                        }
+                    }
+                }
+            }
 
             // Show summary of created views
             UI::show_info("\n📄 Generated files:")?;
@@ -360,6 +425,66 @@ impl UseCaseWorkflow {
             .with_help_message("Person responsible for reviewing this use case")
             .prompt_skippable()?;
 
+        // Collect preconditions
+        let add_preconditions = Confirm::new("Add preconditions?")
+            .with_default(false)
+            .with_help_message("Conditions that must be true before this use case can execute")
+            .prompt()?;
+
+        let mut preconditions = Vec::new();
+        if add_preconditions {
+            loop {
+                let condition = Text::new("  Precondition (or press Enter to finish):")
+                    .with_help_message("Enter a precondition. You can reference other use cases like 'UC-XXX must be complete'")
+                    .prompt()?;
+
+                if condition.trim().is_empty() {
+                    break;
+                }
+
+                preconditions.push(condition);
+
+                let add_more = Confirm::new("Add another precondition?")
+                    .with_default(true)
+                    .prompt()?;
+
+                if !add_more {
+                    break;
+                }
+            }
+        }
+
+        // Collect postconditions
+        let add_postconditions = Confirm::new("Add postconditions?")
+            .with_default(false)
+            .with_help_message(
+                "Conditions that will be true after this use case executes successfully",
+            )
+            .prompt()?;
+
+        let mut postconditions = Vec::new();
+        if add_postconditions {
+            loop {
+                let condition = Text::new("  Postcondition (or press Enter to finish):")
+                    .with_help_message("Enter a postcondition describing the result state")
+                    .prompt()?;
+
+                if condition.trim().is_empty() {
+                    break;
+                }
+
+                postconditions.push(condition);
+
+                let add_more = Confirm::new("Add another postcondition?")
+                    .with_default(true)
+                    .prompt()?;
+
+                if !add_more {
+                    break;
+                }
+            }
+        }
+
         // Collect methodology-specific field values
         let methodology_field_values = Self::prompt_for_methodology_fields(runner, &views)?;
 
@@ -381,7 +506,7 @@ impl UseCaseWorkflow {
         // Merge methodology field values into extra_fields
         extra_fields.extend(methodology_field_values);
 
-        let result = runner.create_use_case_with_views_and_fields(
+        let (use_case_id, message) = runner.create_use_case_with_views_and_fields(
             title,
             category,
             final_description,
@@ -390,7 +515,27 @@ impl UseCaseWorkflow {
             extra_fields,
         )?;
 
-        UI::show_success(&result)?;
+        UI::show_success(&message)?;
+
+        // Add preconditions if any
+        if !preconditions.is_empty() {
+            use crate::controller::UseCaseController;
+            let mut uc_controller = UseCaseController::new()?;
+
+            for condition_text in preconditions {
+                uc_controller.add_precondition(use_case_id.clone(), condition_text)?;
+            }
+        }
+
+        // Add postconditions if any
+        if !postconditions.is_empty() {
+            use crate::controller::UseCaseController;
+            let mut uc_controller = UseCaseController::new()?;
+
+            for condition_text in postconditions {
+                uc_controller.add_postcondition(use_case_id.clone(), condition_text)?;
+            }
+        }
 
         // Show summary of created views
         UI::show_info("\n📄 Generated files:")?;

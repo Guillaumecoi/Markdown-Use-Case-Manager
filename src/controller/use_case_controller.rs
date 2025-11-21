@@ -770,6 +770,7 @@ impl UseCaseController {
         // In a real implementation, we'd need to get these from the user
         let order_val = order.unwrap_or(0); // 0 means append
         let actor = "User".to_string(); // Default actor
+        let receiver = None; // No receiver by default
         let action = step; // Use the step as the action
         let expected_result = None; // No expected result for now
 
@@ -778,6 +779,7 @@ impl UseCaseController {
             &scenario_title,
             order_val,
             actor,
+            receiver,
             action,
             expected_result,
         ) {

@@ -246,8 +246,6 @@ Generated at: {{generated_at}}
     }
 
     /// Render test file for a specific language
-    /// TODO: Call this when implementing test generation feature (auto_generate_tests config)
-    #[allow(dead_code)]
     pub fn render_test(&self, language: &str, data: &HashMap<String, Value>) -> Result<String> {
         let language_lower = language.to_lowercase();
         let template_key = self
@@ -259,13 +257,6 @@ Generated at: {{generated_at}}
             .borrow()
             .render(template_key, data)
             .with_context(|| format!("Failed to render {} test template", language))
-    }
-
-    /// Check if test templates are available for a language
-    /// TODO: Use this before calling render_test to provide helpful error messages
-    #[allow(dead_code)]
-    pub fn has_test_template(&self, language: &str) -> bool {
-        self.test_templates.contains_key(language)
     }
 
     /// Render use case with methodology-specific template

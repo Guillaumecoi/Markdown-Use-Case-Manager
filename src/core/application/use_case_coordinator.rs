@@ -365,7 +365,11 @@ impl UseCaseCoordinator {
     /// Get all preconditions for a use case
     pub fn get_preconditions(&self, use_case_id: &str) -> Result<Vec<String>> {
         let use_case = self.find_use_case_by_id(use_case_id)?;
-        Ok(use_case.preconditions.clone())
+        Ok(use_case
+            .preconditions
+            .iter()
+            .map(|c| c.text.clone())
+            .collect())
     }
 
     /// Remove a precondition from a use case
@@ -385,7 +389,11 @@ impl UseCaseCoordinator {
     /// Get all postconditions for a use case
     pub fn get_postconditions(&self, use_case_id: &str) -> Result<Vec<String>> {
         let use_case = self.find_use_case_by_id(use_case_id)?;
-        Ok(use_case.postconditions.clone())
+        Ok(use_case
+            .postconditions
+            .iter()
+            .map(|c| c.text.clone())
+            .collect())
     }
 
     /// Remove a postcondition from a use case
@@ -519,6 +527,7 @@ impl UseCaseCoordinator {
         scenario_id: &str,
         order: u32,
         actor: String,
+        receiver: Option<String>,
         action: String,
         expected_result: Option<String>,
     ) -> Result<()> {
@@ -532,6 +541,7 @@ impl UseCaseCoordinator {
             scenario_id,
             order,
             actor,
+            receiver,
             action,
             expected_result,
         )

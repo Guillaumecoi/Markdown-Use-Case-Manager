@@ -174,6 +174,7 @@ impl InteractiveRunner {
     }
 
     /// Create use case with multiple views and additional fields
+    /// Returns (use_case_id, message)
     pub fn create_use_case_with_views_and_fields(
         &mut self,
         title: String,
@@ -182,7 +183,7 @@ impl InteractiveRunner {
         priority: String,
         views: Vec<(String, String)>, // Vec of (methodology, level) pairs
         extra_fields: std::collections::HashMap<String, String>,
-    ) -> Result<String> {
+    ) -> Result<(String, String)> {
         let controller = self.ensure_use_case_controller()?;
 
         // Format views as "methodology:level,methodology:level"
@@ -193,7 +194,7 @@ impl InteractiveRunner {
             .join(",");
 
         let result = controller.create_use_case(
-            title,
+            title.clone(),
             category,
             description,
             None,
@@ -201,7 +202,15 @@ impl InteractiveRunner {
             Some(priority),
             Some(extra_fields),
         )?;
-        Ok(result.message)
+
+        // Extract use case ID from message (format: "Created use case: UC-XXX-XXX with views: ...")
+        let use_case_id = if let Some(id_part) = result.message.split("Created use case: ").nth(1) {
+            id_part.split(" with").next().unwrap_or(&title).to_string()
+        } else {
+            title
+        };
+
+        Ok((use_case_id, result.message))
     }
 
     /// List use cases
@@ -217,7 +226,12 @@ impl InteractiveRunner {
     }
 
     /// Create a persona interactively
-    pub fn create_persona_interactive(&mut self, id: String, name: String, function: String) -> Result<String> {
+    pub fn create_persona_interactive(
+        &mut self,
+        id: String,
+        name: String,
+        function: String,
+    ) -> Result<String> {
         let controller = self.ensure_persona_controller()?;
         let result = controller.create_persona(id, name, function)?;
         Ok(result.message)
@@ -419,6 +433,42 @@ impl InteractiveRunner {
             .get(methodology)
             .cloned()
             .unwrap_or_default())
+    }
+
+    // ========== Actor Selection Methods ==========
+
+    /// Get available actors for selection (personas + system actors)
+    ///
+    /// # Returns
+    /// Vector of actor display strings with emoji, name, and ID
+    pub fn get_available_actors(&self) -> Result<Vec<String>> {
+        use crate::controller::ActorController;
+
+        let actor_controller = ActorController::new()?;
+
+        // Get personas
+        let personas = actor_controller.list_personas()?;
+        let mut actors: Vec<String> = personas
+            .iter()
+            .map(|p| {
+                let emoji = p
+                    .extra
+                    .get("emoji")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("🙂");
+                format!("{} {} ({})", emoji, p.name, p.id)
+            })
+            .collect();
+
+        // Get system actors
+        let system_actors = actor_controller.list_actors(None)?;
+        actors.extend(
+            system_actors
+                .iter()
+                .map(|a| format!("{} {} ({})", a.emoji, a.name, a.id)),
+        );
+
+        Ok(actors)
     }
 }
 

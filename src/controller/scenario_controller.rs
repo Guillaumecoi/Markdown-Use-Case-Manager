@@ -29,6 +29,9 @@ impl ScenarioController {
     /// * `scenario_type` - Type of scenario (main/alternative/exception)
     /// * `description` - Optional description
     /// * `persona_id` - Optional persona to assign to this scenario
+    /// * `preconditions` - Optional preconditions for the scenario
+    /// * `postconditions` - Optional postconditions for the scenario
+    /// * `actors` - Optional list of actor IDs involved in the scenario
     ///
     /// # Returns
     /// DisplayResult with the scenario ID
@@ -39,6 +42,9 @@ impl ScenarioController {
         scenario_type: String,
         description: Option<String>,
         persona_id: Option<String>,
+        preconditions: Option<Vec<String>>,
+        postconditions: Option<Vec<String>>,
+        actors: Option<Vec<String>>,
     ) -> Result<DisplayResult> {
         // Parse scenario type
         let parsed_type = ScenarioType::from_str(&scenario_type)
@@ -50,9 +56,9 @@ impl ScenarioController {
             title.clone(),
             parsed_type,
             description.clone(),
-            vec![], // preconditions
-            vec![], // postconditions
-            vec![], // actors
+            preconditions.unwrap_or_default(),
+            postconditions.unwrap_or_default(),
+            actors.unwrap_or_default(),
         )?;
 
         // Assign persona if provided
@@ -205,6 +211,8 @@ impl ScenarioController {
     /// * `scenario_id` - The ID of the scenario
     /// * `step_description` - Description of the step
     /// * `order` - Optional order (will append if not specified)
+    /// * `actor` - Optional actor for the step (defaults to "Actor")
+    /// * `receiver` - Optional receiving actor
     ///
     /// # Returns
     /// DisplayResult indicating success
@@ -214,6 +222,8 @@ impl ScenarioController {
         scenario_id: String,
         step_description: String,
         order: Option<u32>,
+        actor: Option<String>,
+        receiver: Option<String>,
     ) -> Result<DisplayResult> {
         let order = order.unwrap_or_else(|| {
             // Get current step count to append
@@ -223,19 +233,31 @@ impl ScenarioController {
                 .unwrap_or(1)
         });
 
+        let actor_name = actor.unwrap_or_else(|| "Actor".to_string());
+
         self.app_service.add_scenario_step(
             &use_case_id,
             &scenario_id,
             order,
-            "Actor".to_string(), // Default actor
+            actor_name.clone(),
+            receiver.clone(),
             step_description.clone(),
             None, // No expected result by default
         )?;
 
-        Ok(DisplayResult::success(format!(
-            "✅ Added step {} to scenario {}",
-            order, scenario_id
-        )))
+        let message = if let Some(ref recv) = receiver {
+            format!(
+                "✅ Added step {} to scenario {} ({} → {})",
+                order, scenario_id, actor_name, recv
+            )
+        } else {
+            format!(
+                "✅ Added step {} to scenario {} (actor: {})",
+                order, scenario_id, actor_name
+            )
+        };
+
+        Ok(DisplayResult::success(message))
     }
 
     /// Edit a scenario step
@@ -432,6 +454,194 @@ impl ScenarioController {
         self.app_service
             .get_scenario_references(&use_case_id, &scenario_id)
     }
+
+    /// Add a precondition to a scenario
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `scenario_id` - The ID of the scenario
+    /// * `condition` - The precondition text
+    ///
+    /// # Returns
+    /// DisplayResult indicating success
+    pub fn add_precondition(
+        &mut self,
+        use_case_id: String,
+        scenario_id: String,
+        condition: String,
+    ) -> Result<DisplayResult> {
+        let mut scenario = self.get_scenario(&use_case_id, &scenario_id)?;
+        scenario.add_precondition(condition.clone().into());
+
+        // Save via coordinator
+        self.app_service.edit_scenario(
+            &use_case_id,
+            &scenario_id,
+            Some(scenario.title),
+            Some(scenario.description),
+            Some(scenario.scenario_type),
+            Some(scenario.status),
+        )?;
+
+        Ok(DisplayResult::success(format!(
+            "✅ Added precondition to scenario {}",
+            scenario_id
+        )))
+    }
+
+    /// Add a postcondition to a scenario
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `scenario_id` - The ID of the scenario
+    /// * `condition` - The postcondition text
+    ///
+    /// # Returns
+    /// DisplayResult indicating success
+    pub fn add_postcondition(
+        &mut self,
+        use_case_id: String,
+        scenario_id: String,
+        condition: String,
+    ) -> Result<DisplayResult> {
+        let mut scenario = self.get_scenario(&use_case_id, &scenario_id)?;
+        scenario.add_postcondition(condition.clone().into());
+
+        // Save via coordinator
+        self.app_service.edit_scenario(
+            &use_case_id,
+            &scenario_id,
+            Some(scenario.title),
+            Some(scenario.description),
+            Some(scenario.scenario_type),
+            Some(scenario.status),
+        )?;
+
+        Ok(DisplayResult::success(format!(
+            "✅ Added postcondition to scenario {}",
+            scenario_id
+        )))
+    }
+
+    /// Remove a precondition from a scenario
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `scenario_id` - The ID of the scenario
+    /// * `condition` - The precondition text to remove
+    ///
+    /// # Returns
+    /// DisplayResult indicating success
+    pub fn remove_precondition(
+        &mut self,
+        use_case_id: String,
+        scenario_id: String,
+        condition: String,
+    ) -> Result<DisplayResult> {
+        let mut scenario = self.get_scenario(&use_case_id, &scenario_id)?;
+        scenario.remove_precondition(&condition);
+
+        // Save via coordinator
+        self.app_service.edit_scenario(
+            &use_case_id,
+            &scenario_id,
+            Some(scenario.title),
+            Some(scenario.description),
+            Some(scenario.scenario_type),
+            Some(scenario.status),
+        )?;
+
+        Ok(DisplayResult::success(format!(
+            "✅ Removed precondition from scenario {}",
+            scenario_id
+        )))
+    }
+
+    /// Remove a postcondition from a scenario
+    ///
+    /// # Arguments
+    /// * `use_case_id` - The ID of the use case
+    /// * `scenario_id` - The ID of the scenario
+    /// * `condition` - The postcondition text to remove
+    ///
+    /// # Returns
+    /// DisplayResult indicating success
+    pub fn remove_postcondition(
+        &mut self,
+        use_case_id: String,
+        scenario_id: String,
+        condition: String,
+    ) -> Result<DisplayResult> {
+        let mut scenario = self.get_scenario(&use_case_id, &scenario_id)?;
+        scenario.remove_postcondition(&condition);
+
+        // Save via coordinator
+        self.app_service.edit_scenario(
+            &use_case_id,
+            &scenario_id,
+            Some(scenario.title),
+            Some(scenario.description),
+            Some(scenario.scenario_type),
+            Some(scenario.status),
+        )?;
+
+        Ok(DisplayResult::success(format!(
+            "✅ Removed postcondition from scenario {}",
+            scenario_id
+        )))
+    }
+
+    /// Get available actors (personas + system actors) for selection
+    ///
+    /// # Returns
+    /// Vector of actor display strings (emoji + name + id)
+    pub fn get_available_actors(&self) -> Result<Vec<String>> {
+        use crate::controller::ActorController;
+
+        let actor_controller = ActorController::new()?;
+
+        // Get personas
+        let personas = actor_controller.list_personas()?;
+        let mut actors: Vec<String> = personas
+            .iter()
+            .map(|p| {
+                let emoji = p
+                    .extra
+                    .get("emoji")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("🙂");
+                format!("{} {} ({})", emoji, p.name, p.id)
+            })
+            .collect();
+
+        // Get system actors
+        let system_actors = actor_controller.list_actors(None)?;
+        actors.extend(
+            system_actors
+                .iter()
+                .map(|a| format!("{} {} ({})", a.emoji, a.name, a.id)),
+        );
+
+        Ok(actors)
+    }
+
+    /// Get actor IDs only for programmatic use
+    ///
+    /// # Returns
+    /// Vector of actor IDs
+    pub fn get_actor_ids(&self) -> Result<Vec<String>> {
+        use crate::controller::ActorController;
+
+        let actor_controller = ActorController::new()?;
+
+        // Get persona IDs
+        let mut ids = actor_controller.get_persona_ids()?;
+
+        // Get system actor IDs
+        ids.extend(actor_controller.get_actor_ids()?);
+
+        Ok(ids)
+    }
 }
 
 #[cfg(test)]
@@ -495,6 +705,9 @@ mod tests {
                 "main".to_string(),
                 Some("Main login scenario".to_string()),
                 None,
+                None,
+                None,
+                None,
             )
             .unwrap();
 
@@ -517,6 +730,9 @@ mod tests {
                 use_case_id.clone(),
                 "Scenario 1".to_string(),
                 "main".to_string(),
+                None,
+                None,
+                None,
                 None,
                 None,
             )
@@ -545,6 +761,9 @@ mod tests {
                 "main".to_string(),
                 None,
                 None,
+                None,
+                None,
+                None,
             )
             .unwrap();
 
@@ -558,6 +777,8 @@ mod tests {
                 scenario_id.clone(),
                 "User clicks login button".to_string(),
                 None,
+                None,
+                None, // receiver
             )
             .unwrap();
 
@@ -582,6 +803,9 @@ mod tests {
                 "main".to_string(),
                 None,
                 None,
+                None,
+                None,
+                None,
             )
             .unwrap();
 
@@ -595,6 +819,8 @@ mod tests {
                 scenario_id.clone(),
                 "Step to remove".to_string(),
                 None,
+                None,
+                None, // receiver
             )
             .unwrap();
 

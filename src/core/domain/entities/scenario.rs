@@ -1,4 +1,4 @@
-use super::{Metadata, ScenarioReference, ScenarioStep, ScenarioType, Status};
+use super::{Condition, Metadata, ScenarioReference, ScenarioStep, ScenarioType, Status};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -22,13 +22,13 @@ pub struct Scenario {
     #[serde(default)]
     pub steps: Vec<ScenarioStep>,
 
-    /// Scenario-specific preconditions (in addition to use case level)
+    /// Scenario-specific preconditions (in addition to use case level, can reference use cases/scenarios)
     #[serde(default)]
-    pub preconditions: Vec<String>,
+    pub preconditions: Vec<Condition>,
 
-    /// Scenario-specific postconditions (in addition to use case level)
+    /// Scenario-specific postconditions (in addition to use case level, can reference use cases/scenarios)
     #[serde(default)]
-    pub postconditions: Vec<String>,
+    pub postconditions: Vec<Condition>,
 
     /// References to other scenarios or use cases
     #[serde(default)]
@@ -70,19 +70,41 @@ impl Scenario {
     }
 
     /// Add a precondition
-    pub fn add_precondition(&mut self, condition: String) {
-        if !self.preconditions.contains(&condition) {
+    pub fn add_precondition(&mut self, condition: Condition) {
+        // Check for duplicates based on text and target
+        if !self.preconditions.iter().any(|c| {
+            c.text == condition.text
+                && c.target_id == condition.target_id
+                && c.target_type == condition.target_type
+        }) {
             self.preconditions.push(condition);
             self.metadata.touch();
         }
     }
 
     /// Add a postcondition
-    pub fn add_postcondition(&mut self, condition: String) {
-        if !self.postconditions.contains(&condition) {
+    pub fn add_postcondition(&mut self, condition: Condition) {
+        // Check for duplicates based on text and target
+        if !self.postconditions.iter().any(|c| {
+            c.text == condition.text
+                && c.target_id == condition.target_id
+                && c.target_type == condition.target_type
+        }) {
             self.postconditions.push(condition);
             self.metadata.touch();
         }
+    }
+
+    /// Remove a precondition by text
+    pub fn remove_precondition(&mut self, text: &str) {
+        self.preconditions.retain(|c| c.text != text);
+        self.metadata.touch();
+    }
+
+    /// Remove a postcondition by text
+    pub fn remove_postcondition(&mut self, text: &str) {
+        self.postconditions.retain(|c| c.text != text);
+        self.metadata.touch();
     }
 
     /// Update scenario status
@@ -204,11 +226,11 @@ mod tests {
             ScenarioType::HappyPath,
         );
 
-        scenario.add_precondition("User has account".to_string());
-        scenario.add_precondition("User has account".to_string()); // duplicate
+        scenario.add_precondition(Condition::new("User has account".to_string()));
+        scenario.add_precondition(Condition::new("User has account".to_string())); // duplicate
 
         assert_eq!(scenario.preconditions.len(), 1);
-        assert_eq!(scenario.preconditions[0], "User has account");
+        assert_eq!(scenario.preconditions[0].text, "User has account");
     }
 
     #[test]
@@ -220,9 +242,9 @@ mod tests {
             ScenarioType::HappyPath,
         );
 
-        scenario.add_postcondition("User is authenticated".to_string());
+        scenario.add_postcondition(Condition::new("User is authenticated".to_string()));
         assert_eq!(scenario.postconditions.len(), 1);
-        assert_eq!(scenario.postconditions[0], "User is authenticated");
+        assert_eq!(scenario.postconditions[0].text, "User is authenticated");
     }
 
     #[test]
@@ -255,7 +277,7 @@ mod tests {
             "enters".to_string(),
             "credentials".to_string(),
         ));
-        scenario.add_precondition("Valid account".to_string());
+        scenario.add_precondition(Condition::new("Valid account".to_string()));
         scenario
             .extra
             .insert("test_field".to_string(), json!("test_value"));

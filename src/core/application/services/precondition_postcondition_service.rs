@@ -22,7 +22,7 @@ impl<'a> PreconditionPostconditionService<'a> {
     pub fn add_precondition(&mut self, use_case_id: &str, precondition: String) -> Result<()> {
         let index = self.find_use_case_index(use_case_id)?;
         let mut use_case = self.use_cases[index].clone();
-        use_case.add_precondition(precondition);
+        use_case.add_precondition(precondition.into());
         self.repository.save(&use_case)?;
         self.use_cases[index] = use_case;
         Ok(())
@@ -52,7 +52,7 @@ impl<'a> PreconditionPostconditionService<'a> {
     pub fn add_postcondition(&mut self, use_case_id: &str, postcondition: String) -> Result<()> {
         let index = self.find_use_case_index(use_case_id)?;
         let mut use_case = self.use_cases[index].clone();
-        use_case.add_postcondition(postcondition);
+        use_case.add_postcondition(postcondition.into());
         self.repository.save(&use_case)?;
         self.use_cases[index] = use_case;
         Ok(())
@@ -97,7 +97,7 @@ impl<'a> PreconditionPostconditionService<'a> {
             ));
         }
 
-        use_case.preconditions[zero_based_index] = new_text;
+        use_case.preconditions[zero_based_index] = new_text.into();
         self.repository.save(&use_case)?;
         self.use_cases[index_in_vec] = use_case;
         Ok(())
@@ -122,7 +122,7 @@ impl<'a> PreconditionPostconditionService<'a> {
             ));
         }
 
-        use_case.postconditions[zero_based_index] = new_text;
+        use_case.postconditions[zero_based_index] = new_text.into();
         self.repository.save(&use_case)?;
         self.use_cases[index_in_vec] = use_case;
         Ok(())

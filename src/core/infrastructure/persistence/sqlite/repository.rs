@@ -4,7 +4,7 @@
 //! implementing all methods from the UseCaseRepository trait with proper
 //! transaction support and error handling.
 
-use crate::core::domain::UseCase;
+use crate::core::domain::{Condition, UseCase};
 use crate::core::infrastructure::persistence::sqlite::Migrator;
 use crate::core::infrastructure::persistence::traits::UseCaseRepository;
 use anyhow::{anyhow, Context, Result};
@@ -137,34 +137,61 @@ impl SqliteUseCaseRepository {
 
             // Load steps
             let mut steps_stmt = conn.prepare(
-                "SELECT step_order, actor, action, description, notes FROM scenario_steps WHERE scenario_id = ? ORDER BY step_order"
+                "SELECT step_order, actor, receiver, action, description, notes FROM scenario_steps WHERE scenario_id = ? ORDER BY step_order"
             )?;
             let step_rows = steps_stmt.query_map([&scenario_id], |row| {
                 Ok(ScenarioStep {
                     order: row.get(0)?,
                     actor: row.get(1)?,
-                    action: row.get(2)?,
-                    description: row.get(3)?,
-                    notes: row.get(4)?,
+                    receiver: row.get(2)?,
+                    action: row.get(3)?,
+                    description: row.get(4)?,
+                    notes: row.get(5)?,
                 })
             })?;
             let steps: Vec<ScenarioStep> = step_rows.collect::<Result<Vec<_>, _>>()?;
 
             // Load preconditions
             let mut precond_stmt = conn.prepare(
-                "SELECT condition_text FROM scenario_preconditions WHERE scenario_id = ? ORDER BY condition_order"
+                "SELECT condition_text, target_type, target_id, relationship FROM scenario_preconditions WHERE scenario_id = ? ORDER BY condition_order"
             )?;
-            let precond_rows =
-                precond_stmt.query_map([&scenario_id], |row| row.get::<_, String>(0))?;
-            let preconditions: Vec<String> = precond_rows.collect::<Result<Vec<_>, _>>()?;
+            let precond_rows = precond_stmt.query_map([&scenario_id], |row| {
+                let text: String = row.get(0)?;
+                let target_type_str: Option<String> = row.get(1)?;
+                let target_id: Option<String> = row.get(2)?;
+                let relationship: Option<String> = row.get(3)?;
+
+                let target_type = target_type_str.and_then(|s| s.parse().ok());
+
+                Ok(Condition {
+                    text,
+                    target_type,
+                    target_id,
+                    relationship,
+                })
+            })?;
+            let preconditions: Vec<Condition> = precond_rows.collect::<Result<Vec<_>, _>>()?;
 
             // Load postconditions
             let mut postcond_stmt = conn.prepare(
-                "SELECT condition_text FROM scenario_postconditions WHERE scenario_id = ? ORDER BY condition_order"
+                "SELECT condition_text, target_type, target_id, relationship FROM scenario_postconditions WHERE scenario_id = ? ORDER BY condition_order"
             )?;
-            let postcond_rows =
-                postcond_stmt.query_map([&scenario_id], |row| row.get::<_, String>(0))?;
-            let postconditions: Vec<String> = postcond_rows.collect::<Result<Vec<_>, _>>()?;
+            let postcond_rows = postcond_stmt.query_map([&scenario_id], |row| {
+                let text: String = row.get(0)?;
+                let target_type_str: Option<String> = row.get(1)?;
+                let target_id: Option<String> = row.get(2)?;
+                let relationship: Option<String> = row.get(3)?;
+
+                let target_type = target_type_str.and_then(|s| s.parse().ok());
+
+                Ok(Condition {
+                    text,
+                    target_type,
+                    target_id,
+                    relationship,
+                })
+            })?;
+            let postconditions: Vec<Condition> = postcond_rows.collect::<Result<Vec<_>, _>>()?;
 
             // Load references
             let mut ref_stmt = conn.prepare(
@@ -264,8 +291,15 @@ impl SqliteUseCaseRepository {
         // Insert preconditions
         for (index, precondition) in use_case.preconditions.iter().enumerate() {
             tx.execute(
-                "INSERT INTO use_case_preconditions (use_case_id, condition_order, condition_text) VALUES (?, ?, ?)",
-                params![use_case.id, index as i32, precondition],
+                "INSERT INTO use_case_preconditions (use_case_id, condition_order, condition_text, target_type, target_id, relationship) VALUES (?, ?, ?, ?, ?, ?)",
+                params![
+                    use_case.id,
+                    index as i32,
+                    &precondition.text,
+                    precondition.target_type.as_ref().map(|t| t.to_string()),
+                    &precondition.target_id,
+                    &precondition.relationship
+                ],
             )
             .context("Failed to save precondition")?;
         }
@@ -273,8 +307,15 @@ impl SqliteUseCaseRepository {
         // Insert postconditions
         for (index, postcondition) in use_case.postconditions.iter().enumerate() {
             tx.execute(
-                "INSERT INTO use_case_postconditions (use_case_id, condition_order, condition_text) VALUES (?, ?, ?)",
-                params![use_case.id, index as i32, postcondition],
+                "INSERT INTO use_case_postconditions (use_case_id, condition_order, condition_text, target_type, target_id, relationship) VALUES (?, ?, ?, ?, ?, ?)",
+                params![
+                    use_case.id,
+                    index as i32,
+                    &postcondition.text,
+                    postcondition.target_type.as_ref().map(|t| t.to_string()),
+                    &postcondition.target_id,
+                    &postcondition.relationship
+                ],
             )
             .context("Failed to save postcondition")?;
         }
@@ -315,9 +356,9 @@ impl SqliteUseCaseRepository {
             // Insert scenario steps
             for step in &scenario.steps {
                 tx.execute(
-                    "INSERT INTO scenario_steps (scenario_id, step_order, actor, action, description, notes)
-                     VALUES (?, ?, ?, ?, ?, ?)",
-                    params![scenario.id, step.order, step.actor, step.action, step.description, step.notes],
+                    "INSERT INTO scenario_steps (scenario_id, step_order, actor, receiver, action, description, notes)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    params![scenario.id, step.order, step.actor, step.receiver, step.action, step.description, step.notes],
                 )
                 .context("Failed to save scenario step")?;
             }
@@ -325,9 +366,16 @@ impl SqliteUseCaseRepository {
             // Insert scenario preconditions
             for (index, precondition) in scenario.preconditions.iter().enumerate() {
                 tx.execute(
-                    "INSERT INTO scenario_preconditions (scenario_id, condition_order, condition_text)
-                     VALUES (?, ?, ?)",
-                    params![scenario.id, index as i32, precondition],
+                    "INSERT INTO scenario_preconditions (scenario_id, condition_order, condition_text, target_type, target_id, relationship)
+                     VALUES (?, ?, ?, ?, ?, ?)",
+                    params![
+                        scenario.id,
+                        index as i32,
+                        &precondition.text,
+                        precondition.target_type.as_ref().map(|t| t.to_string()),
+                        &precondition.target_id,
+                        &precondition.relationship
+                    ],
                 )
                 .context("Failed to save scenario precondition")?;
             }
@@ -335,9 +383,16 @@ impl SqliteUseCaseRepository {
             // Insert scenario postconditions
             for (index, postcondition) in scenario.postconditions.iter().enumerate() {
                 tx.execute(
-                    "INSERT INTO scenario_postconditions (scenario_id, condition_order, condition_text)
-                     VALUES (?, ?, ?)",
-                    params![scenario.id, index as i32, postcondition],
+                    "INSERT INTO scenario_postconditions (scenario_id, condition_order, condition_text, target_type, target_id, relationship)
+                     VALUES (?, ?, ?, ?, ?, ?)",
+                    params![
+                        scenario.id,
+                        index as i32,
+                        &postcondition.text,
+                        postcondition.target_type.as_ref().map(|t| t.to_string()),
+                        &postcondition.target_id,
+                        &postcondition.relationship
+                    ],
                 )
                 .context("Failed to save scenario postcondition")?;
             }
@@ -434,28 +489,56 @@ impl SqliteUseCaseRepository {
         // Load preconditions
         let mut preconditions = Vec::new();
         let mut stmt = conn.prepare(
-            "SELECT condition_text FROM use_case_preconditions WHERE use_case_id = ? ORDER BY condition_order"
+            "SELECT condition_text, target_type, target_id, relationship FROM use_case_preconditions WHERE use_case_id = ? ORDER BY condition_order"
         )
         .context("Failed to prepare preconditions query")?;
         let precondition_rows = stmt
-            .query_map([id], |row| row.get::<_, String>(0))
+            .query_map([id], |row| {
+                let text: String = row.get(0)?;
+                let target_type_str: Option<String> = row.get(1)?;
+                let target_id: Option<String> = row.get(2)?;
+                let relationship: Option<String> = row.get(3)?;
+
+                let target_type = target_type_str.and_then(|s| s.parse().ok());
+
+                Ok(Condition {
+                    text,
+                    target_type,
+                    target_id,
+                    relationship,
+                })
+            })
             .context("Failed to execute preconditions query")?;
-        for text in precondition_rows {
-            preconditions.push(text.context("Failed to read precondition")?);
+        for condition in precondition_rows {
+            preconditions.push(condition.context("Failed to read precondition")?);
         }
         use_case.preconditions = preconditions;
 
         // Load postconditions
         let mut postconditions = Vec::new();
         let mut stmt = conn.prepare(
-            "SELECT condition_text FROM use_case_postconditions WHERE use_case_id = ? ORDER BY condition_order"
+            "SELECT condition_text, target_type, target_id, relationship FROM use_case_postconditions WHERE use_case_id = ? ORDER BY condition_order"
         )
         .context("Failed to prepare postconditions query")?;
         let postcondition_rows = stmt
-            .query_map([id], |row| row.get::<_, String>(0))
+            .query_map([id], |row| {
+                let text: String = row.get(0)?;
+                let target_type_str: Option<String> = row.get(1)?;
+                let target_id: Option<String> = row.get(2)?;
+                let relationship: Option<String> = row.get(3)?;
+
+                let target_type = target_type_str.and_then(|s| s.parse().ok());
+
+                Ok(Condition {
+                    text,
+                    target_type,
+                    target_id,
+                    relationship,
+                })
+            })
             .context("Failed to execute postconditions query")?;
-        for text in postcondition_rows {
-            postconditions.push(text.context("Failed to read postcondition")?);
+        for condition in postcondition_rows {
+            postconditions.push(condition.context("Failed to read postcondition")?);
         }
         use_case.postconditions = postconditions;
 

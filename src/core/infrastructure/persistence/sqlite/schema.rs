@@ -106,6 +106,9 @@ impl Schema {
                 use_case_id TEXT NOT NULL,
                 condition_order INTEGER NOT NULL,
                 condition_text TEXT NOT NULL,
+                target_type TEXT,
+                target_id TEXT,
+                relationship TEXT,
                 FOREIGN KEY (use_case_id) REFERENCES use_cases(id) ON DELETE CASCADE
             )",
             [],
@@ -128,6 +131,9 @@ impl Schema {
                 use_case_id TEXT NOT NULL,
                 condition_order INTEGER NOT NULL,
                 condition_text TEXT NOT NULL,
+                target_type TEXT,
+                target_id TEXT,
+                relationship TEXT,
                 FOREIGN KEY (use_case_id) REFERENCES use_cases(id) ON DELETE CASCADE
             )",
             [],
@@ -231,6 +237,7 @@ impl Schema {
                 scenario_id TEXT NOT NULL,
                 step_order INTEGER NOT NULL,
                 actor TEXT NOT NULL,
+                receiver TEXT,
                 action TEXT NOT NULL,
                 description TEXT NOT NULL,
                 notes TEXT,
@@ -256,6 +263,9 @@ impl Schema {
                 scenario_id TEXT NOT NULL,
                 condition_order INTEGER NOT NULL,
                 condition_text TEXT NOT NULL,
+                target_type TEXT,
+                target_id TEXT,
+                relationship TEXT,
                 FOREIGN KEY (scenario_id) REFERENCES scenarios(id) ON DELETE CASCADE
             )",
             [],
@@ -278,6 +288,9 @@ impl Schema {
                 scenario_id TEXT NOT NULL,
                 condition_order INTEGER NOT NULL,
                 condition_text TEXT NOT NULL,
+                target_type TEXT,
+                target_id TEXT,
+                relationship TEXT,
                 FOREIGN KEY (scenario_id) REFERENCES scenarios(id) ON DELETE CASCADE
             )",
             [],
