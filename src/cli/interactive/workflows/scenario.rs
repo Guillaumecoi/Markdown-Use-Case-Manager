@@ -187,7 +187,7 @@ impl ScenarioWorkflow {
     /// Helper to collect preconditions or postconditions interactively
     fn collect_conditions(
         condition_type: &str,
-        current_use_case_id: &str,
+        _current_use_case_id: &str,
     ) -> Result<Option<Vec<String>>> {
         let add_conditions = Confirm::new(&format!("Add {}?", condition_type))
             .with_default(false)
@@ -199,73 +199,12 @@ impl ScenarioWorkflow {
 
         let mut conditions = Vec::new();
         loop {
-            // Ask how to add the condition
-            let input_options = vec!["Type text manually", "Reference a use case"];
-            let input_method = Select::new(
-                &format!(
-                    "How do you want to add this {}?",
+            let condition = Text::new(&format!("  {} (or press Enter to finish):", condition_type.trim_end_matches('s')))
+                .with_help_message(&format!(
+                    "Enter a text description of the {}",
                     condition_type.trim_end_matches('s')
-                ),
-                input_options,
-            )
-            .with_help_message("Choose to type text or select from existing use cases")
-            .prompt()?;
-
-            let condition = match input_method {
-                "Reference a use case" => {
-                    // Get list of use cases
-                    use crate::controller::UseCaseController;
-                    let uc_controller = UseCaseController::new()?;
-                    let all_use_cases = uc_controller.get_all_use_cases()?;
-
-                    let use_case_ids = all_use_cases
-                        .iter()
-                        .filter(|uc| uc.id != current_use_case_id) // Exclude current use case
-                        .map(|uc| format!("{} - {}", uc.id, uc.title))
-                        .collect::<Vec<_>>();
-
-                    if use_case_ids.is_empty() {
-                        UI::show_warning("No other use cases found. Please type manually.")?;
-                        Text::new(&format!("  {} (or press Enter to finish):", condition_type))
-                            .with_help_message("Enter condition text")
-                            .prompt()?
-                    } else {
-                        let selected = Select::new("Select use case:", use_case_ids)
-                            .with_help_message("Choose which use case this condition references")
-                            .prompt()?;
-
-                        let target_id = selected
-                            .split(" - ")
-                            .next()
-                            .unwrap_or(&selected)
-                            .to_string();
-
-                        let condition_text = Text::new("Condition text:")
-                            .with_help_message(&format!(
-                                "Describe the {} related to {}",
-                                condition_type.trim_end_matches('s'),
-                                target_id
-                            ))
-                            .prompt()?;
-
-                        let relationship_options =
-                            vec!["requires", "depends_on", "must_complete", "extends"];
-                        let relationship = Select::new("Relationship type:", relationship_options)
-                            .with_help_message(
-                                "How does this condition relate to the referenced use case?",
-                            )
-                            .prompt()?;
-
-                        format!("{}||UC:{}:{}", condition_text, target_id, relationship)
-                    }
-                }
-                _ => Text::new(&format!("  {} (or press Enter to finish):", condition_type))
-                    .with_help_message(&format!(
-                        "Enter a {}. You can also reference use cases.",
-                        condition_type.trim_end_matches('s')
-                    ))
-                    .prompt()?,
-            };
+                ))
+                .prompt()?;
 
             if condition.trim().is_empty() {
                 break;
