@@ -14,7 +14,7 @@ mod project;
 mod usecase;
 
 // Explicit public exports
-pub use actor::{handle_actor_command, handle_persona_command};
+pub use actor::handle_actor_command;
 pub use cleanup::handle_cleanup_command;
 pub use fields::{
     handle_postcondition_add_command, handle_postcondition_list_command,

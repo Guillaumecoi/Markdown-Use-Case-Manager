@@ -44,13 +44,12 @@ impl ScenarioController {
         persona_id: Option<String>,
         preconditions: Option<Vec<String>>,
         postconditions: Option<Vec<String>>,
-        actors: Option<Vec<String>>,
     ) -> Result<DisplayResult> {
         // Parse scenario type
         let parsed_type = ScenarioType::from_str(&scenario_type)
             .map_err(|_| anyhow::anyhow!("Invalid scenario type: {}", scenario_type))?;
 
-        // Create scenario via coordinator
+        // Create scenario via coordinator (actors derived from steps)
         let scenario_id = self.app_service.add_scenario(
             &use_case_id,
             title.clone(),
@@ -58,7 +57,7 @@ impl ScenarioController {
             description.clone(),
             preconditions.unwrap_or_default(),
             postconditions.unwrap_or_default(),
-            actors.unwrap_or_default(),
+            Vec::new(), // actors will be derived from steps
         )?;
 
         // Assign persona if provided
@@ -707,7 +706,6 @@ mod tests {
                 None,
                 None,
                 None,
-                None,
             )
             .unwrap();
 
@@ -730,7 +728,6 @@ mod tests {
                 use_case_id.clone(),
                 "Scenario 1".to_string(),
                 "main".to_string(),
-                None,
                 None,
                 None,
                 None,
@@ -759,7 +756,6 @@ mod tests {
                 use_case_id.clone(),
                 "Test Scenario".to_string(),
                 "main".to_string(),
-                None,
                 None,
                 None,
                 None,
@@ -801,7 +797,6 @@ mod tests {
                 use_case_id.clone(),
                 "Test Scenario".to_string(),
                 "main".to_string(),
-                None,
                 None,
                 None,
                 None,

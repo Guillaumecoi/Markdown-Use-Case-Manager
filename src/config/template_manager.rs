@@ -346,8 +346,12 @@ impl TemplateManager {
         let overview_src = source_templates_dir.join("overview.hbs");
         if overview_src.exists() {
             let overview_dst = config_templates_dir.join("overview.hbs");
-            fs::copy(&overview_src, &overview_dst)?;
-            println!("✓ Copied overview template");
+            if !overview_dst.exists() {
+                fs::copy(&overview_src, &overview_dst)?;
+                println!("✓ Copied overview template");
+            } else {
+                println!("⊙ Skipped overview template (already exists)");
+            }
         }
 
         Ok(())
@@ -368,8 +372,14 @@ impl TemplateManager {
         let scenarios_src = source_templates_dir.join("scenarios");
         if scenarios_src.exists() {
             let scenarios_dst = config_templates_dir.join("scenarios");
-            Self::copy_dir_recursive(&scenarios_src, &scenarios_dst)?;
-            println!("✓ Copied scenario templates");
+            if !scenarios_dst.exists() {
+                Self::copy_dir_recursive(&scenarios_src, &scenarios_dst)?;
+                println!("✓ Copied scenario templates");
+            } else {
+                // Only copy new files, skip existing ones
+                Self::copy_dir_incremental(&scenarios_src, &scenarios_dst)?;
+                println!("⊙ Updated scenario templates (preserved existing files)");
+            }
         }
 
         Ok(())
@@ -428,9 +438,18 @@ impl TemplateManager {
             let methodologies_dir = config_templates_dir.join("methodologies");
             fs::create_dir_all(&methodologies_dir)?;
             let target_method_templates = methodologies_dir.join(methodology);
-            Self::copy_dir_recursive(&source_method_dir, &target_method_templates)?;
 
-            println!("✓ Copied methodology: {}", methodology);
+            if !target_method_templates.exists() {
+                Self::copy_dir_recursive(&source_method_dir, &target_method_templates)?;
+                println!("✓ Copied methodology: {}", methodology);
+            } else {
+                // Only copy new files, skip existing ones to preserve customizations
+                Self::copy_dir_incremental(&source_method_dir, &target_method_templates)?;
+                println!(
+                    "⊙ Skipped methodology: {} (already exists, preserved customizations)",
+                    methodology
+                );
+            }
         }
 
         Ok(())
@@ -469,11 +488,19 @@ impl TemplateManager {
         if source_lang_dir.exists() {
             let target_languages = config_templates_dir.join("languages");
             let target_lang_dir = target_languages.join(&config.generation.test_language);
-            Self::copy_dir_recursive(&source_lang_dir, &target_lang_dir)?;
-            println!(
-                "✓ Copied language templates: {}",
-                config.generation.test_language
-            );
+
+            if !target_lang_dir.exists() {
+                Self::copy_dir_recursive(&source_lang_dir, &target_lang_dir)?;
+                println!(
+                    "✓ Copied language templates: {}",
+                    config.generation.test_language
+                );
+            } else {
+                println!(
+                    "⊙ Skipped language templates: {} (already exists)",
+                    config.generation.test_language
+                );
+            }
         } else {
             println!(
                 "⚠ Language '{}' not found in source-templates/languages/, skipping",
@@ -508,6 +535,38 @@ impl TemplateManager {
             } else {
                 fs::copy(&src_path, &dst_path)?;
             }
+        }
+
+        Ok(())
+    }
+
+    /// Incrementally copy a directory, only adding new files and skipping existing ones.
+    ///
+    /// This preserves any user customizations to existing template files while
+    /// adding any new templates from the source.
+    ///
+    /// # Arguments
+    /// * `src` - Source directory path
+    /// * `dst` - Destination directory path
+    ///
+    /// # Errors
+    /// Returns an error if directories cannot be created or files cannot be copied.
+    fn copy_dir_incremental(src: &Path, dst: &Path) -> Result<()> {
+        fs::create_dir_all(dst)?;
+
+        for entry in fs::read_dir(src)? {
+            let entry = entry?;
+            let src_path = entry.path();
+            let dst_path = dst.join(entry.file_name());
+
+            if src_path.is_dir() {
+                // Recurse into subdirectories
+                Self::copy_dir_incremental(&src_path, &dst_path)?;
+            } else if !dst_path.exists() {
+                // Only copy if destination file doesn't exist
+                fs::copy(&src_path, &dst_path)?;
+            }
+            // Skip if file already exists to preserve customizations
         }
 
         Ok(())

@@ -30,7 +30,7 @@ use interactive::run_interactive_session;
 use standard::{
     handle_actor_command, handle_cleanup_command, handle_create_command, handle_init_command,
     handle_languages_command, handle_list_command, handle_list_methodologies_command,
-    handle_methodology_info_command, handle_persona_command, handle_postcondition_add_command,
+    handle_methodology_info_command, handle_postcondition_add_command,
     handle_postcondition_list_command, handle_postcondition_remove_command,
     handle_precondition_add_command, handle_precondition_list_command,
     handle_precondition_remove_command, handle_reference_add_command,
@@ -233,7 +233,6 @@ pub fn run() -> Result<()> {
                 Ok(())
             }
         },
-        Commands::Persona { command } => handle_persona_command(command),
         Commands::Actor { command } => handle_actor_command(command),
         Commands::Cleanup {
             use_case_id,

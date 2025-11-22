@@ -393,6 +393,16 @@ impl UseCaseWorkflow {
                 println!("   • {}-{}.md", methodology, level);
             }
 
+            // Ask if they want to create a scenario
+            let create_scenario = Confirm::new("Create a scenario for this use case?")
+                .with_default(false)
+                .with_help_message("You can add scenarios to describe specific workflows")
+                .prompt()?;
+
+            if create_scenario {
+                super::scenario::ScenarioWorkflow::create_scenario_for_use_case(&use_case_id)?;
+            }
+
             UI::show_info("\n💡 You can edit the TOML files directly to add additional fields like author, reviewer, and custom methodology fields.")?;
             return Ok(());
         }
@@ -543,6 +553,16 @@ impl UseCaseWorkflow {
             println!("   • {}-{}.md", methodology, level);
         }
 
+        // Ask if they want to create a scenario
+        let create_scenario = Confirm::new("Create a scenario for this use case?")
+            .with_default(false)
+            .with_help_message("You can add scenarios to describe specific workflows")
+            .prompt()?;
+
+        if create_scenario {
+            super::scenario::ScenarioWorkflow::create_scenario_for_use_case(&use_case_id)?;
+        }
+
         Ok(())
     }
 
@@ -575,7 +595,7 @@ impl UseCaseWorkflow {
         let mut runner = InteractiveRunner::new();
 
         // Get list of use cases
-        let use_case_ids = runner.get_use_case_ids()?;
+        let mut use_case_ids = runner.get_use_case_ids()?;
 
         if use_case_ids.is_empty() {
             UI::show_error("No use cases found. Please create a use case first.")?;
@@ -583,10 +603,17 @@ impl UseCaseWorkflow {
             return Ok(());
         }
 
+        // Add cancel option
+        use_case_ids.push("[Cancel]".to_string());
+
         // Let user select which use case to edit
         let selected_id = Select::new("Select use case to edit:", use_case_ids)
             .with_help_message("Choose the use case you want to modify")
             .prompt()?;
+
+        if selected_id == "[Cancel]" {
+            return Ok(());
+        }
 
         // Load use case details
         let use_case = runner.get_use_case_details(&selected_id)?;
@@ -602,9 +629,7 @@ impl UseCaseWorkflow {
                 "Edit Basic Info (title, category, description, priority)",
                 "Edit Methodology Fields",
                 "Manage Views (add/remove)",
-                "Manage Preconditions",
-                "Manage Postconditions",
-                "Manage References",
+                "Manage Conditions (pre/post)",
                 "Manage Scenarios",
                 "Back to Menu",
             ];
@@ -621,14 +646,8 @@ impl UseCaseWorkflow {
                 "Manage Views (add/remove)" => {
                     Self::manage_views(&mut runner, &selected_id, &use_case)?
                 }
-                "Manage Preconditions" => {
-                    super::conditions::ConditionsWorkflow::manage_preconditions(&selected_id)?
-                }
-                "Manage Postconditions" => {
-                    super::conditions::ConditionsWorkflow::manage_postconditions(&selected_id)?
-                }
-                "Manage References" => {
-                    super::references::ReferencesWorkflow::manage_references(&selected_id)?
+                "Manage Conditions (pre/post)" => {
+                    super::conditions::ConditionsWorkflow::manage_conditions(&selected_id)?
                 }
                 "Manage Scenarios" => {
                     super::scenario::ScenarioWorkflow::manage_scenarios(&selected_id)?
@@ -641,7 +660,6 @@ impl UseCaseWorkflow {
             let _use_case = runner.get_use_case_details(&selected_id)?;
         }
 
-        UI::pause_for_input()?;
         Ok(())
     }
 

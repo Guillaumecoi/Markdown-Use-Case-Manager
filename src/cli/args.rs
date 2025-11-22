@@ -26,6 +26,8 @@ pub enum Commands {
         #[arg(long, short = 's', default_value = "toml")]
         storage: String,
         /// Finalize initialization by copying templates (run after reviewing config)
+        /// Note: Finalize also syncs templates with config - if you manually edit mucm.toml
+        /// to add/remove methodologies, run 'mucm init --finalize' to sync template files
         #[arg(long)]
         finalize: bool,
     },
@@ -96,11 +98,6 @@ pub enum Commands {
     Reference {
         #[command(subcommand)]
         command: ReferenceCommands,
-    },
-    /// Manage personas
-    Persona {
-        #[command(subcommand)]
-        command: PersonaCommands,
     },
     /// Manage actors (personas and system actors)
     Actor {
@@ -198,41 +195,6 @@ pub enum ReferenceCommands {
 }
 
 #[derive(Debug, Subcommand)]
-pub enum PersonaCommands {
-    /// Create a new persona with fields from config
-    ///
-    /// Creates a persona with the required id, name, and function fields.
-    /// Additional fields are determined by your persona configuration
-    /// in .config/.mucm/mucm.toml and can be filled in by editing the
-    /// generated TOML file or SQL record directly.
-    Create {
-        /// Persona ID (e.g., "admin", "customer")
-        id: String,
-        /// Persona name
-        name: String,
-        /// Persona function/role (e.g., "System Administrator", "End User")
-        function: String,
-    },
-    /// List all personas
-    List,
-    /// Show persona details
-    Show {
-        /// Persona ID
-        id: String,
-    },
-    /// List all use cases that use this persona
-    UseCases {
-        /// Persona ID
-        id: String,
-    },
-    /// Delete a persona
-    Delete {
-        /// Persona ID
-        id: String,
-    },
-}
-
-#[derive(Debug, Subcommand)]
 pub enum ActorCommands {
     /// Create a new persona
     CreatePersona {
@@ -276,6 +238,11 @@ pub enum ActorCommands {
     },
     /// Show actor details
     Show {
+        /// Actor ID
+        id: String,
+    },
+    /// List all use cases that reference this actor
+    UseCases {
         /// Actor ID
         id: String,
     },

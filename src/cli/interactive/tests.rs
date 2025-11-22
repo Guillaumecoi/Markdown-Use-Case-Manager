@@ -428,17 +428,17 @@ mod persona_workflow_tests {
 
     #[test]
     #[serial]
-    fn test_list_personas_empty() {
+    fn test_list_actors_empty() {
         let (_temp_dir, runner, _config) = setup_test_env();
 
-        let result = runner.list_personas();
+        let result = runner.list_actors();
         assert!(result.is_ok());
         // Should not panic with empty list
     }
 
     #[test]
     #[serial]
-    fn test_list_personas_single() {
+    fn test_list_actors_single() {
         let (_temp_dir, mut runner, _config) = setup_test_env();
 
         // Create one persona
@@ -450,13 +450,13 @@ mod persona_workflow_tests {
             )
             .unwrap();
 
-        let result = runner.list_personas();
+        let result = runner.list_actors();
         assert!(result.is_ok());
     }
 
     #[test]
     #[serial]
-    fn test_list_personas_multiple() {
+    fn test_list_actors_multiple() {
         let (_temp_dir, mut runner, _config) = setup_test_env();
 
         // Create multiple personas
@@ -470,7 +470,7 @@ mod persona_workflow_tests {
                 .unwrap();
         }
 
-        let result = runner.list_personas();
+        let result = runner.list_actors();
         assert!(result.is_ok());
     }
 
@@ -488,7 +488,7 @@ mod persona_workflow_tests {
             )
             .unwrap();
 
-        let result = runner.show_persona("show-test".to_string());
+        let result = runner.show_actor("show-test".to_string());
         assert!(result.is_ok());
     }
 
@@ -511,7 +511,7 @@ mod persona_workflow_tests {
         assert!(repo.exists("to-delete").unwrap());
 
         // Delete it
-        let result = runner.delete_persona("to-delete");
+        let result = runner.delete_actor("to-delete");
         assert!(result.is_ok());
 
         // Verify it's gone
@@ -523,7 +523,7 @@ mod persona_workflow_tests {
     fn test_delete_persona_not_found() {
         let (_temp_dir, runner, _config) = setup_test_env();
 
-        let result = runner.delete_persona("nonexistent");
+        let result = runner.delete_actor("nonexistent");
         // Should handle gracefully
         assert!(result.is_ok() || result.is_err());
     }
@@ -542,11 +542,11 @@ mod persona_workflow_tests {
         assert!(result.is_ok());
 
         // 2. List personas
-        let result = runner.list_personas();
+        let result = runner.list_actors();
         assert!(result.is_ok());
 
         // 3. Show persona
-        let result = runner.show_persona("cycle-test".to_string());
+        let result = runner.show_actor("cycle-test".to_string());
         assert!(result.is_ok());
 
         // 4. Verify in repository
@@ -555,7 +555,7 @@ mod persona_workflow_tests {
         assert_eq!(persona.name, "Cycle Test User");
 
         // 5. Delete persona
-        let result = runner.delete_persona("cycle-test");
+        let result = runner.delete_actor("cycle-test");
         assert!(result.is_ok());
 
         // 6. Verify deletion
@@ -596,7 +596,7 @@ mod persona_workflow_tests {
         // }
     }
 
-    // TODO: Add tests for PersonaWorkflow menu interactions when testing infrastructure supports it
+    // TODO: Add tests for ActorWorkflow menu interactions when testing infrastructure supports it
     // TODO: Add tests for validation prompts in interactive mode
     // TODO: Add tests for cancellation/back navigation in workflows
     // TODO: Add tests for error recovery in interactive workflows

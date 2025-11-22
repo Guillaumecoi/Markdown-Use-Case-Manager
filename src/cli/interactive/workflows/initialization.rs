@@ -211,6 +211,15 @@ impl Initialization {
             return Self::run_initialization_wizard();
         }
 
+        // Ask if they want to create standard system actors
+        let create_actors =
+            Confirm::new("Create standard system actors (Database, API, Web Server, etc.)?")
+                .with_default(true)
+                .with_help_message(
+                    "These are commonly used external systems that interact with your use cases",
+                )
+                .prompt()?;
+
         // Create config with directories
         create_config_with_directories(
             &mut runner,
@@ -221,6 +230,7 @@ impl Initialization {
             test_dir.clone(),
             persona_dir.clone(),
             data_dir.clone(),
+            create_actors,
         )?;
 
         Ok(())
@@ -263,6 +273,7 @@ fn create_config_with_directories(
     test_dir: String,
     persona_dir: String,
     data_dir: String,
+    create_standard_actors: bool,
 ) -> Result<()> {
     match runner.initialize_project(
         language,
@@ -275,6 +286,29 @@ fn create_config_with_directories(
     ) {
         Ok(message) => {
             UI::show_success(&message)?;
+
+            // Save the preference in config
+            if let Ok(mut config) = crate::config::Config::load() {
+                config.actor.auto_create_standard_actors = create_standard_actors;
+                let _ = crate::config::Config::save_config_only(&config);
+            }
+
+            // Create actors if requested
+            if create_standard_actors {
+                use crate::controller::ActorController;
+                let actor_controller = ActorController::new()?;
+                let result = actor_controller.init_standard_actors()?;
+
+                if result.success {
+                    UI::show_success(&result.message)?;
+                } else {
+                    UI::show_warning(&format!(
+                        "Could not create standard actors: {}",
+                        result.message
+                    ))?;
+                }
+            }
+
             Ok(())
         }
         Err(e) => {
