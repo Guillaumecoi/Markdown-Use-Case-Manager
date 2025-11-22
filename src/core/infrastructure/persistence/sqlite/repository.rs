@@ -124,8 +124,8 @@ impl SqliteUseCaseRepository {
                     scenario_type_str,
                     status_str,
                     persona,
-                    created_at_str,
-                    updated_at_str,
+                    _created_at_str,
+                    _updated_at_str,
                     extra,
                 ),
             ) = scenario_result?;
@@ -222,14 +222,6 @@ impl SqliteUseCaseRepository {
                 preconditions,
                 postconditions,
                 references,
-                metadata: crate::core::domain::Metadata {
-                    created_at: created_at_str
-                        .parse()
-                        .context("Failed to parse created_at")?,
-                    updated_at: updated_at_str
-                        .parse()
-                        .context("Failed to parse updated_at")?,
-                },
                 extra,
             });
         }
@@ -336,8 +328,8 @@ impl SqliteUseCaseRepository {
                 .context("Failed to serialize scenario extra fields")?;
 
             tx.execute(
-                "INSERT INTO scenarios (id, use_case_id, title, description, scenario_type, status, persona, created_at, updated_at, extra_json)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO scenarios (id, use_case_id, title, description, scenario_type, status, persona, extra_json)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                 params![
                     scenario.id,
                     use_case.id,
@@ -346,8 +338,6 @@ impl SqliteUseCaseRepository {
                     scenario.scenario_type.to_string(),
                     scenario.status.to_string(),
                     scenario.persona,
-                    scenario.metadata.created_at.to_rfc3339(),
-                    scenario.metadata.updated_at.to_rfc3339(),
                     scenario_extra_json,
                 ],
             )

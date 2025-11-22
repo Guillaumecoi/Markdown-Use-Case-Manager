@@ -217,8 +217,7 @@ impl<'a> ScenarioManagementService<'a> {
             })?;
 
         step.action = new_description;
-        use_case.scenarios[scenario_index].metadata.touch();
-        use_case.metadata.touch();
+        use_case.metadata.touch(); // Update use case metadata when scenario changes
 
         self.repository.save(&use_case)?;
         self.use_cases[index] = use_case;
@@ -253,8 +252,7 @@ impl<'a> ScenarioManagementService<'a> {
         use_case.scenarios[scenario_index]
             .steps
             .sort_by_key(|s| s.order);
-        use_case.scenarios[scenario_index].metadata.touch();
-        use_case.metadata.touch();
+        use_case.metadata.touch(); // Update use case metadata when scenario changes
 
         self.repository.save(&use_case)?;
         self.use_cases[index] = use_case;
@@ -279,8 +277,7 @@ impl<'a> ScenarioManagementService<'a> {
             .ok_or_else(|| anyhow::anyhow!("Scenario with ID '{}' not found", scenario_id))?;
 
         use_case.scenarios[scenario_index].persona = Some(persona_id.to_string());
-        use_case.scenarios[scenario_index].metadata.touch();
-        use_case.metadata.touch();
+        use_case.metadata.touch(); // Update use case metadata when scenario changes
 
         self.repository.save(&use_case)?;
         self.use_cases[index] = use_case;
@@ -304,8 +301,7 @@ impl<'a> ScenarioManagementService<'a> {
             .ok_or_else(|| anyhow::anyhow!("Scenario with ID '{}' not found", scenario_id))?;
 
         use_case.scenarios[scenario_index].persona = None;
-        use_case.scenarios[scenario_index].metadata.touch();
-        use_case.metadata.touch();
+        use_case.metadata.touch(); // Update use case metadata when scenario changes
 
         self.repository.save(&use_case)?;
         self.use_cases[index] = use_case;

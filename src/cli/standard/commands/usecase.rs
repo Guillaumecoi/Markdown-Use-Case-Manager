@@ -102,7 +102,6 @@ pub fn handle_usecase_scenario_command(
                 persona,
                 None, // preconditions
                 None, // postconditions
-                None, // actors
             )?;
             DisplayResultFormatter::display(&result);
         }

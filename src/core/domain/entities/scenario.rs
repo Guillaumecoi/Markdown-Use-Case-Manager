@@ -1,4 +1,4 @@
-use super::{Condition, Metadata, ScenarioReference, ScenarioStep, ScenarioType, Status};
+use super::{Condition, ScenarioReference, ScenarioStep, ScenarioType, Status};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -15,8 +15,6 @@ pub struct Scenario {
     /// Persona this scenario is designed for (placeholder)
     #[serde(default)]
     pub persona: Option<String>,
-
-    pub metadata: Metadata,
 
     /// Ordered steps in the scenario flow
     #[serde(default)]
@@ -53,7 +51,6 @@ impl Scenario {
             scenario_type,
             status: Status::Planned,
             persona: None,
-            metadata: Metadata::new(),
             steps: Vec::new(),
             preconditions: Vec::new(),
             postconditions: Vec::new(),
@@ -66,7 +63,6 @@ impl Scenario {
     pub fn add_step(&mut self, step: ScenarioStep) {
         self.steps.push(step);
         self.steps.sort_by_key(|s| s.order);
-        self.metadata.touch();
     }
 
     /// Add a precondition
@@ -78,7 +74,6 @@ impl Scenario {
                 && c.target_type == condition.target_type
         }) {
             self.preconditions.push(condition);
-            self.metadata.touch();
         }
     }
 
@@ -91,32 +86,27 @@ impl Scenario {
                 && c.target_type == condition.target_type
         }) {
             self.postconditions.push(condition);
-            self.metadata.touch();
         }
     }
 
     /// Remove a precondition by text
     pub fn remove_precondition(&mut self, text: &str) {
         self.preconditions.retain(|c| c.text != text);
-        self.metadata.touch();
     }
 
     /// Remove a postcondition by text
     pub fn remove_postcondition(&mut self, text: &str) {
         self.postconditions.retain(|c| c.text != text);
-        self.metadata.touch();
     }
 
     /// Update scenario status
     pub fn set_status(&mut self, status: Status) {
         self.status = status;
-        self.metadata.touch();
     }
 
     /// Remove a step by order
     pub fn remove_step(&mut self, step_order: u32) {
         self.steps.retain(|step| step.order != step_order as usize);
-        self.metadata.touch();
     }
 
     /// Add a reference to another scenario or use case
@@ -128,7 +118,6 @@ impl Scenario {
                 && r.relationship == reference.relationship
         }) {
             self.references.push(reference);
-            self.metadata.touch();
         }
     }
 
@@ -152,7 +141,6 @@ impl Scenario {
     pub fn remove_reference(&mut self, target_id: &str, relationship: &str) {
         self.references
             .retain(|r| !(r.target_id == target_id && r.relationship == relationship));
-        self.metadata.touch();
     }
 }
 

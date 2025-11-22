@@ -96,16 +96,7 @@ impl ScenarioWorkflow {
         // Collect postconditions
         let postconditions = Self::collect_conditions("postconditions", use_case_id)?;
 
-        // Ask if they want to assign actors
-        let assign_actors_choice =
-            Select::new("Assign actors to this scenario?", vec!["No", "Yes"]).prompt()?;
-
-        let actors = if assign_actors_choice == "Yes" {
-            Self::select_multiple_actors()?
-        } else {
-            None
-        };
-
+        // Note: Actors are automatically derived from scenario steps, not manually assigned
         // Create the scenario
         let mut controller = ScenarioController::new()?;
         let result = controller.create_scenario(
@@ -116,7 +107,6 @@ impl ScenarioWorkflow {
             None, // persona_id removed from interactive workflow
             preconditions,
             postconditions,
-            actors,
         )?;
 
         UI::show_success(&result.message)?;
@@ -235,66 +225,6 @@ impl ScenarioWorkflow {
     }
 
     /// Helper to select multiple actors interactively
-    fn select_multiple_actors() -> Result<Option<Vec<String>>> {
-        let runner = InteractiveRunner::new();
-        let available_actors = runner.get_available_actors()?;
-
-        if available_actors.is_empty() {
-            println!("\n  No actors available. Create personas or system actors first.\n");
-            return Ok(None);
-        }
-
-        let mut selected_actors = Vec::new();
-
-        loop {
-            let mut options = available_actors
-                .iter()
-                .filter(|a| {
-                    // Extract ID from format "emoji name (id)"
-                    let id = a.split('(').nth(1).and_then(|s| s.strip_suffix(')'));
-                    !selected_actors
-                        .iter()
-                        .any(|selected: &String| Some(selected.as_str()) == id)
-                })
-                .cloned()
-                .collect::<Vec<_>>();
-
-            if options.is_empty() {
-                break;
-            }
-
-            options.push("Done selecting".to_string());
-
-            let choice = Select::new("Select actor:", options).prompt()?;
-
-            if choice == "Done selecting" {
-                break;
-            }
-
-            // Extract actor ID from the display string
-            if let Some(id) = choice.split('(').nth(1).and_then(|s| s.strip_suffix(')')) {
-                selected_actors.push(id.to_string());
-                println!("  ✓ Added: {}", choice);
-            }
-
-            if selected_actors.is_empty() {
-                let add_more = Confirm::new("Add another actor?")
-                    .with_default(true)
-                    .prompt()?;
-
-                if !add_more {
-                    break;
-                }
-            }
-        }
-
-        if selected_actors.is_empty() {
-            Ok(None)
-        } else {
-            Ok(Some(selected_actors))
-        }
-    }
-
     /// Helper to select a single actor for a step
     fn select_actor_for_step() -> Result<Option<String>> {
         let runner = InteractiveRunner::new();
