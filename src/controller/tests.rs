@@ -1838,9 +1838,18 @@ mod project_controller_tests {
         // Verify config was updated
         let config = Config::load().unwrap();
         assert_eq!(config.templates.methodologies.len(), 3);
-        assert!(config.templates.methodologies.contains(&"developer".to_string()));
-        assert!(config.templates.methodologies.contains(&"business".to_string()));
-        assert!(config.templates.methodologies.contains(&"feature".to_string()));
+        assert!(config
+            .templates
+            .methodologies
+            .contains(&"developer".to_string()));
+        assert!(config
+            .templates
+            .methodologies
+            .contains(&"business".to_string()));
+        assert!(config
+            .templates
+            .methodologies
+            .contains(&"feature".to_string()));
     }
 
     #[test]
@@ -1957,7 +1966,10 @@ mod project_controller_tests {
         // Verify config was updated
         let config = Config::load().unwrap();
         assert_eq!(config.templates.methodologies.len(), 1);
-        assert!(config.templates.methodologies.contains(&"developer".to_string()));
+        assert!(config
+            .templates
+            .methodologies
+            .contains(&"developer".to_string()));
     }
 
     #[test]
@@ -2059,16 +2071,24 @@ mod project_controller_tests {
         assert_eq!(config.templates.methodologies.len(), 4);
 
         // Remove some of them
-        let remove_result =
-            ProjectController::remove_methodologies(vec!["business".to_string(), "tester".to_string()]);
+        let remove_result = ProjectController::remove_methodologies(vec![
+            "business".to_string(),
+            "tester".to_string(),
+        ]);
         assert!(remove_result.is_ok());
         assert!(remove_result.unwrap().is_success());
 
         // Verify correct ones remain
         let config = Config::load().unwrap();
         assert_eq!(config.templates.methodologies.len(), 2);
-        assert!(config.templates.methodologies.contains(&"developer".to_string()));
-        assert!(config.templates.methodologies.contains(&"feature".to_string()));
+        assert!(config
+            .templates
+            .methodologies
+            .contains(&"developer".to_string()));
+        assert!(config
+            .templates
+            .methodologies
+            .contains(&"feature".to_string()));
     }
 
     #[test]
@@ -2100,7 +2120,10 @@ mod project_controller_tests {
         // Verify other config settings weren't changed
         let config_after_add = Config::load().unwrap();
         assert_eq!(config_after_add.project.name, initial_project_name);
-        assert_eq!(config_after_add.generation.test_language, initial_test_language);
+        assert_eq!(
+            config_after_add.generation.test_language,
+            initial_test_language
+        );
 
         // Remove methodology
         ProjectController::remove_methodologies(vec!["business".to_string()]).unwrap();
@@ -2108,7 +2131,10 @@ mod project_controller_tests {
         // Verify again
         let config_after_remove = Config::load().unwrap();
         assert_eq!(config_after_remove.project.name, initial_project_name);
-        assert_eq!(config_after_remove.generation.test_language, initial_test_language);
+        assert_eq!(
+            config_after_remove.generation.test_language,
+            initial_test_language
+        );
     }
 
     #[test]
@@ -2131,8 +2157,12 @@ mod project_controller_tests {
         .unwrap();
 
         // Verify templates were created
-        let template_dir = std::path::Path::new(".config/.mucm/template-assets/methodologies/developer");
-        assert!(template_dir.exists(), "Developer methodology templates should exist");
+        let template_dir =
+            std::path::Path::new(".config/.mucm/template-assets/methodologies/developer");
+        assert!(
+            template_dir.exists(),
+            "Developer methodology templates should exist"
+        );
 
         // Modify a template file to simulate user customization
         let test_file = template_dir.join("uc_advanced.hbs");
@@ -2180,7 +2210,7 @@ mod project_controller_tests {
         let methodologies_dir = std::path::Path::new(".config/.mucm/template-assets/methodologies");
         let developer_dir = methodologies_dir.join("developer");
         let business_dir = methodologies_dir.join("business");
-        
+
         assert!(developer_dir.exists(), "Developer should exist");
         assert!(!business_dir.exists(), "Business should not exist yet");
 
@@ -2236,7 +2266,7 @@ mod project_controller_tests {
 
         // Customize a file
         let test_file = std::path::Path::new(
-            ".config/.mucm/template-assets/methodologies/developer/uc_advanced.hbs"
+            ".config/.mucm/template-assets/methodologies/developer/uc_advanced.hbs",
         );
         if test_file.exists() {
             let custom_content = "IDEMPOTENCY TEST - PRESERVE THIS";
@@ -2251,7 +2281,8 @@ mod project_controller_tests {
                 let content = fs::read_to_string(test_file).unwrap();
                 assert_eq!(
                     content, custom_content,
-                    "Content should be preserved after sync #{}", i
+                    "Content should be preserved after sync #{}",
+                    i
                 );
             }
         }
@@ -2259,8 +2290,7 @@ mod project_controller_tests {
 
     #[test]
     #[serial]
-    fn test_sync_templates_after_removing_methodology_from_config() {
-        use std::fs;
+    fn test_sync_templates_removes_deleted_methodology_folder() {
         let _temp_dir = setup_empty_dir();
 
         // Initialize with multiple methodologies
@@ -2276,33 +2306,31 @@ mod project_controller_tests {
         )
         .unwrap();
 
-        let business_dir = std::path::Path::new(".config/.mucm/template-assets/methodologies/business");
-        assert!(business_dir.exists(), "Business should exist initially");
+        let business_dir =
+            std::path::Path::new(".config/.mucm/template-assets/methodologies/business");
+        let developer_dir =
+            std::path::Path::new(".config/.mucm/template-assets/methodologies/developer");
 
-        // Customize business template
-        let business_file = business_dir.join("uc_advanced.hbs");
-        if business_file.exists() {
-            fs::write(&business_file, "BUSINESS CUSTOMIZATION").unwrap();
-        }
+        assert!(business_dir.exists(), "Business should exist initially");
+        assert!(developer_dir.exists(), "Developer should exist initially");
 
         // Remove business from config
         ProjectController::remove_methodologies(vec!["business".to_string()]).unwrap();
 
-        // Sync templates
+        // Sync templates - this should remove the business folder
         ProjectController::sync_templates().unwrap();
 
-        // Verify business templates still exist (not deleted by sync)
-        // This preserves user customizations even when methodology is removed from config
+        // Verify business folder was deleted
         assert!(
-            business_dir.exists(),
-            "Business templates should still exist after removal from config (preserves customizations)"
+            !business_dir.exists(),
+            "Business templates should be deleted after removal from config"
         );
 
-        // User customization should be preserved
-        if business_file.exists() {
-            let content = fs::read_to_string(&business_file).unwrap();
-            assert_eq!(content, "BUSINESS CUSTOMIZATION", "Customization should be preserved");
-        }
+        // Verify developer folder still exists
+        assert!(
+            developer_dir.exists(),
+            "Developer templates should still exist"
+        );
     }
 
     #[test]

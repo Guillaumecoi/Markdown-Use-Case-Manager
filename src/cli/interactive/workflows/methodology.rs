@@ -61,7 +61,7 @@ impl MethodologyWorkflow {
         UI::show_section_header("Remove Methodologies", "➖")?;
 
         let installed = ProjectController::get_installed_methodologies()?;
-        
+
         if installed.is_empty() {
             UI::show_warning("No methodologies configured to remove.")?;
             return Ok(());
@@ -93,7 +93,7 @@ impl MethodologyWorkflow {
 
         // Delegate to controller (validates default methodology)
         let result = ProjectController::remove_methodologies(selected)?;
-        
+
         if result.is_success() {
             println!("\n{}", result.message);
         } else {

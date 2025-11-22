@@ -679,8 +679,11 @@ impl ConditionsWorkflow {
         // Select postcondition to remove
         let mut postconditions_with_cancel = postconditions.clone();
         postconditions_with_cancel.push("[Cancel]".to_string());
-        let selection =
-            Select::new("Select postcondition to remove:", postconditions_with_cancel).prompt()?;
+        let selection = Select::new(
+            "Select postcondition to remove:",
+            postconditions_with_cancel,
+        )
+        .prompt()?;
 
         if selection == "[Cancel]" {
             return Ok(());

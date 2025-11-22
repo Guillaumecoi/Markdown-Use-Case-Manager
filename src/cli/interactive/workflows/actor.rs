@@ -235,12 +235,12 @@ impl ActorWorkflow {
 
             // Build menu based on actor type
             let mut edit_options = vec!["Edit Name", "Edit Emoji"];
-            
+
             // Only personas have custom fields
             if actor.actor_type == crate::core::ActorType::Persona {
                 edit_options.push("Edit Custom Fields");
             }
-            
+
             edit_options.push("Back to Menu");
 
             let choice = Select::new("What would you like to edit?", edit_options).prompt()?;

@@ -7,8 +7,8 @@ use anyhow::Result;
 
 use crate::cli::interactive::menus::settings::Settings;
 use crate::cli::interactive::ui::UI;
-use crate::cli::interactive::workflows::initialization::Initialization;
 use crate::cli::interactive::workflows::actor::ActorWorkflow;
+use crate::cli::interactive::workflows::initialization::Initialization;
 use crate::cli::interactive::workflows::use_case::UseCaseWorkflow;
 use crate::cli::standard::CliRunner;
 

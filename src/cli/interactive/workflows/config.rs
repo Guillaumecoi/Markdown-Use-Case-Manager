@@ -103,21 +103,30 @@ impl ConfigWorkflow {
         UI::clear_screen()?;
         println!("\n📄 Current Configuration");
         println!("═══════════════════════════\n");
-        
+
         println!("📋 Project Information");
         println!("  Name: {}", config.project.name);
         println!("  Description: {}\n", config.project.description);
-        
+
         println!("📁 Directory Settings");
-        println!("  Use Cases: {} (generated)", config.directories.use_case_dir);
+        println!(
+            "  Use Cases: {} (generated)",
+            config.directories.use_case_dir
+        );
         println!("  Tests: {}", config.directories.test_dir);
         println!("  Actors: {} (generated)", config.directories.actor_dir);
-        println!("  Data: {} (source of truth)\n", config.directories.data_dir);
-        
+        println!(
+            "  Data: {} (source of truth)\n",
+            config.directories.data_dir
+        );
+
         println!("🔧 Generation Settings");
         println!("  Test Language: {}", config.generation.test_language);
-        println!("  Auto-generate Tests: {}\n", config.generation.auto_generate_tests);
-        
+        println!(
+            "  Auto-generate Tests: {}\n",
+            config.generation.auto_generate_tests
+        );
+
         println!("📚 Methodologies");
         println!("  Default: {}", config.templates.default_methodology);
         if config.templates.methodologies.is_empty() {
@@ -126,11 +135,14 @@ impl ConfigWorkflow {
             println!("  Available: {}", config.templates.methodologies.join(", "));
         }
         println!();
-        
+
         println!("📊 Metadata Configuration");
         println!("  Auto-set 'created': {}", config.metadata.created);
-        println!("  Auto-update 'last_updated': {}\n", config.metadata.last_updated);
-        
+        println!(
+            "  Auto-update 'last_updated': {}\n",
+            config.metadata.last_updated
+        );
+
         println!("💾 Storage");
         println!("  Backend: {}\n", config.storage.backend);
 
@@ -141,9 +153,9 @@ impl ConfigWorkflow {
     /// Save configuration
     pub fn save_config(config: &Config) -> Result<()> {
         config.save_in_dir(".")?;
-        
+
         println!("\n💾 Syncing template files with configuration...");
-        
+
         // Sync template files with current config (copy new, remove old)
         use crate::controller::ProjectController;
         match ProjectController::sync_templates() {
@@ -155,7 +167,7 @@ impl ConfigWorkflow {
                 println!("Configuration was saved but templates may be out of sync.\n");
             }
         }
-        
+
         Ok(())
     }
 }

@@ -360,16 +360,62 @@ impl ProjectController {
     }
 
     /// Sync templates with current config without deleting existing files.
-    /// 
+    ///
     /// This is used by the interactive settings menu to update templates
     /// when methodologies are added/removed, while preserving any user
     /// customizations to existing template files.
+    ///
+    /// This method will:
+    /// - Add template files for newly added methodologies
+    /// - Remove template folders for methodologies no longer in config
+    /// - Preserve existing template files within active methodologies
     pub fn sync_templates() -> Result<DisplayResult> {
+        // First, clean up removed methodology folders
+        Self::cleanup_removed_methodologies()?;
+
+        // Then sync templates (adds new ones, preserves existing)
         Self::finalize_init_internal(true, false)
     }
 
+    /// Remove template folders for methodologies that are no longer in the config.
+    ///
+    /// This ensures that when a methodology is removed via remove_methodologies(),
+    /// its template folder is deleted during the next sync.
+    fn cleanup_removed_methodologies() -> Result<()> {
+        use std::fs;
+
+        let config = Config::load()?;
+        let methodologies_dir = std::path::Path::new(".config/.mucm/template-assets/methodologies");
+
+        if !methodologies_dir.exists() {
+            return Ok(());
+        }
+
+        // Get list of configured methodologies
+        let configured: std::collections::HashSet<String> =
+            config.templates.methodologies.iter().cloned().collect();
+
+        // Check each directory in methodologies folder
+        for entry in fs::read_dir(methodologies_dir)? {
+            let entry = entry?;
+            let path = entry.path();
+
+            if path.is_dir() {
+                if let Some(dir_name) = path.file_name().and_then(|n| n.to_str()) {
+                    // If this directory is not in the configured methodologies, remove it
+                    if !configured.contains(dir_name) {
+                        fs::remove_dir_all(&path)?;
+                        println!("🗑️  Removed template folder for '{}'", dir_name);
+                    }
+                }
+            }
+        }
+
+        Ok(())
+    }
+
     /// Internal finalize with force and clean options (public for use by interactive mode)
-    /// 
+    ///
     /// # Arguments
     /// * `force` - Skip the "already finalized" check
     /// * `clean` - Delete existing templates before copying (use with caution!)
@@ -497,7 +543,7 @@ impl ProjectController {
     }
 
     /// Add methodologies to the project configuration.
-    /// 
+    ///
     /// Updates the mucm.toml config file to include the specified methodologies.
     /// Template files should be synced separately using finalize_init.
     ///
@@ -508,7 +554,9 @@ impl ProjectController {
     /// DisplayResult with success/error message
     pub fn add_methodologies(methodologies: Vec<String>) -> Result<DisplayResult> {
         if methodologies.is_empty() {
-            return Ok(DisplayResult::error("No methodologies provided".to_string()));
+            return Ok(DisplayResult::error(
+                "No methodologies provided".to_string(),
+            ));
         }
 
         let mut config = Config::load()?;
@@ -528,7 +576,10 @@ impl ProjectController {
 
         let mut message = String::new();
         if !added.is_empty() {
-            message.push_str(&format!("✅ Added {} methodology(ies) to configuration:\n", added.len()));
+            message.push_str(&format!(
+                "✅ Added {} methodology(ies) to configuration:\n",
+                added.len()
+            ));
             for m in &added {
                 message.push_str(&format!("   • {}\n", m));
             }
@@ -537,12 +588,15 @@ impl ProjectController {
             if !added.is_empty() {
                 message.push('\n');
             }
-            message.push_str(&format!("ℹ️  Skipped {} (already configured):\n", skipped.len()));
+            message.push_str(&format!(
+                "ℹ️  Skipped {} (already configured):\n",
+                skipped.len()
+            ));
             for m in &skipped {
                 message.push_str(&format!("   • {}\n", m));
             }
         }
-        
+
         if !added.is_empty() {
             message.push_str("\n💡 Template files will be synced when you Save & Exit.\n");
         }
@@ -551,7 +605,7 @@ impl ProjectController {
     }
 
     /// Remove methodologies from the project configuration.
-    /// 
+    ///
     /// Updates the mucm.toml config file to remove the specified methodologies.
     /// Template files should be synced separately using finalize_init.
     ///
@@ -562,7 +616,9 @@ impl ProjectController {
     /// DisplayResult with success/error message, or error if trying to remove default
     pub fn remove_methodologies(methodologies: Vec<String>) -> Result<DisplayResult> {
         if methodologies.is_empty() {
-            return Ok(DisplayResult::error("No methodologies provided".to_string()));
+            return Ok(DisplayResult::error(
+                "No methodologies provided".to_string(),
+            ));
         }
 
         let mut config = Config::load()?;
@@ -589,7 +645,10 @@ impl ProjectController {
 
         config.save_in_dir(".")?;
 
-        let mut message = format!("✅ Removed {} methodology(ies) from configuration:\n", removed.len());
+        let mut message = format!(
+            "✅ Removed {} methodology(ies) from configuration:\n",
+            removed.len()
+        );
         for m in removed {
             message.push_str(&format!("   • {}\n", m));
         }

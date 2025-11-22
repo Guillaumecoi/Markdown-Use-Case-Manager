@@ -438,14 +438,17 @@ impl TemplateManager {
             let methodologies_dir = config_templates_dir.join("methodologies");
             fs::create_dir_all(&methodologies_dir)?;
             let target_method_templates = methodologies_dir.join(methodology);
-            
+
             if !target_method_templates.exists() {
                 Self::copy_dir_recursive(&source_method_dir, &target_method_templates)?;
                 println!("✓ Copied methodology: {}", methodology);
             } else {
                 // Only copy new files, skip existing ones to preserve customizations
                 Self::copy_dir_incremental(&source_method_dir, &target_method_templates)?;
-                println!("⊙ Skipped methodology: {} (already exists, preserved customizations)", methodology);
+                println!(
+                    "⊙ Skipped methodology: {} (already exists, preserved customizations)",
+                    methodology
+                );
             }
         }
 
@@ -485,7 +488,7 @@ impl TemplateManager {
         if source_lang_dir.exists() {
             let target_languages = config_templates_dir.join("languages");
             let target_lang_dir = target_languages.join(&config.generation.test_language);
-            
+
             if !target_lang_dir.exists() {
                 Self::copy_dir_recursive(&source_lang_dir, &target_lang_dir)?;
                 println!(

@@ -199,12 +199,15 @@ impl ScenarioWorkflow {
 
         let mut conditions = Vec::new();
         loop {
-            let condition = Text::new(&format!("  {} (or press Enter to finish):", condition_type.trim_end_matches('s')))
-                .with_help_message(&format!(
-                    "Enter a text description of the {}",
-                    condition_type.trim_end_matches('s')
-                ))
-                .prompt()?;
+            let condition = Text::new(&format!(
+                "  {} (or press Enter to finish):",
+                condition_type.trim_end_matches('s')
+            ))
+            .with_help_message(&format!(
+                "Enter a text description of the {}",
+                condition_type.trim_end_matches('s')
+            ))
+            .prompt()?;
 
             if condition.trim().is_empty() {
                 break;
@@ -346,7 +349,7 @@ impl ScenarioWorkflow {
         scenario_options.push("[Cancel]".to_string());
 
         let selected = Select::new("Select scenario to edit:", scenario_options).prompt()?;
-        
+
         if selected == "[Cancel]" {
             return Ok(());
         }
@@ -490,7 +493,7 @@ impl ScenarioWorkflow {
         scenario_options.push("[Cancel]".to_string());
 
         let selected = Select::new("Select scenario to delete:", scenario_options).prompt()?;
-        
+
         if selected == "[Cancel]" {
             return Ok(());
         }
@@ -545,7 +548,14 @@ impl ScenarioWorkflow {
             }
             println!();
 
-            let actions = vec!["Add step", "Insert step", "Edit step", "Remove step", "Reorder step", "Back"];
+            let actions = vec![
+                "Add step",
+                "Insert step",
+                "Edit step",
+                "Remove step",
+                "Reorder step",
+                "Back",
+            ];
             let choice = Select::new("What would you like to do?", actions).prompt()?;
 
             match choice {
@@ -618,10 +628,12 @@ impl ScenarioWorkflow {
                     let mut position_options: Vec<String> = Vec::new();
                     position_options.push("At beginning (before step 1)".to_string());
                     for step in &scenario.steps {
-                        position_options.push(format!("After step {} ({})", step.order, step.action));
+                        position_options
+                            .push(format!("After step {} ({})", step.order, step.action));
                     }
 
-                    let position_choice = Select::new("Where to insert the new step?", position_options).prompt()?;
+                    let position_choice =
+                        Select::new("Where to insert the new step?", position_options).prompt()?;
 
                     let insert_order: u32 = if position_choice.starts_with("At beginning") {
                         1
@@ -716,7 +728,8 @@ impl ScenarioWorkflow {
                         selected_step.split('.').next().unwrap().trim().parse()?;
 
                     let move_options = vec!["Move up", "Move down", "Move to specific position"];
-                    let move_choice = Select::new("How to move this step?", move_options).prompt()?;
+                    let move_choice =
+                        Select::new("How to move this step?", move_options).prompt()?;
 
                     let new_order: u32 = match move_choice {
                         "Move up" => {
@@ -869,7 +882,8 @@ impl ScenarioWorkflow {
                         .map(|c| c.to_string())
                         .collect();
                     options.push("[Cancel]".to_string());
-                    let selected = Select::new("Select precondition to remove:", options).prompt()?;
+                    let selected =
+                        Select::new("Select precondition to remove:", options).prompt()?;
 
                     if selected == "[Cancel]" {
                         continue;
@@ -893,7 +907,9 @@ impl ScenarioWorkflow {
                 }
                 "Add Postcondition" => {
                     let condition = Text::new("Enter postcondition:")
-                        .with_help_message("Describe what must be true after this scenario completes")
+                        .with_help_message(
+                            "Describe what must be true after this scenario completes",
+                        )
                         .prompt()?;
 
                     let result = controller.add_postcondition(
@@ -917,7 +933,8 @@ impl ScenarioWorkflow {
                         .map(|c| c.to_string())
                         .collect();
                     options.push("[Cancel]".to_string());
-                    let selected = Select::new("Select postcondition to remove:", options).prompt()?;
+                    let selected =
+                        Select::new("Select postcondition to remove:", options).prompt()?;
 
                     if selected == "[Cancel]" {
                         continue;
@@ -946,5 +963,4 @@ impl ScenarioWorkflow {
 
         Ok(())
     }
-
 }

@@ -365,22 +365,14 @@ impl InteractiveRunner {
     }
 
     /// Update actor name (works for all actor types)
-    pub fn update_actor_entity_name(
-        &mut self,
-        actor_id: String,
-        name: String,
-    ) -> Result<String> {
+    pub fn update_actor_entity_name(&mut self, actor_id: String, name: String) -> Result<String> {
         let controller = self.ensure_actor_controller()?;
         let result = controller.update_actor_name(actor_id, name)?;
         Ok(result.message)
     }
 
     /// Update actor emoji (works for all actor types)
-    pub fn update_actor_entity_emoji(
-        &mut self,
-        actor_id: String,
-        emoji: String,
-    ) -> Result<String> {
+    pub fn update_actor_entity_emoji(&mut self, actor_id: String, emoji: String) -> Result<String> {
         let controller = self.ensure_actor_controller()?;
         let result = controller.update_emoji(actor_id, emoji)?;
         Ok(result.message)
